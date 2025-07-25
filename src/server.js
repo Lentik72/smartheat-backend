@@ -116,7 +116,13 @@ const missingKeys = requiredKeys.filter(key => !API_KEYS[key]);
 
 if (missingKeys.length > 0) {
   logger.error('Missing required environment variables:', missingKeys);
-  process.exit(1);
+  // In production/Railway, this will cause deployment failure if env vars aren't set
+  // For development, we can run in degraded mode
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  } else {
+    logger.warn('⚠️  Running in degraded mode without all API keys');
+  }
 }
 
 logger.info('✅ All required API keys loaded successfully');

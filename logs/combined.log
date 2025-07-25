@@ -6,3 +6,12 @@
 [32minfo[39m: 🔒 Security: Helmet, CORS, Rate limiting enabled {"timestamp":"2025-07-25T00:15:24.896Z"}
 [32minfo[39m: GET /health 200 2ms {"meta":{"req":{"headers":{"accept":"*/*","host":"localhost:8080","user-agent":"curl/8.7.1"},"httpVersion":"1.1","method":"GET","originalUrl":"/health","query":{},"url":"/health"},"res":{"statusCode":200},"responseTime":2},"timestamp":"2025-07-25T00:15:27.748Z"}
 [32minfo[39m: SIGTERM received, shutting down gracefully {"timestamp":"2025-07-25T00:15:27.776Z"}
+[31merror[39m: Missing required environment variables: {"0":"OPENWEATHER","1":"MONGODB_URI","2":"JWT_SECRET","timestamp":"2025-07-25T00:18:27.761Z"}
+[33mwarn[39m: ⚠️  Running in degraded mode without all API keys {"timestamp":"2025-07-25T00:18:27.763Z"}
+[32minfo[39m: ✅ All required API keys loaded successfully {"timestamp":"2025-07-25T00:18:27.763Z"}
+[32minfo[39m: 🚀 SmartHeat Backend API Server running on port 8080 {"timestamp":"2025-07-25T00:18:27.767Z"}
+[32minfo[39m: 📍 Health check: http://localhost:8080/health {"timestamp":"2025-07-25T00:18:27.768Z"}
+[32minfo[39m: 📖 API docs: http://localhost:8080/api/docs {"timestamp":"2025-07-25T00:18:27.768Z"}
+[32minfo[39m: 🌍 Environment: development {"timestamp":"2025-07-25T00:18:27.768Z"}
+[32minfo[39m: 🔒 Security: Helmet, CORS, Rate limiting enabled {"timestamp":"2025-07-25T00:18:27.768Z"}
+[32minfo[39m: GET /health 200 3ms {"meta":{"req":{"headers":{"accept":"*/*","host":"localhost:8080","user-agent":"curl/8.7.1"},"httpVersion":"1.1","method":"GET","originalUrl":"/health","query":{},"url":"/health"},"res":{"statusCode":200},"responseTime":3},"timestamp":"2025-07-25T00:18:32.564Z"}
