@@ -9,6 +9,32 @@ const router = express.Router();
 let anonymousUsers = new Map();
 let deviceRegistrations = new Map();
 
+// Admin configuration - secure bootstrap
+const ADMIN_EMAILS = [
+  process.env.ADMIN_EMAIL || 'admin@smartheat.app', // Set via environment variable
+  // Add additional admin emails here via ADMIN_EMAIL_2, etc.
+];
+
+const isAdminEmail = (email) => {
+  return ADMIN_EMAILS.includes(email.toLowerCase().trim());
+};
+
+const getInitialRole = (email) => {
+  const cleanEmail = email.toLowerCase().trim();
+  
+  // First admin becomes super admin
+  if (ADMIN_EMAILS[0] === cleanEmail) {
+    return 'super_admin';
+  }
+  
+  // Other configured emails become regular admins
+  if (ADMIN_EMAILS.includes(cleanEmail)) {
+    return 'admin';
+  }
+  
+  return 'customer';
+};
+
 // Validation middleware
 const validateDeviceRegistration = [
   body('deviceId').isLength({ min: 10, max: 100 }).withMessage('Device ID must be 10-100 characters'),
@@ -45,6 +71,32 @@ const verifyToken = (req, res, next) => {
   } catch (error) {
     return res.status(403).json({ error: 'Invalid or expired token' });
   }
+};
+
+// Admin authorization middleware
+const requireAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  if (!req.user.role || (req.user.role !== 'admin' && req.user.role !== 'super_admin')) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  next();
+};
+
+// Super admin authorization middleware
+const requireSuperAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  if (!req.user.role || req.user.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Super admin access required' });
+  }
+  
+  next();
 };
 
 // POST /api/auth/register - Register anonymous user device
@@ -377,11 +429,148 @@ const cleanupInactiveUsers = () => {
   }
   
   if (deletedUsers > 0) {
-    console.log(`🧹 Cleaned up ${deletedUsers} inactive users and ${deletedDevices} devices`);
+    // Cleanup will be logged by the main application logger if needed
   }
 };
 
 // Run cleanup every 24 hours
 setInterval(cleanupInactiveUsers, 24 * 60 * 60 * 1000);
+
+// POST /api/auth/admin-login - Admin email-based authentication
+router.post('/admin-login', [
+  body('email').isEmail().withMessage('Valid email required'),
+  body('deviceId').isLength({ min: 10, max: 100 }).withMessage('Device ID required'),
+  body('appVersion').isLength({ min: 1, max: 10 }).withMessage('App version required')
+], handleValidationErrors, (req, res) => {
+  try {
+    const { email, deviceId, appVersion } = req.body;
+    const logger = req.app.locals.logger;
+    
+    // Check if email is authorized admin
+    if (!isAdminEmail(email)) {
+      logger.warn(`🚫 Unauthorized admin login attempt: ${email}`);
+      return res.status(403).json({
+        error: 'Unauthorized',
+        message: 'Email not authorized for admin access'
+      });
+    }
+    
+    const role = getInitialRole(email);
+    const userId = uuidv4();
+    
+    // Create admin user record
+    const adminUser = {
+      id: userId,
+      email: email.toLowerCase().trim(),
+      role: role,
+      type: 'admin',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      lastActive: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      deviceCount: 1,
+      privacySettings: {
+        analyticsConsent: true,
+        communityConsent: true,
+        marketDataConsent: true
+      }
+    };
+    
+    // Register admin device
+    const deviceRegistration = {
+      deviceId,
+      userId,
+      deviceModel: 'Admin Device',
+      osVersion: 'iOS',
+      appVersion,
+      registeredAt: new Date().toISOString(),
+      lastSeen: new Date().toISOString(),
+      isActive: true,
+      isAdminDevice: true
+    };
+    
+    // Store registrations
+    anonymousUsers.set(userId, adminUser);
+    deviceRegistrations.set(deviceId, deviceRegistration);
+    
+    // Generate JWT token with admin role
+    const token = jwt.sign(
+      {
+        userId,
+        email: email.toLowerCase().trim(),
+        role,
+        deviceId,
+        type: 'admin'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' } // Shorter expiry for admin tokens
+    );
+    
+    logger.info(`🔑 Admin login successful: ${email} (${role}) - Device: ${deviceId.substring(0, 8)}...`);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Admin authentication successful',
+      token,
+      userId,
+      email: email.toLowerCase().trim(),
+      role,
+      expiresIn: '30 days',
+      permissions: {
+        manageSupplierRequests: true,
+        viewAnalytics: true,
+        manageUsers: role === 'super_admin',
+        systemSettings: role === 'super_admin'
+      }
+    });
+    
+  } catch (error) {
+    req.app.locals.logger.error('Admin login error:', error);
+    res.status(500).json({
+      error: 'Authentication failed',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/auth/admin/profile - Get admin profile
+router.get('/admin/profile', verifyToken, requireAdmin, (req, res) => {
+  try {
+    const { userId, email, role } = req.user;
+    const logger = req.app.locals.logger;
+    
+    const user = anonymousUsers.get(userId);
+    if (!user) {
+      return res.status(404).json({
+        error: 'Admin user not found'
+      });
+    }
+    
+    logger.info(`📋 Admin profile accessed: ${email}`);
+    
+    res.json({
+      userId,
+      email,
+      role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      lastActive: user.lastActive,
+      lastLoginAt: user.lastLoginAt,
+      permissions: {
+        manageSupplierRequests: true,
+        viewAnalytics: true,
+        manageUsers: role === 'super_admin',
+        systemSettings: role === 'super_admin'
+      }
+    });
+    
+  } catch (error) {
+    req.app.locals.logger.error('Admin profile error:', error);
+    res.status(500).json({
+      error: 'Failed to get admin profile',
+      message: error.message
+    });
+  }
+});
 
 module.exports = router;

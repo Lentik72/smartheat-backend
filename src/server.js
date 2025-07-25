@@ -9,12 +9,16 @@ const winston = require('winston');
 const expressWinston = require('express-winston');
 require('dotenv').config();
 
+// Import Sequelize
+const { Sequelize } = require('sequelize');
+
 // Import route modules
 const weatherRoutes = require('./routes/weather');
 const marketRoutes = require('./routes/market');
 const communityRoutes = require('./routes/community');
 const analyticsRoutes = require('./routes/analytics');
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -85,6 +89,7 @@ const createRateLimit = (windowMs, max, message) => rateLimit({
 
 // Different rate limits for different endpoints
 app.use('/api/auth', createRateLimit(15 * 60 * 1000, 5, 'Too many authentication attempts'));
+app.use('/api/admin', createRateLimit(15 * 60 * 1000, 20, 'Too many admin requests'));
 app.use('/api/community', createRateLimit(15 * 60 * 1000, 100, 'Too many community requests'));
 app.use('/api', createRateLimit(15 * 60 * 1000, 200, 'Too many API requests'));
 
@@ -104,14 +109,14 @@ const API_KEYS = {
   FRED: process.env.FRED_API_KEY,
   ALPHA_VANTAGE: process.env.ALPHA_VANTAGE_API_KEY,
   EIA: process.env.EIA_API_KEY,
-  MONGODB_URI: process.env.MONGODB_URI,
+  DATABASE_URL: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL,
   JWT_SECRET: process.env.JWT_SECRET,
   EMAIL_USER: process.env.EMAIL_USER,
   EMAIL_PASS: process.env.EMAIL_PASS
 };
 
 // Validate critical API keys
-const requiredKeys = ['OPENWEATHER', 'MONGODB_URI', 'JWT_SECRET'];
+const requiredKeys = ['OPENWEATHER', 'DATABASE_URL', 'JWT_SECRET'];
 const missingKeys = requiredKeys.filter(key => !API_KEYS[key]);
 
 if (missingKeys.length > 0) {
@@ -127,9 +132,46 @@ if (missingKeys.length > 0) {
 
 logger.info('✅ All required API keys loaded successfully');
 
-// Make cache and logger available to routes
+// Database connection (PostgreSQL)
+let sequelize;
+if (API_KEYS.DATABASE_URL) {
+  try {
+    sequelize = new Sequelize(API_KEYS.DATABASE_URL, {
+      dialect: 'postgres',
+      logging: false,
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      },
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      }
+    });
+
+    // Test the connection
+    sequelize.authenticate()
+      .then(() => {
+        logger.info('✅ Connected to PostgreSQL database');
+      })
+      .catch(err => {
+        logger.warn('⚠️  PostgreSQL connection failed:', err.message || err);
+      });
+  } catch (error) {
+    logger.error('❌ Database initialization error:', error.message);
+  }
+} else {
+  logger.warn('⚠️  No DATABASE_URL provided - admin features will use memory storage');
+}
+
+// Make cache, logger, and database available to routes
 app.locals.cache = cache;
 app.locals.logger = logger;
+app.locals.sequelize = sequelize;
 
 // Routes
 app.use('/api/weather', weatherRoutes);
@@ -137,6 +179,7 @@ app.use('/api/market', marketRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -150,7 +193,7 @@ app.get('/health', (req, res) => {
     services: {
       weather: !!API_KEYS.OPENWEATHER,
       marketData: !!(API_KEYS.FRED || API_KEYS.ALPHA_VANTAGE),
-      database: !!API_KEYS.MONGODB_URI,
+      database: !!API_KEYS.DATABASE_URL,
       authentication: !!API_KEYS.JWT_SECRET,
       email: !!(API_KEYS.EMAIL_USER && API_KEYS.EMAIL_PASS)
     },
