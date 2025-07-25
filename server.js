@@ -10,17 +10,36 @@ const expressWinston = require('express-winston');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-// Import route modules
-const weatherRoutes = require('./src/routes/weather');
-const marketRoutes = require('./src/routes/market');
-const communityRoutes = require('./src/routes/community');
-const analyticsRoutes = require('./src/routes/analytics');
-const authRoutes = require('./src/routes/auth');
+// Import route modules with error handling
+let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes;
+
+try {
+  weatherRoutes = require('./src/routes/weather');
+  marketRoutes = require('./src/routes/market');
+  communityRoutes = require('./src/routes/community');
+  analyticsRoutes = require('./src/routes/analytics');
+  authRoutes = require('./src/routes/auth');
+} catch (error) {
+  console.error('Error loading route modules:', error.message);
+  // Create placeholder routers if routes fail to load
+  weatherRoutes = express.Router();
+  marketRoutes = express.Router();
+  communityRoutes = express.Router();
+  analyticsRoutes = express.Router();
+  authRoutes = express.Router();
+  
+  // Add basic error responses
+  weatherRoutes.get('*', (req, res) => res.status(503).json({ error: 'Weather service temporarily unavailable' }));
+  marketRoutes.get('*', (req, res) => res.status(503).json({ error: 'Market service temporarily unavailable' }));
+  communityRoutes.get('*', (req, res) => res.status(503).json({ error: 'Community service temporarily unavailable' }));
+  analyticsRoutes.get('*', (req, res) => res.status(503).json({ error: 'Analytics service temporarily unavailable' }));
+  authRoutes.get('*', (req, res) => res.status(503).json({ error: 'Auth service temporarily unavailable' }));
+}
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Configure Winston Logger
+// Configure Winston Logger (Railway-compatible)
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: winston.format.combine(
@@ -30,9 +49,8 @@ const logger = winston.createLogger({
     winston.format.simple()
   ),
   transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' })
+    new winston.transports.Console()
+    // File logging disabled for Railway deployment
   ]
 });
 
@@ -109,30 +127,31 @@ const missingKeys = requiredKeys.filter(key => !API_KEYS[key]);
 
 if (missingKeys.length > 0) {
   logger.error('Missing required environment variables:', missingKeys);
-  // In production/Railway, this will cause deployment failure if env vars aren't set
-  // For development, we can run in degraded mode
-  if (process.env.NODE_ENV === 'production') {
-    process.exit(1);
-  } else {
-    logger.warn('⚠️  Running in degraded mode without all API keys');
-  }
+  logger.warn('⚠️  Running in degraded mode without all API keys');
+  logger.warn('Configure environment variables in Railway dashboard for full functionality');
+} else {
+  logger.info('✅ All required API keys loaded successfully');
 }
-
-logger.info('✅ All required API keys loaded successfully');
 
 // Make cache and logger available to routes
 app.locals.cache = cache;
 app.locals.logger = logger;
 app.locals.apiKeys = API_KEYS;
 
-// Database connection
+// Database connection (optional for initial deployment)
 if (API_KEYS.MONGODB_URI) {
   mongoose.connect(API_KEYS.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
   })
   .then(() => logger.info('✅ Connected to MongoDB'))
-  .catch(err => logger.error('❌ MongoDB connection failed:', err));
+  .catch(err => {
+    logger.warn('⚠️  MongoDB connection failed:', err.message);
+    logger.warn('Database features will be unavailable until MongoDB is configured');
+  });
+} else {
+  logger.warn('⚠️  MongoDB URI not configured - database features disabled');
 }
 
 // Health check endpoint
@@ -144,7 +163,7 @@ app.get('/health', (req, res) => {
     services: {
       weather: !!API_KEYS.OPENWEATHER,
       marketData: !!(API_KEYS.FRED || API_KEYS.ALPHA_VANTAGE),
-      database: mongoose.connection.readyState === 1,
+      database: API_KEYS.MONGODB_URI ? mongoose.connection.readyState === 1 : false,
       authentication: !!API_KEYS.JWT_SECRET,
       email: !!(API_KEYS.EMAIL_USER && API_KEYS.EMAIL_PASS)
     },
@@ -262,13 +281,17 @@ app.listen(PORT, '0.0.0.0', () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('Received SIGTERM, shutting down gracefully');
-  mongoose.connection.close();
+  if (mongoose.connection.readyState !== 0) {
+    mongoose.connection.close();
+  }
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   logger.info('Received SIGINT, shutting down gracefully');
-  mongoose.connection.close();
+  if (mongoose.connection.readyState !== 0) {
+    mongoose.connection.close();
+  }
   process.exit(0);
 });
 
