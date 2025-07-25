@@ -136,38 +136,41 @@ if (missingKeys.length > 0) {
 // Database connection (PostgreSQL)
 let sequelize;
 if (API_KEYS.DATABASE_URL) {
-  sequelize = new Sequelize(API_KEYS.DATABASE_URL, {
-    dialect: 'postgres',
-    protocol: 'postgres',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
-    dialectOptions: {
-      ssl: process.env.NODE_ENV === 'production' ? {
-        require: true,
-        rejectUnauthorized: false
-      } : false
-    },
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
-    }
-  });
-
-  // Test the connection
-  sequelize.authenticate()
-    .then(() => {
-      logger.info('✅ Connected to PostgreSQL database');
-      // Sync database tables (create if they don't exist)
-      return sequelize.sync({ alter: false });
-    })
-    .then(() => {
-      logger.info('✅ Database tables synchronized');
-    })
-    .catch(err => {
-      logger.warn('⚠️  PostgreSQL connection failed:', err.message);
-      logger.warn('Database features will be unavailable until PostgreSQL is configured');
+  try {
+    // Railway provides the DATABASE_URL in the correct format
+    sequelize = new Sequelize(API_KEYS.DATABASE_URL, {
+      dialect: 'postgres',
+      logging: false, // Disable logging in production
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      },
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      }
     });
+
+    // Test the connection
+    sequelize.authenticate()
+      .then(() => {
+        logger.info('✅ Connected to PostgreSQL database');
+        // Don't sync tables automatically - use migrations in production
+        logger.info('📊 Database ready for operations');
+      })
+      .catch(err => {
+        logger.warn('⚠️  PostgreSQL connection failed:', err.message);
+        logger.warn('Database features will be unavailable until PostgreSQL is configured');
+        // Don't exit - allow server to run without database
+      });
+  } catch (error) {
+    logger.error('❌ Database initialization error:', error.message);
+    logger.warn('Server will continue without database features');
+  }
 } else {
   logger.warn('⚠️  DATABASE_URL not configured - database features disabled');
 }
@@ -304,12 +307,32 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`🚀 SmartHeat Backend API Server running on port ${PORT}`);
   logger.info(`📍 Health check: http://localhost:${PORT}/health`);
   logger.info(`📖 API docs: http://localhost:${PORT}/api/docs`);
   logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info('🔒 Security: Helmet, CORS, Rate limiting enabled');
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  switch (error.code) {
+    case 'EACCES':
+      logger.error(`Port ${PORT} requires elevated privileges`);
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      logger.error(`Port ${PORT} is already in use`);
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
 });
 
 // Graceful shutdown
