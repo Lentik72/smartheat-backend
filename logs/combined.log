@@ -1,0 +1,8 @@
+[32minfo[39m: ✅ All required API keys loaded successfully {"timestamp":"2025-07-25T00:15:24.890Z"}
+[32minfo[39m: 🚀 SmartHeat Backend API Server running on port 8080 {"timestamp":"2025-07-25T00:15:24.895Z"}
+[32minfo[39m: 📍 Health check: http://localhost:8080/health {"timestamp":"2025-07-25T00:15:24.896Z"}
+[32minfo[39m: 📖 API docs: http://localhost:8080/api/docs {"timestamp":"2025-07-25T00:15:24.896Z"}
+[32minfo[39m: 🌍 Environment: development {"timestamp":"2025-07-25T00:15:24.896Z"}
+[32minfo[39m: 🔒 Security: Helmet, CORS, Rate limiting enabled {"timestamp":"2025-07-25T00:15:24.896Z"}
+[32minfo[39m: GET /health 200 2ms {"meta":{"req":{"headers":{"accept":"*/*","host":"localhost:8080","user-agent":"curl/8.7.1"},"httpVersion":"1.1","method":"GET","originalUrl":"/health","query":{},"url":"/health"},"res":{"statusCode":200},"responseTime":2},"timestamp":"2025-07-25T00:15:27.748Z"}
+[32minfo[39m: SIGTERM received, shutting down gracefully {"timestamp":"2025-07-25T00:15:27.776Z"}
