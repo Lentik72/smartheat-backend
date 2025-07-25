@@ -7,7 +7,7 @@ const rateLimit = require('express-rate-limit');
 const NodeCache = require('node-cache');
 const winston = require('winston');
 const expressWinston = require('express-winston');
-const mongoose = require('mongoose');
+const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 // Import route modules with error handling
@@ -115,14 +115,14 @@ const API_KEYS = {
   FRED: process.env.FRED_API_KEY,
   ALPHA_VANTAGE: process.env.ALPHA_VANTAGE_API_KEY,
   EIA: process.env.EIA_API_KEY,
-  MONGODB_URI: process.env.MONGODB_URI,
+  DATABASE_URL: process.env.DATABASE_URL,
   JWT_SECRET: process.env.JWT_SECRET,
   EMAIL_USER: process.env.EMAIL_USER,
   EMAIL_PASS: process.env.EMAIL_PASS
 };
 
 // Validate critical API keys
-const requiredKeys = ['OPENWEATHER', 'MONGODB_URI', 'JWT_SECRET'];
+const requiredKeys = ['OPENWEATHER', 'DATABASE_URL', 'JWT_SECRET'];
 const missingKeys = requiredKeys.filter(key => !API_KEYS[key]);
 
 if (missingKeys.length > 0) {
@@ -133,29 +133,63 @@ if (missingKeys.length > 0) {
   logger.info('✅ All required API keys loaded successfully');
 }
 
-// Make cache and logger available to routes
+// Database connection (PostgreSQL)
+let sequelize;
+if (API_KEYS.DATABASE_URL) {
+  sequelize = new Sequelize(API_KEYS.DATABASE_URL, {
+    dialect: 'postgres',
+    protocol: 'postgres',
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    dialectOptions: {
+      ssl: process.env.NODE_ENV === 'production' ? {
+        require: true,
+        rejectUnauthorized: false
+      } : false
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    }
+  });
+
+  // Test the connection
+  sequelize.authenticate()
+    .then(() => {
+      logger.info('✅ Connected to PostgreSQL database');
+      // Sync database tables (create if they don't exist)
+      return sequelize.sync({ alter: false });
+    })
+    .then(() => {
+      logger.info('✅ Database tables synchronized');
+    })
+    .catch(err => {
+      logger.warn('⚠️  PostgreSQL connection failed:', err.message);
+      logger.warn('Database features will be unavailable until PostgreSQL is configured');
+    });
+} else {
+  logger.warn('⚠️  DATABASE_URL not configured - database features disabled');
+}
+
+// Make cache, logger, and database available to routes
 app.locals.cache = cache;
 app.locals.logger = logger;
 app.locals.apiKeys = API_KEYS;
-
-// Database connection (optional for initial deployment)
-if (API_KEYS.MONGODB_URI) {
-  mongoose.connect(API_KEYS.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-  })
-  .then(() => logger.info('✅ Connected to MongoDB'))
-  .catch(err => {
-    logger.warn('⚠️  MongoDB connection failed:', err.message);
-    logger.warn('Database features will be unavailable until MongoDB is configured');
-  });
-} else {
-  logger.warn('⚠️  MongoDB URI not configured - database features disabled');
-}
+app.locals.sequelize = sequelize;
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
+  let databaseStatus = false;
+  if (sequelize) {
+    try {
+      await sequelize.authenticate();
+      databaseStatus = true;
+    } catch (error) {
+      databaseStatus = false;
+    }
+  }
+
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -163,7 +197,7 @@ app.get('/health', (req, res) => {
     services: {
       weather: !!API_KEYS.OPENWEATHER,
       marketData: !!(API_KEYS.FRED || API_KEYS.ALPHA_VANTAGE),
-      database: API_KEYS.MONGODB_URI ? mongoose.connection.readyState === 1 : false,
+      database: databaseStatus,
       authentication: !!API_KEYS.JWT_SECRET,
       email: !!(API_KEYS.EMAIL_USER && API_KEYS.EMAIL_PASS)
     },
@@ -279,18 +313,18 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('Received SIGTERM, shutting down gracefully');
-  if (mongoose.connection.readyState !== 0) {
-    mongoose.connection.close();
+  if (sequelize) {
+    await sequelize.close();
   }
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('Received SIGINT, shutting down gracefully');
-  if (mongoose.connection.readyState !== 0) {
-    mongoose.connection.close();
+  if (sequelize) {
+    await sequelize.close();
   }
   process.exit(0);
 });
