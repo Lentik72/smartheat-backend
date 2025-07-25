@@ -12,8 +12,9 @@ let deviceRegistrations = new Map();
 // Admin configuration - secure bootstrap
 const ADMIN_EMAILS = [
   process.env.ADMIN_EMAIL || 'admin@smartheat.app', // Set via environment variable
-  // Add additional admin emails here via ADMIN_EMAIL_2, etc.
-];
+  process.env.ADMIN_EMAIL_2 || null, // Optional second admin
+  // Add additional admin emails here
+].filter(Boolean); // Remove null values
 
 const isAdminEmail = (email) => {
   return ADMIN_EMAILS.includes(email.toLowerCase().trim());

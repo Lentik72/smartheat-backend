@@ -182,9 +182,21 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
   const memoryUsage = process.memoryUsage();
   const cacheStats = cache.getStats();
+  
+  // Test database connection
+  let databaseStatus = 'disconnected';
+  if (sequelize) {
+    try {
+      await sequelize.authenticate();
+      databaseStatus = 'connected';
+    } catch (error) {
+      databaseStatus = 'error';
+      logger.warn('Database health check failed:', error.message);
+    }
+  }
   
   res.json({
     status: 'healthy',
@@ -193,7 +205,7 @@ app.get('/health', (req, res) => {
     services: {
       weather: !!API_KEYS.OPENWEATHER,
       marketData: !!(API_KEYS.FRED || API_KEYS.ALPHA_VANTAGE),
-      database: !!API_KEYS.DATABASE_URL,
+      database: databaseStatus,
       authentication: !!API_KEYS.JWT_SECRET,
       email: !!(API_KEYS.EMAIL_USER && API_KEYS.EMAIL_PASS)
     },

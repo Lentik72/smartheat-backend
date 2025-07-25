@@ -11,7 +11,7 @@ const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 // Import route modules with error handling
-let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes;
+let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes;
 
 try {
   weatherRoutes = require('./src/routes/weather');
@@ -19,6 +19,7 @@ try {
   communityRoutes = require('./src/routes/community');
   analyticsRoutes = require('./src/routes/analytics');
   authRoutes = require('./src/routes/auth');
+  adminRoutes = require('./src/routes/admin');
 } catch (error) {
   console.error('Error loading route modules:', error.message);
   // Create placeholder routers if routes fail to load
@@ -27,6 +28,7 @@ try {
   communityRoutes = express.Router();
   analyticsRoutes = express.Router();
   authRoutes = express.Router();
+  adminRoutes = express.Router();
   
   // Add basic error responses
   weatherRoutes.get('*', (req, res) => res.status(503).json({ error: 'Weather service temporarily unavailable' }));
@@ -34,6 +36,7 @@ try {
   communityRoutes.get('*', (req, res) => res.status(503).json({ error: 'Community service temporarily unavailable' }));
   analyticsRoutes.get('*', (req, res) => res.status(503).json({ error: 'Analytics service temporarily unavailable' }));
   authRoutes.get('*', (req, res) => res.status(503).json({ error: 'Auth service temporarily unavailable' }));
+  adminRoutes.get('*', (req, res) => res.status(503).json({ error: 'Admin service temporarily unavailable' }));
 }
 
 const app = express();
@@ -258,6 +261,11 @@ app.get('/api/docs', (req, res) => {
       auth: {
         register: 'POST /api/auth/register',
         login: 'POST /api/auth/login'
+      },
+      admin: {
+        supplierRequests: '/api/admin/supplier-requests',
+        dashboard: '/api/admin/dashboard',
+        auditLogs: '/api/admin/audit-logs'
       }
     },
     rateLimit: '100 requests per 15 minutes',
@@ -282,6 +290,7 @@ app.use('/api/market', marketRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Cache status endpoint
 app.get('/api/cache/status', (req, res) => {

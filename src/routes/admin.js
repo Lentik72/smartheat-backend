@@ -112,7 +112,7 @@ router.post('/supplier-requests', ensurePersistence, [
   body('state').optional().isLength({ max: 2 }).withMessage('State must be 2 characters'),
   body('servicesOffered').isArray().withMessage('Services must be an array'),
   body('serviceRadius').optional().isInt({ min: 1, max: 500 }).withMessage('Service radius must be 1-500 miles')
-], handleValidationErrors, (req, res) => {
+], handleValidationErrors, async (req, res) => {
   try {
     const {
       companyName,
@@ -201,50 +201,49 @@ router.post('/supplier-requests', ensurePersistence, [
 
 // GET /api/admin/supplier-requests - Get all supplier registration requests (Admin only)
 router.get('/supplier-requests', [
+  ensurePersistence,
   verifyToken,
   requireAdmin,
   query('status').optional().isIn(['pending', 'approved', 'rejected', 'reviewing']).withMessage('Invalid status'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be 1-100'),
   query('offset').optional().isInt({ min: 0 }).withMessage('Offset must be >= 0')
-], handleValidationErrors, (req, res) => {
+], handleValidationErrors, async (req, res) => {
   try {
     const { status, limit = 50, offset = 0 } = req.query;
     const { userId, email: adminEmail } = req.user;
     const logger = req.app.locals.logger;
     
-    let requests = Array.from(supplierRequests.values());
+    // Get requests from database/memory
+    const requests = await req.dataPersistence.getSupplierRequests({
+      status,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
     
-    // Filter by status if provided
-    if (status) {
-      requests = requests.filter(request => request.status === status);
-    }
-    
-    // Sort by submission date (newest first)
-    requests.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-    
-    // Apply pagination
-    const totalCount = requests.length;
-    const paginatedRequests = requests.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+    // Get total count for pagination
+    const allRequests = await req.dataPersistence.getSupplierRequests({ limit: 1000 });
+    const totalCount = status ? allRequests.filter(r => r.status === status).length : allRequests.length;
     
     // Add computed fields
-    const enrichedRequests = paginatedRequests.map(request => ({
+    const enrichedRequests = requests.map(request => ({
       ...request,
-      daysSinceSubmission: Math.floor((Date.now() - new Date(request.submittedAt)) / (1000 * 60 * 60 * 24)),
-      isOverdue: Math.floor((Date.now() - new Date(request.submittedAt)) / (1000 * 60 * 60 * 24)) > 2
+      daysSinceSubmission: Math.floor((Date.now() - new Date(request.createdAt || request.submittedAt)) / (1000 * 60 * 60 * 24)),
+      isOverdue: Math.floor((Date.now() - new Date(request.createdAt || request.submittedAt)) / (1000 * 60 * 60 * 24)) > 2
     }));
     
     // Log admin action
-    logAdminAction(
+    await logAdminAction(
+      req,
       userId,
       adminEmail,
       'view_pending_requests',
       null,
       'supplier_requests',
       `Viewed ${totalCount} supplier requests`,
-      { status, totalCount, returnedCount: paginatedRequests.length }
+      { status, totalCount, returnedCount: requests.length }
     );
     
-    logger.info(`👀 Admin ${adminEmail} viewed supplier requests: ${totalCount} total, ${paginatedRequests.length} returned`);
+    logger.info(`👀 Admin ${adminEmail} viewed supplier requests: ${totalCount} total, ${requests.length} returned`);
     
     res.json({
       success: true,
@@ -277,17 +276,21 @@ router.get('/supplier-requests', [
 
 // PUT /api/admin/supplier-requests/:id/approve - Approve supplier registration (Admin only)
 router.put('/supplier-requests/:id/approve', [
+  ensurePersistence,  
   verifyToken,
   requireAdmin,
   body('adminNotes').optional().isLength({ max: 500 }).withMessage('Admin notes too long')
-], handleValidationErrors, (req, res) => {
+], handleValidationErrors, async (req, res) => {
   try {
     const requestId = req.params.id;
     const { adminNotes } = req.body;
     const { userId, email: adminEmail } = req.user;
     const logger = req.app.locals.logger;
     
-    const supplierRequest = supplierRequests.get(requestId);
+    // Get the request from database/memory
+    const allRequests = await req.dataPersistence.getSupplierRequests({ limit: 1000 });
+    const supplierRequest = allRequests.find(r => r.id === requestId);
+    
     if (!supplierRequest) {
       return res.status(404).json({
         error: 'Supplier request not found'
@@ -302,15 +305,22 @@ router.put('/supplier-requests/:id/approve', [
     }
     
     // Update request status
-    supplierRequest.status = 'approved';
-    supplierRequest.reviewedAt = new Date().toISOString();
-    supplierRequest.reviewedBy = userId;
-    supplierRequest.adminNotes = adminNotes;
+    const updatedRequest = await req.dataPersistence.updateSupplierRequest(requestId, {
+      status: 'approved',
+      reviewedAt: new Date(),
+      reviewedBy: userId,
+      adminNotes: adminNotes
+    });
     
-    supplierRequests.set(requestId, supplierRequest);
+    if (!updatedRequest) {
+      return res.status(500).json({
+        error: 'Failed to update supplier request'
+      });
+    }
     
     // Log admin action
-    logAdminAction(
+    await logAdminAction(
+      req,
       userId,
       adminEmail,
       'approve_supplier',
@@ -329,7 +339,7 @@ router.put('/supplier-requests/:id/approve', [
     res.json({
       success: true,
       message: 'Supplier registration approved successfully',
-      request: supplierRequest
+      request: updatedRequest
     });
     
   } catch (error) {
@@ -343,18 +353,22 @@ router.put('/supplier-requests/:id/approve', [
 
 // PUT /api/admin/supplier-requests/:id/reject - Reject supplier registration (Admin only)
 router.put('/supplier-requests/:id/reject', [
+  ensurePersistence,
   verifyToken,
   requireAdmin,
   body('rejectionReason').isLength({ min: 10, max: 200 }).withMessage('Rejection reason must be 10-200 characters'),
   body('adminNotes').optional().isLength({ max: 500 }).withMessage('Admin notes too long')
-], handleValidationErrors, (req, res) => {
+], handleValidationErrors, async (req, res) => {
   try {
     const requestId = req.params.id;
     const { rejectionReason, adminNotes } = req.body;
     const { userId, email: adminEmail } = req.user;
     const logger = req.app.locals.logger;
     
-    const supplierRequest = supplierRequests.get(requestId);
+    // Get the request from database/memory
+    const allRequests = await req.dataPersistence.getSupplierRequests({ limit: 1000 });
+    const supplierRequest = allRequests.find(r => r.id === requestId);
+    
     if (!supplierRequest) {
       return res.status(404).json({
         error: 'Supplier request not found'
@@ -369,16 +383,23 @@ router.put('/supplier-requests/:id/reject', [
     }
     
     // Update request status
-    supplierRequest.status = 'rejected';
-    supplierRequest.reviewedAt = new Date().toISOString();
-    supplierRequest.reviewedBy = userId;
-    supplierRequest.rejectionReason = rejectionReason;
-    supplierRequest.adminNotes = adminNotes;
+    const updatedRequest = await req.dataPersistence.updateSupplierRequest(requestId, {
+      status: 'rejected',
+      reviewedAt: new Date(),
+      reviewedBy: userId,
+      rejectionReason: rejectionReason,
+      adminNotes: adminNotes
+    });
     
-    supplierRequests.set(requestId, supplierRequest);
+    if (!updatedRequest) {
+      return res.status(500).json({
+        error: 'Failed to update supplier request'
+      });
+    }
     
     // Log admin action
-    logAdminAction(
+    await logAdminAction(
+      req,
       userId,
       adminEmail,
       'reject_supplier',
@@ -395,7 +416,7 @@ router.put('/supplier-requests/:id/reject', [
     res.json({
       success: true,
       message: 'Supplier registration rejected',
-      request: supplierRequest
+      request: updatedRequest
     });
     
   } catch (error) {
@@ -409,40 +430,34 @@ router.put('/supplier-requests/:id/reject', [
 
 // GET /api/admin/audit-logs - Get admin audit logs (Admin only)
 router.get('/audit-logs', [
+  ensurePersistence,
   verifyToken,
   requireAdmin,
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be 1-100'),
   query('offset').optional().isInt({ min: 0 }).withMessage('Offset must be >= 0'),
   query('action').optional().isString().withMessage('Action must be string'),
   query('severity').optional().isIn(['low', 'medium', 'high', 'critical']).withMessage('Invalid severity')
-], handleValidationErrors, (req, res) => {
+], handleValidationErrors, async (req, res) => {
   try {
     const { limit = 50, offset = 0, action, severity } = req.query;
     const { userId, email: adminEmail } = req.user;
     
-    let logs = Array.from(auditLogs.values());
+    // Get logs from database/memory
+    const logs = await req.dataPersistence.getAuditLogs({
+      action,
+      severity,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
     
-    // Filter by action if provided
-    if (action) {
-      logs = logs.filter(log => log.action.includes(action));
-    }
-    
-    // Filter by severity if provided
-    if (severity) {
-      logs = logs.filter(log => log.severity === severity);
-    }
-    
-    // Sort by timestamp (newest first)
-    logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    // Apply pagination
-    const totalCount = logs.length;
-    const paginatedLogs = logs.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+    // Get total count for pagination
+    const allLogs = await req.dataPersistence.getAuditLogs({ limit: 1000 });
+    const totalCount = allLogs.length;
     
     // Add relative timestamps
-    const enrichedLogs = paginatedLogs.map(log => ({
+    const enrichedLogs = logs.map(log => ({
       ...log,
-      timeAgo: getTimeAgo(new Date(log.timestamp))
+      timeAgo: getTimeAgo(new Date(log.createdAt || log.timestamp))
     }));
     
     res.json({
@@ -466,7 +481,7 @@ router.get('/audit-logs', [
 });
 
 // GET /api/admin/dashboard - Get admin dashboard data (Admin only)
-router.get('/dashboard', verifyToken, requireAdmin, (req, res) => {
+router.get('/dashboard', ensurePersistence, verifyToken, requireAdmin, async (req, res) => {
   try {
     const { userId, email: adminEmail } = req.user;
     const logger = req.app.locals.logger;
@@ -475,9 +490,10 @@ router.get('/dashboard', verifyToken, requireAdmin, (req, res) => {
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     
-    const allRequests = Array.from(supplierRequests.values());
-    const recentRequests = allRequests.filter(r => new Date(r.submittedAt) > last24h);
-    const weeklyRequests = allRequests.filter(r => new Date(r.submittedAt) > last7d);
+    // Get all requests from database/memory
+    const allRequests = await req.dataPersistence.getSupplierRequests({ limit: 1000 });
+    const recentRequests = allRequests.filter(r => new Date(r.createdAt || r.submittedAt) > last24h);
+    const weeklyRequests = allRequests.filter(r => new Date(r.createdAt || r.submittedAt) > last7d);
     
     const dashboard = {
       supplierRequests: {
@@ -487,37 +503,38 @@ router.get('/dashboard', verifyToken, requireAdmin, (req, res) => {
         approved: allRequests.filter(r => r.status === 'approved').length,
         rejected: allRequests.filter(r => r.status === 'rejected').length,
         overdue: allRequests.filter(r => {
-          const days = Math.floor((Date.now() - new Date(r.submittedAt)) / (1000 * 60 * 60 * 24));
+          const days = Math.floor((Date.now() - new Date(r.createdAt || r.submittedAt)) / (1000 * 60 * 60 * 24));
           return r.status === 'pending' && days > 2;
         }).length,
         recent24h: recentRequests.length,
         recent7d: weeklyRequests.length
       },
       activity: {
-        totalAuditLogs: auditLogs.size,
-        recentActions: Array.from(auditLogs.values())
-          .filter(log => new Date(log.timestamp) > last24h)
+        totalAuditLogs: (await req.dataPersistence.getAuditLogs({ limit: 1000 })).length,
+        recentActions: (await req.dataPersistence.getAuditLogs({ limit: 1000 }))
+          .filter(log => new Date(log.createdAt || log.timestamp) > last24h)
           .length,
-        criticalActions: Array.from(auditLogs.values())
-          .filter(log => log.severity === 'critical' && new Date(log.timestamp) > last7d)
+        criticalActions: (await req.dataPersistence.getAuditLogs({ severity: 'critical', limit: 1000 }))
+          .filter(log => new Date(log.createdAt || log.timestamp) > last7d)
           .length
       },
       recentRequests: allRequests
-        .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+        .sort((a, b) => new Date(b.createdAt || b.submittedAt) - new Date(a.createdAt || a.submittedAt))
         .slice(0, 5)
         .map(request => ({
           id: request.id,
           companyName: request.companyName,
           email: request.email,
           status: request.status,
-          submittedAt: request.submittedAt,
-          daysSinceSubmission: Math.floor((Date.now() - new Date(request.submittedAt)) / (1000 * 60 * 60 * 24)),
-          isOverdue: Math.floor((Date.now() - new Date(request.submittedAt)) / (1000 * 60 * 60 * 24)) > 2
+          submittedAt: request.createdAt || request.submittedAt,
+          daysSinceSubmission: Math.floor((Date.now() - new Date(request.createdAt || request.submittedAt)) / (1000 * 60 * 60 * 24)),
+          isOverdue: Math.floor((Date.now() - new Date(request.createdAt || request.submittedAt)) / (1000 * 60 * 60 * 24)) > 2
         }))
     };
     
     // Log dashboard access
-    logAdminAction(
+    await logAdminAction(
+      req,
       userId,
       adminEmail,
       'view_dashboard',
@@ -554,5 +571,75 @@ const getTimeAgo = (date) => {
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
   return `${Math.floor(diffInSeconds / 86400)} days ago`;
 };
+
+// GET /api/admin/health - Admin system health check
+router.get('/health', ensurePersistence, verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { userId, email: adminEmail } = req.user;
+    
+    // Test database operations
+    let dbStatus = 'unknown';
+    let testResults = {};
+    
+    try {
+      // Test supplier request creation and retrieval
+      const testData = {
+        companyName: 'Health Check Test',
+        email: 'test@healthcheck.com',
+        servicesOffered: ['test'],
+        deviceId: 'health-check',
+        submitterIP: req.ip
+      };
+      
+      // This will test both database and memory fallback
+      const testRequest = await req.dataPersistence.createSupplierRequest(testData);
+      const retrievedRequests = await req.dataPersistence.getSupplierRequests({ limit: 1 });
+      
+      if (testRequest && retrievedRequests.length > 0) {
+        dbStatus = req.dataPersistence.hasDatabase ? 'database' : 'memory';
+      }
+      
+      testResults.persistence = 'working';
+    } catch (error) {
+      testResults.persistence = 'error';
+      testResults.persistenceError = error.message;
+    }
+    
+    // Test audit logging
+    try {
+      await logAdminAction(req, userId, adminEmail, 'health_check', null, 'admin_system', 'Admin health check performed');
+      testResults.auditLog = 'working';
+    } catch (error) {
+      testResults.auditLog = 'error';
+      testResults.auditError = error.message;
+    }
+    
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      adminSystem: {
+        persistence: dbStatus,
+        hasDatabase: req.dataPersistence.hasDatabase,
+        authentication: 'working',
+        authorization: 'working'
+      },
+      tests: testResults,
+      admin: {
+        userId,
+        email: adminEmail,
+        role: req.user.role
+      }
+    });
+    
+  } catch (error) {
+    req.app.locals.logger.error('Admin health check error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: 'Admin health check failed',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 module.exports = router;
