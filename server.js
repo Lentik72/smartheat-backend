@@ -115,11 +115,18 @@ const API_KEYS = {
   FRED: process.env.FRED_API_KEY,
   ALPHA_VANTAGE: process.env.ALPHA_VANTAGE_API_KEY,
   EIA: process.env.EIA_API_KEY,
-  DATABASE_URL: process.env.DATABASE_URL,
+  DATABASE_URL: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL,
   JWT_SECRET: process.env.JWT_SECRET,
   EMAIL_USER: process.env.EMAIL_USER,
   EMAIL_PASS: process.env.EMAIL_PASS
 };
+
+// Log environment info for debugging
+if (process.env.NODE_ENV === 'production') {
+  logger.info('🔍 Available environment variables:', Object.keys(process.env).filter(key => 
+    key.includes('DATABASE') || key.includes('PG') || key.includes('POSTGRES')
+  ));
+}
 
 // Validate critical API keys
 const requiredKeys = ['OPENWEATHER', 'DATABASE_URL', 'JWT_SECRET'];
@@ -163,7 +170,8 @@ if (API_KEYS.DATABASE_URL) {
         logger.info('📊 Database ready for operations');
       })
       .catch(err => {
-        logger.warn('⚠️  PostgreSQL connection failed:', err.message);
+        logger.warn('⚠️  PostgreSQL connection failed:', err.message || err);
+        logger.warn('Connection string format:', API_KEYS.DATABASE_URL ? 'postgresql://[hidden]' : 'Not provided');
         logger.warn('Database features will be unavailable until PostgreSQL is configured');
         // Don't exit - allow server to run without database
       });
