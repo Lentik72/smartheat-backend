@@ -153,10 +153,16 @@ if (API_KEYS.DATABASE_URL) {
       }
     });
 
-    // Test the connection
+    // Test the connection and initialize ML tables
     sequelize.authenticate()
-      .then(() => {
+      .then(async () => {
         logger.info('✅ Connected to PostgreSQL database');
+        logger.info('📊 Database ready for operations');
+        
+        // Initialize ML tables
+        const { initializeMLTables, seedMLData } = require('./models/init-ml-tables');
+        await initializeMLTables(sequelize);
+        await seedMLData(sequelize);
       })
       .catch(err => {
         logger.warn('⚠️  PostgreSQL connection failed:', err.message || err);
@@ -177,6 +183,7 @@ app.locals.sequelize = sequelize;
 app.use('/api/weather', weatherRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/ml', require('./routes/ml-predictions'));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -253,6 +260,12 @@ app.get('/api/docs', (req, res) => {
       analytics: {
         'POST /api/analytics/consumption': 'Submit consumption data',
         'GET /api/analytics/insights/:zipCode': 'Get market insights for ZIP code'
+      },
+      ml: {
+        'POST /api/ml/predictions/consumption': 'Get oil consumption prediction',
+        'POST /api/ml/data/submit': 'Submit consumption data for ML training',
+        'GET /api/ml/analytics': 'Get usage analytics and insights',
+        'GET /api/ml/model/status': 'Get ML model status and metrics'
       },
       auth: {
         'POST /api/auth/register': 'Register anonymous user',
