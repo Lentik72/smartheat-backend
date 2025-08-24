@@ -1,6 +1,6 @@
 // src/routes/admin.js - Admin Management API
 const express = require('express');
-const { body, validationResult, query } = require('express-validator');
+const { body, param, validationResult, query } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();

@@ -1,6 +1,6 @@
 // src/routes/analytics.js - Privacy-Compliant Analytics & Insights
 const express = require('express');
-const { body, param, validationResult } = require('express-validator');
+const { body, validationResult, param } = require('express-validator');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
@@ -10,7 +10,7 @@ let marketInsights = new Map(); // zipCode prefix -> insights
 let anonymousUsagePatterns = []; // Anonymous consumption patterns
 
 // Validation middleware
-const validateZipCode = param('zipCode').matches(/^\d{5}$/).withMessage('Invalid ZIP code format');
+const validateZipCode = [param('zipCode').matches(/^\d{5}$/).withMessage('Invalid ZIP code format')];
 const validateConsumptionData = [
   body('zipCode').matches(/^\d{5}$/).withMessage('Invalid ZIP code format'),
   body('tankSize').isFloat({ min: 100, max: 2000 }).withMessage('Tank size must be 100-2000 gallons'),
