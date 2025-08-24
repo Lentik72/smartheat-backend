@@ -642,4 +642,333 @@ router.get('/health', ensurePersistence, verifyToken, requireAdmin, async (req, 
   }
 });
 
+// ===============================================
+// COMMUNITY SUPPLIER MANAGEMENT ENDPOINTS  
+// ===============================================
+
+// GET /api/admin/community/suppliers - Get all community suppliers (Admin only)
+router.get('/community/suppliers', [
+  ensurePersistence,
+  verifyToken,
+  requireAdmin,
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be >= 1'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be 1-100'),
+  query('search').optional().isString().withMessage('Search must be string'),
+  query('city').optional().isString().withMessage('City must be string'),
+  query('state').optional().isString().withMessage('State must be string')
+], handleValidationErrors, async (req, res) => {
+  try {
+    const { page = 1, limit = 25, search, city, state } = req.query;
+    const { userId, email: adminEmail } = req.user;
+    
+    // Get community suppliers from persistence layer
+    const communitySuppliers = await req.dataPersistence.getCommunitySuppliers({
+      search,
+      city,
+      state,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    
+    // Log admin action
+    await logAdminAction(
+      req,
+      userId,
+      adminEmail,
+      'view_community_suppliers',
+      null,
+      'community_management',
+      'Admin viewed community suppliers',
+      { page, limit, search, city, state, count: communitySuppliers.data.length }
+    );
+    
+    logger.info(`👤 Admin ${adminEmail} viewed community suppliers (page ${page}, ${communitySuppliers.data.length} results)`);
+    
+    res.json({
+      success: true,
+      suppliers: communitySuppliers.data,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: communitySuppliers.total,
+        pages: Math.ceil(communitySuppliers.total / limit)
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    req.app.locals.logger.error('Admin view community suppliers error:', error);
+    res.status(500).json({
+      error: 'Failed to fetch community suppliers',
+      message: error.message
+    });
+  }
+});
+
+// PUT /api/admin/community/suppliers/:id - Edit community supplier (Admin only)
+router.put('/community/suppliers/:id', [
+  ensurePersistence,
+  verifyToken,
+  requireAdmin,
+  param('id').isUUID().withMessage('Invalid supplier ID'),
+  body('companyName').optional().trim().isLength({ min: 2, max: 100 }).withMessage('Company name must be 2-100 characters'),
+  body('city').optional().trim().isLength({ min: 2, max: 50 }).withMessage('City must be 2-50 characters'),
+  body('state').optional().isLength({ min: 2, max: 2 }).withMessage('State must be 2 characters'),
+  body('primaryPhone').optional().matches(/^[\d\s\-\(\)\+\.]+$/).withMessage('Invalid phone format'),
+  body('website').optional().isURL().withMessage('Invalid website URL'),
+  body('servicesArea').optional().trim().isLength({ max: 200 }).withMessage('Services area too long'),
+  body('isVerified').optional().isBoolean().withMessage('isVerified must be boolean'),
+  body('adminNotes').optional().trim().isLength({ max: 500 }).withMessage('Admin notes too long')
+], handleValidationErrors, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, email: adminEmail } = req.user;
+    const updateData = req.body;
+    
+    // Get existing supplier
+    const existingSupplier = await req.dataPersistence.getCommunitySupplierById(id);
+    if (!existingSupplier) {
+      return res.status(404).json({
+        error: 'Supplier not found',
+        message: 'Community supplier does not exist'
+      });
+    }
+    
+    // Update supplier
+    const updatedSupplier = await req.dataPersistence.updateCommunitySupplier(id, {
+      ...updateData,
+      updatedAt: new Date().toISOString(),
+      lastModifiedBy: adminEmail
+    });
+    
+    // Log admin action
+    await logAdminAction(
+      req,
+      userId,
+      adminEmail,
+      'edit_community_supplier',
+      id,
+      'community_management',
+      `Admin edited community supplier: ${existingSupplier.companyName}`,
+      { 
+        companyName: existingSupplier.companyName,
+        changes: updateData,
+        before: existingSupplier,
+        after: updatedSupplier
+      }
+    );
+    
+    logger.info(`✏️ Admin ${adminEmail} edited community supplier: ${existingSupplier.companyName}`);
+    
+    res.json({
+      success: true,
+      message: 'Community supplier updated successfully',
+      supplier: updatedSupplier
+    });
+    
+  } catch (error) {
+    req.app.locals.logger.error('Admin edit community supplier error:', error);
+    res.status(500).json({
+      error: 'Failed to update community supplier',
+      message: error.message
+    });
+  }
+});
+
+// DELETE /api/admin/community/suppliers/:id - Remove community supplier (Admin only)
+router.delete('/community/suppliers/:id', [
+  ensurePersistence,
+  verifyToken,
+  requireAdmin,
+  param('id').isUUID().withMessage('Invalid supplier ID'),
+  body('reason').trim().isLength({ min: 10, max: 500 }).withMessage('Reason must be 10-500 characters'),
+  body('adminNotes').optional().trim().isLength({ max: 500 }).withMessage('Admin notes too long')
+], handleValidationErrors, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason, adminNotes } = req.body;
+    const { userId, email: adminEmail } = req.user;
+    
+    // Get existing supplier
+    const existingSupplier = await req.dataPersistence.getCommunitySupplierById(id);
+    if (!existingSupplier) {
+      return res.status(404).json({
+        error: 'Supplier not found',
+        message: 'Community supplier does not exist'
+      });
+    }
+    
+    // Remove supplier
+    await req.dataPersistence.deleteCommunitySupplier(id);
+    
+    // Log admin action with high severity
+    await logAdminAction(
+      req,
+      userId,
+      adminEmail,
+      'delete_community_supplier',
+      id,
+      'community_management',
+      `Admin removed community supplier: ${existingSupplier.companyName} - Reason: ${reason}`,
+      { 
+        companyName: existingSupplier.companyName,
+        reason,
+        adminNotes,
+        supplierData: existingSupplier
+      },
+      'high'
+    );
+    
+    logger.warn(`🗑️ Admin ${adminEmail} removed community supplier: ${existingSupplier.companyName} - ${reason}`);
+    
+    res.json({
+      success: true,
+      message: 'Community supplier removed successfully',
+      removedSupplier: {
+        id: existingSupplier.id,
+        companyName: existingSupplier.companyName,
+        city: existingSupplier.city,
+        state: existingSupplier.state
+      }
+    });
+    
+  } catch (error) {
+    req.app.locals.logger.error('Admin delete community supplier error:', error);
+    res.status(500).json({
+      error: 'Failed to remove community supplier',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/admin/community/reports - Get all supplier reports (Admin only)
+router.get('/community/reports', [
+  ensurePersistence,
+  verifyToken,
+  requireAdmin,
+  query('status').optional().isIn(['pending', 'resolved', 'dismissed']).withMessage('Invalid status'),
+  query('type').optional().isIn(['invalid_phone', 'out_of_business', 'poor_service', 'incorrect_info', 'spam']).withMessage('Invalid report type'),
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be >= 1'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be 1-100')
+], handleValidationErrors, async (req, res) => {
+  try {
+    const { status, type, page = 1, limit = 25 } = req.query;
+    const { userId, email: adminEmail } = req.user;
+    
+    // Get supplier reports from persistence layer
+    const reports = await req.dataPersistence.getSupplierReports({
+      status,
+      type,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    
+    // Log admin action
+    await logAdminAction(
+      req,
+      userId,
+      adminEmail,
+      'view_supplier_reports',
+      null,
+      'community_management',
+      'Admin viewed supplier reports',
+      { status, type, page, limit, count: reports.data.length }
+    );
+    
+    logger.info(`📋 Admin ${adminEmail} viewed supplier reports (${reports.data.length} results)`);
+    
+    res.json({
+      success: true,
+      reports: reports.data,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: reports.total,
+        pages: Math.ceil(reports.total / limit)
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    req.app.locals.logger.error('Admin view supplier reports error:', error);
+    res.status(500).json({
+      error: 'Failed to fetch supplier reports',
+      message: error.message
+    });
+  }
+});
+
+// PUT /api/admin/community/reports/:id/resolve - Resolve supplier report (Admin only)
+router.put('/community/reports/:id/resolve', [
+  ensurePersistence,
+  verifyToken,
+  requireAdmin,
+  param('id').isUUID().withMessage('Invalid report ID'),
+  body('action').isIn(['dismiss', 'resolved', 'supplier_warned', 'supplier_removed']).withMessage('Invalid action'),
+  body('adminNotes').trim().isLength({ min: 10, max: 500 }).withMessage('Admin notes must be 10-500 characters')
+], handleValidationErrors, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action, adminNotes } = req.body;
+    const { userId, email: adminEmail } = req.user;
+    
+    // Get existing report
+    const existingReport = await req.dataPersistence.getSupplierReportById(id);
+    if (!existingReport) {
+      return res.status(404).json({
+        error: 'Report not found',
+        message: 'Supplier report does not exist'
+      });
+    }
+    
+    // Update report status
+    const updatedReport = await req.dataPersistence.updateSupplierReport(id, {
+      status: action === 'dismiss' ? 'dismissed' : 'resolved',
+      resolution: action,
+      adminNotes,
+      resolvedBy: adminEmail,
+      resolvedAt: new Date().toISOString()
+    });
+    
+    // If removing supplier, also remove from community
+    if (action === 'supplier_removed') {
+      await req.dataPersistence.deleteCommunitySupplier(existingReport.supplierId);
+    }
+    
+    // Log admin action
+    await logAdminAction(
+      req,
+      userId,
+      adminEmail,
+      'resolve_supplier_report',
+      id,
+      'community_management',
+      `Admin resolved supplier report: ${existingReport.supplierName} - Action: ${action}`,
+      { 
+        supplierName: existingReport.supplierName,
+        reportType: existingReport.reportType,
+        action,
+        adminNotes,
+        originalReport: existingReport
+      },
+      action === 'supplier_removed' ? 'high' : 'medium'
+    );
+    
+    logger.info(`✅ Admin ${adminEmail} resolved supplier report: ${existingReport.supplierName} - ${action}`);
+    
+    res.json({
+      success: true,
+      message: 'Supplier report resolved successfully',
+      report: updatedReport
+    });
+    
+  } catch (error) {
+    req.app.locals.logger.error('Admin resolve supplier report error:', error);
+    res.status(500).json({
+      error: 'Failed to resolve supplier report',
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;

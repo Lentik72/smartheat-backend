@@ -5,9 +5,11 @@ const { DataTypes } = require('sequelize');
 let supplierRequestsMemory = new Map();
 let auditLogsMemory = new Map();
 let usersMemory = new Map();
+let communitySupplierMemory = new Map();
+let supplierReportsMemory = new Map();
 
 // Database Models
-let SupplierRequest, AuditLog, User;
+let SupplierRequest, AuditLog, User, CommunitySupplier, SupplierReport;
 
 const initDatabase = (sequelize) => {
   if (!sequelize) {
@@ -166,12 +168,129 @@ const initDatabase = (sequelize) => {
       ]
     });
 
+    // Define CommunitySupplier model
+    CommunitySupplier = sequelize.define('CommunitySupplier', {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+      },
+      companyName: {
+        type: DataTypes.STRING(100),
+        allowNull: false
+      },
+      contactPerson: DataTypes.STRING(100),
+      primaryPhone: DataTypes.STRING(20),
+      secondaryPhone: DataTypes.STRING(20),
+      email: {
+        type: DataTypes.STRING(255),
+        validate: {
+          isEmail: true
+        }
+      },
+      website: DataTypes.STRING(255),
+      address: DataTypes.TEXT,
+      city: {
+        type: DataTypes.STRING(50),
+        allowNull: false
+      },
+      state: {
+        type: DataTypes.STRING(2),
+        allowNull: false
+      },
+      zipCode: DataTypes.STRING(10),
+      servicesArea: DataTypes.STRING(200),
+      deliveryCount: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+      },
+      averageRating: {
+        type: DataTypes.DECIMAL(2, 1),
+        defaultValue: 0.0
+      },
+      isVerified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
+      lastActivityDate: DataTypes.DATE,
+      addedByUserZip: DataTypes.STRING(10),
+      lastModifiedBy: DataTypes.STRING(255),
+      adminNotes: DataTypes.TEXT,
+      services: {
+        type: DataTypes.JSONB,
+        defaultValue: []
+      }
+    }, {
+      tableName: 'community_suppliers',
+      timestamps: true,
+      underscored: true,
+      indexes: [
+        { fields: ['company_name'] },
+        { fields: ['city', 'state'] },
+        { fields: ['is_verified'] },
+        { fields: ['delivery_count'] }
+      ]
+    });
+
+    // Define SupplierReport model
+    SupplierReport = sequelize.define('SupplierReport', {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+      },
+      supplierId: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+          model: CommunitySupplier,
+          key: 'id'
+        },
+        onDelete: 'CASCADE'
+      },
+      supplierName: {
+        type: DataTypes.STRING(100),
+        allowNull: false
+      },
+      reportType: {
+        type: DataTypes.ENUM('invalid_phone', 'out_of_business', 'poor_service', 'incorrect_info', 'spam'),
+        allowNull: false
+      },
+      details: {
+        type: DataTypes.TEXT,
+        allowNull: false
+      },
+      reportedBy: DataTypes.STRING(45), // IP address for anonymous reporting
+      status: {
+        type: DataTypes.ENUM('pending', 'resolved', 'dismissed'),
+        defaultValue: 'pending'
+      },
+      resolution: DataTypes.ENUM('dismiss', 'resolved', 'supplier_warned', 'supplier_removed'),
+      adminNotes: DataTypes.TEXT,
+      resolvedBy: DataTypes.STRING(255),
+      resolvedAt: DataTypes.DATE
+    }, {
+      tableName: 'supplier_reports',
+      timestamps: true,
+      underscored: true,
+      indexes: [
+        { fields: ['supplier_id'] },
+        { fields: ['status'] },
+        { fields: ['report_type'] },
+        { fields: ['created_at'] }
+      ]
+    });
+
+    // Define associations
+    CommunitySupplier.hasMany(SupplierReport, { foreignKey: 'supplierId', as: 'reports' });
+    SupplierReport.belongsTo(CommunitySupplier, { foreignKey: 'supplierId', as: 'supplier' });
+
     // Sync models (create tables if they don't exist)
     sequelize.sync({ alter: false }) // Don't alter existing tables
       .then(() => console.log('✅ Database models synchronized'))
       .catch(err => console.error('❌ Database sync error:', err.message));
 
-    return { SupplierRequest, AuditLog, User };
+    return { SupplierRequest, AuditLog, User, CommunitySupplier, SupplierReport };
   } catch (error) {
     console.error('❌ Database model initialization error:', error.message);
     return null;
@@ -303,6 +422,274 @@ class DataPersistence {
     }
     logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     return logs.slice(filters.offset || 0, (filters.offset || 0) + (filters.limit || 50));
+  }
+
+  // Community Suppliers
+  async createCommunitySupplier(data) {
+    if (this.hasDatabase) {
+      try {
+        const supplier = await this.models.CommunitySupplier.create(data);
+        return supplier.toJSON();
+      } catch (error) {
+        console.error('Database create community supplier error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    const id = data.id || require('uuid').v4();
+    const supplier = { ...data, id, createdAt: new Date(), updatedAt: new Date() };
+    communitySupplierMemory.set(id, supplier);
+    return supplier;
+  }
+
+  async getCommunitySuppliers(filters = {}) {
+    if (this.hasDatabase) {
+      try {
+        const whereClause = {};
+        const { Op } = require('sequelize');
+        
+        if (filters.search) {
+          whereClause[Op.or] = [
+            { companyName: { [Op.iLike]: `%${filters.search}%` } },
+            { city: { [Op.iLike]: `%${filters.search}%` } },
+            { servicesArea: { [Op.iLike]: `%${filters.search}%` } }
+          ];
+        }
+        if (filters.city) whereClause.city = { [Op.iLike]: `%${filters.city}%` };
+        if (filters.state) whereClause.state = filters.state.toUpperCase();
+
+        const offset = ((filters.page || 1) - 1) * (filters.limit || 25);
+        const limit = filters.limit || 25;
+
+        const { count, rows } = await this.models.CommunitySupplier.findAndCountAll({
+          where: whereClause,
+          order: [['deliveryCount', 'DESC'], ['createdAt', 'DESC']],
+          limit,
+          offset,
+          include: [{
+            model: this.models.SupplierReport,
+            as: 'reports',
+            attributes: ['id', 'reportType', 'status'],
+            required: false
+          }]
+        });
+
+        return {
+          data: rows.map(r => r.toJSON()),
+          total: count,
+          page: filters.page || 1,
+          limit: filters.limit || 25
+        };
+      } catch (error) {
+        console.error('Database community suppliers query error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    let suppliers = Array.from(communitySupplierMemory.values());
+    
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      suppliers = suppliers.filter(s => 
+        s.companyName.toLowerCase().includes(searchLower) ||
+        s.city.toLowerCase().includes(searchLower) ||
+        (s.servicesArea && s.servicesArea.toLowerCase().includes(searchLower))
+      );
+    }
+    if (filters.city) {
+      suppliers = suppliers.filter(s => s.city.toLowerCase().includes(filters.city.toLowerCase()));
+    }
+    if (filters.state) {
+      suppliers = suppliers.filter(s => s.state === filters.state.toUpperCase());
+    }
+
+    suppliers.sort((a, b) => (b.deliveryCount || 0) - (a.deliveryCount || 0));
+    
+    const offset = ((filters.page || 1) - 1) * (filters.limit || 25);
+    const limit = filters.limit || 25;
+    
+    return {
+      data: suppliers.slice(offset, offset + limit),
+      total: suppliers.length,
+      page: filters.page || 1,
+      limit: filters.limit || 25
+    };
+  }
+
+  async getCommunitySupplierById(id) {
+    if (this.hasDatabase) {
+      try {
+        const supplier = await this.models.CommunitySupplier.findByPk(id, {
+          include: [{
+            model: this.models.SupplierReport,
+            as: 'reports',
+            order: [['createdAt', 'DESC']]
+          }]
+        });
+        return supplier ? supplier.toJSON() : null;
+      } catch (error) {
+        console.error('Database get community supplier error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    return communitySupplierMemory.get(id) || null;
+  }
+
+  async updateCommunitySupplier(id, updates) {
+    if (this.hasDatabase) {
+      try {
+        await this.models.CommunitySupplier.update(
+          { ...updates, updatedAt: new Date() },
+          { where: { id } }
+        );
+        const updated = await this.models.CommunitySupplier.findByPk(id);
+        return updated ? updated.toJSON() : null;
+      } catch (error) {
+        console.error('Database update community supplier error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    const existing = communitySupplierMemory.get(id);
+    if (existing) {
+      const updated = { ...existing, ...updates, updatedAt: new Date() };
+      communitySupplierMemory.set(id, updated);
+      return updated;
+    }
+    return null;
+  }
+
+  async deleteCommunitySupplier(id) {
+    if (this.hasDatabase) {
+      try {
+        const result = await this.models.CommunitySupplier.destroy({ where: { id } });
+        return result > 0;
+      } catch (error) {
+        console.error('Database delete community supplier error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    return communitySupplierMemory.delete(id);
+  }
+
+  // Supplier Reports
+  async createSupplierReport(data) {
+    if (this.hasDatabase) {
+      try {
+        const report = await this.models.SupplierReport.create(data);
+        return report.toJSON();
+      } catch (error) {
+        console.error('Database create supplier report error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    const id = data.id || require('uuid').v4();
+    const report = { ...data, id, createdAt: new Date(), updatedAt: new Date() };
+    supplierReportsMemory.set(id, report);
+    return report;
+  }
+
+  async getSupplierReports(filters = {}) {
+    if (this.hasDatabase) {
+      try {
+        const whereClause = {};
+        if (filters.status) whereClause.status = filters.status;
+        if (filters.type) whereClause.reportType = filters.type;
+
+        const offset = ((filters.page || 1) - 1) * (filters.limit || 25);
+        const limit = filters.limit || 25;
+
+        const { count, rows } = await this.models.SupplierReport.findAndCountAll({
+          where: whereClause,
+          order: [['createdAt', 'DESC']],
+          limit,
+          offset,
+          include: [{
+            model: this.models.CommunitySupplier,
+            as: 'supplier',
+            attributes: ['id', 'companyName', 'city', 'state']
+          }]
+        });
+
+        return {
+          data: rows.map(r => r.toJSON()),
+          total: count,
+          page: filters.page || 1,
+          limit: filters.limit || 25
+        };
+      } catch (error) {
+        console.error('Database supplier reports query error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    let reports = Array.from(supplierReportsMemory.values());
+    
+    if (filters.status) {
+      reports = reports.filter(r => r.status === filters.status);
+    }
+    if (filters.type) {
+      reports = reports.filter(r => r.reportType === filters.type);
+    }
+
+    reports.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    const offset = ((filters.page || 1) - 1) * (filters.limit || 25);
+    const limit = filters.limit || 25;
+    
+    return {
+      data: reports.slice(offset, offset + limit),
+      total: reports.length,
+      page: filters.page || 1,
+      limit: filters.limit || 25
+    };
+  }
+
+  async getSupplierReportById(id) {
+    if (this.hasDatabase) {
+      try {
+        const report = await this.models.SupplierReport.findByPk(id, {
+          include: [{
+            model: this.models.CommunitySupplier,
+            as: 'supplier',
+            attributes: ['id', 'companyName', 'city', 'state']
+          }]
+        });
+        return report ? report.toJSON() : null;
+      } catch (error) {
+        console.error('Database get supplier report error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    return supplierReportsMemory.get(id) || null;
+  }
+
+  async updateSupplierReport(id, updates) {
+    if (this.hasDatabase) {
+      try {
+        await this.models.SupplierReport.update(
+          { ...updates, updatedAt: new Date() },
+          { where: { id } }
+        );
+        const updated = await this.models.SupplierReport.findByPk(id);
+        return updated ? updated.toJSON() : null;
+      } catch (error) {
+        console.error('Database update supplier report error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    const existing = supplierReportsMemory.get(id);
+    if (existing) {
+      const updated = { ...existing, ...updates, updatedAt: new Date() };
+      supplierReportsMemory.set(id, updated);
+      return updated;
+    }
+    return null;
   }
 }
 

@@ -6,13 +6,81 @@ const nodemailer = require('nodemailer');
 const router = express.Router();
 
 // Mock database - In production, replace with MongoDB
-let communitySuppliers = [];
-let communityActivities = [];
+let communitySuppliers = [
+  {
+    id: 'sample-1',
+    companyName: 'Northeastern Heating Oil',
+    city: 'Boston',
+    state: 'MA',
+    zipCode: '02101',
+    servicesArea: 'Greater Boston Area',
+    phone: '617-555-0123',
+    email: 'service@northeastern-oil.com',
+    deliveryCount: 45,
+    averageRating: 4.5,
+    lastActive: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    isVerified: true,
+    services: ['heating_oil_delivery', 'emergency_delivery', 'automatic_delivery'],
+    website: 'https://northeastern-oil.com'
+  },
+  {
+    id: 'sample-2', 
+    companyName: 'Harbor Fuel Company',
+    city: 'Portland',
+    state: 'ME',
+    zipCode: '04101',
+    servicesArea: 'Southern Maine',
+    phone: '207-555-0456',
+    email: 'info@harborfuel.com',
+    deliveryCount: 32,
+    averageRating: 4.2,
+    lastActive: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+    isVerified: true,
+    services: ['heating_oil_delivery', 'tank_maintenance'],
+    website: 'https://harborfuel.com'
+  },
+  {
+    id: 'sample-3',
+    companyName: 'Valley Oil Services',  
+    city: 'Hartford',
+    state: 'CT',
+    zipCode: '06101',
+    servicesArea: 'Central Connecticut',
+    phone: '860-555-0789',
+    email: 'orders@valleyoil.com', 
+    deliveryCount: 28,
+    averageRating: 4.7,
+    lastActive: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+    isVerified: true,
+    services: ['heating_oil_delivery', 'budget_plans', 'online_ordering'],
+    website: 'https://valleyoil.com'
+  }
+];
+
+let communityActivities = [
+  {
+    id: 'activity-1',
+    type: 'supplier_shared',
+    description: 'New supplier added to community',
+    supplierName: 'Northeastern Heating Oil',
+    city: 'Boston, MA',
+    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: 'activity-2', 
+    type: 'delivery_completed',
+    description: 'Delivery completed',
+    supplierName: 'Harbor Fuel Company',
+    city: 'Portland, ME',
+    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
+
 let supplierReports = [];
 let communityStats = {
-  totalSuppliers: 0,
-  totalDeliveries: 0,
-  citiesServed: 0,
+  totalSuppliers: 3,
+  totalDeliveries: 105,
+  citiesServed: 12,
   lastUpdated: new Date().toISOString()
 };
 
