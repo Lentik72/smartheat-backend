@@ -339,13 +339,13 @@ router.post('/suppliers/invite', [
     }
     
     // Create invitation email
-    const invitationSubject = 'Invitation to Join SmartHeat Community Platform';
+    const invitationSubject = 'Invitation to Join HomeHeat Community Platform';
     const invitationBody = `
 Hello${contactName ? ` ${contactName}` : ''},
 
-You've been invited to join the SmartHeat Community Platform by one of our users.
+You've been invited to join the HomeHeat Community Platform by one of our users.
 
-SmartHeat is a community-driven platform that helps homeowners:
+HomeHeat is a community-driven platform that helps homeowners:
 • Find reliable heating oil suppliers in their area
 • Get better pricing through community recommendations
 • Share and discover trusted service providers
@@ -373,10 +373,10 @@ Your privacy is protected:
 Questions? Reply to this email or visit our website.
 
 Best regards,
-The SmartHeat Team
+The HomeHeat Team
 
 ---
-This invitation was sent because a SmartHeat user recommended your services.
+This invitation was sent because a HomeHeat user recommended your services.
 If you don't wish to receive these invitations, please reply with "UNSUBSCRIBE".
     `;
     

@@ -11,7 +11,7 @@ const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 // Import route modules with error handling
-let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes;
+let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes;
 
 try {
   weatherRoutes = require('./src/routes/weather');
@@ -20,6 +20,7 @@ try {
   analyticsRoutes = require('./src/routes/analytics');
   authRoutes = require('./src/routes/auth');
   adminRoutes = require('./src/routes/admin');
+  suppliersRoutes = require('./src/routes/suppliers');  // V1.3.0: Dynamic supplier directory
 } catch (error) {
   console.error('Error loading route modules:', error.message);
   // Create placeholder routers if routes fail to load
@@ -29,7 +30,8 @@ try {
   analyticsRoutes = express.Router();
   authRoutes = express.Router();
   adminRoutes = express.Router();
-  
+  suppliersRoutes = express.Router();
+
   // Add basic error responses
   weatherRoutes.get('*', (req, res) => res.status(503).json({ error: 'Weather service temporarily unavailable' }));
   marketRoutes.get('*', (req, res) => res.status(503).json({ error: 'Market service temporarily unavailable' }));
@@ -37,7 +39,11 @@ try {
   analyticsRoutes.get('*', (req, res) => res.status(503).json({ error: 'Analytics service temporarily unavailable' }));
   authRoutes.get('*', (req, res) => res.status(503).json({ error: 'Auth service temporarily unavailable' }));
   adminRoutes.get('*', (req, res) => res.status(503).json({ error: 'Admin service temporarily unavailable' }));
+  suppliersRoutes.get('*', (req, res) => res.status(503).json({ error: 'Suppliers service temporarily unavailable' }));
 }
+
+// Import Supplier model initializer
+const { initSupplierModel } = require('./src/models/Supplier');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -167,9 +173,16 @@ if (API_KEYS.DATABASE_URL) {
 
     // Test the connection
     sequelize.authenticate()
-      .then(() => {
+      .then(async () => {
         logger.info('✅ Connected to PostgreSQL database');
-        // Don't sync tables automatically - use migrations in production
+
+        // V1.3.0: Initialize Supplier model and sync table
+        const Supplier = initSupplierModel(sequelize);
+        if (Supplier) {
+          await Supplier.sync({ alter: false }); // Don't alter in production, use migrations
+          logger.info('✅ Supplier model synced');
+        }
+
         logger.info('📊 Database ready for operations');
       })
       .catch(err => {
@@ -266,10 +279,15 @@ app.get('/api/docs', (req, res) => {
         supplierRequests: '/api/admin/supplier-requests',
         dashboard: '/api/admin/dashboard',
         auditLogs: '/api/admin/audit-logs'
+      },
+      suppliers: {
+        byZip: '/api/v1/suppliers?zip=01340',
+        version: '/api/v1/suppliers/version',
+        note: 'Returns signed JSON response for verification'
       }
     },
-    rateLimit: '100 requests per 15 minutes',
-    security: ['Helmet', 'CORS', 'Rate Limiting', 'JWT Authentication']
+    rateLimit: '100 requests per 15 minutes (60/hour for suppliers)',
+    security: ['Helmet', 'CORS', 'Rate Limiting', 'JWT Authentication', 'HMAC Signed Responses']
   });
 });
 
@@ -291,6 +309,7 @@ app.use('/api/community', communityRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/v1/suppliers', suppliersRoutes);  // V1.3.0: Dynamic supplier directory
 
 // Cache status endpoint
 app.get('/api/cache/status', (req, res) => {

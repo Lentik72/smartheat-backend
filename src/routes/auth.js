@@ -13,8 +13,11 @@ let deviceRegistrations = new Map();
 const ADMIN_EMAILS = [
   process.env.ADMIN_EMAIL || 'admin@smartheat.app', // Set via environment variable
   process.env.ADMIN_EMAIL_2 || null, // Optional second admin
-  // Add additional admin emails here
+  'ltsoir@gmail.com', // Leo's admin account
 ].filter(Boolean); // Remove null values
+
+// Admin password - MUST be set via environment variable in production
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 const isAdminEmail = (email) => {
   return ADMIN_EMAILS.includes(email.toLowerCase().trim());
@@ -437,22 +440,40 @@ const cleanupInactiveUsers = () => {
 // Run cleanup every 24 hours
 setInterval(cleanupInactiveUsers, 24 * 60 * 60 * 1000);
 
-// POST /api/auth/admin-login - Admin email-based authentication
+// POST /api/auth/admin-login - Admin email-based authentication with password
 router.post('/admin-login', [
   body('email').isEmail().withMessage('Valid email required'),
+  body('password').isLength({ min: 1 }).withMessage('Password required'),
   body('deviceId').isLength({ min: 10, max: 100 }).withMessage('Device ID required'),
-  body('appVersion').isLength({ min: 1, max: 10 }).withMessage('App version required')
+  body('appVersion').optional().isLength({ min: 1, max: 10 }).withMessage('App version invalid')
 ], handleValidationErrors, (req, res) => {
   try {
-    const { email, deviceId, appVersion } = req.body;
+    const { email, password, deviceId, appVersion } = req.body;
     const logger = req.app.locals.logger;
-    
+
     // Check if email is authorized admin
     if (!isAdminEmail(email)) {
       logger.warn(`🚫 Unauthorized admin login attempt: ${email}`);
       return res.status(403).json({
         error: 'Unauthorized',
         message: 'Email not authorized for admin access'
+      });
+    }
+
+    // Validate password
+    if (!ADMIN_PASSWORD) {
+      logger.error('❌ ADMIN_PASSWORD environment variable not set!');
+      return res.status(500).json({
+        error: 'Configuration error',
+        message: 'Admin authentication not configured'
+      });
+    }
+
+    if (password !== ADMIN_PASSWORD) {
+      logger.warn(`🚫 Invalid password for admin: ${email}`);
+      return res.status(401).json({
+        error: 'Invalid credentials',
+        message: 'Invalid email or password'
       });
     }
     
