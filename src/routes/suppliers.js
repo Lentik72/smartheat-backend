@@ -28,13 +28,32 @@ const getSigningSecret = () => {
   return process.env.SUPPLIER_SIGNING_SECRET || 'HomeHeat_Supplier_v1.3.0_SigningKey';
 };
 
-// Sign a payload with HMAC-SHA256
+// Recursively sort object keys for canonical JSON
+const sortObjectKeys = (obj) => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(sortObjectKeys);
+  }
+  const sorted = {};
+  Object.keys(obj).sort().forEach(key => {
+    sorted[key] = sortObjectKeys(obj[key]);
+  });
+  return sorted;
+};
+
+// Sign a payload with HMAC-SHA256 using canonical JSON (sorted keys)
+// Phase B: Deterministic signing for cross-platform verification
 const signPayload = (payload) => {
   const secret = getSigningSecret();
-  const payloadString = JSON.stringify(payload);
+  // Recursively sort all keys for canonical JSON representation
+  // This ensures identical signatures regardless of object construction order
+  const canonical = sortObjectKeys(payload);
+  const canonicalString = JSON.stringify(canonical);
   const signature = crypto
     .createHmac('sha256', secret)
-    .update(payloadString)
+    .update(canonicalString)
     .digest('hex');
   return signature;
 };
