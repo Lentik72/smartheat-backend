@@ -1685,6 +1685,36 @@ router.get('/admin/deliveries', async (req, res) => {
   }
 });
 
+// V19.0.5b: Delete all test data
+router.delete('/admin/deliveries', async (req, res) => {
+  const logger = req.app.locals.logger;
+
+  try {
+    const CommunityDelivery = getCommunityDeliveryModel();
+    if (!CommunityDelivery) {
+      return res.status(503).json({ error: 'Service unavailable' });
+    }
+
+    const count = await CommunityDelivery.count();
+    await CommunityDelivery.destroy({ where: {}, truncate: true });
+
+    // Clear cache
+    const cache = req.app.locals.cache;
+    cache.flushAll();
+
+    logger.info(`[V19.0.5b] Deleted all ${count} deliveries`);
+
+    res.json({
+      success: true,
+      deletedCount: count
+    });
+
+  } catch (error) {
+    logger.error('[V19.0.5b] Delete all error:', error);
+    res.status(500).json({ error: 'Delete failed' });
+  }
+});
+
 router.post('/admin/deduplicate', async (req, res) => {
   const logger = req.app.locals.logger;
 
