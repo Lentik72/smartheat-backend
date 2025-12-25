@@ -42,8 +42,9 @@ try {
   suppliersRoutes.get('*', (req, res) => res.status(503).json({ error: 'Suppliers service temporarily unavailable' }));
 }
 
-// Import Supplier model initializer
+// Import model initializers
 const { initSupplierModel } = require('./src/models/Supplier');
+const { initCommunityDeliveryModel } = require('./src/models/CommunityDelivery');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -181,6 +182,13 @@ if (API_KEYS.DATABASE_URL) {
         if (Supplier) {
           await Supplier.sync({ alter: false }); // Don't alter in production, use migrations
           logger.info('✅ Supplier model synced');
+        }
+
+        // V18.0: Initialize CommunityDelivery model for benchmarking
+        const CommunityDelivery = initCommunityDeliveryModel(sequelize);
+        if (CommunityDelivery) {
+          await CommunityDelivery.sync({ alter: true }); // alter: true for initial deployment
+          logger.info('✅ CommunityDelivery model synced');
         }
 
         logger.info('📊 Database ready for operations');

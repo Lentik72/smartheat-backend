@@ -1,8 +1,26 @@
 // src/routes/community.js - Privacy-Compliant Community Supplier API
+// V18.0: Added community benchmarking endpoints for delivery price sharing
+// V18.6: Added distance-based community grouping (10→15→20 mile tiers)
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
+const { Op, fn, col, literal } = require('sequelize');
+const {
+  getCommunityDeliveryModel,
+  getGallonsBucket,
+  roundPrice,
+  getCurrentMonth,
+  getPreviousMonth,
+  VALIDATION_THRESHOLDS
+} = require('../models/CommunityDelivery');
+const {
+  findNearbyPrefixes,
+  findNearbyPrefixesProgressive,
+  getCentroid,
+  isInSupportedRegion,
+  calculateDistance
+} = require('../data/zip-centroids');
 const router = express.Router();
 
 // Mock database - In production, replace with MongoDB
@@ -512,7 +530,7 @@ router.post('/report', [
 router.get('/activity', (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 20, 50);
-    
+
     const activities = communityActivities
       .slice(0, limit)
       .map(activity => ({
@@ -521,18 +539,1070 @@ router.get('/activity', (req, res) => {
         activityDescription: activity.activityDescription,
         createdAt: activity.createdAt
       }));
-    
+
     res.json({
       activities,
       total: communityActivities.length,
       timestamp: new Date().toISOString()
     });
-    
+
   } catch (error) {
     req.app.locals.logger.error('Community activity error:', error);
     res.status(500).json({
       error: 'Failed to fetch community activity',
       message: error.message
+    });
+  }
+});
+
+// ============================================================================
+// V18.0: COMMUNITY BENCHMARKING ENDPOINTS
+// Anonymous delivery price sharing for local market intelligence
+// ============================================================================
+
+// POST /api/community/deliveries - Submit anonymous delivery for community benchmarking
+// V18.6: Now accepts optional fullZipCode for distance-based community
+router.post('/deliveries', [
+  body('zipPrefix').matches(/^\d{3}$/).withMessage('ZIP prefix must be 3 digits'),
+  body('fullZipCode').optional().matches(/^\d{5}$/).withMessage('Full ZIP code must be 5 digits'),
+  body('pricePerGallon').isFloat({ min: 1.00, max: 8.00 }).withMessage('Price must be between $1.00 and $8.00'),
+  body('deliveryMonth').matches(/^\d{4}-\d{2}$/).withMessage('Delivery month must be YYYY-MM format'),
+  body('gallonsBucket').isIn(['small', 'medium', 'large', 'xlarge', 'bulk']).withMessage('Invalid gallons bucket'),
+  body('marketPriceAtTime').optional().isFloat({ min: 1.00, max: 8.00 }),
+  body('contributorHash').isLength({ min: 64, max: 64 }).withMessage('Invalid contributor hash')
+], handleValidationErrors, async (req, res) => {
+  const logger = req.app.locals.logger;
+
+  try {
+    const CommunityDelivery = getCommunityDeliveryModel();
+    if (!CommunityDelivery) {
+      return res.status(503).json({
+        success: false,
+        status: 'service_unavailable',
+        message: 'Community benchmarking is temporarily unavailable'
+      });
+    }
+
+    const {
+      zipPrefix,
+      fullZipCode,
+      pricePerGallon,
+      deliveryMonth,
+      gallonsBucket,
+      marketPriceAtTime,
+      contributorHash
+    } = req.body;
+
+    // Round price to nearest $0.05 for anonymization
+    const roundedPrice = roundPrice(parseFloat(pricePerGallon));
+
+    // Validate delivery month is not too old (max 90 days)
+    const deliveryDate = new Date(deliveryMonth + '-01');
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    if (deliveryDate < ninetyDaysAgo) {
+      return res.status(400).json({
+        success: false,
+        status: 'rejected',
+        reason: 'stale_submission',
+        message: 'Delivery is too old to submit (max 90 days)'
+      });
+    }
+
+    // Rate limiting: Max 4 submissions per contributor per month
+    const currentMonth = getCurrentMonth();
+    const recentSubmissions = await CommunityDelivery.count({
+      where: {
+        contributorHash,
+        deliveryMonth: currentMonth
+      }
+    });
+
+    if (recentSubmissions >= 4) {
+      return res.status(429).json({
+        success: false,
+        status: 'rejected',
+        reason: 'rate_limit_exceeded',
+        message: 'Maximum 4 submissions per month reached'
+      });
+    }
+
+    // Validation: Check against market price if provided
+    let validationStatus = 'valid';
+    let rejectionReason = null;
+
+    if (marketPriceAtTime) {
+      const thresholds = VALIDATION_THRESHOLDS[gallonsBucket];
+      const deviation = Math.abs(roundedPrice - marketPriceAtTime) / marketPriceAtTime;
+
+      if (deviation > thresholds.hardReject) {
+        // Hard rejection - don't store
+        logger.warn(`[V18.0] Hard reject: ${roundedPrice} vs market ${marketPriceAtTime} (${(deviation * 100).toFixed(1)}% deviation)`);
+        return res.status(400).json({
+          success: false,
+          status: 'rejected',
+          reason: 'price_outside_expected_range',
+          message: 'Price seems incorrect. Please verify and try again.'
+        });
+      } else if (deviation > thresholds.softExclude) {
+        // Soft exclusion - store but don't include in averages
+        validationStatus = 'soft_excluded';
+        rejectionReason = 'moderate_market_deviation';
+        logger.info(`[V18.0] Soft exclude: ${roundedPrice} vs market ${marketPriceAtTime} (${(deviation * 100).toFixed(1)}% deviation)`);
+      }
+    }
+
+    // Calculate contributor weight (prevent one user from dominating)
+    const areaDeliveries = await CommunityDelivery.count({
+      where: {
+        zipPrefix,
+        deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
+        validationStatus: 'valid'
+      }
+    });
+
+    const contributorDeliveries = await CommunityDelivery.count({
+      where: {
+        zipPrefix,
+        contributorHash,
+        deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
+        validationStatus: 'valid'
+      }
+    });
+
+    // Weight capping based on sample size
+    let maxWeight;
+    if (areaDeliveries < 5) {
+      maxWeight = 0.40;
+    } else if (areaDeliveries < 10) {
+      maxWeight = 0.30;
+    } else {
+      maxWeight = 0.20;
+    }
+
+    // If this contributor already has entries, reduce weight
+    const contributionWeight = contributorDeliveries > 0
+      ? Math.max(0.5, 1.0 - (contributorDeliveries * 0.2))
+      : 1.0;
+
+    const cappedWeight = Math.min(contributionWeight, maxWeight * (areaDeliveries + 1));
+
+    // Create the delivery record
+    // V18.6: Include fullZipCode for distance-based queries
+    const delivery = await CommunityDelivery.create({
+      zipPrefix,
+      fullZipCode: fullZipCode || null,
+      pricePerGallon: roundedPrice,
+      deliveryMonth,
+      gallonsBucket,
+      marketPriceAtTime: marketPriceAtTime || null,
+      validationStatus,
+      rejectionReason,
+      contributorHash,
+      contributionWeight: Math.min(cappedWeight, 1.0)
+    });
+
+    // Get updated area stats
+    const updatedStats = await CommunityDelivery.count({
+      where: {
+        zipPrefix,
+        deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
+        validationStatus: 'valid'
+      }
+    });
+
+    const uniqueContributors = await CommunityDelivery.count({
+      where: {
+        zipPrefix,
+        deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
+        validationStatus: 'valid'
+      },
+      distinct: true,
+      col: 'contributorHash'
+    });
+
+    const thresholdMet = updatedStats >= 3 && uniqueContributors >= 2;
+    const unlockedFeature = thresholdMet && areaDeliveries < 3;
+
+    logger.info(`[V18.0] Delivery submitted: ZIP ${zipPrefix}, $${roundedPrice}, bucket ${gallonsBucket}, status ${validationStatus}`);
+
+    // Response based on validation status
+    if (validationStatus === 'soft_excluded') {
+      return res.json({
+        success: true,
+        status: 'soft_excluded',
+        message: "Received! Price seems unusual so we're reviewing it.",
+        reason: rejectionReason
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      status: 'valid',
+      message: unlockedFeature
+        ? '🎉 You just activated community data for your area!'
+        : 'Thank you for contributing!',
+      areaStats: {
+        deliveryCount: updatedStats,
+        contributorCount: uniqueContributors,
+        thresholdMet
+      },
+      unlockedFeature
+    });
+
+  } catch (error) {
+    logger.error('[V18.0] Community delivery submission error:', error);
+    res.status(500).json({
+      success: false,
+      status: 'error',
+      message: 'Failed to submit delivery'
+    });
+  }
+});
+
+// GET /api/community/benchmark/:zipPrefix - Get community benchmark for area
+router.get('/benchmark/:zipPrefix', [
+  param('zipPrefix').matches(/^\d{3}$/).withMessage('ZIP prefix must be 3 digits'),
+  query('months').optional().isInt({ min: 1, max: 6 }).withMessage('Months must be 1-6'),
+  query('userBucket').optional().isIn(['small', 'medium', 'large', 'xlarge', 'bulk'])
+], handleValidationErrors, async (req, res) => {
+  const logger = req.app.locals.logger;
+  const cache = req.app.locals.cache;
+
+  try {
+    const CommunityDelivery = getCommunityDeliveryModel();
+    if (!CommunityDelivery) {
+      return res.status(503).json({
+        hasData: false,
+        message: 'Community benchmarking is temporarily unavailable'
+      });
+    }
+
+    const { zipPrefix } = req.params;
+    const months = parseInt(req.query.months) || 2;
+    const userBucket = req.query.userBucket;
+
+    // Check cache first
+    const cacheKey = `benchmark_${zipPrefix}_${months}_${userBucket || 'all'}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    // Calculate date range
+    const monthsToInclude = [];
+    const now = new Date();
+    for (let i = 0; i < months; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthsToInclude.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    // Get all valid deliveries in range
+    const deliveries = await CommunityDelivery.findAll({
+      where: {
+        zipPrefix,
+        deliveryMonth: { [Op.in]: monthsToInclude },
+        validationStatus: 'valid'
+      },
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Count unique contributors
+    const contributors = new Set(deliveries.map(d => d.contributorHash));
+    const contributorCount = contributors.size;
+    const deliveryCount = deliveries.length;
+
+    // Check thresholds
+    if (deliveryCount < 3 || contributorCount < 2) {
+      const response = {
+        hasData: false,
+        zipPrefix,
+        confidence: {
+          level: 'insufficient',
+          score: deliveryCount / 3 * 0.5 + contributorCount / 2 * 0.5,
+          badge: '⚪'
+        },
+        progress: {
+          deliveryCount,
+          requiredCount: 3,
+          contributorCount,
+          requiredContributors: 2,
+          percentComplete: Math.round((deliveryCount / 3) * 100)
+        },
+        message: deliveryCount === 0
+          ? 'Be the first in your area!'
+          : `Almost there! ${3 - deliveryCount} more delivery needed.`,
+        growthPrompt: deliveryCount === 0 ? 'be_first' : 'invite_neighbor'
+      };
+
+      cache.set(cacheKey, response, 300); // 5 min cache
+      return res.json(response);
+    }
+
+    // Calculate statistics
+    const prices = deliveries.map(d => parseFloat(d.pricePerGallon)).sort((a, b) => a - b);
+    const medianPrice = prices[Math.floor(prices.length / 2)];
+    const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length;
+
+    // IQR for typical range (only if enough data)
+    let typicalRange = null;
+    if (prices.length >= 5) {
+      const q1Idx = Math.floor(prices.length * 0.25);
+      const q3Idx = Math.floor(prices.length * 0.75);
+      typicalRange = {
+        low: prices[q1Idx],
+        high: prices[q3Idx]
+      };
+    }
+
+    // Calculate by bucket
+    const byBucket = {};
+    const buckets = ['small', 'medium', 'large', 'xlarge', 'bulk'];
+    for (const bucket of buckets) {
+      const bucketDeliveries = deliveries.filter(d => d.gallonsBucket === bucket);
+      if (bucketDeliveries.length > 0) {
+        const bucketPrices = bucketDeliveries.map(d => parseFloat(d.pricePerGallon)).sort((a, b) => a - b);
+        byBucket[bucket] = {
+          median: bucketPrices[Math.floor(bucketPrices.length / 2)],
+          count: bucketPrices.length
+        };
+      }
+    }
+
+    // User's bucket stats
+    let userBucketStats = null;
+    if (userBucket && byBucket[userBucket]) {
+      userBucketStats = {
+        median: byBucket[userBucket].median,
+        count: byBucket[userBucket].count,
+        hasSufficientData: byBucket[userBucket].count >= 3
+      };
+    }
+
+    // Calculate bucket spread
+    let bucketSpread = null;
+    if (byBucket.small && byBucket.bulk) {
+      const spread = byBucket.small.median - byBucket.bulk.median;
+      if (spread > 0) {
+        bucketSpread = {
+          smallVsBulk: spread,
+          insight: `Bulk orders save ~$${spread.toFixed(2)}/gal vs small orders`
+        };
+      }
+    }
+
+    // Calculate confidence
+    const newestDelivery = deliveries[0];
+    const daysSinceNewest = Math.floor((new Date() - new Date(newestDelivery.createdAt)) / (1000 * 60 * 60 * 24));
+
+    const deliveryCountFactor = Math.min(deliveryCount / 10, 1.0);
+    const contributorCountFactor = Math.min(contributorCount / 5, 1.0);
+    const recencyFactor = daysSinceNewest < 14 ? 1.0 : daysSinceNewest < 30 ? 0.7 : 0.4;
+
+    const confidenceScore = (deliveryCountFactor * 0.4) + (contributorCountFactor * 0.3) + (recencyFactor * 0.3);
+
+    let confidenceLevel, confidenceBadge;
+    if (confidenceScore >= 0.8) {
+      confidenceLevel = 'high';
+      confidenceBadge = '🟢';
+    } else if (confidenceScore >= 0.5) {
+      confidenceLevel = 'medium';
+      confidenceBadge = '🟠';
+    } else {
+      confidenceLevel = 'low';
+      confidenceBadge = '🟡';
+    }
+
+    const response = {
+      hasData: true,
+      zipPrefix,
+      confidence: {
+        level: confidenceLevel,
+        score: confidenceScore,
+        badge: confidenceBadge
+      },
+      period: {
+        start: monthsToInclude[monthsToInclude.length - 1],
+        end: monthsToInclude[0]
+      },
+      stats: {
+        medianPrice,
+        avgPrice: Math.round(avgPrice * 100) / 100,
+        typicalRange,
+        deliveryCount,
+        contributorCount
+      },
+      byBucket,
+      userBucket: userBucket || null,
+      userBucketStats,
+      bucketSpread,
+      lastUpdated: newestDelivery.createdAt
+    };
+
+    // Add caveat for low confidence
+    if (confidenceLevel === 'low') {
+      response.caveat = 'Early signal - limited data';
+    }
+
+    cache.set(cacheKey, response, 300); // 5 min cache
+    logger.info(`[V18.0] Benchmark served: ZIP ${zipPrefix}, ${deliveryCount} deliveries, ${confidenceLevel} confidence`);
+
+    res.json(response);
+
+  } catch (error) {
+    logger.error('[V18.0] Community benchmark error:', error);
+    res.status(500).json({
+      hasData: false,
+      message: 'Failed to fetch community benchmark'
+    });
+  }
+});
+
+// GET /api/community/trend/:zipPrefix - Get trend for Buy Meter integration
+router.get('/trend/:zipPrefix', [
+  param('zipPrefix').matches(/^\d{3}$/).withMessage('ZIP prefix must be 3 digits')
+], handleValidationErrors, async (req, res) => {
+  const logger = req.app.locals.logger;
+  const cache = req.app.locals.cache;
+
+  try {
+    const CommunityDelivery = getCommunityDeliveryModel();
+    if (!CommunityDelivery) {
+      return res.status(503).json({
+        hasTrend: false,
+        message: 'Community benchmarking is temporarily unavailable'
+      });
+    }
+
+    const { zipPrefix } = req.params;
+    const cacheKey = `trend_${zipPrefix}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const currentMonth = getCurrentMonth();
+    const previousMonth = getPreviousMonth();
+
+    // Get current month deliveries
+    const currentDeliveries = await CommunityDelivery.findAll({
+      where: {
+        zipPrefix,
+        deliveryMonth: currentMonth,
+        validationStatus: 'valid'
+      }
+    });
+
+    // Get previous month deliveries
+    const previousDeliveries = await CommunityDelivery.findAll({
+      where: {
+        zipPrefix,
+        deliveryMonth: previousMonth,
+        validationStatus: 'valid'
+      }
+    });
+
+    const currentPrices = currentDeliveries.map(d => parseFloat(d.pricePerGallon)).sort((a, b) => a - b);
+    const previousPrices = previousDeliveries.map(d => parseFloat(d.pricePerGallon)).sort((a, b) => a - b);
+
+    // Need at least 3 in current month for any trend
+    if (currentPrices.length < 3) {
+      const response = {
+        hasTrend: false,
+        zipPrefix,
+        confidence: 'insufficient',
+        recentDeliveryCount: currentPrices.length,
+        signal: 'insufficient_data',
+        buyTimingImpact: {
+          direction: 'neutral',
+          weight: 0,
+          reason: 'Not enough data for trend'
+        }
+      };
+
+      if (currentPrices.length > 0) {
+        response.displayOnly = {
+          show: true,
+          message: `${currentPrices.length} neighbors paid ~$${currentPrices[Math.floor(currentPrices.length / 2)].toFixed(2)} this month`
+        };
+      }
+
+      cache.set(cacheKey, response, 300);
+      return res.json(response);
+    }
+
+    const currentMedian = currentPrices[Math.floor(currentPrices.length / 2)];
+
+    // Calculate trend if we have previous month data
+    let changePercent = null;
+    let previousMedian = null;
+    let signal = 'stable';
+    let hasEnoughHistory = false;
+
+    if (previousPrices.length >= 3) {
+      previousMedian = previousPrices[Math.floor(previousPrices.length / 2)];
+      changePercent = ((currentMedian - previousMedian) / previousMedian) * 100;
+      hasEnoughHistory = true;
+
+      if (changePercent <= -3) {
+        signal = 'prices_falling';
+      } else if (changePercent >= 3) {
+        signal = 'prices_rising';
+      }
+    }
+
+    // Determine confidence
+    const uniqueContributors = new Set(currentDeliveries.map(d => d.contributorHash)).size;
+    let confidence;
+    if (currentPrices.length >= 10 && uniqueContributors >= 5) {
+      confidence = 'high';
+    } else if (currentPrices.length >= 5 && uniqueContributors >= 3) {
+      confidence = 'medium';
+    } else {
+      confidence = 'low';
+    }
+
+    // Calculate Buy Meter impact
+    let buyTimingWeight = 0;
+    let buyTimingDirection = 'neutral';
+    let buyTimingReason = '';
+
+    if (confidence === 'high' && hasEnoughHistory) {
+      if (signal === 'prices_falling') {
+        buyTimingWeight = 0.15;
+        buyTimingDirection = 'positive';
+        buyTimingReason = `Community prices down ${Math.abs(changePercent).toFixed(0)}% this month`;
+      } else if (signal === 'prices_rising') {
+        buyTimingWeight = -0.15;
+        buyTimingDirection = 'negative';
+        buyTimingReason = `Community prices up ${changePercent.toFixed(0)}% this month`;
+      }
+    } else if (confidence === 'medium' && hasEnoughHistory) {
+      if (signal === 'prices_falling') {
+        buyTimingWeight = 0.10;
+        buyTimingDirection = 'positive';
+        buyTimingReason = `Community prices down ${Math.abs(changePercent).toFixed(0)}% this month`;
+      } else if (signal === 'prices_rising') {
+        buyTimingWeight = -0.10;
+        buyTimingDirection = 'negative';
+        buyTimingReason = `Community prices up ${changePercent.toFixed(0)}% this month`;
+      }
+    }
+
+    const response = {
+      hasTrend: true,
+      zipPrefix,
+      confidence,
+      currentMonthMedian: currentMedian,
+      previousMonthMedian: previousMedian,
+      changePercent: changePercent ? Math.round(changePercent * 10) / 10 : null,
+      recentDeliveryCount: currentPrices.length,
+      signal,
+      buyTimingImpact: {
+        direction: buyTimingDirection,
+        weight: buyTimingWeight,
+        reason: buyTimingReason || 'Stable community prices'
+      }
+    };
+
+    if (confidence === 'low') {
+      response.displayOnly = {
+        show: true,
+        message: `${currentPrices.length} neighbors paid ~$${currentMedian.toFixed(2)} this month`
+      };
+    }
+
+    cache.set(cacheKey, response, 300);
+    logger.info(`[V18.0] Trend served: ZIP ${zipPrefix}, ${confidence} confidence, signal ${signal}`);
+
+    res.json(response);
+
+  } catch (error) {
+    logger.error('[V18.0] Community trend error:', error);
+    res.status(500).json({
+      hasTrend: false,
+      message: 'Failed to fetch community trend'
+    });
+  }
+});
+
+// ============================================================================
+// V18.6: DISTANCE-BASED COMMUNITY BENCHMARKING
+// Progressive radius expansion: 10 → 15 → 20 → 30 → 50 miles
+// ============================================================================
+
+// GET /api/community/benchmark-v2/:zipCode - Distance-based community benchmark
+router.get('/benchmark-v2/:zipCode', [
+  param('zipCode').matches(/^\d{5}$/).withMessage('ZIP code must be 5 digits'),
+  query('months').optional().isInt({ min: 1, max: 6 }).withMessage('Months must be 1-6'),
+  query('userBucket').optional().isIn(['small', 'medium', 'large', 'xlarge', 'bulk'])
+], handleValidationErrors, async (req, res) => {
+  const logger = req.app.locals.logger;
+  const cache = req.app.locals.cache;
+
+  try {
+    const CommunityDelivery = getCommunityDeliveryModel();
+    if (!CommunityDelivery) {
+      return res.status(503).json({
+        hasData: false,
+        message: 'Community benchmarking is temporarily unavailable'
+      });
+    }
+
+    const { zipCode } = req.params;
+    const months = parseInt(req.query.months) || 2;
+    const userBucket = req.query.userBucket;
+
+    // Check if ZIP is in supported region
+    if (!isInSupportedRegion(zipCode)) {
+      return res.json({
+        hasData: false,
+        zipCode,
+        confidence: {
+          level: 'unsupported',
+          score: 0,
+          badge: '⚪'
+        },
+        message: 'Community data not yet available for this region',
+        radiusMiles: null
+      });
+    }
+
+    // Check cache first
+    const cacheKey = `benchmark_v2_${zipCode}_${months}_${userBucket || 'all'}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    // Calculate date range
+    const monthsToInclude = [];
+    const now = new Date();
+    for (let i = 0; i < months; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthsToInclude.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    // Progressive radius expansion to find enough data
+    // V18.6.1: Capped at 20mi for price benchmarks (pricing is hyperlocal)
+    const radiusTiers = [10, 15, 20];
+    let deliveries = [];
+    let usedRadius = radiusTiers[0];
+    let nearbyPrefixes = [];
+
+    for (const radius of radiusTiers) {
+      nearbyPrefixes = findNearbyPrefixes(zipCode, radius).map(n => n.prefix);
+
+      if (nearbyPrefixes.length === 0) continue;
+
+      // Query deliveries from all nearby prefixes
+      deliveries = await CommunityDelivery.findAll({
+        where: {
+          zipPrefix: { [Op.in]: nearbyPrefixes },
+          deliveryMonth: { [Op.in]: monthsToInclude },
+          validationStatus: 'valid'
+        },
+        order: [['createdAt', 'DESC']]
+      });
+
+      // Count unique contributors
+      const contributors = new Set(deliveries.map(d => d.contributorHash));
+      const deliveryCount = deliveries.length;
+      const contributorCount = contributors.size;
+
+      // Check if thresholds are met
+      if (deliveryCount >= 3 && contributorCount >= 2) {
+        usedRadius = radius;
+        break;
+      }
+
+      usedRadius = radius;
+    }
+
+    // Count unique contributors
+    const contributors = new Set(deliveries.map(d => d.contributorHash));
+    const contributorCount = contributors.size;
+    const deliveryCount = deliveries.length;
+
+    // Check thresholds
+    if (deliveryCount < 3 || contributorCount < 2) {
+      const response = {
+        hasData: false,
+        zipCode,
+        radiusMiles: usedRadius,
+        confidence: {
+          level: 'insufficient',
+          score: deliveryCount / 3 * 0.5 + contributorCount / 2 * 0.5,
+          badge: '⚪'
+        },
+        progress: {
+          deliveryCount,
+          requiredCount: 3,
+          contributorCount,
+          requiredContributors: 2,
+          percentComplete: Math.round((deliveryCount / 3) * 100)
+        },
+        message: deliveryCount === 0
+          ? 'Be the first in your area!'
+          : `Almost there! ${3 - deliveryCount} more ${3 - deliveryCount === 1 ? 'delivery' : 'deliveries'} needed.`,
+        growthPrompt: deliveryCount === 0 ? 'be_first' : 'invite_neighbor',
+        nearbyAreas: nearbyPrefixes.length
+      };
+
+      cache.set(cacheKey, response, 300); // 5 min cache
+      return res.json(response);
+    }
+
+    // Calculate statistics
+    const prices = deliveries.map(d => parseFloat(d.pricePerGallon)).sort((a, b) => a - b);
+    const medianPrice = prices[Math.floor(prices.length / 2)];
+    const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length;
+
+    // IQR for typical range (only if enough data)
+    let typicalRange = null;
+    if (prices.length >= 5) {
+      const q1Idx = Math.floor(prices.length * 0.25);
+      const q3Idx = Math.floor(prices.length * 0.75);
+      typicalRange = {
+        low: prices[q1Idx],
+        high: prices[q3Idx]
+      };
+    }
+
+    // Calculate by bucket
+    const byBucket = {};
+    const buckets = ['small', 'medium', 'large', 'xlarge', 'bulk'];
+    for (const bucket of buckets) {
+      const bucketDeliveries = deliveries.filter(d => d.gallonsBucket === bucket);
+      if (bucketDeliveries.length > 0) {
+        const bucketPrices = bucketDeliveries.map(d => parseFloat(d.pricePerGallon)).sort((a, b) => a - b);
+        byBucket[bucket] = {
+          median: bucketPrices[Math.floor(bucketPrices.length / 2)],
+          count: bucketPrices.length
+        };
+      }
+    }
+
+    // User's bucket stats
+    let userBucketStats = null;
+    if (userBucket && byBucket[userBucket]) {
+      userBucketStats = {
+        median: byBucket[userBucket].median,
+        count: byBucket[userBucket].count,
+        hasSufficientData: byBucket[userBucket].count >= 3
+      };
+    }
+
+    // Calculate bucket spread
+    let bucketSpread = null;
+    if (byBucket.small && byBucket.bulk) {
+      const spread = byBucket.small.median - byBucket.bulk.median;
+      if (spread > 0) {
+        bucketSpread = {
+          smallVsBulk: spread,
+          insight: `Bulk orders save ~$${spread.toFixed(2)}/gal vs small orders`
+        };
+      }
+    }
+
+    // Calculate confidence (enhanced for distance-based)
+    const newestDelivery = deliveries[0];
+    const daysSinceNewest = Math.floor((new Date() - new Date(newestDelivery.createdAt)) / (1000 * 60 * 60 * 24));
+
+    const deliveryCountFactor = Math.min(deliveryCount / 10, 1.0);
+    const contributorCountFactor = Math.min(contributorCount / 5, 1.0);
+    const recencyFactor = daysSinceNewest < 14 ? 1.0 : daysSinceNewest < 30 ? 0.7 : 0.4;
+    // V18.6: Tighter radius = higher confidence
+    const radiusFactor = usedRadius <= 10 ? 1.0 : usedRadius <= 15 ? 0.9 : 0.8;
+
+    const confidenceScore = (deliveryCountFactor * 0.35) + (contributorCountFactor * 0.25) + (recencyFactor * 0.2) + (radiusFactor * 0.2);
+
+    let confidenceLevel, confidenceBadge;
+    // V18.6.1: Cap confidence at Medium when radius > 15mi (farther = fuzzier)
+    const maxConfidenceForRadius = usedRadius <= 15 ? 'high' : 'medium';
+
+    if (confidenceScore >= 0.8 && maxConfidenceForRadius === 'high') {
+      confidenceLevel = 'high';
+      confidenceBadge = '🟢';
+    } else if (confidenceScore >= 0.5 || maxConfidenceForRadius === 'medium') {
+      confidenceLevel = 'medium';
+      confidenceBadge = '🟠';
+    } else {
+      confidenceLevel = 'low';
+      confidenceBadge = '🟡';
+    }
+
+    const response = {
+      hasData: true,
+      zipCode,
+      radiusMiles: usedRadius,
+      confidence: {
+        level: confidenceLevel,
+        score: Math.round(confidenceScore * 100) / 100,
+        badge: confidenceBadge
+      },
+      period: {
+        start: monthsToInclude[monthsToInclude.length - 1],
+        end: monthsToInclude[0]
+      },
+      stats: {
+        medianPrice,
+        avgPrice: Math.round(avgPrice * 100) / 100,
+        typicalRange,
+        deliveryCount,
+        contributorCount
+      },
+      byBucket,
+      userBucket: userBucket || null,
+      userBucketStats,
+      bucketSpread,
+      lastUpdated: newestDelivery.createdAt,
+      nearbyAreas: nearbyPrefixes.length
+    };
+
+    // Add descriptive radius text
+    // V18.6.1: Language refined per GPT feedback - avoid "region" sounding too big
+    if (usedRadius <= 10) {
+      response.radiusDescription = 'Your immediate neighborhood';
+    } else if (usedRadius <= 15) {
+      response.radiusDescription = 'Your local area';
+    } else {
+      // 20mi max for benchmarks
+      response.radiusDescription = 'Wider local area';
+    }
+
+    // Add caveat for low confidence
+    if (confidenceLevel === 'low') {
+      response.caveat = 'Early signal - limited data';
+    }
+
+    cache.set(cacheKey, response, 300); // 5 min cache
+    logger.info(`[V18.6] Distance benchmark served: ZIP ${zipCode}, ${usedRadius}mi radius, ${deliveryCount} deliveries, ${confidenceLevel} confidence`);
+
+    res.json(response);
+
+  } catch (error) {
+    logger.error('[V18.6] Distance-based benchmark error:', error);
+    res.status(500).json({
+      hasData: false,
+      message: 'Failed to fetch community benchmark'
+    });
+  }
+});
+
+// GET /api/community/trend-v2/:zipCode - Distance-based trend for Buy Meter integration
+router.get('/trend-v2/:zipCode', [
+  param('zipCode').matches(/^\d{5}$/).withMessage('ZIP code must be 5 digits')
+], handleValidationErrors, async (req, res) => {
+  const logger = req.app.locals.logger;
+  const cache = req.app.locals.cache;
+
+  try {
+    const CommunityDelivery = getCommunityDeliveryModel();
+    if (!CommunityDelivery) {
+      return res.status(503).json({
+        hasTrend: false,
+        message: 'Community benchmarking is temporarily unavailable'
+      });
+    }
+
+    const { zipCode } = req.params;
+    const cacheKey = `trend_v2_${zipCode}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    // Check if ZIP is in supported region
+    if (!isInSupportedRegion(zipCode)) {
+      return res.json({
+        hasTrend: false,
+        zipCode,
+        confidence: 'unsupported',
+        signal: 'unsupported_region',
+        buyTimingImpact: {
+          direction: 'neutral',
+          weight: 0,
+          reason: 'Community data not available for this region'
+        }
+      });
+    }
+
+    const currentMonth = getCurrentMonth();
+    const previousMonth = getPreviousMonth();
+
+    // Progressive radius expansion
+    // V18.6.1: Trends allow 30mi (directional signals tolerate abstraction)
+    // Benchmarks capped at 20mi (exact prices need tighter locality)
+    const radiusTiers = [10, 15, 20, 30];
+    let currentDeliveries = [];
+    let previousDeliveries = [];
+    let usedRadius = 10;
+
+    for (const radius of radiusTiers) {
+      const nearbyPrefixes = findNearbyPrefixes(zipCode, radius).map(n => n.prefix);
+
+      if (nearbyPrefixes.length === 0) continue;
+
+      currentDeliveries = await CommunityDelivery.findAll({
+        where: {
+          zipPrefix: { [Op.in]: nearbyPrefixes },
+          deliveryMonth: currentMonth,
+          validationStatus: 'valid'
+        }
+      });
+
+      if (currentDeliveries.length >= 3) {
+        usedRadius = radius;
+
+        previousDeliveries = await CommunityDelivery.findAll({
+          where: {
+            zipPrefix: { [Op.in]: nearbyPrefixes },
+            deliveryMonth: previousMonth,
+            validationStatus: 'valid'
+          }
+        });
+        break;
+      }
+
+      usedRadius = radius;
+    }
+
+    const currentPrices = currentDeliveries.map(d => parseFloat(d.pricePerGallon)).sort((a, b) => a - b);
+    const previousPrices = previousDeliveries.map(d => parseFloat(d.pricePerGallon)).sort((a, b) => a - b);
+
+    // Need at least 3 in current month for any trend
+    if (currentPrices.length < 3) {
+      const response = {
+        hasTrend: false,
+        zipCode,
+        radiusMiles: usedRadius,
+        confidence: 'insufficient',
+        recentDeliveryCount: currentPrices.length,
+        signal: 'insufficient_data',
+        buyTimingImpact: {
+          direction: 'neutral',
+          weight: 0,
+          reason: 'Not enough data for trend'
+        }
+      };
+
+      if (currentPrices.length > 0) {
+        response.displayOnly = {
+          show: true,
+          message: `${currentPrices.length} neighbors paid ~$${currentPrices[Math.floor(currentPrices.length / 2)].toFixed(2)} this month`
+        };
+      }
+
+      cache.set(cacheKey, response, 300);
+      return res.json(response);
+    }
+
+    const currentMedian = currentPrices[Math.floor(currentPrices.length / 2)];
+
+    // Calculate trend if we have previous month data
+    let changePercent = null;
+    let previousMedian = null;
+    let signal = 'stable';
+    let hasEnoughHistory = false;
+
+    if (previousPrices.length >= 3) {
+      previousMedian = previousPrices[Math.floor(previousPrices.length / 2)];
+      changePercent = ((currentMedian - previousMedian) / previousMedian) * 100;
+      hasEnoughHistory = true;
+
+      if (changePercent <= -3) {
+        signal = 'prices_falling';
+      } else if (changePercent >= 3) {
+        signal = 'prices_rising';
+      }
+    }
+
+    // Determine confidence
+    const uniqueContributors = new Set(currentDeliveries.map(d => d.contributorHash)).size;
+    let confidence;
+    if (currentPrices.length >= 10 && uniqueContributors >= 5) {
+      confidence = 'high';
+    } else if (currentPrices.length >= 5 && uniqueContributors >= 3) {
+      confidence = 'medium';
+    } else {
+      confidence = 'low';
+    }
+
+    // Calculate Buy Meter impact
+    let buyTimingWeight = 0;
+    let buyTimingDirection = 'neutral';
+    let buyTimingReason = '';
+
+    if (confidence === 'high' && hasEnoughHistory) {
+      if (signal === 'prices_falling') {
+        buyTimingWeight = 0.15;
+        buyTimingDirection = 'positive';
+        buyTimingReason = `Community prices down ${Math.abs(changePercent).toFixed(0)}% this month`;
+      } else if (signal === 'prices_rising') {
+        buyTimingWeight = -0.15;
+        buyTimingDirection = 'negative';
+        buyTimingReason = `Community prices up ${changePercent.toFixed(0)}% this month`;
+      }
+    } else if (confidence === 'medium' && hasEnoughHistory) {
+      if (signal === 'prices_falling') {
+        buyTimingWeight = 0.10;
+        buyTimingDirection = 'positive';
+        buyTimingReason = `Community prices down ${Math.abs(changePercent).toFixed(0)}% this month`;
+      } else if (signal === 'prices_rising') {
+        buyTimingWeight = -0.10;
+        buyTimingDirection = 'negative';
+        buyTimingReason = `Community prices up ${changePercent.toFixed(0)}% this month`;
+      }
+    }
+
+    const response = {
+      hasTrend: true,
+      zipCode,
+      radiusMiles: usedRadius,
+      confidence,
+      currentMonthMedian: currentMedian,
+      previousMonthMedian: previousMedian,
+      changePercent: changePercent ? Math.round(changePercent * 10) / 10 : null,
+      recentDeliveryCount: currentPrices.length,
+      signal,
+      buyTimingImpact: {
+        direction: buyTimingDirection,
+        weight: buyTimingWeight,
+        reason: buyTimingReason || 'Stable community prices'
+      }
+    };
+
+    if (confidence === 'low') {
+      response.displayOnly = {
+        show: true,
+        message: `${currentPrices.length} neighbors paid ~$${currentMedian.toFixed(2)} this month`
+      };
+    }
+
+    // Add radius description
+    // V18.6.1: Language refined - trends can go to 30mi for directional signals
+    if (usedRadius <= 10) {
+      response.radiusDescription = 'Your immediate neighborhood';
+    } else if (usedRadius <= 15) {
+      response.radiusDescription = 'Your local area';
+    } else if (usedRadius <= 20) {
+      response.radiusDescription = 'Wider local area';
+    } else {
+      // 30mi for trends only
+      response.radiusDescription = 'Surrounding area';
+    }
+
+    cache.set(cacheKey, response, 300);
+    logger.info(`[V18.6] Distance trend served: ZIP ${zipCode}, ${usedRadius}mi radius, ${confidence} confidence, signal ${signal}`);
+
+    res.json(response);
+
+  } catch (error) {
+    logger.error('[V18.6] Distance-based trend error:', error);
+    res.status(500).json({
+      hasTrend: false,
+      message: 'Failed to fetch community trend'
     });
   }
 });
