@@ -648,6 +648,27 @@ router.post('/deliveries', [
       });
     }
 
+    // V19.0.5b: Also check for same price in same area (catches reinstalls with new hash)
+    // If exact same price+month+bucket already exists in this ZIP, likely same person
+    const existingAreaDelivery = await CommunityDelivery.findOne({
+      where: {
+        zipPrefix,
+        deliveryMonth,
+        pricePerGallon: roundedPrice,
+        gallonsBucket
+      }
+    });
+
+    if (existingAreaDelivery) {
+      logger.info(`[V19.0.5b] Area duplicate rejected: $${roundedPrice} for ${deliveryMonth} in ${zipPrefix} already exists`);
+      return res.status(409).json({
+        success: false,
+        status: 'duplicate',
+        reason: 'price_already_reported',
+        message: 'This price has already been reported in your area'
+      });
+    }
+
     // Validation: Check against market price if provided
     let validationStatus = 'valid';
     let rejectionReason = null;
@@ -1625,6 +1646,63 @@ router.get('/trend-v2/:zipCode', [
       hasTrend: false,
       message: 'Failed to fetch community trend'
     });
+  }
+});
+
+// ============================================================================
+// V19.0.5b: ADMIN - Deduplicate existing data (one-time cleanup)
+// ============================================================================
+
+router.post('/admin/deduplicate', async (req, res) => {
+  const logger = req.app.locals.logger;
+
+  try {
+    const CommunityDelivery = getCommunityDeliveryModel();
+    if (!CommunityDelivery) {
+      return res.status(503).json({ error: 'Service unavailable' });
+    }
+
+    // Find all deliveries grouped by zipPrefix + deliveryMonth + pricePerGallon + gallonsBucket
+    const allDeliveries = await CommunityDelivery.findAll({
+      order: [['createdAt', 'ASC']]  // Keep oldest, delete newer duplicates
+    });
+
+    const seen = new Map();  // key -> first delivery id
+    const toDelete = [];
+
+    for (const delivery of allDeliveries) {
+      const key = `${delivery.zipPrefix}|${delivery.deliveryMonth}|${delivery.pricePerGallon}|${delivery.gallonsBucket}`;
+
+      if (seen.has(key)) {
+        // This is a duplicate - mark for deletion
+        toDelete.push(delivery.id);
+      } else {
+        seen.set(key, delivery.id);
+      }
+    }
+
+    // Delete duplicates
+    if (toDelete.length > 0) {
+      await CommunityDelivery.destroy({
+        where: { id: { [Op.in]: toDelete } }
+      });
+    }
+
+    // Clear cache
+    const cache = req.app.locals.cache;
+    cache.flushAll();
+
+    logger.info(`[V19.0.5b] Deduplication complete: removed ${toDelete.length} duplicates`);
+
+    res.json({
+      success: true,
+      duplicatesRemoved: toDelete.length,
+      remainingDeliveries: allDeliveries.length - toDelete.length
+    });
+
+  } catch (error) {
+    logger.error('[V19.0.5b] Deduplication error:', error);
+    res.status(500).json({ error: 'Deduplication failed' });
   }
 });
 
