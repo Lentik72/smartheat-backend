@@ -1653,6 +1653,38 @@ router.get('/trend-v2/:zipCode', [
 // V19.0.5b: ADMIN - Deduplicate existing data (one-time cleanup)
 // ============================================================================
 
+// V19.0.5b: Debug - view all deliveries
+router.get('/admin/deliveries', async (req, res) => {
+  try {
+    const CommunityDelivery = getCommunityDeliveryModel();
+    if (!CommunityDelivery) {
+      return res.status(503).json({ error: 'Service unavailable' });
+    }
+
+    const deliveries = await CommunityDelivery.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 50
+    });
+
+    res.json({
+      count: deliveries.length,
+      deliveries: deliveries.map(d => ({
+        id: d.id,
+        zipPrefix: d.zipPrefix,
+        fullZipCode: d.fullZipCode,
+        pricePerGallon: d.pricePerGallon,
+        deliveryMonth: d.deliveryMonth,
+        gallonsBucket: d.gallonsBucket,
+        contributorHash: d.contributorHash ? d.contributorHash.substring(0, 8) + '...' : null,
+        validationStatus: d.validationStatus,
+        createdAt: d.createdAt
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/admin/deduplicate', async (req, res) => {
   const logger = req.app.locals.logger;
 
