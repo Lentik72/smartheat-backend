@@ -627,6 +627,27 @@ router.post('/deliveries', [
       });
     }
 
+    // V19.0.5: Duplicate detection - same user can't submit same delivery twice
+    // Match on: contributorHash + deliveryMonth + roundedPrice + gallonsBucket
+    const existingDelivery = await CommunityDelivery.findOne({
+      where: {
+        contributorHash,
+        deliveryMonth,
+        pricePerGallon: roundedPrice,
+        gallonsBucket
+      }
+    });
+
+    if (existingDelivery) {
+      logger.info(`[V19.0.5] Duplicate submission rejected: ${contributorHash.substring(0, 8)}... already submitted $${roundedPrice} for ${deliveryMonth}`);
+      return res.status(409).json({
+        success: false,
+        status: 'duplicate',
+        reason: 'already_submitted',
+        message: 'This delivery has already been shared'
+      });
+    }
+
     // Validation: Check against market price if provided
     let validationStatus = 'valid';
     let rejectionReason = null;
