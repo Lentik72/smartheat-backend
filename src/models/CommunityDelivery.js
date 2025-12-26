@@ -1,7 +1,12 @@
 // Community Delivery Model
 // V18.0: Community Benchmarking - Anonymous delivery price sharing
 // V18.6: Added fullZipCode for distance-based community grouping
+// V20.1: Added fuelType for propane/oil isolation
 const { DataTypes } = require('sequelize');
+
+// V20.1: Valid fuel types
+const FUEL_TYPES = ['heating_oil', 'propane'];
+const DEFAULT_FUEL_TYPE = 'heating_oil';
 
 let CommunityDelivery;
 
@@ -34,6 +39,13 @@ const initCommunityDeliveryModel = (sequelize) => {
         validate: {
           is: /^\d{5}$/
         }
+      },
+      // V20.1: Fuel type for propane/oil isolation
+      // Required for new submissions, defaults to heating_oil for existing data
+      fuelType: {
+        type: DataTypes.ENUM('heating_oil', 'propane'),
+        allowNull: false,
+        defaultValue: 'heating_oil'
       },
       // Rounded to nearest $0.05 for anonymization
       pricePerGallon: {
@@ -96,6 +108,8 @@ const initCommunityDeliveryModel = (sequelize) => {
         { fields: ['contributor_hash'] },
         // V18.6: Index for full ZIP queries
         { fields: ['full_zip_code'] },
+        // V20.1: Index for fuel type filtering
+        { fields: ['fuel_type'] },
         // Composite index for common queries
         {
           name: 'community_deliveries_benchmark_idx',
@@ -105,6 +119,11 @@ const initCommunityDeliveryModel = (sequelize) => {
         {
           name: 'community_deliveries_distance_idx',
           fields: ['full_zip_code', 'delivery_month', 'validation_status']
+        },
+        // V20.1: Composite index for fuel-filtered queries
+        {
+          name: 'community_deliveries_fuel_benchmark_idx',
+          fields: ['zip_prefix', 'fuel_type', 'delivery_month', 'validation_status']
         }
       ]
     });
@@ -162,5 +181,8 @@ module.exports = {
   roundPrice,
   getCurrentMonth,
   getPreviousMonth,
-  VALIDATION_THRESHOLDS
+  VALIDATION_THRESHOLDS,
+  // V20.1: Fuel type exports
+  FUEL_TYPES,
+  DEFAULT_FUEL_TYPE
 };

@@ -12,8 +12,13 @@ const {
   roundPrice,
   getCurrentMonth,
   getPreviousMonth,
-  VALIDATION_THRESHOLDS
+  VALIDATION_THRESHOLDS,
+  FUEL_TYPES,
+  DEFAULT_FUEL_TYPE
 } = require('../models/CommunityDelivery');
+
+// V20.1: 45-day freshness threshold for community data
+const FRESHNESS_THRESHOLD_DAYS = 45;
 const {
   findNearbyPrefixes,
   findNearbyPrefixesProgressive,
@@ -562,6 +567,7 @@ router.get('/activity', (req, res) => {
 
 // POST /api/community/deliveries - Submit anonymous delivery for community benchmarking
 // V18.6: Now accepts optional fullZipCode for distance-based community
+// V20.1: Now requires fuelType for propane/oil isolation
 router.post('/deliveries', [
   body('zipPrefix').matches(/^\d{3}$/).withMessage('ZIP prefix must be 3 digits'),
   body('fullZipCode').optional().matches(/^\d{5}$/).withMessage('Full ZIP code must be 5 digits'),
@@ -569,7 +575,9 @@ router.post('/deliveries', [
   body('deliveryMonth').matches(/^\d{4}-\d{2}$/).withMessage('Delivery month must be YYYY-MM format'),
   body('gallonsBucket').isIn(['small', 'medium', 'large', 'xlarge', 'bulk']).withMessage('Invalid gallons bucket'),
   body('marketPriceAtTime').optional().isFloat({ min: 1.00, max: 8.00 }),
-  body('contributorHash').isLength({ min: 64, max: 64 }).withMessage('Invalid contributor hash')
+  body('contributorHash').isLength({ min: 64, max: 64 }).withMessage('Invalid contributor hash'),
+  // V20.1: Fuel type is required for new submissions
+  body('fuelType').isIn(FUEL_TYPES).withMessage(`Fuel type must be one of: ${FUEL_TYPES.join(', ')}`)
 ], handleValidationErrors, async (req, res) => {
   const logger = req.app.locals.logger;
 
@@ -590,7 +598,8 @@ router.post('/deliveries', [
       deliveryMonth,
       gallonsBucket,
       marketPriceAtTime,
-      contributorHash
+      contributorHash,
+      fuelType  // V20.1: Required fuel type
     } = req.body;
 
     // Round price to nearest $0.05 for anonymization
@@ -628,18 +637,20 @@ router.post('/deliveries', [
     }
 
     // V19.0.5: Duplicate detection - same user can't submit same delivery twice
-    // Match on: contributorHash + deliveryMonth + roundedPrice + gallonsBucket
+    // V20.1: Now includes fuelType in duplicate check
+    // Match on: contributorHash + deliveryMonth + roundedPrice + gallonsBucket + fuelType
     const existingDelivery = await CommunityDelivery.findOne({
       where: {
         contributorHash,
         deliveryMonth,
         pricePerGallon: roundedPrice,
-        gallonsBucket
+        gallonsBucket,
+        fuelType  // V20.1: Fuel type must match
       }
     });
 
     if (existingDelivery) {
-      logger.info(`[V19.0.5] Duplicate submission rejected: ${contributorHash.substring(0, 8)}... already submitted $${roundedPrice} for ${deliveryMonth}`);
+      logger.info(`[V19.0.5] Duplicate submission rejected: ${contributorHash.substring(0, 8)}... already submitted $${roundedPrice} for ${deliveryMonth} (${fuelType})`);
       return res.status(409).json({
         success: false,
         status: 'duplicate',
@@ -649,18 +660,19 @@ router.post('/deliveries', [
     }
 
     // V19.0.5b: Also check for same price in same area (catches reinstalls with new hash)
-    // If exact same price+month+bucket already exists in this ZIP, likely same person
+    // V20.1: Now includes fuelType - same price+fuel in same ZIP is likely same person
     const existingAreaDelivery = await CommunityDelivery.findOne({
       where: {
         zipPrefix,
         deliveryMonth,
         pricePerGallon: roundedPrice,
-        gallonsBucket
+        gallonsBucket,
+        fuelType  // V20.1: Fuel type must match
       }
     });
 
     if (existingAreaDelivery) {
-      logger.info(`[V19.0.5b] Area duplicate rejected: $${roundedPrice} for ${deliveryMonth} in ${zipPrefix} already exists`);
+      logger.info(`[V19.0.5b] Area duplicate rejected: $${roundedPrice} ${fuelType} for ${deliveryMonth} in ${zipPrefix} already exists`);
       return res.status(409).json({
         success: false,
         status: 'duplicate',
@@ -695,9 +707,11 @@ router.post('/deliveries', [
     }
 
     // Calculate contributor weight (prevent one user from dominating)
+    // V20.1: Filter by fuelType
     const areaDeliveries = await CommunityDelivery.count({
       where: {
         zipPrefix,
+        fuelType,  // V20.1: Only count same fuel type
         deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
         validationStatus: 'valid'
       }
@@ -706,6 +720,7 @@ router.post('/deliveries', [
     const contributorDeliveries = await CommunityDelivery.count({
       where: {
         zipPrefix,
+        fuelType,  // V20.1: Only count same fuel type
         contributorHash,
         deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
         validationStatus: 'valid'
@@ -731,9 +746,11 @@ router.post('/deliveries', [
 
     // Create the delivery record
     // V18.6: Include fullZipCode for distance-based queries
+    // V20.1: Include fuelType for propane/oil isolation
     const delivery = await CommunityDelivery.create({
       zipPrefix,
       fullZipCode: fullZipCode || null,
+      fuelType,  // V20.1: Store fuel type
       pricePerGallon: roundedPrice,
       deliveryMonth,
       gallonsBucket,
@@ -745,9 +762,11 @@ router.post('/deliveries', [
     });
 
     // Get updated area stats
+    // V20.1: Filter by fuelType
     const updatedStats = await CommunityDelivery.count({
       where: {
         zipPrefix,
+        fuelType,  // V20.1: Only count same fuel type
         deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
         validationStatus: 'valid'
       }
@@ -756,6 +775,7 @@ router.post('/deliveries', [
     const uniqueContributors = await CommunityDelivery.count({
       where: {
         zipPrefix,
+        fuelType,  // V20.1: Only count same fuel type
         deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
         validationStatus: 'valid'
       },
@@ -766,7 +786,7 @@ router.post('/deliveries', [
     const thresholdMet = updatedStats >= 3 && uniqueContributors >= 2;
     const unlockedFeature = thresholdMet && areaDeliveries < 3;
 
-    logger.info(`[V18.0] Delivery submitted: ZIP ${zipPrefix}, $${roundedPrice}, bucket ${gallonsBucket}, status ${validationStatus}`);
+    logger.info(`[V20.1] Delivery submitted: ZIP ${zipPrefix}, $${roundedPrice}, ${fuelType}, bucket ${gallonsBucket}, status ${validationStatus}`);
 
     // Response based on validation status
     if (validationStatus === 'soft_excluded') {
@@ -803,10 +823,13 @@ router.post('/deliveries', [
 });
 
 // GET /api/community/benchmark/:zipPrefix - Get community benchmark for area
+// V20.1: Now requires fuelType query param for propane/oil isolation
 router.get('/benchmark/:zipPrefix', [
   param('zipPrefix').matches(/^\d{3}$/).withMessage('ZIP prefix must be 3 digits'),
   query('months').optional().isInt({ min: 1, max: 6 }).withMessage('Months must be 1-6'),
-  query('userBucket').optional().isIn(['small', 'medium', 'large', 'xlarge', 'bulk'])
+  query('userBucket').optional().isIn(['small', 'medium', 'large', 'xlarge', 'bulk']),
+  // V20.1: Fuel type filter (defaults to heating_oil for backwards compatibility)
+  query('fuelType').optional().isIn(FUEL_TYPES).withMessage(`Fuel type must be one of: ${FUEL_TYPES.join(', ')}`)
 ], handleValidationErrors, async (req, res) => {
   const logger = req.app.locals.logger;
   const cache = req.app.locals.cache;
@@ -823,9 +846,12 @@ router.get('/benchmark/:zipPrefix', [
     const { zipPrefix } = req.params;
     const months = parseInt(req.query.months) || 2;
     const userBucket = req.query.userBucket;
+    // V20.1: Default to heating_oil for backwards compatibility
+    const fuelType = req.query.fuelType || DEFAULT_FUEL_TYPE;
 
     // Check cache first
-    const cacheKey = `benchmark_${zipPrefix}_${months}_${userBucket || 'all'}`;
+    // V20.1: Include fuelType in cache key
+    const cacheKey = `benchmark_${zipPrefix}_${months}_${userBucket || 'all'}_${fuelType}`;
     const cached = cache.get(cacheKey);
     if (cached) {
       return res.json(cached);
@@ -840,9 +866,11 @@ router.get('/benchmark/:zipPrefix', [
     }
 
     // Get all valid deliveries in range
+    // V20.1: Filter by fuelType
     const deliveries = await CommunityDelivery.findAll({
       where: {
         zipPrefix,
+        fuelType,  // V20.1: Only include matching fuel type
         deliveryMonth: { [Op.in]: monthsToInclude },
         validationStatus: 'valid'
       },
@@ -854,11 +882,38 @@ router.get('/benchmark/:zipPrefix', [
     const contributorCount = contributors.size;
     const deliveryCount = deliveries.length;
 
+    // V20.1: Check 45-day freshness - if all data is stale, return hasData: false
+    let freshDeliveries = deliveries;
+    if (deliveryCount > 0) {
+      const freshnessThreshold = new Date();
+      freshnessThreshold.setDate(freshnessThreshold.getDate() - FRESHNESS_THRESHOLD_DAYS);
+      freshDeliveries = deliveries.filter(d => new Date(d.createdAt) > freshnessThreshold);
+
+      if (freshDeliveries.length === 0) {
+        const response = {
+          hasData: false,
+          zipPrefix,
+          fuelType,  // V20.1: Include fuel type
+          dataFreshness: 'stale',  // V20.1: Indicate data is stale
+          confidence: {
+            level: 'stale',
+            score: 0,
+            badge: '⚪'
+          },
+          message: 'Not enough recent local prices to compare',
+          growthPrompt: 'share_recent'
+        };
+        cache.set(cacheKey, response, 300);
+        return res.json(response);
+      }
+    }
+
     // Check thresholds
     if (deliveryCount < 3 || contributorCount < 2) {
       const response = {
         hasData: false,
         zipPrefix,
+        fuelType,  // V20.1: Include fuel type
         confidence: {
           level: 'insufficient',
           score: deliveryCount / 3 * 0.5 + contributorCount / 2 * 0.5,
@@ -958,6 +1013,7 @@ router.get('/benchmark/:zipPrefix', [
     const response = {
       hasData: true,
       zipPrefix,
+      fuelType,  // V20.1: Include fuel type
       confidence: {
         level: confidenceLevel,
         score: confidenceScore,
@@ -987,7 +1043,7 @@ router.get('/benchmark/:zipPrefix', [
     }
 
     cache.set(cacheKey, response, 300); // 5 min cache
-    logger.info(`[V18.0] Benchmark served: ZIP ${zipPrefix}, ${deliveryCount} deliveries, ${confidenceLevel} confidence`);
+    logger.info(`[V20.1] Benchmark served: ZIP ${zipPrefix}, ${fuelType}, ${deliveryCount} deliveries, ${confidenceLevel} confidence`);
 
     res.json(response);
 
@@ -1001,8 +1057,11 @@ router.get('/benchmark/:zipPrefix', [
 });
 
 // GET /api/community/trend/:zipPrefix - Get trend for Buy Meter integration
+// V20.1: Now requires fuelType query param for propane/oil isolation
 router.get('/trend/:zipPrefix', [
-  param('zipPrefix').matches(/^\d{3}$/).withMessage('ZIP prefix must be 3 digits')
+  param('zipPrefix').matches(/^\d{3}$/).withMessage('ZIP prefix must be 3 digits'),
+  // V20.1: Fuel type filter (defaults to heating_oil for backwards compatibility)
+  query('fuelType').optional().isIn(FUEL_TYPES).withMessage(`Fuel type must be one of: ${FUEL_TYPES.join(', ')}`)
 ], handleValidationErrors, async (req, res) => {
   const logger = req.app.locals.logger;
   const cache = req.app.locals.cache;
@@ -1017,7 +1076,11 @@ router.get('/trend/:zipPrefix', [
     }
 
     const { zipPrefix } = req.params;
-    const cacheKey = `trend_${zipPrefix}`;
+    // V20.1: Default to heating_oil for backwards compatibility
+    const fuelType = req.query.fuelType || DEFAULT_FUEL_TYPE;
+
+    // V20.1: Include fuelType in cache key
+    const cacheKey = `trend_${zipPrefix}_${fuelType}`;
     const cached = cache.get(cacheKey);
     if (cached) {
       return res.json(cached);
@@ -1027,18 +1090,22 @@ router.get('/trend/:zipPrefix', [
     const previousMonth = getPreviousMonth();
 
     // Get current month deliveries
+    // V20.1: Filter by fuelType
     const currentDeliveries = await CommunityDelivery.findAll({
       where: {
         zipPrefix,
+        fuelType,  // V20.1: Only include matching fuel type
         deliveryMonth: currentMonth,
         validationStatus: 'valid'
       }
     });
 
     // Get previous month deliveries
+    // V20.1: Filter by fuelType
     const previousDeliveries = await CommunityDelivery.findAll({
       where: {
         zipPrefix,
+        fuelType,  // V20.1: Only include matching fuel type
         deliveryMonth: previousMonth,
         validationStatus: 'valid'
       }
@@ -1052,6 +1119,7 @@ router.get('/trend/:zipPrefix', [
       const response = {
         hasTrend: false,
         zipPrefix,
+        fuelType,  // V20.1: Include fuel type
         confidence: 'insufficient',
         recentDeliveryCount: currentPrices.length,
         signal: 'insufficient_data',
@@ -1134,6 +1202,7 @@ router.get('/trend/:zipPrefix', [
     const response = {
       hasTrend: true,
       zipPrefix,
+      fuelType,  // V20.1: Include fuel type
       confidence,
       currentMonthMedian: currentMedian,
       previousMonthMedian: previousMedian,
@@ -1155,7 +1224,7 @@ router.get('/trend/:zipPrefix', [
     }
 
     cache.set(cacheKey, response, 300);
-    logger.info(`[V18.0] Trend served: ZIP ${zipPrefix}, ${confidence} confidence, signal ${signal}`);
+    logger.info(`[V20.1] Trend served: ZIP ${zipPrefix}, ${fuelType}, ${confidence} confidence, signal ${signal}`);
 
     res.json(response);
 
@@ -1174,10 +1243,13 @@ router.get('/trend/:zipPrefix', [
 // ============================================================================
 
 // GET /api/community/benchmark-v2/:zipCode - Distance-based community benchmark
+// V20.1: Now requires fuelType query param for propane/oil isolation
 router.get('/benchmark-v2/:zipCode', [
   param('zipCode').matches(/^\d{5}$/).withMessage('ZIP code must be 5 digits'),
   query('months').optional().isInt({ min: 1, max: 6 }).withMessage('Months must be 1-6'),
-  query('userBucket').optional().isIn(['small', 'medium', 'large', 'xlarge', 'bulk'])
+  query('userBucket').optional().isIn(['small', 'medium', 'large', 'xlarge', 'bulk']),
+  // V20.1: Fuel type filter (defaults to heating_oil for backwards compatibility)
+  query('fuelType').optional().isIn(FUEL_TYPES).withMessage(`Fuel type must be one of: ${FUEL_TYPES.join(', ')}`)
 ], handleValidationErrors, async (req, res) => {
   const logger = req.app.locals.logger;
   const cache = req.app.locals.cache;
@@ -1194,12 +1266,15 @@ router.get('/benchmark-v2/:zipCode', [
     const { zipCode } = req.params;
     const months = parseInt(req.query.months) || 2;
     const userBucket = req.query.userBucket;
+    // V20.1: Default to heating_oil for backwards compatibility
+    const fuelType = req.query.fuelType || DEFAULT_FUEL_TYPE;
 
     // Check if ZIP is in supported region
     if (!isInSupportedRegion(zipCode)) {
       return res.json({
         hasData: false,
         zipCode,
+        fuelType,  // V20.1: Include fuel type
         confidence: {
           level: 'unsupported',
           score: 0,
@@ -1211,7 +1286,8 @@ router.get('/benchmark-v2/:zipCode', [
     }
 
     // Check cache first
-    const cacheKey = `benchmark_v2_${zipCode}_${months}_${userBucket || 'all'}`;
+    // V20.1: Include fuelType in cache key
+    const cacheKey = `benchmark_v2_${zipCode}_${months}_${userBucket || 'all'}_${fuelType}`;
     const cached = cache.get(cacheKey);
     if (cached) {
       return res.json(cached);
@@ -1238,9 +1314,11 @@ router.get('/benchmark-v2/:zipCode', [
       if (nearbyPrefixes.length === 0) continue;
 
       // Query deliveries from all nearby prefixes
+      // V20.1: Filter by fuelType
       deliveries = await CommunityDelivery.findAll({
         where: {
           zipPrefix: { [Op.in]: nearbyPrefixes },
+          fuelType,  // V20.1: Only include matching fuel type
           deliveryMonth: { [Op.in]: monthsToInclude },
           validationStatus: 'valid'
         },
@@ -1266,11 +1344,40 @@ router.get('/benchmark-v2/:zipCode', [
     const contributorCount = contributors.size;
     const deliveryCount = deliveries.length;
 
+    // V20.1: Check 45-day freshness - if all data is stale, return hasData: false
+    let freshDeliveries = deliveries;
+    if (deliveryCount > 0) {
+      const freshnessThreshold = new Date();
+      freshnessThreshold.setDate(freshnessThreshold.getDate() - FRESHNESS_THRESHOLD_DAYS);
+      freshDeliveries = deliveries.filter(d => new Date(d.createdAt) > freshnessThreshold);
+
+      if (freshDeliveries.length === 0) {
+        const response = {
+          hasData: false,
+          zipCode,
+          fuelType,  // V20.1: Include fuel type
+          radiusMiles: usedRadius,
+          dataFreshness: 'stale',  // V20.1: Indicate data is stale
+          confidence: {
+            level: 'stale',
+            score: 0,
+            badge: '⚪'
+          },
+          message: 'Not enough recent local prices to compare',
+          growthPrompt: 'share_recent',
+          nearbyAreas: nearbyPrefixes.length
+        };
+        cache.set(cacheKey, response, 300);
+        return res.json(response);
+      }
+    }
+
     // Check thresholds
     if (deliveryCount < 3 || contributorCount < 2) {
       const response = {
         hasData: false,
         zipCode,
+        fuelType,  // V20.1: Include fuel type
         radiusMiles: usedRadius,
         confidence: {
           level: 'insufficient',
@@ -1377,6 +1484,7 @@ router.get('/benchmark-v2/:zipCode', [
     const response = {
       hasData: true,
       zipCode,
+      fuelType,  // V20.1: Include fuel type
       radiusMiles: usedRadius,
       confidence: {
         level: confidenceLevel,
@@ -1419,7 +1527,7 @@ router.get('/benchmark-v2/:zipCode', [
     }
 
     cache.set(cacheKey, response, 300); // 5 min cache
-    logger.info(`[V18.6] Distance benchmark served: ZIP ${zipCode}, ${usedRadius}mi radius, ${deliveryCount} deliveries, ${confidenceLevel} confidence`);
+    logger.info(`[V20.1] Distance benchmark served: ZIP ${zipCode}, ${fuelType}, ${usedRadius}mi radius, ${deliveryCount} deliveries, ${confidenceLevel} confidence`);
 
     res.json(response);
 
@@ -1433,8 +1541,11 @@ router.get('/benchmark-v2/:zipCode', [
 });
 
 // GET /api/community/trend-v2/:zipCode - Distance-based trend for Buy Meter integration
+// V20.1: Now requires fuelType query param for propane/oil isolation
 router.get('/trend-v2/:zipCode', [
-  param('zipCode').matches(/^\d{5}$/).withMessage('ZIP code must be 5 digits')
+  param('zipCode').matches(/^\d{5}$/).withMessage('ZIP code must be 5 digits'),
+  // V20.1: Fuel type filter (defaults to heating_oil for backwards compatibility)
+  query('fuelType').optional().isIn(FUEL_TYPES).withMessage(`Fuel type must be one of: ${FUEL_TYPES.join(', ')}`)
 ], handleValidationErrors, async (req, res) => {
   const logger = req.app.locals.logger;
   const cache = req.app.locals.cache;
@@ -1449,7 +1560,11 @@ router.get('/trend-v2/:zipCode', [
     }
 
     const { zipCode } = req.params;
-    const cacheKey = `trend_v2_${zipCode}`;
+    // V20.1: Default to heating_oil for backwards compatibility
+    const fuelType = req.query.fuelType || DEFAULT_FUEL_TYPE;
+
+    // V20.1: Include fuelType in cache key
+    const cacheKey = `trend_v2_${zipCode}_${fuelType}`;
     const cached = cache.get(cacheKey);
     if (cached) {
       return res.json(cached);
@@ -1460,6 +1575,7 @@ router.get('/trend-v2/:zipCode', [
       return res.json({
         hasTrend: false,
         zipCode,
+        fuelType,  // V20.1: Include fuel type
         confidence: 'unsupported',
         signal: 'unsupported_region',
         buyTimingImpact: {
@@ -1486,9 +1602,11 @@ router.get('/trend-v2/:zipCode', [
 
       if (nearbyPrefixes.length === 0) continue;
 
+      // V20.1: Filter by fuelType
       currentDeliveries = await CommunityDelivery.findAll({
         where: {
           zipPrefix: { [Op.in]: nearbyPrefixes },
+          fuelType,  // V20.1: Only include matching fuel type
           deliveryMonth: currentMonth,
           validationStatus: 'valid'
         }
@@ -1497,9 +1615,11 @@ router.get('/trend-v2/:zipCode', [
       if (currentDeliveries.length >= 3) {
         usedRadius = radius;
 
+        // V20.1: Filter by fuelType
         previousDeliveries = await CommunityDelivery.findAll({
           where: {
             zipPrefix: { [Op.in]: nearbyPrefixes },
+            fuelType,  // V20.1: Only include matching fuel type
             deliveryMonth: previousMonth,
             validationStatus: 'valid'
           }
@@ -1518,6 +1638,7 @@ router.get('/trend-v2/:zipCode', [
       const response = {
         hasTrend: false,
         zipCode,
+        fuelType,  // V20.1: Include fuel type
         radiusMiles: usedRadius,
         confidence: 'insufficient',
         recentDeliveryCount: currentPrices.length,
@@ -1601,6 +1722,7 @@ router.get('/trend-v2/:zipCode', [
     const response = {
       hasTrend: true,
       zipCode,
+      fuelType,  // V20.1: Include fuel type
       radiusMiles: usedRadius,
       confidence,
       currentMonthMedian: currentMedian,
@@ -1636,7 +1758,7 @@ router.get('/trend-v2/:zipCode', [
     }
 
     cache.set(cacheKey, response, 300);
-    logger.info(`[V18.6] Distance trend served: ZIP ${zipCode}, ${usedRadius}mi radius, ${confidence} confidence, signal ${signal}`);
+    logger.info(`[V20.1] Distance trend served: ZIP ${zipCode}, ${fuelType}, ${usedRadius}mi radius, ${confidence} confidence, signal ${signal}`);
 
     res.json(response);
 
