@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Seed Suppliers Database
- * V1.3.0: Populates the suppliers table with initial data
+ * V1.4.0: Populates the suppliers table with initial data
+ *         Updated: County-based matching, removed aggregators/co-ops
  *
  * Usage:
  *   node scripts/seed-suppliers.js
@@ -31,36 +32,6 @@ const SUPPLIERS = [
     serviceCounties: ["Westchester"],
     serviceAreaRadius: 20,
     notes: "Family owned since 1978",
-    verified: true,
-    source: "manual"
-  },
-  {
-    name: "Suburban Propane",
-    phone: "(914) 962-2727",
-    email: null,
-    website: "https://suburbanpropane.com",
-    addressLine1: "1 Waterfront Drive",
-    city: "Peekskill",
-    state: "NY",
-    postalCodesServed: ["10566", "10567", "10520", "10547", "10548", "10509", "10562", "10549", "10511", "10512"],
-    serviceCounties: ["Westchester", "Putnam"],
-    serviceAreaRadius: 30,
-    notes: null,
-    verified: true,
-    source: "manual"
-  },
-  {
-    name: "Ceci Brothers Oil",
-    phone: "(914) 962-4508",
-    email: null,
-    website: "https://cecioil.com",
-    addressLine1: "1500 Main Street",
-    city: "Peekskill",
-    state: "NY",
-    postalCodesServed: ["10566", "10567", "10520", "10547", "10548", "10509"],
-    serviceCounties: ["Westchester"],
-    serviceAreaRadius: 15,
-    notes: null,
     verified: true,
     source: "manual"
   },
@@ -125,36 +96,6 @@ const SUPPLIERS = [
     source: "manual"
   },
   {
-    name: "FuelSnap",
-    phone: "(888) 706-4556",
-    email: null,
-    website: "https://www.fuelsnap.com",
-    addressLine1: null,
-    city: null,
-    state: "NY",
-    postalCodesServed: ["10520", "10566", "10549", "10562", "10509", "10512", "10536", "10541", "10547", "10567", "10511", "10548"],
-    serviceCounties: ["Westchester", "Putnam"],
-    serviceAreaRadius: 50,
-    notes: "Online ordering platform",
-    verified: true,
-    source: "manual"
-  },
-  {
-    name: "Cash Heating Oil (COD Oil)",
-    phone: "(914) 939-4COD",
-    email: null,
-    website: "https://cashheatingoil.com",
-    addressLine1: null,
-    city: "Ossining",
-    state: "NY",
-    postalCodesServed: ["10562", "10566", "10520", "10549", "10509", "10512", "10536", "10541", "10547"],
-    serviceCounties: ["Westchester"],
-    serviceAreaRadius: 25,
-    notes: "COD delivery service",
-    verified: true,
-    source: "manual"
-  },
-  {
     name: "Town & Country Oil",
     phone: "(914) 962-0700",
     email: "info@townandcountryoil.com",
@@ -170,21 +111,6 @@ const SUPPLIERS = [
     source: "manual"
   },
   {
-    name: "Supreme Oil",
-    phone: "(914) 769-0900",
-    email: null,
-    website: "https://supremeoil.us",
-    addressLine1: null,
-    city: "Pleasantville",
-    state: "NY",
-    postalCodesServed: ["10570", "10549", "10562", "10591", "10510", "10536", "10514", "10533"],
-    serviceCounties: ["Westchester"],
-    serviceAreaRadius: 20,
-    notes: null,
-    verified: true,
-    source: "manual"
-  },
-  {
     name: "Putnam Oil",
     phone: "(845) 225-3900",
     email: null,
@@ -193,9 +119,9 @@ const SUPPLIERS = [
     city: "Carmel",
     state: "NY",
     postalCodesServed: ["10512", "10541", "10509", "10516", "10524", "10579", "10537"],
-    serviceCounties: ["Putnam"],
+    serviceCounties: ["Putnam", "Dutchess", "Westchester"],  // Updated: serves lower Dutchess & upper Westchester
     serviceAreaRadius: 20,
-    notes: null,
+    notes: "Serves Putnam, lower Dutchess, and upper Westchester counties",
     verified: true,
     source: "manual"
   },
@@ -211,21 +137,6 @@ const SUPPLIERS = [
     serviceCounties: ["Westchester"],
     serviceAreaRadius: 15,
     notes: null,
-    verified: true,
-    source: "manual"
-  },
-  {
-    name: "GetHomeHeat.com",
-    phone: "(888) 474-9327",
-    email: null,
-    website: "https://gethomeheat.com",
-    addressLine1: null,
-    city: null,
-    state: "NY",
-    postalCodesServed: ["10520", "10549", "10562", "10566", "10512", "10509", "10536", "10570", "10591", "10514"],
-    serviceCounties: ["Westchester", "Putnam"],
-    serviceAreaRadius: 40,
-    notes: "Online ordering",
     verified: true,
     source: "manual"
   },
@@ -290,21 +201,67 @@ const SUPPLIERS = [
     verified: true,
     source: "manual"
   },
+
+  // ============================================
+  // NEW COD SUPPLIERS (V1.4.0)
+  // ============================================
   {
-    name: "Alliance Express (HOP Energy)",
-    phone: "(800) 448-4328",
+    name: "Yorktown Fuel",
+    phone: "(914) 962-0005",
+    email: "office@yorktownfuel.com",
+    website: "https://www.yorktownfuel.com",
+    addressLine1: "1137 E Main St, Suite F",
+    city: "Shrub Oak",
+    state: "NY",
+    postalCodesServed: ["10588", "10598", "10547", "10567", "10535"],
+    serviceCounties: ["Westchester", "Putnam"],
+    serviceAreaRadius: 20,
+    notes: "Family owned, 24/7 service, COD",
+    verified: true,
+    source: "manual"
+  },
+  {
+    name: "County Energy Products",
+    phone: "(978) 256-5011",
     email: null,
-    website: "https://www.hopenergy.com",
+    website: "https://countyenergyproducts.com",
     addressLine1: null,
-    city: "Greenfield",
+    city: "Chelmsford",
     state: "MA",
-    postalCodesServed: [
-      "01301", "01340", "01344", "01346", "01360", "01367", "01370",
-      "01373", "01376", "01337", "01339", "01341"
-    ],
-    serviceCounties: ["Franklin"],
+    postalCodesServed: ["01824", "01826", "01850", "01851", "01852", "01876", "01821"],
+    serviceCounties: ["Middlesex"],
+    serviceAreaRadius: 25,
+    notes: "Serves Chelmsford and surrounding areas",
+    verified: true,
+    source: "manual"
+  },
+  {
+    name: "Emergency Services Fuel Corp",
+    phone: "(914) 762-5208",
+    email: "emergencyfuel@optonline.net",
+    website: null,
+    addressLine1: "380 Scarborough Rd",
+    city: "Briarcliff Manor",
+    state: "NY",
+    postalCodesServed: [],  // Uses county-based matching
+    serviceCounties: ["Westchester", "Putnam", "Rockland", "Orange"],
     serviceAreaRadius: 30,
-    notes: "Part of HOP Energy network",
+    notes: "COD delivery, A+ BBB rating, serves 60+ towns",
+    verified: true,
+    source: "manual"
+  },
+  {
+    name: "Economy Fuel (Peekskill)",
+    phone: "(914) 739-5590",
+    email: null,
+    website: "https://www.economyfuelny.com",
+    addressLine1: "500 Highland Ave",
+    city: "Peekskill",
+    state: "NY",
+    postalCodesServed: ["10566", "10567", "10520", "10547", "10548"],
+    serviceCounties: ["Westchester", "Putnam", "Dutchess"],
+    serviceAreaRadius: 30,
+    notes: "All deliveries C.O.D., family owned, serves northern Westchester and Dutchess",
     verified: true,
     source: "manual"
   }

@@ -93,6 +93,11 @@ const initSupplierModel = (sequelize) => {
           name: 'suppliers_postal_codes_gin',
           fields: ['postalCodesServed'],
           using: 'GIN'
+        },
+        {
+          name: 'suppliers_service_counties_gin',
+          fields: ['serviceCounties'],
+          using: 'GIN'
         }
       ]
     });

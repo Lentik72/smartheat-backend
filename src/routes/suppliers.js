@@ -1,11 +1,13 @@
 // Supplier Directory API Routes
 // V1.3.0: Dynamic supplier directory with signed responses
+// V1.4.0: County-based matching for better coverage
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const { getSupplierModel } = require('../models/Supplier');
 const { Op } = require('sequelize');
+const { getCountyForZip } = require('../data/zip-to-county');
 
 // Rate limiting specifically for supplier endpoint
 // More restrictive than global limit to prevent scraping
@@ -125,10 +127,48 @@ router.get('/', async (req, res) => {
       limit: maxLimit
     });
 
-    // If no exact ZIP match, try prefix match (same county area)
+    // Fallback chain: exact ZIP -> county match -> ZIP prefix
     let finalSuppliers = suppliers;
+    let matchType = 'zip';
+
+    // Step 2: If no exact ZIP match, try county-based match
     if (suppliers.length === 0) {
+      const userCounty = getCountyForZip(normalizedZip);
+
+      if (userCounty) {
+        logger?.info(`[Suppliers] No exact ZIP match for ${normalizedZip}, trying county: ${userCounty}`);
+
+        const countySuppliers = await Supplier.findAll({
+          where: {
+            active: true,
+            serviceCounties: {
+              [Op.contains]: [userCounty]
+            }
+          },
+          attributes: [
+            'id', 'name', 'phone', 'email', 'website',
+            'addressLine1', 'city', 'state',
+            'postalCodesServed', 'serviceAreaRadius', 'notes'
+          ],
+          order: [
+            ['verified', 'DESC'],
+            ['name', 'ASC']
+          ],
+          limit: maxLimit
+        });
+
+        if (countySuppliers.length > 0) {
+          finalSuppliers = countySuppliers;
+          matchType = 'county';
+          logger?.info(`[Suppliers] Found ${countySuppliers.length} suppliers for ${userCounty} County`);
+        }
+      }
+    }
+
+    // Step 3: If still no match, try ZIP prefix (last resort)
+    if (finalSuppliers.length === 0) {
       const zipPrefix = normalizedZip.substring(0, 3);
+      logger?.info(`[Suppliers] No county match, trying ZIP prefix: ${zipPrefix}xx`);
 
       // Raw query for JSONB array element prefix matching
       const sequelize = req.app.locals.sequelize;
@@ -151,6 +191,9 @@ router.get('/', async (req, res) => {
       });
 
       finalSuppliers = prefixSuppliers;
+      if (prefixSuppliers.length > 0) {
+        matchType = 'prefix';
+      }
     }
 
     // Build response payload
@@ -173,14 +216,16 @@ router.get('/', async (req, res) => {
         count: finalSuppliers.length,
         version: DIRECTORY_VERSION,
         generatedAt: new Date().toISOString(),
-        source: 'database'
+        source: 'database',
+        matchType: matchType  // 'zip', 'county', or 'prefix'
       }
     };
 
     // Sign the payload
     const signature = signPayload(payload);
 
-    logger?.info(`[Suppliers] Returned ${finalSuppliers.length} suppliers for ZIP ${normalizedZip}`);
+    const county = getCountyForZip(normalizedZip);
+    logger?.info(`[Suppliers] Returned ${finalSuppliers.length} suppliers for ZIP ${normalizedZip} (${county || 'unknown'} County) via ${matchType} match`);
 
     res.json({
       ...payload,
