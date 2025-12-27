@@ -1,9 +1,8 @@
 // src/routes/analytics.js - Privacy-Compliant Analytics & Insights
-// V1.4.0: Added coverage gap reporting with email alerts
+// V1.4.0: Added coverage gap reporting (check /api/analytics/coverage-gaps)
 const express = require('express');
 const { body, validationResult, param } = require('express-validator');
 const { v4: uuidv4 } = require('uuid');
-const nodemailer = require('nodemailer');
 const router = express.Router();
 
 // In-memory storage for aggregated analytics (privacy-compliant)
@@ -11,9 +10,8 @@ let regionalConsumption = new Map(); // zipCode prefix -> aggregated data
 let marketInsights = new Map(); // zipCode prefix -> insights
 let anonymousUsagePatterns = []; // Anonymous consumption patterns
 
-// V1.4.0: Coverage gap tracking (rate-limited alerts)
-let coverageGapReports = new Map(); // ZIP -> { count, lastAlerted }
-const COVERAGE_ALERT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+// V1.4.0: Coverage gap tracking
+let coverageGapReports = new Map(); // ZIP -> { count, firstReported, lastReported, county }
 
 // Validation middleware
 const validateZipCode = [param('zipCode').matches(/^\d{5}$/).withMessage('Invalid ZIP code format')];
@@ -565,7 +563,7 @@ try {
 /**
  * POST /api/analytics/coverage-gap
  * Report a coverage gap (no suppliers found for user's ZIP)
- * Rate-limited: only one alert per ZIP per 24 hours
+ * Tracked for admin review at GET /api/analytics/coverage-gaps
  */
 router.post('/coverage-gap', [
   body('zipCode').matches(/^\d{5}$/).withMessage('Invalid ZIP code format'),
@@ -576,46 +574,24 @@ router.post('/coverage-gap', [
     const logger = req.app.locals.logger;
     const county = getCountyForZip(zipCode) || 'Unknown';
 
-    // Check if we've already alerted for this ZIP recently
     const existing = coverageGapReports.get(zipCode);
-    const now = Date.now();
 
     if (existing) {
       existing.count++;
       existing.lastReported = new Date().toISOString();
-
-      // Check cooldown
-      if (now - existing.lastAlerted < COVERAGE_ALERT_COOLDOWN_MS) {
-        logger?.info(`[CoverageGap] ZIP ${zipCode} (${county} County) - already alerted, skipping email`);
-        return res.json({
-          received: true,
-          alerted: false,
-          reason: 'cooldown',
-          reportCount: existing.count
-        });
-      }
     } else {
       coverageGapReports.set(zipCode, {
         count: 1,
         firstReported: new Date().toISOString(),
         lastReported: new Date().toISOString(),
-        lastAlerted: 0,
         county
       });
     }
 
-    // Send email alert
-    const alertSent = await sendCoverageGapAlert(zipCode, county, coverageGapReports.get(zipCode).count, logger);
-
-    if (alertSent) {
-      coverageGapReports.get(zipCode).lastAlerted = now;
-    }
-
-    logger?.info(`[CoverageGap] ZIP ${zipCode} (${county} County) - report #${coverageGapReports.get(zipCode).count}, alert sent: ${alertSent}`);
+    logger?.info(`[CoverageGap] ZIP ${zipCode} (${county} County) - report #${coverageGapReports.get(zipCode).count}`);
 
     res.json({
       received: true,
-      alerted: alertSent,
       county,
       reportCount: coverageGapReports.get(zipCode).count
     });
@@ -653,56 +629,5 @@ router.get('/coverage-gaps', (req, res) => {
     gaps
   });
 });
-
-/**
- * Send coverage gap alert email
- */
-async function sendCoverageGapAlert(zipCode, county, reportCount, logger) {
-  // Check if email is configured
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  const adminEmail = process.env.ADMIN_EMAIL || 'tsoiradvisors@gmail.com';
-
-  if (!smtpUser || !smtpPass) {
-    logger?.warn('[CoverageGap] Email not configured (SMTP_USER/SMTP_PASS missing)');
-    return false;
-  }
-
-  try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: smtpUser,
-        pass: smtpPass
-      }
-    });
-
-    const subject = `[HomeHeat] Coverage Gap: ${county} County (ZIP ${zipCode})`;
-    const text = `A user in ZIP ${zipCode} (${county} County) viewed the supplier directory but found no suppliers.
-
-Report count for this ZIP: ${reportCount}
-Timestamp: ${new Date().toISOString()}
-
-Consider adding suppliers for this area.
-
----
-HomeHeat Coverage Gap Alert
-https://gethomeheat.com`;
-
-    await transporter.sendMail({
-      from: `"HomeHeat Alerts" <${smtpUser}>`,
-      to: adminEmail,
-      subject,
-      text
-    });
-
-    logger?.info(`[CoverageGap] Alert email sent to ${adminEmail} for ZIP ${zipCode}`);
-    return true;
-
-  } catch (error) {
-    logger?.error(`[CoverageGap] Failed to send email: ${error.message}`);
-    return false;
-  }
-}
 
 module.exports = router;
