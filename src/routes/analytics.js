@@ -661,7 +661,7 @@ async function sendCoverageGapAlert(zipCode, county, reportCount, logger) {
   // Check if email is configured
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
-  const adminEmail = process.env.ADMIN_EMAIL || 'ltsoir@gmail.com';
+  const adminEmail = process.env.ADMIN_EMAIL || 'tsoiradvisors@gmail.com';
 
   if (!smtpUser || !smtpPass) {
     logger?.warn('[CoverageGap] Email not configured (SMTP_USER/SMTP_PASS missing)');
