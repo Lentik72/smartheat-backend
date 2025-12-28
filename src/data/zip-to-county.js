@@ -361,6 +361,135 @@ const ZIP_TO_COUNTY = {
   "01453": "Middlesex", // Leominster (partial)
   "01463": "Middlesex", // Pepperell
   "01471": "Middlesex", // Westford
+
+  // ============================================
+  // NEW JERSEY - MORRIS COUNTY
+  // ============================================
+  "07801": "Morris", // Dover
+  "07803": "Morris", // Mine Hill
+  "07821": "Morris", // Andover
+  "07828": "Morris", // Budd Lake
+  "07834": "Morris", // Denville
+  "07836": "Morris", // Flanders
+  "07840": "Morris", // Hackettstown (partial)
+  "07842": "Morris", // Hibernia
+  "07845": "Morris", // Ironia
+  "07847": "Morris", // Kenvil
+  "07849": "Morris", // Lake Hopatcong
+  "07850": "Morris", // Landing
+  "07852": "Morris", // Ledgewood
+  "07853": "Morris", // Long Valley
+  "07856": "Morris", // Mount Arlington
+  "07857": "Morris", // Netcong
+  "07866": "Morris", // Rockaway
+  "07869": "Morris", // Randolph
+  "07870": "Morris", // Schooleys Mountain
+  "07876": "Morris", // Succasunna
+  "07878": "Morris", // Mount Tabor
+  "07885": "Morris", // Wharton
+  "07927": "Morris", // Cedar Knolls
+  "07928": "Morris", // Chatham
+  "07930": "Morris", // Chester
+  "07931": "Morris", // Far Hills (partial)
+  "07932": "Morris", // Florham Park
+  "07933": "Morris", // Gillette
+  "07935": "Morris", // Green Village
+  "07936": "Morris", // East Hanover
+  "07940": "Morris", // Madison
+  "07945": "Morris", // Mendham
+  "07946": "Morris", // Millington
+  "07950": "Morris", // Morris Plains
+  "07960": "Morris", // Morristown
+  "07961": "Morris", // Morristown
+  "07962": "Morris", // Morristown
+  "07963": "Morris", // Morristown
+  "07970": "Morris", // Mount Freedom
+  "07976": "Morris", // New Vernon
+  "07980": "Morris", // Stirling
+  "07981": "Morris", // Whippany
+  "07983": "Morris", // Brookside
+  "07834": "Morris", // Denville
+  // Mount Olive Township ZIPs
+  "07828": "Morris", // Budd Lake (Mount Olive)
+  "07836": "Morris", // Flanders (Mount Olive)
+
+  // ============================================
+  // NEW JERSEY - MERCER COUNTY
+  // ============================================
+  "08512": "Mercer", // Cranbury
+  "08520": "Mercer", // Hightstown
+  "08525": "Mercer", // Hopewell
+  "08530": "Mercer", // Lambertville (partial)
+  "08534": "Mercer", // Pennington
+  "08536": "Mercer", // Plainsboro
+  "08540": "Mercer", // Princeton
+  "08541": "Mercer", // Princeton
+  "08542": "Mercer", // Princeton
+  "08543": "Mercer", // Princeton
+  "08544": "Mercer", // Princeton
+  "08550": "Mercer", // Princeton Junction
+  "08560": "Mercer", // Titusville
+  "08601": "Mercer", // Trenton
+  "08602": "Mercer", // Trenton
+  "08603": "Mercer", // Trenton
+  "08604": "Mercer", // Trenton
+  "08605": "Mercer", // Trenton
+  "08606": "Mercer", // Trenton
+  "08607": "Mercer", // Trenton
+  "08608": "Mercer", // Trenton
+  "08609": "Mercer", // Trenton
+  "08610": "Mercer", // Hamilton
+  "08611": "Mercer", // Trenton
+  "08618": "Mercer", // Trenton
+  "08619": "Mercer", // Hamilton
+  "08620": "Mercer", // Hamilton
+  "08625": "Mercer", // Trenton
+  "08628": "Mercer", // Trenton
+  "08629": "Mercer", // Trenton
+  "08638": "Mercer", // Trenton
+  "08640": "Mercer", // Fort Dix (partial)
+  "08641": "Mercer", // Trenton
+  "08645": "Mercer", // Trenton
+  "08646": "Mercer", // Trenton
+  "08647": "Mercer", // Trenton
+  "08648": "Mercer", // Lawrence Township
+  "08650": "Mercer", // Trenton
+  "08666": "Mercer", // Trenton
+  "08690": "Mercer", // Hamilton
+  "08691": "Mercer", // Robbinsville
+  "08695": "Mercer", // Trenton
+
+  // ============================================
+  // NEW JERSEY - SUSSEX COUNTY
+  // ============================================
+  "07418": "Sussex", // Hamburg
+  "07419": "Sussex", // Hamburg
+  "07422": "Sussex", // Highland Lakes
+  "07428": "Sussex", // McAfee
+  "07435": "Sussex", // Newfoundland (partial)
+  "07439": "Sussex", // Ogdensburg
+  "07460": "Sussex", // Stockholm
+  "07461": "Sussex", // Sussex
+  "07462": "Sussex", // Vernon
+  "07821": "Sussex", // Andover
+  "07822": "Sussex", // Augusta
+  "07826": "Sussex", // Branchville
+  "07827": "Sussex", // Montague
+  "07838": "Sussex", // Great Meadows
+  "07839": "Sussex", // Greendell
+  "07843": "Sussex", // Hopatcong
+  "07846": "Sussex", // Johnsonburg
+  "07848": "Sussex", // Lafayette
+  "07851": "Sussex", // Layton
+  "07855": "Sussex", // Middleville
+  "07860": "Sussex", // Newton
+  "07871": "Sussex", // Sparta
+  "07874": "Sussex", // Stanhope
+  "07875": "Sussex", // Stillwater
+  "07877": "Sussex", // Swartswood
+  "07879": "Sussex", // Tranquility
+  "07881": "Sussex", // Wallpack Center
+  "07890": "Sussex", // Wantage
 };
 
 /**
@@ -411,7 +540,12 @@ function getStateForCounty(county) {
     "Franklin": "MA",
     "Hampshire": "MA",
     "Berkshire": "MA",
-    "Middlesex": "MA"
+    "Middlesex": "MA",
+    "Morris": "NJ",
+    "Mercer": "NJ",
+    "Sussex": "NJ",
+    "Passaic": "NJ",
+    "Bergen": "NJ"
   };
   return countyToState[county] || null;
 }

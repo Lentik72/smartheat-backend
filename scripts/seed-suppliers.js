@@ -264,6 +264,74 @@ const SUPPLIERS = [
     notes: "All deliveries C.O.D., family owned, serves northern Westchester and Dutchess",
     verified: true,
     source: "manual"
+  },
+
+  // ============================================
+  // NEW JERSEY - MORRIS COUNTY (Mount Olive area)
+  // ============================================
+  {
+    name: "AJ's Fuel",
+    phone: "(862) 803-9300",
+    email: "ajsfuel@yahoo.com",
+    website: "https://www.ajsfuelinc.com",
+    addressLine1: null,
+    city: "Budd Lake",
+    state: "NJ",
+    postalCodesServed: ["07828", "07834", "07836", "07840", "07850", "07852", "07857", "07869", "07876", "07878"],
+    serviceCounties: ["Morris", "Sussex"],
+    serviceAreaRadius: 25,
+    notes: "Family owned 50+ years, COD delivery, 24/7 live support",
+    verified: true,
+    source: "manual"
+  },
+  {
+    name: "Reis Fuel",
+    phone: "(973) 209-2667",
+    email: null,
+    website: "https://reisfuel.com",
+    addressLine1: null,
+    city: "Northern NJ",
+    state: "NJ",
+    postalCodesServed: [],
+    serviceCounties: ["Morris", "Sussex", "Passaic", "Bergen"],
+    serviceAreaRadius: 30,
+    notes: "No contracts, COD, 20+ years experience, 4500+ customers",
+    verified: true,
+    source: "manual"
+  },
+
+  // ============================================
+  // NEW JERSEY - MERCER COUNTY (Princeton area)
+  // ============================================
+  {
+    name: "Princeton Fuel Online",
+    phone: "(800) 253-9001",
+    email: "info@princetonfuel.com",
+    website: "https://www.princetonfuelonline.com",
+    addressLine1: null,
+    city: "Princeton",
+    state: "NJ",
+    postalCodesServed: ["08540", "08542", "08544", "08550", "08534", "08536", "08628", "08638", "08648"],
+    serviceCounties: ["Mercer"],
+    serviceAreaRadius: 25,
+    notes: "Since 1942, COD online ordering, 24hr emergency delivery",
+    verified: true,
+    source: "manual"
+  },
+  {
+    name: "Force Ten Heating",
+    phone: "(609) 426-4700",
+    email: "forceten@gmail.com",
+    website: "http://forceten.org",
+    addressLine1: null,
+    city: "Robbinsville",
+    state: "NJ",
+    postalCodesServed: ["08691", "08610", "08618", "08619", "08620", "08629", "08638", "08540", "08525", "08530"],
+    serviceCounties: ["Mercer"],
+    serviceAreaRadius: 20,
+    notes: "Since 1994, COD cash pricing, 6-day delivery all year",
+    verified: true,
+    source: "manual"
   }
 ];
 
