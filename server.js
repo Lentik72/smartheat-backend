@@ -189,6 +189,8 @@ if (API_KEYS.DATABASE_URL) {
         if (CommunityDelivery) {
           await CommunityDelivery.sync({ alter: true }); // alter: true for initial deployment
           logger.info('✅ CommunityDelivery model synced');
+        } else {
+          logger.error('❌ CommunityDelivery model failed to initialize');
         }
 
         logger.info('📊 Database ready for operations');
@@ -225,6 +227,12 @@ app.get('/health', async (req, res) => {
     }
   }
 
+  // V21.0: Check model availability
+  const { getCommunityDeliveryModel } = require('./src/models/CommunityDelivery');
+  const { getSupplierModel } = require('./src/models/Supplier');
+  const communityModelReady = !!getCommunityDeliveryModel();
+  const supplierModelReady = !!getSupplierModel();
+
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -234,7 +242,9 @@ app.get('/health', async (req, res) => {
       marketData: !!(API_KEYS.FRED || API_KEYS.ALPHA_VANTAGE),
       database: databaseStatus,
       authentication: !!API_KEYS.JWT_SECRET,
-      email: !!(API_KEYS.EMAIL_USER && API_KEYS.EMAIL_PASS)
+      email: !!(API_KEYS.EMAIL_USER && API_KEYS.EMAIL_PASS),
+      communityModel: communityModelReady,
+      supplierModel: supplierModelReady
     },
     system: {
       nodeVersion: process.version,
