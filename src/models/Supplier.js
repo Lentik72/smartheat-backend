@@ -91,12 +91,12 @@ const initSupplierModel = (sequelize) => {
         { fields: ['verified'] },
         {
           name: 'suppliers_postal_codes_gin',
-          fields: ['postalCodesServed'],
+          fields: ['postal_codes_served'],  // Use snake_case (underscored: true)
           using: 'GIN'
         },
         {
           name: 'suppliers_service_counties_gin',
-          fields: ['serviceCounties'],
+          fields: ['service_counties'],  // Use snake_case (underscored: true)
           using: 'GIN'
         }
       ]
