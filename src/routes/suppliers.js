@@ -127,41 +127,48 @@ router.get('/', async (req, res) => {
       limit: maxLimit
     });
 
-    // Fallback chain: exact ZIP -> county match -> ZIP prefix
-    let finalSuppliers = suppliers;
-    let matchType = 'zip';
+    // Matching strategy: ZIP matches + county matches (merged, deduplicated)
+    let finalSuppliers = [...suppliers];
+    let matchType = suppliers.length > 0 ? 'zip' : 'none';
+    const userCounty = getCountyForZip(normalizedZip);
 
-    // Step 2: If no exact ZIP match, try county-based match
-    if (suppliers.length === 0) {
-      const userCounty = getCountyForZip(normalizedZip);
+    // Step 2: ALWAYS include county-based matches (merge with ZIP matches)
+    if (userCounty) {
+      logger?.info(`[Suppliers] ZIP ${normalizedZip} is in ${userCounty} County, including county suppliers`);
 
-      if (userCounty) {
-        logger?.info(`[Suppliers] No exact ZIP match for ${normalizedZip}, trying county: ${userCounty}`);
+      const countySuppliers = await Supplier.findAll({
+        where: {
+          active: true,
+          serviceCounties: {
+            [Op.contains]: [userCounty]
+          }
+        },
+        attributes: [
+          'id', 'name', 'phone', 'email', 'website',
+          'addressLine1', 'city', 'state',
+          'postalCodesServed', 'serviceAreaRadius', 'notes'
+        ],
+        order: [
+          ['verified', 'DESC'],
+          ['name', 'ASC']
+        ],
+        limit: maxLimit
+      });
 
-        const countySuppliers = await Supplier.findAll({
-          where: {
-            active: true,
-            serviceCounties: {
-              [Op.contains]: [userCounty]
-            }
-          },
-          attributes: [
-            'id', 'name', 'phone', 'email', 'website',
-            'addressLine1', 'city', 'state',
-            'postalCodesServed', 'serviceAreaRadius', 'notes'
-          ],
-          order: [
-            ['verified', 'DESC'],
-            ['name', 'ASC']
-          ],
-          limit: maxLimit
-        });
+      if (countySuppliers.length > 0) {
+        // Merge and deduplicate by ID
+        const existingIds = new Set(finalSuppliers.map(s => s.id));
+        const newSuppliers = countySuppliers.filter(s => !existingIds.has(s.id));
+        finalSuppliers = [...finalSuppliers, ...newSuppliers];
 
-        if (countySuppliers.length > 0) {
-          finalSuppliers = countySuppliers;
+        // Update match type
+        if (suppliers.length > 0 && newSuppliers.length > 0) {
+          matchType = 'zip+county';
+        } else if (suppliers.length === 0) {
           matchType = 'county';
-          logger?.info(`[Suppliers] Found ${countySuppliers.length} suppliers for ${userCounty} County`);
         }
+
+        logger?.info(`[Suppliers] Added ${newSuppliers.length} county suppliers (total: ${finalSuppliers.length})`);
       }
     }
 

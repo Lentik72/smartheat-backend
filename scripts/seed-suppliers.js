@@ -142,28 +142,9 @@ const SUPPLIERS = [
   },
 
   // ============================================
-  // FRANKLIN COUNTY, MA (new coverage for Colrain user)
+  // FRANKLIN COUNTY, MA (COD-friendly dealers)
   // ============================================
-  {
-    name: "Sandri Energy",
-    phone: "(413) 772-2121",
-    email: null,
-    website: "https://sandri.com",
-    addressLine1: "400 Chapman Street",
-    city: "Greenfield",
-    state: "MA",
-    postalCodesServed: [
-      "01301", "01340", "01344", "01346", "01360", "01367", "01370",
-      "01373", "01376", "01378", "01379", "01337", "01339", "01341",
-      "01342", "01343", "01347", "01349", "01351", "01354", "01355",
-      "01364", "01366", "01368", "01375", "01380"
-    ],
-    serviceCounties: ["Franklin", "Hampshire"],
-    serviceAreaRadius: 30,
-    notes: "Oil, propane, and kerosene delivery",
-    verified: true,
-    source: "manual"
-  },
+  // NOTE: Sandri Energy removed - full-service company requiring account signup
   {
     name: "Surner Heating",
     phone: "(413) 773-5999",
