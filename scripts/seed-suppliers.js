@@ -12,7 +12,133 @@
 
 const { Sequelize } = require('sequelize');
 const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config();
+
+// ============================================
+// Helper: Expand ZIP coverage from county mapping
+// ============================================
+async function expandZipCoverage(sequelize) {
+  const mappingPath = path.join(__dirname, '../src/data/zip-to-county.js');
+
+  if (!fs.existsSync(mappingPath)) {
+    console.log('   ⚠️  zip-to-county.js not found, skipping expansion');
+    return;
+  }
+
+  const mappingFile = fs.readFileSync(mappingPath, 'utf8');
+
+  // Parse ZIPs by county
+  const countyZips = {};
+  const regex = /"(\d{5})":\s*"(\w+)"/g;
+  let match;
+  while ((match = regex.exec(mappingFile)) !== null) {
+    const [, zip, county] = match;
+    if (!countyZips[county]) countyZips[county] = [];
+    countyZips[county].push(zip);
+  }
+
+  // Get all active suppliers
+  const [suppliers] = await sequelize.query(`
+    SELECT id, name, postal_codes_served, service_counties
+    FROM suppliers WHERE active = true;
+  `);
+
+  let expanded = 0;
+  for (const s of suppliers) {
+    const counties = s.service_counties || [];
+    if (counties.length === 0) continue;
+
+    let allZips = [...(s.postal_codes_served || [])];
+    for (const county of counties) {
+      if (countyZips[county]) {
+        allZips = [...allZips, ...countyZips[county]];
+      }
+    }
+
+    const newZips = [...new Set(allZips)].sort();
+    const oldCount = (s.postal_codes_served || []).length;
+
+    if (newZips.length > oldCount) {
+      await sequelize.query(
+        `UPDATE suppliers SET postal_codes_served = :zips::jsonb WHERE id = :id`,
+        { replacements: { id: s.id, zips: JSON.stringify(newZips) } }
+      );
+      console.log(`   ✓ ${s.name}: ${oldCount} → ${newZips.length} ZIPs`);
+      expanded++;
+    }
+  }
+
+  console.log(`   Expanded ${expanded} suppliers`);
+}
+
+// ============================================
+// Helper: Generate bundled supplier file for iOS
+// ============================================
+async function generateBundledFile() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.log('   ⚠️  DATABASE_URL not set, skipping bundle generation');
+    return;
+  }
+
+  const sequelize = new Sequelize(databaseUrl, {
+    dialect: 'postgres',
+    logging: false,
+    dialectOptions: { ssl: { require: true, rejectUnauthorized: false } }
+  });
+
+  try {
+    const [suppliers] = await sequelize.query(`
+      SELECT id, name, phone, email, website,
+        address_line1 as "addressLine1", city, state,
+        postal_codes_served as "postalCodesServed",
+        service_area_radius as "serviceAreaRadius", notes
+      FROM suppliers WHERE active = true ORDER BY name;
+    `);
+
+    const formatted = suppliers.map(s => ({
+      id: s.id,
+      name: s.name,
+      phone: s.phone,
+      email: s.email || null,
+      website: s.website || null,
+      addressLine1: s.addressLine1 || null,
+      city: s.city,
+      state: s.state,
+      postalCodesServed: s.postalCodesServed || [],
+      serviceAreaRadius: s.serviceAreaRadius || 25,
+      notes: s.notes || null
+    }));
+
+    const jsonData = JSON.stringify(formatted, null, 2);
+
+    // Encrypt for iOS bundle
+    const PASSPHRASE = 'SmH3at10S_SuppL1er_D1r3ct0ryv14.4';
+    const key = crypto.createHash('sha256').update(PASSPHRASE).digest();
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    let encrypted = cipher.update(jsonData, 'utf8');
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    const tag = cipher.getAuthTag();
+    const combined = Buffer.concat([iv, encrypted, tag]);
+
+    // Save files
+    const iosPath = path.join(__dirname, '../../SmartHeatIOS/Resources/SuppliersDirectory.enc');
+    const jsonPath = '/tmp/SuppliersDirectory.json';
+
+    fs.writeFileSync(jsonPath, jsonData);
+    fs.writeFileSync(iosPath, combined);
+
+    console.log(`   ✓ Bundled ${suppliers.length} suppliers (${combined.length} bytes)`);
+    console.log(`   ✓ Saved to: SmartHeatIOS/Resources/SuppliersDirectory.enc`);
+
+  } finally {
+    await sequelize.close();
+  }
+}
 
 // Supplier data to seed
 // Format matches iOS DirectorySupplier model
@@ -444,7 +570,15 @@ async function seedSuppliers() {
       console.log(`   ${row.state}: ${row.count} suppliers`);
     });
 
+    // Auto-expand ZIP coverage based on serviceCounties
+    console.log('\n🗺️  Expanding ZIP coverage from county mapping...');
+    await expandZipCoverage(sequelize);
+
     await sequelize.close();
+
+    // Generate bundled file for iOS
+    console.log('\n📦 Generating bundled supplier file for iOS...');
+    await generateBundledFile();
 
   } catch (error) {
     console.error('❌ Seed failed:', error.message);
