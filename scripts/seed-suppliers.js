@@ -17,62 +17,6 @@ const path = require('path');
 const crypto = require('crypto');
 require('dotenv').config();
 
-// ============================================
-// Helper: Expand ZIP coverage from county mapping
-// ============================================
-async function expandZipCoverage(sequelize) {
-  const mappingPath = path.join(__dirname, '../src/data/zip-to-county.js');
-
-  if (!fs.existsSync(mappingPath)) {
-    console.log('   ⚠️  zip-to-county.js not found, skipping expansion');
-    return;
-  }
-
-  const mappingFile = fs.readFileSync(mappingPath, 'utf8');
-
-  // Parse ZIPs by county
-  const countyZips = {};
-  const regex = /"(\d{5})":\s*"(\w+)"/g;
-  let match;
-  while ((match = regex.exec(mappingFile)) !== null) {
-    const [, zip, county] = match;
-    if (!countyZips[county]) countyZips[county] = [];
-    countyZips[county].push(zip);
-  }
-
-  // Get all active suppliers
-  const [suppliers] = await sequelize.query(`
-    SELECT id, name, postal_codes_served, service_counties
-    FROM suppliers WHERE active = true;
-  `);
-
-  let expanded = 0;
-  for (const s of suppliers) {
-    const counties = s.service_counties || [];
-    if (counties.length === 0) continue;
-
-    let allZips = [...(s.postal_codes_served || [])];
-    for (const county of counties) {
-      if (countyZips[county]) {
-        allZips = [...allZips, ...countyZips[county]];
-      }
-    }
-
-    const newZips = [...new Set(allZips)].sort();
-    const oldCount = (s.postal_codes_served || []).length;
-
-    if (newZips.length > oldCount) {
-      await sequelize.query(
-        `UPDATE suppliers SET postal_codes_served = :zips::jsonb WHERE id = :id`,
-        { replacements: { id: s.id, zips: JSON.stringify(newZips) } }
-      );
-      console.log(`   ✓ ${s.name}: ${oldCount} → ${newZips.length} ZIPs`);
-      expanded++;
-    }
-  }
-
-  console.log(`   Expanded ${expanded} suppliers`);
-}
 
 // ============================================
 // Helper: Generate bundled supplier file for iOS
@@ -569,10 +513,6 @@ async function seedSuppliers() {
     coverage.forEach(row => {
       console.log(`   ${row.state}: ${row.count} suppliers`);
     });
-
-    // Auto-expand ZIP coverage based on serviceCounties
-    console.log('\n🗺️  Expanding ZIP coverage from county mapping...');
-    await expandZipCoverage(sequelize);
 
     await sequelize.close();
 
