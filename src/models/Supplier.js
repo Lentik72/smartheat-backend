@@ -1,5 +1,5 @@
 // Supplier Directory Model
-// V1.3.0: Dynamic supplier directory with signed responses
+// V1.4.0: Added serviceCities, lat, lng for unified matching
 const { DataTypes } = require('sequelize');
 
 let Supplier;
@@ -57,8 +57,23 @@ const initSupplierModel = (sequelize) => {
         defaultValue: [],
         allowNull: true
       },
+      // Array of cities this supplier serves (for city matching)
+      serviceCities: {
+        type: DataTypes.JSONB,
+        defaultValue: [],
+        allowNull: true
+      },
       serviceAreaRadius: {
         type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      // Coordinates for radius matching (backend only)
+      lat: {
+        type: DataTypes.DECIMAL(10, 7),
+        allowNull: true
+      },
+      lng: {
+        type: DataTypes.DECIMAL(10, 7),
         allowNull: true
       },
       notes: {
@@ -97,6 +112,11 @@ const initSupplierModel = (sequelize) => {
         {
           name: 'suppliers_service_counties_gin',
           fields: ['service_counties'],  // Use snake_case (underscored: true)
+          using: 'GIN'
+        },
+        {
+          name: 'suppliers_service_cities_gin',
+          fields: ['service_cities'],  // Use snake_case (underscored: true)
           using: 'GIN'
         }
       ]

@@ -1,13 +1,14 @@
 // Supplier Directory API Routes
 // V1.3.0: Dynamic supplier directory with signed responses
 // V1.4.0: County-based matching for better coverage
+// V1.5.0: Unified matching with ZIP → City → County → Radius + ranking
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const { getSupplierModel } = require('../models/Supplier');
 const { Op } = require('sequelize');
-const { getCountyForZip } = require('../data/zip-to-county');
+const { findSuppliersForZip, getZipInfo } = require('../services/supplierMatcher');
 
 // Rate limiting specifically for supplier endpoint
 // More restrictive than global limit to prevent scraping
@@ -106,106 +107,46 @@ router.get('/', async (req, res) => {
       return res.json({ ...payload, signature });
     }
 
-    // Find suppliers serving this ZIP code
-    // PostgreSQL JSONB containment query
-    const suppliers = await Supplier.findAll({
-      where: {
-        active: true,
-        postalCodesServed: {
-          [Op.contains]: [normalizedZip]
-        }
-      },
+    // Get all active suppliers for unified matching
+    const allSuppliers = await Supplier.findAll({
+      where: { active: true },
       attributes: [
         'id', 'name', 'phone', 'email', 'website',
         'addressLine1', 'city', 'state',
-        'postalCodesServed', 'serviceAreaRadius', 'notes'
-      ],
-      order: [
-        ['verified', 'DESC'],
-        ['name', 'ASC']
-      ],
-      limit: maxLimit
+        'postalCodesServed', 'serviceCities', 'serviceCounties',
+        'serviceAreaRadius', 'lat', 'lng', 'notes', 'verified'
+      ]
     });
 
-    // Matching strategy: ZIP matches + county matches (merged, deduplicated)
-    let finalSuppliers = [...suppliers];
-    let matchType = suppliers.length > 0 ? 'zip' : 'none';
-    const userCounty = getCountyForZip(normalizedZip);
+    // Use unified matching with ranking (backend includes radius)
+    const { suppliers: matchedSuppliers, gapType, userInfo } = findSuppliersForZip(
+      normalizedZip,
+      allSuppliers.map(s => s.toJSON()),
+      { includeRadius: true }
+    );
 
-    // Step 2: ALWAYS include county-based matches (merge with ZIP matches)
-    if (userCounty) {
-      logger?.info(`[Suppliers] ZIP ${normalizedZip} is in ${userCounty} County, including county suppliers`);
-
-      const countySuppliers = await Supplier.findAll({
-        where: {
-          active: true,
-          serviceCounties: {
-            [Op.contains]: [userCounty]
-          }
-        },
-        attributes: [
-          'id', 'name', 'phone', 'email', 'website',
-          'addressLine1', 'city', 'state',
-          'postalCodesServed', 'serviceAreaRadius', 'notes'
-        ],
-        order: [
-          ['verified', 'DESC'],
-          ['name', 'ASC']
-        ],
-        limit: maxLimit
+    // Log gap detection for future enrichment
+    if (gapType) {
+      logger?.warn(`[Suppliers] Gap detected for ZIP ${normalizedZip}: ${gapType}`, {
+        zip: normalizedZip,
+        county: userInfo?.county,
+        city: userInfo?.city,
+        gapType,
+        resultCount: matchedSuppliers.length
       });
-
-      if (countySuppliers.length > 0) {
-        // Merge and deduplicate by ID
-        const existingIds = new Set(finalSuppliers.map(s => s.id));
-        const newSuppliers = countySuppliers.filter(s => !existingIds.has(s.id));
-        finalSuppliers = [...finalSuppliers, ...newSuppliers];
-
-        // Update match type
-        if (suppliers.length > 0 && newSuppliers.length > 0) {
-          matchType = 'zip+county';
-        } else if (suppliers.length === 0) {
-          matchType = 'county';
-        }
-
-        logger?.info(`[Suppliers] Added ${newSuppliers.length} county suppliers (total: ${finalSuppliers.length})`);
-      }
     }
 
-    // Step 3: If still no match, try ZIP prefix (last resort)
-    if (finalSuppliers.length === 0) {
-      const zipPrefix = normalizedZip.substring(0, 3);
-      logger?.info(`[Suppliers] No county match, trying ZIP prefix: ${zipPrefix}xx`);
+    // Limit results
+    const limitedSuppliers = matchedSuppliers.slice(0, maxLimit);
 
-      // Raw query for JSONB array element prefix matching
-      const sequelize = req.app.locals.sequelize;
-      const prefixSuppliers = await sequelize.query(`
-        SELECT id, name, phone, email, website,
-               address_line1 as "addressLine1", city, state,
-               postal_codes_served as "postalCodesServed",
-               service_area_radius as "serviceAreaRadius", notes
-        FROM suppliers
-        WHERE active = true
-          AND EXISTS (
-            SELECT 1 FROM jsonb_array_elements_text(postal_codes_served) AS zip
-            WHERE zip LIKE :prefix
-          )
-        ORDER BY verified DESC, name ASC
-        LIMIT :limit
-      `, {
-        replacements: { prefix: `${zipPrefix}%`, limit: maxLimit },
-        type: sequelize.QueryTypes.SELECT
-      });
-
-      finalSuppliers = prefixSuppliers;
-      if (prefixSuppliers.length > 0) {
-        matchType = 'prefix';
-      }
-    }
+    // Determine primary match type from top result
+    const primaryMatchType = limitedSuppliers.length > 0
+      ? limitedSuppliers[0].matchType
+      : 'none';
 
     // Build response payload
     const payload = {
-      data: finalSuppliers.map(s => ({
+      data: limitedSuppliers.map(s => ({
         id: s.id,
         name: s.name,
         phone: s.phone,
@@ -215,24 +156,28 @@ router.get('/', async (req, res) => {
         city: s.city,
         state: s.state,
         postalCodesServed: s.postalCodesServed || [],
+        serviceCities: s.serviceCities || [],
+        serviceCounties: s.serviceCounties || [],
         serviceAreaRadius: s.serviceAreaRadius,
         notes: s.notes
       })),
       meta: {
         zip: normalizedZip,
-        count: finalSuppliers.length,
+        count: limitedSuppliers.length,
         version: DIRECTORY_VERSION,
         generatedAt: new Date().toISOString(),
         source: 'database',
-        matchType: matchType  // 'zip', 'county', or 'prefix'
+        matchType: primaryMatchType,
+        userCity: userInfo?.city,
+        userCounty: userInfo?.county,
+        gapType: gapType  // For debugging/admin
       }
     };
 
     // Sign the payload
     const signature = signPayload(payload);
 
-    const county = getCountyForZip(normalizedZip);
-    logger?.info(`[Suppliers] Returned ${finalSuppliers.length} suppliers for ZIP ${normalizedZip} (${county || 'unknown'} County) via ${matchType} match`);
+    logger?.info(`[Suppliers] Returned ${limitedSuppliers.length} suppliers for ZIP ${normalizedZip} (${userInfo?.county || 'unknown'} County) via ${primaryMatchType} match`);
 
     res.json({
       ...payload,

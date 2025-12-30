@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
  * generate-bundled-suppliers.js
+ * V2.0.0: Unified matching - generates both suppliers AND ZIP database
  *
- * Generates the encrypted SuppliersDirectory.enc file for iOS app bundling.
- * Run this script whenever suppliers are added/removed/updated in the database.
+ * Generates encrypted files for iOS app bundling:
+ * 1. SuppliersDirectory.enc - suppliers with serviceCities/serviceCounties
+ * 2. ZipDatabase.enc - ZIP → city/county/state mapping
  *
  * Usage:
  *   node scripts/generate-bundled-suppliers.js
@@ -13,7 +15,9 @@
  *
  * Output:
  *   - /tmp/SuppliersDirectory.json (plain JSON for reference)
+ *   - /tmp/ZipDatabase.json (plain JSON for reference)
  *   - SmartHeatIOS/Resources/SuppliersDirectory.enc (encrypted for iOS bundle)
+ *   - SmartHeatIOS/Resources/ZipDatabase.enc (encrypted for iOS bundle)
  */
 
 const { Sequelize } = require('sequelize');
@@ -27,7 +31,29 @@ const ENCRYPTION_PASSPHRASE = 'SmH3at10S_SuppL1er_D1r3ct0ryv14.4';
 
 // Output paths
 const IOS_RESOURCES_PATH = path.join(__dirname, '../../SmartHeatIOS/Resources/SuppliersDirectory.enc');
+const IOS_ZIPDB_PATH = path.join(__dirname, '../../SmartHeatIOS/Resources/ZipDatabase.enc');
 const JSON_REFERENCE_PATH = '/tmp/SuppliersDirectory.json';
+const ZIPDB_REFERENCE_PATH = '/tmp/ZipDatabase.json';
+
+// Load ZIP database from backend
+const zipDatabase = require('../src/data/zip-database.json');
+
+/**
+ * Encrypt data using AES-256-GCM (matching iOS CryptoKit)
+ */
+function encryptData(jsonData) {
+  const key = crypto.createHash('sha256').update(ENCRYPTION_PASSPHRASE).digest();
+  const iv = crypto.randomBytes(12); // 12-byte nonce for GCM
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+
+  let encrypted = cipher.update(jsonData, 'utf8');
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  const tag = cipher.getAuthTag();
+
+  // Combined format: nonce (12) + ciphertext + tag (16)
+  // This matches CryptoKit's AES.GCM.SealedBox.combined format
+  return Buffer.concat([iv, encrypted, tag]);
+}
 
 async function main() {
   console.log('=== Generate Bundled Suppliers ===\n');
@@ -56,7 +82,7 @@ async function main() {
     await sequelize.authenticate();
     console.log('Connected to database');
 
-    // Fetch active suppliers
+    // Fetch active suppliers (with new fields for unified matching)
     const [suppliers] = await sequelize.query(`
       SELECT
         id,
@@ -68,6 +94,8 @@ async function main() {
         city,
         state,
         postal_codes_served as "postalCodesServed",
+        service_cities as "serviceCities",
+        service_counties as "serviceCounties",
         service_area_radius as "serviceAreaRadius",
         notes
       FROM suppliers
@@ -82,7 +110,7 @@ async function main() {
       process.exit(1);
     }
 
-    // Transform to DirectorySupplier format (matching iOS model)
+    // Transform to DirectorySupplier format (matching iOS model with unified matching fields)
     const formatted = suppliers.map(s => ({
       id: s.id,
       name: s.name,
@@ -93,29 +121,23 @@ async function main() {
       city: s.city,
       state: s.state,
       postalCodesServed: s.postalCodesServed || [],
+      serviceCities: s.serviceCities || [],
+      serviceCounties: s.serviceCounties || [],
       serviceAreaRadius: s.serviceAreaRadius || 25,
       notes: s.notes || null
     }));
 
-    // Generate JSON
+    // =====================
+    // 1. SUPPLIERS DIRECTORY
+    // =====================
     const jsonData = JSON.stringify(formatted, null, 2);
 
     // Save plain JSON for reference
     fs.writeFileSync(JSON_REFERENCE_PATH, jsonData);
     console.log(`Saved ${JSON_REFERENCE_PATH} (${jsonData.length} bytes)`);
 
-    // Encrypt using AES-256-GCM (matching iOS CryptoKit implementation)
-    const key = crypto.createHash('sha256').update(ENCRYPTION_PASSPHRASE).digest();
-    const iv = crypto.randomBytes(12); // 12-byte nonce for GCM
-    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-
-    let encrypted = cipher.update(jsonData, 'utf8');
-    encrypted = Buffer.concat([encrypted, cipher.final()]);
-    const tag = cipher.getAuthTag();
-
-    // Combined format: nonce (12) + ciphertext + tag (16)
-    // This matches CryptoKit's AES.GCM.SealedBox.combined format
-    const combined = Buffer.concat([iv, encrypted, tag]);
+    // Encrypt suppliers
+    const suppliersEncrypted = encryptData(jsonData);
 
     // Ensure directory exists
     const outputDir = path.dirname(IOS_RESOURCES_PATH);
@@ -123,25 +145,56 @@ async function main() {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    // Save encrypted file
-    fs.writeFileSync(IOS_RESOURCES_PATH, combined);
-    console.log(`Saved ${IOS_RESOURCES_PATH} (${combined.length} bytes)`);
+    // Save encrypted suppliers file
+    fs.writeFileSync(IOS_RESOURCES_PATH, suppliersEncrypted);
+    console.log(`Saved ${IOS_RESOURCES_PATH} (${suppliersEncrypted.length} bytes)`);
+
+    // =====================
+    // 2. ZIP DATABASE
+    // =====================
+    const zipDbJson = JSON.stringify(zipDatabase, null, 2);
+    const zipCount = Object.keys(zipDatabase).length;
+
+    // Save plain JSON for reference
+    fs.writeFileSync(ZIPDB_REFERENCE_PATH, zipDbJson);
+    console.log(`Saved ${ZIPDB_REFERENCE_PATH} (${zipDbJson.length} bytes, ${zipCount} ZIPs)`);
+
+    // Encrypt ZIP database
+    const zipDbEncrypted = encryptData(zipDbJson);
+
+    // Save encrypted ZIP database file
+    fs.writeFileSync(IOS_ZIPDB_PATH, zipDbEncrypted);
+    console.log(`Saved ${IOS_ZIPDB_PATH} (${zipDbEncrypted.length} bytes)`);
 
     // Print summary
     console.log('\n=== Suppliers in Bundle ===');
     formatted.forEach(s => {
       const zips = s.postalCodesServed.length;
-      console.log(`  ${s.name} (${s.city}, ${s.state}) - ${zips} ZIPs`);
+      const cities = s.serviceCities?.length || 0;
+      const counties = s.serviceCounties?.length || 0;
+      console.log(`  ${s.name} (${s.city}, ${s.state}) - ${zips} ZIPs, ${cities} cities, ${counties} counties`);
     });
 
-    console.log('\n=== Summary ===');
-    console.log(`Total suppliers: ${formatted.length}`);
-    console.log(`States: ${[...new Set(formatted.map(s => s.state))].join(', ')}`);
-    console.log(`JSON size: ${jsonData.length} bytes`);
-    console.log(`Encrypted size: ${combined.length} bytes`);
+    // Count unique counties in ZIP database
+    const uniqueCounties = [...new Set(Object.values(zipDatabase).map(z => z.county))];
+    const uniqueStates = [...new Set(Object.values(zipDatabase).map(z => z.state))];
 
-    console.log('\n SUCCESS: Bundled supplier file updated');
-    console.log('Next: Rebuild iOS app to include new bundle');
+    console.log('\n=== ZIP Database ===');
+    console.log(`Total ZIPs: ${zipCount}`);
+    console.log(`Counties: ${uniqueCounties.length} (${uniqueCounties.slice(0, 5).join(', ')}...)`);
+    console.log(`States: ${uniqueStates.join(', ')}`);
+
+    console.log('\n=== Summary ===');
+    console.log(`Suppliers: ${formatted.length}`);
+    console.log(`ZIP codes: ${zipCount}`);
+    console.log(`Suppliers encrypted: ${suppliersEncrypted.length} bytes`);
+    console.log(`ZIP DB encrypted: ${zipDbEncrypted.length} bytes`);
+
+    console.log('\n SUCCESS: Bundled files updated');
+    console.log('Files generated:');
+    console.log(`  - ${IOS_RESOURCES_PATH}`);
+    console.log(`  - ${IOS_ZIPDB_PATH}`);
+    console.log('\nNext: Rebuild iOS app to include new bundles');
 
   } catch (error) {
     console.error('ERROR:', error.message);
