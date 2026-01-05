@@ -2554,6 +2554,366 @@
     "county": "Middlesex",
     "state": "MA"
   },
+  "06468": {
+    "city": "Monroe",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06470": {
+    "city": "Newtown",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06482": {
+    "city": "Sandy Hook",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06484": {
+    "city": "Shelton",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06601": {
+    "city": "Bridgeport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06602": {
+    "city": "Bridgeport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06604": {
+    "city": "Bridgeport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06605": {
+    "city": "Bridgeport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06606": {
+    "city": "Bridgeport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06607": {
+    "city": "Bridgeport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06608": {
+    "city": "Bridgeport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06610": {
+    "city": "Bridgeport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06611": {
+    "city": "Trumbull",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06612": {
+    "city": "Easton",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06614": {
+    "city": "Stratford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06615": {
+    "city": "Stratford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06801": {
+    "city": "Bethel",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06804": {
+    "city": "Brookfield",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06807": {
+    "city": "Cos Cob",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06810": {
+    "city": "Danbury",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06811": {
+    "city": "Danbury",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06812": {
+    "city": "New Fairfield",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06813": {
+    "city": "Danbury",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06814": {
+    "city": "Danbury",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06816": {
+    "city": "Danbury",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06817": {
+    "city": "Danbury",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06820": {
+    "city": "Darien",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06824": {
+    "city": "Fairfield",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06825": {
+    "city": "Fairfield",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06828": {
+    "city": "Fairfield",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06830": {
+    "city": "Greenwich",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06831": {
+    "city": "Greenwich",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06832": {
+    "city": "Greenwich",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06836": {
+    "city": "Greenwich",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06838": {
+    "city": "Greens Farms",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06840": {
+    "city": "New Canaan",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06850": {
+    "city": "Norwalk",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06851": {
+    "city": "Norwalk",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06852": {
+    "city": "Norwalk",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06853": {
+    "city": "Norwalk",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06854": {
+    "city": "Norwalk",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06855": {
+    "city": "Norwalk",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06856": {
+    "city": "Norwalk",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06857": {
+    "city": "Norwalk",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06858": {
+    "city": "Norwalk",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06860": {
+    "city": "Norwalk",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06870": {
+    "city": "Old Greenwich",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06877": {
+    "city": "Ridgefield",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06878": {
+    "city": "Riverside",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06879": {
+    "city": "Ridgefield",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06880": {
+    "city": "Westport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06881": {
+    "city": "Westport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06883": {
+    "city": "Weston",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06888": {
+    "city": "Westport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06889": {
+    "city": "Westport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06890": {
+    "city": "Southport",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06896": {
+    "city": "Redding",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06897": {
+    "city": "Wilton",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06901": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06902": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06903": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06904": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06905": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06906": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06907": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06910": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06911": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06912": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06913": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06914": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06926": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
+  "06927": {
+    "city": "Stamford",
+    "county": "Fairfield",
+    "state": "CT"
+  },
   "07418": {
     "city": "Hamburg",
     "county": "Sussex",
