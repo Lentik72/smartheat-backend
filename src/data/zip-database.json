@@ -3264,6 +3264,276 @@
     "county": "Morris",
     "state": "NJ"
   },
+  "08002": {
+    "city": "Cherry Hill",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08003": {
+    "city": "Cherry Hill",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08004": {
+    "city": "Atco",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08007": {
+    "city": "Barrington",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08009": {
+    "city": "Berlin",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08010": {
+    "city": "Beverly",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08011": {
+    "city": "Birmingham",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08012": {
+    "city": "Blackwood",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08015": {
+    "city": "Browns Mills",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08016": {
+    "city": "Burlington",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08019": {
+    "city": "Chatsworth",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08021": {
+    "city": "Clementon",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08022": {
+    "city": "Columbus",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08026": {
+    "city": "Gibbsboro",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08030": {
+    "city": "Gloucester City",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08031": {
+    "city": "Bellmawr",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08033": {
+    "city": "Haddonfield",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08034": {
+    "city": "Cherry Hill",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08036": {
+    "city": "Hainesport",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08041": {
+    "city": "Jobstown",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08042": {
+    "city": "Juliustown",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08043": {
+    "city": "Voorhees",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08046": {
+    "city": "Willingboro",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08048": {
+    "city": "Lumberton",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08049": {
+    "city": "Magnolia",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08052": {
+    "city": "Maple Shade",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08053": {
+    "city": "Marlton",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08054": {
+    "city": "Mount Laurel",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08055": {
+    "city": "Medford",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08057": {
+    "city": "Moorestown",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08059": {
+    "city": "Mount Ephraim",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08060": {
+    "city": "Mount Holly",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08064": {
+    "city": "New Lisbon",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08065": {
+    "city": "Palmyra",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08068": {
+    "city": "Pemberton",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08073": {
+    "city": "Rancocas",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08075": {
+    "city": "Riverside",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08077": {
+    "city": "Riverton",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08081": {
+    "city": "Sicklerville",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08083": {
+    "city": "Somerdale",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08084": {
+    "city": "Stratford",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08088": {
+    "city": "Vincentown",
+    "county": "Burlington",
+    "state": "NJ"
+  },
+  "08089": {
+    "city": "Waterford Works",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08101": {
+    "city": "Camden",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08102": {
+    "city": "Camden",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08103": {
+    "city": "Camden",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08104": {
+    "city": "Camden",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08105": {
+    "city": "Camden",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08106": {
+    "city": "Audubon",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08107": {
+    "city": "Oaklyn",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08108": {
+    "city": "Collingswood",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08109": {
+    "city": "Merchantville",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08110": {
+    "city": "Pennsauken",
+    "county": "Camden",
+    "state": "NJ"
+  },
+  "08505": {
+    "city": "Bordentown",
+    "county": "Burlington",
+    "state": "NJ"
+  },
   "08512": {
     "city": "Cranbury",
     "county": "Mercer",
@@ -3322,6 +3592,11 @@
   "08550": {
     "city": "Princeton Junction",
     "county": "Mercer",
+    "state": "NJ"
+  },
+  "08554": {
+    "city": "Roebling",
+    "county": "Burlington",
     "state": "NJ"
   },
   "08560": {
@@ -3421,12 +3696,12 @@
   },
   "08640": {
     "city": "Fort Dix",
-    "county": "Mercer",
+    "county": "Burlington",
     "state": "NJ"
   },
   "08641": {
-    "city": "Trenton",
-    "county": "Mercer",
+    "city": "McGuire AFB",
+    "county": "Burlington",
     "state": "NJ"
   },
   "08645": {
