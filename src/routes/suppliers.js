@@ -3,6 +3,7 @@
 // V1.4.0: County-based matching for better coverage
 // V1.5.0: Unified matching with ZIP → City → County → Radius + ranking
 // V1.5.1: City and county search parameters with location→ZIP resolution
+// V1.5.2: Terminal proximity as silent ranking factor (closer to terminal = ranked higher)
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
@@ -11,6 +12,7 @@ const { getSupplierModel } = require('../models/Supplier');
 const { Op } = require('sequelize');
 const { findSuppliersForZip, getZipInfo } = require('../services/supplierMatcher');
 const { getZipsForCity, getZipsForCounty, normalizeLocation } = require('../services/locationResolver');
+const { getTerminalProximityScore } = require('../services/terminalProximity');
 
 // Rate limiting specifically for supplier endpoint
 // More restrictive than global limit to prevent scraping
@@ -239,6 +241,7 @@ router.get('/', async (req, res) => {
     }
 
     // Convert to array and sort by match count (descending), then alphabetically
+    // V1.5.2: Added terminal proximity as silent ranking factor
     const aggregatedSuppliers = Array.from(supplierMatchCounts.values())
       .sort((a, b) => {
         // Primary: more matching ZIPs = higher rank
@@ -252,7 +255,13 @@ router.get('/', async (req, res) => {
         if (aOrder !== bOrder) {
           return aOrder - bOrder;
         }
-        // Tertiary: alphabetical
+        // Tertiary: terminal proximity (closer to wholesale terminal = likely better pricing)
+        const aProximity = getTerminalProximityScore(a.supplier.city, a.supplier.state);
+        const bProximity = getTerminalProximityScore(b.supplier.city, b.supplier.state);
+        if (bProximity !== aProximity) {
+          return bProximity - aProximity; // Higher score = closer to terminal = ranked higher
+        }
+        // Quaternary: alphabetical
         return a.supplier.name.localeCompare(b.supplier.name);
       })
       .map(item => ({
