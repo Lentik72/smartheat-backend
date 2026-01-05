@@ -1,436 +1,3117 @@
 {
-  "10501": { "city": "Amawalk", "county": "Westchester", "state": "NY" },
-  "10502": { "city": "Ardsley", "county": "Westchester", "state": "NY" },
-  "10503": { "city": "Ardsley-on-Hudson", "county": "Westchester", "state": "NY" },
-  "10504": { "city": "Armonk", "county": "Westchester", "state": "NY" },
-  "10505": { "city": "Baldwin Place", "county": "Westchester", "state": "NY" },
-  "10506": { "city": "Bedford", "county": "Westchester", "state": "NY" },
-  "10507": { "city": "Bedford Hills", "county": "Westchester", "state": "NY" },
-  "10509": { "city": "Brewster", "county": "Putnam", "state": "NY" },
-  "10510": { "city": "Briarcliff Manor", "county": "Westchester", "state": "NY" },
-  "10511": { "city": "Buchanan", "county": "Westchester", "state": "NY" },
-  "10512": { "city": "Carmel", "county": "Putnam", "state": "NY" },
-  "10514": { "city": "Chappaqua", "county": "Westchester", "state": "NY" },
-  "10516": { "city": "Cold Spring", "county": "Putnam", "state": "NY" },
-  "10517": { "city": "Crompond", "county": "Westchester", "state": "NY" },
-  "10518": { "city": "Cross River", "county": "Westchester", "state": "NY" },
-  "10519": { "city": "Croton Falls", "county": "Westchester", "state": "NY" },
-  "10520": { "city": "Croton-on-Hudson", "county": "Westchester", "state": "NY" },
-  "10522": { "city": "Dobbs Ferry", "county": "Westchester", "state": "NY" },
-  "10523": { "city": "Elmsford", "county": "Westchester", "state": "NY" },
-  "10524": { "city": "Garrison", "county": "Putnam", "state": "NY" },
-  "10526": { "city": "Goldens Bridge", "county": "Westchester", "state": "NY" },
-  "10527": { "city": "Granite Springs", "county": "Westchester", "state": "NY" },
-  "10528": { "city": "Harrison", "county": "Westchester", "state": "NY" },
-  "10530": { "city": "Hartsdale", "county": "Westchester", "state": "NY" },
-  "10532": { "city": "Hawthorne", "county": "Westchester", "state": "NY" },
-  "10533": { "city": "Irvington", "county": "Westchester", "state": "NY" },
-  "10535": { "city": "Jefferson Valley", "county": "Westchester", "state": "NY" },
-  "10536": { "city": "Katonah", "county": "Westchester", "state": "NY" },
-  "10537": { "city": "Lake Peekskill", "county": "Putnam", "state": "NY" },
-  "10538": { "city": "Larchmont", "county": "Westchester", "state": "NY" },
-  "10541": { "city": "Mahopac", "county": "Putnam", "state": "NY" },
-  "10542": { "city": "Mahopac Falls", "county": "Putnam", "state": "NY" },
-  "10543": { "city": "Mamaroneck", "county": "Westchester", "state": "NY" },
-  "10545": { "city": "Maryknoll", "county": "Westchester", "state": "NY" },
-  "10546": { "city": "Millwood", "county": "Westchester", "state": "NY" },
-  "10547": { "city": "Mohegan Lake", "county": "Westchester", "state": "NY" },
-  "10548": { "city": "Montrose", "county": "Westchester", "state": "NY" },
-  "10549": { "city": "Mount Kisco", "county": "Westchester", "state": "NY" },
-  "10550": { "city": "Mount Vernon", "county": "Westchester", "state": "NY" },
-  "10551": { "city": "Mount Vernon", "county": "Westchester", "state": "NY" },
-  "10552": { "city": "Mount Vernon", "county": "Westchester", "state": "NY" },
-  "10553": { "city": "Mount Vernon", "county": "Westchester", "state": "NY" },
-  "10560": { "city": "North Salem", "county": "Westchester", "state": "NY" },
-  "10562": { "city": "Ossining", "county": "Westchester", "state": "NY" },
-  "10566": { "city": "Peekskill", "county": "Westchester", "state": "NY" },
-  "10567": { "city": "Cortlandt Manor", "county": "Westchester", "state": "NY" },
-  "10570": { "city": "Pleasantville", "county": "Westchester", "state": "NY" },
-  "10573": { "city": "Port Chester", "county": "Westchester", "state": "NY" },
-  "10576": { "city": "Pound Ridge", "county": "Westchester", "state": "NY" },
-  "10577": { "city": "Purchase", "county": "Westchester", "state": "NY" },
-  "10578": { "city": "Purdys", "county": "Westchester", "state": "NY" },
-  "10579": { "city": "Putnam Valley", "county": "Putnam", "state": "NY" },
-  "10580": { "city": "Rye", "county": "Westchester", "state": "NY" },
-  "10583": { "city": "Scarsdale", "county": "Westchester", "state": "NY" },
-  "10587": { "city": "Shenorock", "county": "Westchester", "state": "NY" },
-  "10588": { "city": "Shrub Oak", "county": "Westchester", "state": "NY" },
-  "10589": { "city": "Somers", "county": "Westchester", "state": "NY" },
-  "10590": { "city": "South Salem", "county": "Westchester", "state": "NY" },
-  "10591": { "city": "Tarrytown", "county": "Westchester", "state": "NY" },
-  "10594": { "city": "Thornwood", "county": "Westchester", "state": "NY" },
-  "10595": { "city": "Valhalla", "county": "Westchester", "state": "NY" },
-  "10597": { "city": "Waccabuc", "county": "Westchester", "state": "NY" },
-  "10598": { "city": "Yorktown Heights", "county": "Westchester", "state": "NY" },
-  "10601": { "city": "White Plains", "county": "Westchester", "state": "NY" },
-  "10602": { "city": "White Plains", "county": "Westchester", "state": "NY" },
-  "10603": { "city": "White Plains", "county": "Westchester", "state": "NY" },
-  "10604": { "city": "West Harrison", "county": "Westchester", "state": "NY" },
-  "10605": { "city": "White Plains", "county": "Westchester", "state": "NY" },
-  "10606": { "city": "White Plains", "county": "Westchester", "state": "NY" },
-  "10607": { "city": "White Plains", "county": "Westchester", "state": "NY" },
-  "10608": { "city": "White Plains", "county": "Westchester", "state": "NY" },
-  "10701": { "city": "Yonkers", "county": "Westchester", "state": "NY" },
-  "10702": { "city": "Yonkers", "county": "Westchester", "state": "NY" },
-  "10703": { "city": "Yonkers", "county": "Westchester", "state": "NY" },
-  "10704": { "city": "Yonkers", "county": "Westchester", "state": "NY" },
-  "10705": { "city": "Yonkers", "county": "Westchester", "state": "NY" },
-  "10706": { "city": "Hastings-on-Hudson", "county": "Westchester", "state": "NY" },
-  "10707": { "city": "Tuckahoe", "county": "Westchester", "state": "NY" },
-  "10708": { "city": "Bronxville", "county": "Westchester", "state": "NY" },
-  "10709": { "city": "Eastchester", "county": "Westchester", "state": "NY" },
-  "10710": { "city": "Yonkers", "county": "Westchester", "state": "NY" },
-  "10801": { "city": "New Rochelle", "county": "Westchester", "state": "NY" },
-  "10802": { "city": "New Rochelle", "county": "Westchester", "state": "NY" },
-  "10803": { "city": "Pelham", "county": "Westchester", "state": "NY" },
-  "10804": { "city": "New Rochelle", "county": "Westchester", "state": "NY" },
-  "10805": { "city": "New Rochelle", "county": "Westchester", "state": "NY" },
-  "10901": { "city": "Suffern", "county": "Rockland", "state": "NY" },
-  "10911": { "city": "Bear Mountain", "county": "Rockland", "state": "NY" },
-  "10913": { "city": "Blauvelt", "county": "Rockland", "state": "NY" },
-  "10920": { "city": "Congers", "county": "Rockland", "state": "NY" },
-  "10923": { "city": "Garnerville", "county": "Rockland", "state": "NY" },
-  "10927": { "city": "Haverstraw", "county": "Rockland", "state": "NY" },
-  "10931": { "city": "Hillburn", "county": "Rockland", "state": "NY" },
-  "10952": { "city": "Monsey", "county": "Rockland", "state": "NY" },
-  "10954": { "city": "Nanuet", "county": "Rockland", "state": "NY" },
-  "10956": { "city": "New City", "county": "Rockland", "state": "NY" },
-  "10960": { "city": "Nyack", "county": "Rockland", "state": "NY" },
-  "10962": { "city": "Orangeburg", "county": "Rockland", "state": "NY" },
-  "10964": { "city": "Palisades", "county": "Rockland", "state": "NY" },
-  "10965": { "city": "Pearl River", "county": "Rockland", "state": "NY" },
-  "10968": { "city": "Piermont", "county": "Rockland", "state": "NY" },
-  "10970": { "city": "Pomona", "county": "Rockland", "state": "NY" },
-  "10974": { "city": "Sloatsburg", "county": "Rockland", "state": "NY" },
-  "10976": { "city": "Sparkill", "county": "Rockland", "state": "NY" },
-  "10977": { "city": "Spring Valley", "county": "Rockland", "state": "NY" },
-  "10980": { "city": "Stony Point", "county": "Rockland", "state": "NY" },
-  "10982": { "city": "Tallman", "county": "Rockland", "state": "NY" },
-  "10983": { "city": "Tappan", "county": "Rockland", "state": "NY" },
-  "10984": { "city": "Thiells", "county": "Rockland", "state": "NY" },
-  "10986": { "city": "Tomkins Cove", "county": "Rockland", "state": "NY" },
-  "10989": { "city": "Valley Cottage", "county": "Rockland", "state": "NY" },
-  "10993": { "city": "West Haverstraw", "county": "Rockland", "state": "NY" },
-  "10994": { "city": "West Nyack", "county": "Rockland", "state": "NY" },
-  "10910": { "city": "Arden", "county": "Orange", "state": "NY" },
-  "10912": { "city": "Bellvale", "county": "Orange", "state": "NY" },
-  "10914": { "city": "Blooming Grove", "county": "Orange", "state": "NY" },
-  "10915": { "city": "Bullville", "county": "Orange", "state": "NY" },
-  "10916": { "city": "Campbell Hall", "county": "Orange", "state": "NY" },
-  "10917": { "city": "Central Valley", "county": "Orange", "state": "NY" },
-  "10918": { "city": "Chester", "county": "Orange", "state": "NY" },
-  "10919": { "city": "Circleville", "county": "Orange", "state": "NY" },
-  "10921": { "city": "Florida", "county": "Orange", "state": "NY" },
-  "10922": { "city": "Fort Montgomery", "county": "Orange", "state": "NY" },
-  "10924": { "city": "Goshen", "county": "Orange", "state": "NY" },
-  "10925": { "city": "Greenwood Lake", "county": "Orange", "state": "NY" },
-  "10926": { "city": "Harriman", "county": "Orange", "state": "NY" },
-  "10928": { "city": "Highland Falls", "county": "Orange", "state": "NY" },
-  "10930": { "city": "Highland Mills", "county": "Orange", "state": "NY" },
-  "10932": { "city": "Howells", "county": "Orange", "state": "NY" },
-  "10933": { "city": "Johnson", "county": "Orange", "state": "NY" },
-  "10940": { "city": "Middletown", "county": "Orange", "state": "NY" },
-  "10941": { "city": "Middletown", "county": "Orange", "state": "NY" },
-  "10950": { "city": "Monroe", "county": "Orange", "state": "NY" },
-  "10958": { "city": "New Hampton", "county": "Orange", "state": "NY" },
-  "10959": { "city": "New Milford", "county": "Orange", "state": "NY" },
-  "10963": { "city": "Otisville", "county": "Orange", "state": "NY" },
-  "10969": { "city": "Pine Island", "county": "Orange", "state": "NY" },
-  "10973": { "city": "Slate Hill", "county": "Orange", "state": "NY" },
-  "10975": { "city": "Southfields", "county": "Orange", "state": "NY" },
-  "10979": { "city": "Sterling Forest", "county": "Orange", "state": "NY" },
-  "10981": { "city": "Sugar Loaf", "county": "Orange", "state": "NY" },
-  "10985": { "city": "Thompson Ridge", "county": "Orange", "state": "NY" },
-  "10987": { "city": "Tuxedo Park", "county": "Orange", "state": "NY" },
-  "10988": { "city": "Unionville", "county": "Orange", "state": "NY" },
-  "10990": { "city": "Warwick", "county": "Orange", "state": "NY" },
-  "10992": { "city": "Washingtonville", "county": "Orange", "state": "NY" },
-  "10996": { "city": "West Point", "county": "Orange", "state": "NY" },
-  "10997": { "city": "West Point", "county": "Orange", "state": "NY" },
-  "10998": { "city": "Westtown", "county": "Orange", "state": "NY" },
-  "12501": { "city": "Amenia", "county": "Dutchess", "state": "NY" },
-  "12504": { "city": "Annandale-on-Hudson", "county": "Dutchess", "state": "NY" },
-  "12507": { "city": "Bangall", "county": "Dutchess", "state": "NY" },
-  "12508": { "city": "Beacon", "county": "Dutchess", "state": "NY" },
-  "12514": { "city": "Clinton Corners", "county": "Dutchess", "state": "NY" },
-  "12522": { "city": "Dover Plains", "county": "Dutchess", "state": "NY" },
-  "12524": { "city": "Fishkill", "county": "Dutchess", "state": "NY" },
-  "12531": { "city": "Holmes", "county": "Dutchess", "state": "NY" },
-  "12533": { "city": "Hopewell Junction", "county": "Dutchess", "state": "NY" },
-  "12537": { "city": "Hughsonville", "county": "Dutchess", "state": "NY" },
-  "12538": { "city": "Hyde Park", "county": "Dutchess", "state": "NY" },
-  "12540": { "city": "Lagrangeville", "county": "Dutchess", "state": "NY" },
-  "12543": { "city": "Maybrook", "county": "Orange", "state": "NY" },
-  "12545": { "city": "Millbrook", "county": "Dutchess", "state": "NY" },
-  "12546": { "city": "Millerton", "county": "Dutchess", "state": "NY" },
-  "12549": { "city": "Montgomery", "county": "Orange", "state": "NY" },
-  "12550": { "city": "Newburgh", "county": "Orange", "state": "NY" },
-  "12553": { "city": "New Windsor", "county": "Orange", "state": "NY" },
-  "12564": { "city": "Pawling", "county": "Dutchess", "state": "NY" },
-  "12566": { "city": "Pine Bush", "county": "Orange", "state": "NY" },
-  "12567": { "city": "Pine Plains", "county": "Dutchess", "state": "NY" },
-  "12569": { "city": "Pleasant Valley", "county": "Dutchess", "state": "NY" },
-  "12570": { "city": "Poughquag", "county": "Dutchess", "state": "NY" },
-  "12571": { "city": "Red Hook", "county": "Dutchess", "state": "NY" },
-  "12572": { "city": "Rhinebeck", "county": "Dutchess", "state": "NY" },
-  "12574": { "city": "Rhinecliff", "county": "Dutchess", "state": "NY" },
-  "12575": { "city": "Rock Tavern", "county": "Orange", "state": "NY" },
-  "12577": { "city": "Salisbury Mills", "county": "Orange", "state": "NY" },
-  "12578": { "city": "Salt Point", "county": "Dutchess", "state": "NY" },
-  "12580": { "city": "Staatsburg", "county": "Dutchess", "state": "NY" },
-  "12581": { "city": "Stanfordville", "county": "Dutchess", "state": "NY" },
-  "12582": { "city": "Stormville", "county": "Dutchess", "state": "NY" },
-  "12585": { "city": "Verbank", "county": "Dutchess", "state": "NY" },
-  "12586": { "city": "Walden", "county": "Orange", "state": "NY" },
-  "12589": { "city": "Wallkill", "county": "Orange", "state": "NY" },
-  "12590": { "city": "Wappingers Falls", "county": "Dutchess", "state": "NY" },
-  "12592": { "city": "Wassaic", "county": "Dutchess", "state": "NY" },
-  "12594": { "city": "Wingdale", "county": "Dutchess", "state": "NY" },
-  "12601": { "city": "Poughkeepsie", "county": "Dutchess", "state": "NY" },
-  "12602": { "city": "Poughkeepsie", "county": "Dutchess", "state": "NY" },
-  "12603": { "city": "Poughkeepsie", "county": "Dutchess", "state": "NY" },
-  "12604": { "city": "Poughkeepsie", "county": "Dutchess", "state": "NY" },
-  "01002": { "city": "Amherst", "county": "Hampshire", "state": "MA" },
-  "01003": { "city": "Amherst", "county": "Hampshire", "state": "MA" },
-  "01004": { "city": "Amherst", "county": "Hampshire", "state": "MA" },
-  "01007": { "city": "Belchertown", "county": "Hampshire", "state": "MA" },
-  "01011": { "city": "Chester", "county": "Hampshire", "state": "MA" },
-  "01012": { "city": "Chesterfield", "county": "Hampshire", "state": "MA" },
-  "01026": { "city": "Cummington", "county": "Hampshire", "state": "MA" },
-  "01027": { "city": "Easthampton", "county": "Hampshire", "state": "MA" },
-  "01032": { "city": "Goshen", "county": "Hampshire", "state": "MA" },
-  "01033": { "city": "Granby", "county": "Hampshire", "state": "MA" },
-  "01035": { "city": "Hadley", "county": "Hampshire", "state": "MA" },
-  "01036": { "city": "Hampden", "county": "Hampshire", "state": "MA" },
-  "01038": { "city": "Hatfield", "county": "Hampshire", "state": "MA" },
-  "01039": { "city": "Haydenville", "county": "Hampshire", "state": "MA" },
-  "01050": { "city": "Huntington", "county": "Hampshire", "state": "MA" },
-  "01053": { "city": "Leeds", "county": "Hampshire", "state": "MA" },
-  "01054": { "city": "Leverett", "county": "Hampshire", "state": "MA" },
-  "01060": { "city": "Northampton", "county": "Hampshire", "state": "MA" },
-  "01061": { "city": "Northampton", "county": "Hampshire", "state": "MA" },
-  "01062": { "city": "Florence", "county": "Hampshire", "state": "MA" },
-  "01063": { "city": "Northampton", "county": "Hampshire", "state": "MA" },
-  "01066": { "city": "Pelham", "county": "Hampshire", "state": "MA" },
-  "01070": { "city": "Plainfield", "county": "Hampshire", "state": "MA" },
-  "01073": { "city": "Southampton", "county": "Hampshire", "state": "MA" },
-  "01075": { "city": "South Hadley", "county": "Hampshire", "state": "MA" },
-  "01080": { "city": "Three Rivers", "county": "Hampshire", "state": "MA" },
-  "01082": { "city": "Ware", "county": "Hampshire", "state": "MA" },
-  "01085": { "city": "Westfield", "county": "Hampshire", "state": "MA" },
-  "01088": { "city": "West Hatfield", "county": "Hampshire", "state": "MA" },
-  "01093": { "city": "Whately", "county": "Hampshire", "state": "MA" },
-  "01094": { "city": "Wheelwright", "county": "Hampshire", "state": "MA" },
-  "01095": { "city": "Wilbraham", "county": "Hampshire", "state": "MA" },
-  "01096": { "city": "Williamsburg", "county": "Hampshire", "state": "MA" },
-  "01097": { "city": "Worthington", "county": "Hampshire", "state": "MA" },
-  "01201": { "city": "Pittsfield", "county": "Berkshire", "state": "MA" },
-  "01202": { "city": "Pittsfield", "county": "Berkshire", "state": "MA" },
-  "01203": { "city": "Pittsfield", "county": "Berkshire", "state": "MA" },
-  "01220": { "city": "Adams", "county": "Berkshire", "state": "MA" },
-  "01222": { "city": "Ashley Falls", "county": "Berkshire", "state": "MA" },
-  "01223": { "city": "Becket", "county": "Berkshire", "state": "MA" },
-  "01224": { "city": "Berkshire", "county": "Berkshire", "state": "MA" },
-  "01225": { "city": "Cheshire", "county": "Berkshire", "state": "MA" },
-  "01226": { "city": "Dalton", "county": "Berkshire", "state": "MA" },
-  "01229": { "city": "Glendale", "county": "Berkshire", "state": "MA" },
-  "01230": { "city": "Great Barrington", "county": "Berkshire", "state": "MA" },
-  "01235": { "city": "Hinsdale", "county": "Berkshire", "state": "MA" },
-  "01236": { "city": "Housatonic", "county": "Berkshire", "state": "MA" },
-  "01237": { "city": "Lanesborough", "county": "Berkshire", "state": "MA" },
-  "01238": { "city": "Lee", "county": "Berkshire", "state": "MA" },
-  "01240": { "city": "Lenox", "county": "Berkshire", "state": "MA" },
-  "01242": { "city": "Lenox Dale", "county": "Berkshire", "state": "MA" },
-  "01243": { "city": "Middlefield", "county": "Berkshire", "state": "MA" },
-  "01244": { "city": "Mill River", "county": "Berkshire", "state": "MA" },
-  "01245": { "city": "Monterey", "county": "Berkshire", "state": "MA" },
-  "01247": { "city": "North Adams", "county": "Berkshire", "state": "MA" },
-  "01252": { "city": "North Egremont", "county": "Berkshire", "state": "MA" },
-  "01253": { "city": "Otis", "county": "Berkshire", "state": "MA" },
-  "01254": { "city": "Richmond", "county": "Berkshire", "state": "MA" },
-  "01255": { "city": "Sandisfield", "county": "Berkshire", "state": "MA" },
-  "01256": { "city": "Savoy", "county": "Berkshire", "state": "MA" },
-  "01257": { "city": "Sheffield", "county": "Berkshire", "state": "MA" },
-  "01258": { "city": "South Egremont", "county": "Berkshire", "state": "MA" },
-  "01259": { "city": "Southfield", "county": "Berkshire", "state": "MA" },
-  "01260": { "city": "South Lee", "county": "Berkshire", "state": "MA" },
-  "01262": { "city": "Stockbridge", "county": "Berkshire", "state": "MA" },
-  "01263": { "city": "Stockbridge", "county": "Berkshire", "state": "MA" },
-  "01264": { "city": "Tyringham", "county": "Berkshire", "state": "MA" },
-  "01266": { "city": "West Stockbridge", "county": "Berkshire", "state": "MA" },
-  "01267": { "city": "Williamstown", "county": "Berkshire", "state": "MA" },
-  "01270": { "city": "Windsor", "county": "Berkshire", "state": "MA" },
-  "01301": { "city": "Greenfield", "county": "Franklin", "state": "MA" },
-  "01302": { "city": "Greenfield", "county": "Franklin", "state": "MA" },
-  "01330": { "city": "Ashfield", "county": "Franklin", "state": "MA" },
-  "01331": { "city": "Athol", "county": "Franklin", "state": "MA" },
-  "01337": { "city": "Bernardston", "county": "Franklin", "state": "MA" },
-  "01338": { "city": "Buckland", "county": "Franklin", "state": "MA" },
-  "01339": { "city": "Charlemont", "county": "Franklin", "state": "MA" },
-  "01340": { "city": "Colrain", "county": "Franklin", "state": "MA" },
-  "01341": { "city": "Conway", "county": "Franklin", "state": "MA" },
-  "01342": { "city": "Deerfield", "county": "Franklin", "state": "MA" },
-  "01343": { "city": "Drury", "county": "Franklin", "state": "MA" },
-  "01344": { "city": "Erving", "county": "Franklin", "state": "MA" },
-  "01346": { "city": "Heath", "county": "Franklin", "state": "MA" },
-  "01347": { "city": "Lake Pleasant", "county": "Franklin", "state": "MA" },
-  "01349": { "city": "Millers Falls", "county": "Franklin", "state": "MA" },
-  "01350": { "city": "Monroe Bridge", "county": "Franklin", "state": "MA" },
-  "01351": { "city": "Montague", "county": "Franklin", "state": "MA" },
-  "01354": { "city": "Gill", "county": "Franklin", "state": "MA" },
-  "01355": { "city": "New Salem", "county": "Franklin", "state": "MA" },
-  "01360": { "city": "Northfield", "county": "Franklin", "state": "MA" },
-  "01364": { "city": "Orange", "county": "Franklin", "state": "MA" },
-  "01366": { "city": "Petersham", "county": "Franklin", "state": "MA" },
-  "01367": { "city": "Rowe", "county": "Franklin", "state": "MA" },
-  "01368": { "city": "Royalston", "county": "Franklin", "state": "MA" },
-  "01370": { "city": "Shelburne Falls", "county": "Franklin", "state": "MA" },
-  "01373": { "city": "South Deerfield", "county": "Franklin", "state": "MA" },
-  "01375": { "city": "Sunderland", "county": "Franklin", "state": "MA" },
-  "01376": { "city": "Turners Falls", "county": "Franklin", "state": "MA" },
-  "01378": { "city": "Warwick", "county": "Franklin", "state": "MA" },
-  "01379": { "city": "Wendell", "county": "Franklin", "state": "MA" },
-  "01380": { "city": "Wendell Depot", "county": "Franklin", "state": "MA" },
-  "01431": { "city": "Ashby", "county": "Middlesex", "state": "MA" },
-  "01432": { "city": "Ayer", "county": "Middlesex", "state": "MA" },
-  "01450": { "city": "Groton", "county": "Middlesex", "state": "MA" },
-  "01453": { "city": "Leominster", "county": "Middlesex", "state": "MA" },
-  "01460": { "city": "Littleton", "county": "Middlesex", "state": "MA" },
-  "01463": { "city": "Pepperell", "county": "Middlesex", "state": "MA" },
-  "01464": { "city": "Shirley", "county": "Middlesex", "state": "MA" },
-  "01469": { "city": "Townsend", "county": "Middlesex", "state": "MA" },
-  "01471": { "city": "Westford", "county": "Middlesex", "state": "MA" },
-  "01719": { "city": "Boxborough", "county": "Middlesex", "state": "MA" },
-  "01720": { "city": "Acton", "county": "Middlesex", "state": "MA" },
-  "01730": { "city": "Bedford", "county": "Middlesex", "state": "MA" },
-  "01741": { "city": "Carlisle", "county": "Middlesex", "state": "MA" },
-  "01742": { "city": "Concord", "county": "Middlesex", "state": "MA" },
-  "01754": { "city": "Maynard", "county": "Middlesex", "state": "MA" },
-  "01773": { "city": "Lincoln", "county": "Middlesex", "state": "MA" },
-  "01775": { "city": "Stow", "county": "Middlesex", "state": "MA" },
-  "01776": { "city": "Sudbury", "county": "Middlesex", "state": "MA" },
-  "01778": { "city": "Wayland", "county": "Middlesex", "state": "MA" },
-  "01821": { "city": "Billerica", "county": "Middlesex", "state": "MA" },
-  "01824": { "city": "Chelmsford", "county": "Middlesex", "state": "MA" },
-  "01826": { "city": "Dracut", "county": "Middlesex", "state": "MA" },
-  "01850": { "city": "Lowell", "county": "Middlesex", "state": "MA" },
-  "01851": { "city": "Lowell", "county": "Middlesex", "state": "MA" },
-  "01852": { "city": "Lowell", "county": "Middlesex", "state": "MA" },
-  "01853": { "city": "Lowell", "county": "Middlesex", "state": "MA" },
-  "01854": { "city": "Lowell", "county": "Middlesex", "state": "MA" },
-  "01862": { "city": "North Billerica", "county": "Middlesex", "state": "MA" },
-  "01863": { "city": "North Chelmsford", "county": "Middlesex", "state": "MA" },
-  "01876": { "city": "Tewksbury", "county": "Middlesex", "state": "MA" },
-  "07418": { "city": "Hamburg", "county": "Sussex", "state": "NJ" },
-  "07419": { "city": "Hamburg", "county": "Sussex", "state": "NJ" },
-  "07422": { "city": "Highland Lakes", "county": "Sussex", "state": "NJ" },
-  "07428": { "city": "McAfee", "county": "Sussex", "state": "NJ" },
-  "07435": { "city": "Newfoundland", "county": "Sussex", "state": "NJ" },
-  "07439": { "city": "Ogdensburg", "county": "Sussex", "state": "NJ" },
-  "07460": { "city": "Stockholm", "county": "Sussex", "state": "NJ" },
-  "07461": { "city": "Sussex", "county": "Sussex", "state": "NJ" },
-  "07462": { "city": "Vernon", "county": "Sussex", "state": "NJ" },
-  "07801": { "city": "Dover", "county": "Morris", "state": "NJ" },
-  "07803": { "city": "Mine Hill", "county": "Morris", "state": "NJ" },
-  "07821": { "city": "Andover", "county": "Sussex", "state": "NJ" },
-  "07822": { "city": "Augusta", "county": "Sussex", "state": "NJ" },
-  "07826": { "city": "Branchville", "county": "Sussex", "state": "NJ" },
-  "07827": { "city": "Montague", "county": "Sussex", "state": "NJ" },
-  "07828": { "city": "Budd Lake", "county": "Morris", "state": "NJ" },
-  "07834": { "city": "Denville", "county": "Morris", "state": "NJ" },
-  "07836": { "city": "Flanders", "county": "Morris", "state": "NJ" },
-  "07838": { "city": "Great Meadows", "county": "Sussex", "state": "NJ" },
-  "07839": { "city": "Greendell", "county": "Sussex", "state": "NJ" },
-  "07840": { "city": "Hackettstown", "county": "Morris", "state": "NJ" },
-  "07842": { "city": "Hibernia", "county": "Morris", "state": "NJ" },
-  "07843": { "city": "Hopatcong", "county": "Sussex", "state": "NJ" },
-  "07845": { "city": "Ironia", "county": "Morris", "state": "NJ" },
-  "07846": { "city": "Johnsonburg", "county": "Sussex", "state": "NJ" },
-  "07847": { "city": "Kenvil", "county": "Morris", "state": "NJ" },
-  "07848": { "city": "Lafayette", "county": "Sussex", "state": "NJ" },
-  "07849": { "city": "Lake Hopatcong", "county": "Morris", "state": "NJ" },
-  "07850": { "city": "Landing", "county": "Morris", "state": "NJ" },
-  "07851": { "city": "Layton", "county": "Sussex", "state": "NJ" },
-  "07852": { "city": "Ledgewood", "county": "Morris", "state": "NJ" },
-  "07853": { "city": "Long Valley", "county": "Morris", "state": "NJ" },
-  "07855": { "city": "Middleville", "county": "Sussex", "state": "NJ" },
-  "07856": { "city": "Mount Arlington", "county": "Morris", "state": "NJ" },
-  "07857": { "city": "Netcong", "county": "Morris", "state": "NJ" },
-  "07860": { "city": "Newton", "county": "Sussex", "state": "NJ" },
-  "07866": { "city": "Rockaway", "county": "Morris", "state": "NJ" },
-  "07869": { "city": "Randolph", "county": "Morris", "state": "NJ" },
-  "07870": { "city": "Schooleys Mountain", "county": "Morris", "state": "NJ" },
-  "07871": { "city": "Sparta", "county": "Sussex", "state": "NJ" },
-  "07874": { "city": "Stanhope", "county": "Sussex", "state": "NJ" },
-  "07875": { "city": "Stillwater", "county": "Sussex", "state": "NJ" },
-  "07876": { "city": "Succasunna", "county": "Morris", "state": "NJ" },
-  "07877": { "city": "Swartswood", "county": "Sussex", "state": "NJ" },
-  "07878": { "city": "Mount Tabor", "county": "Morris", "state": "NJ" },
-  "07879": { "city": "Tranquility", "county": "Sussex", "state": "NJ" },
-  "07881": { "city": "Wallpack Center", "county": "Sussex", "state": "NJ" },
-  "07885": { "city": "Wharton", "county": "Morris", "state": "NJ" },
-  "07890": { "city": "Wantage", "county": "Sussex", "state": "NJ" },
-  "07927": { "city": "Cedar Knolls", "county": "Morris", "state": "NJ" },
-  "07928": { "city": "Chatham", "county": "Morris", "state": "NJ" },
-  "07930": { "city": "Chester", "county": "Morris", "state": "NJ" },
-  "07931": { "city": "Far Hills", "county": "Morris", "state": "NJ" },
-  "07932": { "city": "Florham Park", "county": "Morris", "state": "NJ" },
-  "07933": { "city": "Gillette", "county": "Morris", "state": "NJ" },
-  "07935": { "city": "Green Village", "county": "Morris", "state": "NJ" },
-  "07936": { "city": "East Hanover", "county": "Morris", "state": "NJ" },
-  "07940": { "city": "Madison", "county": "Morris", "state": "NJ" },
-  "07945": { "city": "Mendham", "county": "Morris", "state": "NJ" },
-  "07946": { "city": "Millington", "county": "Morris", "state": "NJ" },
-  "07950": { "city": "Morris Plains", "county": "Morris", "state": "NJ" },
-  "07960": { "city": "Morristown", "county": "Morris", "state": "NJ" },
-  "07961": { "city": "Morristown", "county": "Morris", "state": "NJ" },
-  "07962": { "city": "Morristown", "county": "Morris", "state": "NJ" },
-  "07963": { "city": "Morristown", "county": "Morris", "state": "NJ" },
-  "07970": { "city": "Mount Freedom", "county": "Morris", "state": "NJ" },
-  "07976": { "city": "New Vernon", "county": "Morris", "state": "NJ" },
-  "07980": { "city": "Stirling", "county": "Morris", "state": "NJ" },
-  "07981": { "city": "Whippany", "county": "Morris", "state": "NJ" },
-  "07983": { "city": "Brookside", "county": "Morris", "state": "NJ" },
-  "08512": { "city": "Cranbury", "county": "Mercer", "state": "NJ" },
-  "08520": { "city": "Hightstown", "county": "Mercer", "state": "NJ" },
-  "08525": { "city": "Hopewell", "county": "Mercer", "state": "NJ" },
-  "08530": { "city": "Lambertville", "county": "Mercer", "state": "NJ" },
-  "08534": { "city": "Pennington", "county": "Mercer", "state": "NJ" },
-  "08536": { "city": "Plainsboro", "county": "Mercer", "state": "NJ" },
-  "08540": { "city": "Princeton", "county": "Mercer", "state": "NJ" },
-  "08541": { "city": "Princeton", "county": "Mercer", "state": "NJ" },
-  "08542": { "city": "Princeton", "county": "Mercer", "state": "NJ" },
-  "08543": { "city": "Princeton", "county": "Mercer", "state": "NJ" },
-  "08544": { "city": "Princeton", "county": "Mercer", "state": "NJ" },
-  "08550": { "city": "Princeton Junction", "county": "Mercer", "state": "NJ" },
-  "08560": { "city": "Titusville", "county": "Mercer", "state": "NJ" },
-  "08601": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08602": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08603": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08604": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08605": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08606": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08607": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08608": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08609": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08610": { "city": "Hamilton", "county": "Mercer", "state": "NJ" },
-  "08611": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08618": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08619": { "city": "Hamilton", "county": "Mercer", "state": "NJ" },
-  "08620": { "city": "Hamilton", "county": "Mercer", "state": "NJ" },
-  "08625": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08628": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08629": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08638": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08640": { "city": "Fort Dix", "county": "Mercer", "state": "NJ" },
-  "08641": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08645": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08646": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08647": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08648": { "city": "Lawrence Township", "county": "Mercer", "state": "NJ" },
-  "08650": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08666": { "city": "Trenton", "county": "Mercer", "state": "NJ" },
-  "08690": { "city": "Hamilton", "county": "Mercer", "state": "NJ" },
-  "08691": { "city": "Robbinsville", "county": "Mercer", "state": "NJ" },
-  "08695": { "city": "Trenton", "county": "Mercer", "state": "NJ" }
+  "10501": {
+    "city": "Amawalk",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10502": {
+    "city": "Ardsley",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10503": {
+    "city": "Ardsley-on-Hudson",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10504": {
+    "city": "Armonk",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10505": {
+    "city": "Baldwin Place",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10506": {
+    "city": "Bedford",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10507": {
+    "city": "Bedford Hills",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10509": {
+    "city": "Brewster",
+    "county": "Putnam",
+    "state": "NY"
+  },
+  "10510": {
+    "city": "Briarcliff Manor",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10511": {
+    "city": "Buchanan",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10512": {
+    "city": "Carmel",
+    "county": "Putnam",
+    "state": "NY"
+  },
+  "10514": {
+    "city": "Chappaqua",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10516": {
+    "city": "Cold Spring",
+    "county": "Putnam",
+    "state": "NY"
+  },
+  "10517": {
+    "city": "Crompond",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10518": {
+    "city": "Cross River",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10519": {
+    "city": "Croton Falls",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10520": {
+    "city": "Croton-on-Hudson",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10522": {
+    "city": "Dobbs Ferry",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10523": {
+    "city": "Elmsford",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10524": {
+    "city": "Garrison",
+    "county": "Putnam",
+    "state": "NY"
+  },
+  "10526": {
+    "city": "Goldens Bridge",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10527": {
+    "city": "Granite Springs",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10528": {
+    "city": "Harrison",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10530": {
+    "city": "Hartsdale",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10532": {
+    "city": "Hawthorne",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10533": {
+    "city": "Irvington",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10535": {
+    "city": "Jefferson Valley",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10536": {
+    "city": "Katonah",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10537": {
+    "city": "Lake Peekskill",
+    "county": "Putnam",
+    "state": "NY"
+  },
+  "10538": {
+    "city": "Larchmont",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10541": {
+    "city": "Mahopac",
+    "county": "Putnam",
+    "state": "NY"
+  },
+  "10542": {
+    "city": "Mahopac Falls",
+    "county": "Putnam",
+    "state": "NY"
+  },
+  "10543": {
+    "city": "Mamaroneck",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10545": {
+    "city": "Maryknoll",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10546": {
+    "city": "Millwood",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10547": {
+    "city": "Mohegan Lake",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10548": {
+    "city": "Montrose",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10549": {
+    "city": "Mount Kisco",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10550": {
+    "city": "Mount Vernon",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10551": {
+    "city": "Mount Vernon",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10552": {
+    "city": "Mount Vernon",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10553": {
+    "city": "Mount Vernon",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10560": {
+    "city": "North Salem",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10562": {
+    "city": "Ossining",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10566": {
+    "city": "Peekskill",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10567": {
+    "city": "Cortlandt Manor",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10570": {
+    "city": "Pleasantville",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10573": {
+    "city": "Port Chester",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10576": {
+    "city": "Pound Ridge",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10577": {
+    "city": "Purchase",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10578": {
+    "city": "Purdys",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10579": {
+    "city": "Putnam Valley",
+    "county": "Putnam",
+    "state": "NY"
+  },
+  "10580": {
+    "city": "Rye",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10583": {
+    "city": "Scarsdale",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10587": {
+    "city": "Shenorock",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10588": {
+    "city": "Shrub Oak",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10589": {
+    "city": "Somers",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10590": {
+    "city": "South Salem",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10591": {
+    "city": "Tarrytown",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10594": {
+    "city": "Thornwood",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10595": {
+    "city": "Valhalla",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10597": {
+    "city": "Waccabuc",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10598": {
+    "city": "Yorktown Heights",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10601": {
+    "city": "White Plains",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10602": {
+    "city": "White Plains",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10603": {
+    "city": "White Plains",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10604": {
+    "city": "West Harrison",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10605": {
+    "city": "White Plains",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10606": {
+    "city": "White Plains",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10607": {
+    "city": "White Plains",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10608": {
+    "city": "White Plains",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10701": {
+    "city": "Yonkers",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10702": {
+    "city": "Yonkers",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10703": {
+    "city": "Yonkers",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10704": {
+    "city": "Yonkers",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10705": {
+    "city": "Yonkers",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10706": {
+    "city": "Hastings-on-Hudson",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10707": {
+    "city": "Tuckahoe",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10708": {
+    "city": "Bronxville",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10709": {
+    "city": "Eastchester",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10710": {
+    "city": "Yonkers",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10801": {
+    "city": "New Rochelle",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10802": {
+    "city": "New Rochelle",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10803": {
+    "city": "Pelham",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10804": {
+    "city": "New Rochelle",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10805": {
+    "city": "New Rochelle",
+    "county": "Westchester",
+    "state": "NY"
+  },
+  "10901": {
+    "city": "Suffern",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10910": {
+    "city": "Arden",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10911": {
+    "city": "Bear Mountain",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10912": {
+    "city": "Bellvale",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10913": {
+    "city": "Blauvelt",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10914": {
+    "city": "Blooming Grove",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10915": {
+    "city": "Bullville",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10916": {
+    "city": "Campbell Hall",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10917": {
+    "city": "Central Valley",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10918": {
+    "city": "Chester",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10919": {
+    "city": "Circleville",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10920": {
+    "city": "Congers",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10921": {
+    "city": "Florida",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10922": {
+    "city": "Fort Montgomery",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10923": {
+    "city": "Garnerville",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10924": {
+    "city": "Goshen",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10925": {
+    "city": "Greenwood Lake",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10926": {
+    "city": "Harriman",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10927": {
+    "city": "Haverstraw",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10928": {
+    "city": "Highland Falls",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10930": {
+    "city": "Highland Mills",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10931": {
+    "city": "Hillburn",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10932": {
+    "city": "Howells",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10933": {
+    "city": "Johnson",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10940": {
+    "city": "Middletown",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10941": {
+    "city": "Middletown",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10950": {
+    "city": "Monroe",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10952": {
+    "city": "Monsey",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10954": {
+    "city": "Nanuet",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10956": {
+    "city": "New City",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10958": {
+    "city": "New Hampton",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10959": {
+    "city": "New Milford",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10960": {
+    "city": "Nyack",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10962": {
+    "city": "Orangeburg",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10963": {
+    "city": "Otisville",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10964": {
+    "city": "Palisades",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10965": {
+    "city": "Pearl River",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10968": {
+    "city": "Piermont",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10969": {
+    "city": "Pine Island",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10970": {
+    "city": "Pomona",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10973": {
+    "city": "Slate Hill",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10974": {
+    "city": "Sloatsburg",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10975": {
+    "city": "Southfields",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10976": {
+    "city": "Sparkill",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10977": {
+    "city": "Spring Valley",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10979": {
+    "city": "Sterling Forest",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10980": {
+    "city": "Stony Point",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10981": {
+    "city": "Sugar Loaf",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10982": {
+    "city": "Tallman",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10983": {
+    "city": "Tappan",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10984": {
+    "city": "Thiells",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10985": {
+    "city": "Thompson Ridge",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10986": {
+    "city": "Tomkins Cove",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10987": {
+    "city": "Tuxedo Park",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10988": {
+    "city": "Unionville",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10989": {
+    "city": "Valley Cottage",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10990": {
+    "city": "Warwick",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10992": {
+    "city": "Washingtonville",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10993": {
+    "city": "West Haverstraw",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10994": {
+    "city": "West Nyack",
+    "county": "Rockland",
+    "state": "NY"
+  },
+  "10996": {
+    "city": "West Point",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10997": {
+    "city": "West Point",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "10998": {
+    "city": "Westtown",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "11001": {
+    "city": "Floral Park",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11003": {
+    "city": "Elmont",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11010": {
+    "city": "Franklin Square",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11020": {
+    "city": "Great Neck",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11021": {
+    "city": "Great Neck",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11023": {
+    "city": "Great Neck",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11024": {
+    "city": "Great Neck",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11030": {
+    "city": "Manhasset",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11040": {
+    "city": "New Hyde Park",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11042": {
+    "city": "New Hyde Park",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11050": {
+    "city": "Port Washington",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11051": {
+    "city": "Port Washington",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11052": {
+    "city": "Port Washington",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11053": {
+    "city": "Port Washington",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11054": {
+    "city": "Port Washington",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11096": {
+    "city": "Inwood",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11501": {
+    "city": "Mineola",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11507": {
+    "city": "Albertson",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11509": {
+    "city": "Atlantic Beach",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11510": {
+    "city": "Baldwin",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11514": {
+    "city": "Carle Place",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11516": {
+    "city": "Cedarhurst",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11518": {
+    "city": "East Rockaway",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11520": {
+    "city": "Freeport",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11530": {
+    "city": "Garden City",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11531": {
+    "city": "Garden City",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11542": {
+    "city": "Glen Cove",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11545": {
+    "city": "Glen Head",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11547": {
+    "city": "Glenwood Landing",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11548": {
+    "city": "Greenvale",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11549": {
+    "city": "Hempstead",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11550": {
+    "city": "Hempstead",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11551": {
+    "city": "Hempstead",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11552": {
+    "city": "West Hempstead",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11553": {
+    "city": "Uniondale",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11554": {
+    "city": "East Meadow",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11556": {
+    "city": "Uniondale",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11557": {
+    "city": "Hewlett",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11558": {
+    "city": "Island Park",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11559": {
+    "city": "Lawrence",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11560": {
+    "city": "Locust Valley",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11561": {
+    "city": "Long Beach",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11563": {
+    "city": "Lynbrook",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11565": {
+    "city": "Malverne",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11566": {
+    "city": "Merrick",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11568": {
+    "city": "Old Westbury",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11569": {
+    "city": "Point Lookout",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11570": {
+    "city": "Rockville Centre",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11571": {
+    "city": "Rockville Centre",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11572": {
+    "city": "Oceanside",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11575": {
+    "city": "Roosevelt",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11576": {
+    "city": "Roslyn",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11577": {
+    "city": "Roslyn Heights",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11579": {
+    "city": "Sea Cliff",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11580": {
+    "city": "Valley Stream",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11581": {
+    "city": "Valley Stream",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11582": {
+    "city": "Valley Stream",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11590": {
+    "city": "Westbury",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11596": {
+    "city": "Williston Park",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11598": {
+    "city": "Woodmere",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11599": {
+    "city": "Garden City",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11701": {
+    "city": "Amityville",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11702": {
+    "city": "Babylon",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11703": {
+    "city": "North Babylon",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11704": {
+    "city": "West Babylon",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11705": {
+    "city": "Bayport",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11706": {
+    "city": "Bay Shore",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11707": {
+    "city": "West Babylon",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11708": {
+    "city": "Amityville",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11709": {
+    "city": "Bayville",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11710": {
+    "city": "Bellmore",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11713": {
+    "city": "Bellport",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11714": {
+    "city": "Bethpage",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11715": {
+    "city": "Blue Point",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11716": {
+    "city": "Bohemia",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11717": {
+    "city": "Brentwood",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11718": {
+    "city": "Brightwaters",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11719": {
+    "city": "Brookhaven",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11720": {
+    "city": "Centereach",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11721": {
+    "city": "Centerport",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11722": {
+    "city": "Central Islip",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11724": {
+    "city": "Cold Spring Harbor",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11725": {
+    "city": "Commack",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11726": {
+    "city": "Copiague",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11727": {
+    "city": "Coram",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11729": {
+    "city": "Deer Park",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11730": {
+    "city": "East Islip",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11731": {
+    "city": "East Northport",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11732": {
+    "city": "East Norwich",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11733": {
+    "city": "East Setauket",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11735": {
+    "city": "Farmingdale",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11738": {
+    "city": "Farmingville",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11739": {
+    "city": "Great River",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11740": {
+    "city": "Greenlawn",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11741": {
+    "city": "Holbrook",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11742": {
+    "city": "Holtsville",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11743": {
+    "city": "Huntington",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11746": {
+    "city": "Huntington Station",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11747": {
+    "city": "Melville",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11749": {
+    "city": "Islandia",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11751": {
+    "city": "Islip",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11752": {
+    "city": "Islip Terrace",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11753": {
+    "city": "Jericho",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11754": {
+    "city": "Kings Park",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11755": {
+    "city": "Lake Grove",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11756": {
+    "city": "Levittown",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11757": {
+    "city": "Lindenhurst",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11758": {
+    "city": "Massapequa",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11762": {
+    "city": "Massapequa Park",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11763": {
+    "city": "Medford",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11764": {
+    "city": "Miller Place",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11765": {
+    "city": "Mill Neck",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11766": {
+    "city": "Mount Sinai",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11767": {
+    "city": "Nesconset",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11768": {
+    "city": "Northport",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11769": {
+    "city": "Oakdale",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11770": {
+    "city": "Ocean Beach",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11771": {
+    "city": "Oyster Bay",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11772": {
+    "city": "Patchogue",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11776": {
+    "city": "Port Jefferson Station",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11777": {
+    "city": "Port Jefferson",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11778": {
+    "city": "Rocky Point",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11779": {
+    "city": "Ronkonkoma",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11780": {
+    "city": "Saint James",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11782": {
+    "city": "Sayville",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11783": {
+    "city": "Seaford",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11784": {
+    "city": "Selden",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11786": {
+    "city": "Shoreham",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11787": {
+    "city": "Smithtown",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11788": {
+    "city": "Hauppauge",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11789": {
+    "city": "Sound Beach",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11790": {
+    "city": "Stony Brook",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11791": {
+    "city": "Syosset",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11792": {
+    "city": "Wading River",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11793": {
+    "city": "Wantagh",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11794": {
+    "city": "Stony Brook",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11795": {
+    "city": "West Islip",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11796": {
+    "city": "West Sayville",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11797": {
+    "city": "Woodbury",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11798": {
+    "city": "Wyandanch",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11801": {
+    "city": "Hicksville",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11802": {
+    "city": "Hicksville",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11803": {
+    "city": "Plainview",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11804": {
+    "city": "Old Bethpage",
+    "county": "Nassau",
+    "state": "NY"
+  },
+  "11901": {
+    "city": "Riverhead",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11930": {
+    "city": "Amagansett",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11931": {
+    "city": "Aquebogue",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11932": {
+    "city": "Bridgehampton",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11933": {
+    "city": "Calverton",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11934": {
+    "city": "Center Moriches",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11935": {
+    "city": "Cutchogue",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11937": {
+    "city": "East Hampton",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11939": {
+    "city": "East Marion",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11940": {
+    "city": "East Moriches",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11941": {
+    "city": "Eastport",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11942": {
+    "city": "East Quogue",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11944": {
+    "city": "Greenport",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11946": {
+    "city": "Hampton Bays",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11947": {
+    "city": "Jamesport",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11948": {
+    "city": "Laurel",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11949": {
+    "city": "Manorville",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11950": {
+    "city": "Mastic",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11951": {
+    "city": "Mastic Beach",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11952": {
+    "city": "Mattituck",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11953": {
+    "city": "Middle Island",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11954": {
+    "city": "Montauk",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11955": {
+    "city": "Moriches",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11956": {
+    "city": "New Suffolk",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11957": {
+    "city": "Orient",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11958": {
+    "city": "Peconic",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11959": {
+    "city": "Quogue",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11960": {
+    "city": "Remsenburg",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11961": {
+    "city": "Ridge",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11962": {
+    "city": "Sagaponack",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11963": {
+    "city": "Sag Harbor",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11964": {
+    "city": "Shelter Island",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11965": {
+    "city": "Shelter Island Heights",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11967": {
+    "city": "Shirley",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11968": {
+    "city": "Southampton",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11969": {
+    "city": "Southampton",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11970": {
+    "city": "South Jamesport",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11971": {
+    "city": "Southold",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11972": {
+    "city": "Speonk",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11973": {
+    "city": "Upton",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11975": {
+    "city": "Wainscott",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11976": {
+    "city": "Water Mill",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11977": {
+    "city": "Westhampton",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11978": {
+    "city": "Westhampton Beach",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "11980": {
+    "city": "Yaphank",
+    "county": "Suffolk",
+    "state": "NY"
+  },
+  "12501": {
+    "city": "Amenia",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12504": {
+    "city": "Annandale-on-Hudson",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12507": {
+    "city": "Bangall",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12508": {
+    "city": "Beacon",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12514": {
+    "city": "Clinton Corners",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12522": {
+    "city": "Dover Plains",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12524": {
+    "city": "Fishkill",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12531": {
+    "city": "Holmes",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12533": {
+    "city": "Hopewell Junction",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12537": {
+    "city": "Hughsonville",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12538": {
+    "city": "Hyde Park",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12540": {
+    "city": "Lagrangeville",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12543": {
+    "city": "Maybrook",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "12545": {
+    "city": "Millbrook",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12546": {
+    "city": "Millerton",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12549": {
+    "city": "Montgomery",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "12550": {
+    "city": "Newburgh",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "12553": {
+    "city": "New Windsor",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "12564": {
+    "city": "Pawling",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12566": {
+    "city": "Pine Bush",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "12567": {
+    "city": "Pine Plains",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12569": {
+    "city": "Pleasant Valley",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12570": {
+    "city": "Poughquag",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12571": {
+    "city": "Red Hook",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12572": {
+    "city": "Rhinebeck",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12574": {
+    "city": "Rhinecliff",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12575": {
+    "city": "Rock Tavern",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "12577": {
+    "city": "Salisbury Mills",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "12578": {
+    "city": "Salt Point",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12580": {
+    "city": "Staatsburg",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12581": {
+    "city": "Stanfordville",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12582": {
+    "city": "Stormville",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12585": {
+    "city": "Verbank",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12586": {
+    "city": "Walden",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "12589": {
+    "city": "Wallkill",
+    "county": "Orange",
+    "state": "NY"
+  },
+  "12590": {
+    "city": "Wappingers Falls",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12592": {
+    "city": "Wassaic",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12594": {
+    "city": "Wingdale",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12601": {
+    "city": "Poughkeepsie",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12602": {
+    "city": "Poughkeepsie",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12603": {
+    "city": "Poughkeepsie",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "12604": {
+    "city": "Poughkeepsie",
+    "county": "Dutchess",
+    "state": "NY"
+  },
+  "01002": {
+    "city": "Amherst",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01003": {
+    "city": "Amherst",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01004": {
+    "city": "Amherst",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01007": {
+    "city": "Belchertown",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01011": {
+    "city": "Chester",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01012": {
+    "city": "Chesterfield",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01026": {
+    "city": "Cummington",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01027": {
+    "city": "Easthampton",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01032": {
+    "city": "Goshen",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01033": {
+    "city": "Granby",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01035": {
+    "city": "Hadley",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01036": {
+    "city": "Hampden",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01038": {
+    "city": "Hatfield",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01039": {
+    "city": "Haydenville",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01050": {
+    "city": "Huntington",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01053": {
+    "city": "Leeds",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01054": {
+    "city": "Leverett",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01060": {
+    "city": "Northampton",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01061": {
+    "city": "Northampton",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01062": {
+    "city": "Florence",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01063": {
+    "city": "Northampton",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01066": {
+    "city": "Pelham",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01070": {
+    "city": "Plainfield",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01073": {
+    "city": "Southampton",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01075": {
+    "city": "South Hadley",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01080": {
+    "city": "Three Rivers",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01082": {
+    "city": "Ware",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01085": {
+    "city": "Westfield",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01088": {
+    "city": "West Hatfield",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01093": {
+    "city": "Whately",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01094": {
+    "city": "Wheelwright",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01095": {
+    "city": "Wilbraham",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01096": {
+    "city": "Williamsburg",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01097": {
+    "city": "Worthington",
+    "county": "Hampshire",
+    "state": "MA"
+  },
+  "01201": {
+    "city": "Pittsfield",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01202": {
+    "city": "Pittsfield",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01203": {
+    "city": "Pittsfield",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01220": {
+    "city": "Adams",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01222": {
+    "city": "Ashley Falls",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01223": {
+    "city": "Becket",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01224": {
+    "city": "Berkshire",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01225": {
+    "city": "Cheshire",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01226": {
+    "city": "Dalton",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01229": {
+    "city": "Glendale",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01230": {
+    "city": "Great Barrington",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01235": {
+    "city": "Hinsdale",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01236": {
+    "city": "Housatonic",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01237": {
+    "city": "Lanesborough",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01238": {
+    "city": "Lee",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01240": {
+    "city": "Lenox",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01242": {
+    "city": "Lenox Dale",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01243": {
+    "city": "Middlefield",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01244": {
+    "city": "Mill River",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01245": {
+    "city": "Monterey",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01247": {
+    "city": "North Adams",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01252": {
+    "city": "North Egremont",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01253": {
+    "city": "Otis",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01254": {
+    "city": "Richmond",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01255": {
+    "city": "Sandisfield",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01256": {
+    "city": "Savoy",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01257": {
+    "city": "Sheffield",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01258": {
+    "city": "South Egremont",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01259": {
+    "city": "Southfield",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01260": {
+    "city": "South Lee",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01262": {
+    "city": "Stockbridge",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01263": {
+    "city": "Stockbridge",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01264": {
+    "city": "Tyringham",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01266": {
+    "city": "West Stockbridge",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01267": {
+    "city": "Williamstown",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01270": {
+    "city": "Windsor",
+    "county": "Berkshire",
+    "state": "MA"
+  },
+  "01301": {
+    "city": "Greenfield",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01302": {
+    "city": "Greenfield",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01330": {
+    "city": "Ashfield",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01331": {
+    "city": "Athol",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01337": {
+    "city": "Bernardston",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01338": {
+    "city": "Buckland",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01339": {
+    "city": "Charlemont",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01340": {
+    "city": "Colrain",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01341": {
+    "city": "Conway",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01342": {
+    "city": "Deerfield",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01343": {
+    "city": "Drury",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01344": {
+    "city": "Erving",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01346": {
+    "city": "Heath",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01347": {
+    "city": "Lake Pleasant",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01349": {
+    "city": "Millers Falls",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01350": {
+    "city": "Monroe Bridge",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01351": {
+    "city": "Montague",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01354": {
+    "city": "Gill",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01355": {
+    "city": "New Salem",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01360": {
+    "city": "Northfield",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01364": {
+    "city": "Orange",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01366": {
+    "city": "Petersham",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01367": {
+    "city": "Rowe",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01368": {
+    "city": "Royalston",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01370": {
+    "city": "Shelburne Falls",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01373": {
+    "city": "South Deerfield",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01375": {
+    "city": "Sunderland",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01376": {
+    "city": "Turners Falls",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01378": {
+    "city": "Warwick",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01379": {
+    "city": "Wendell",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01380": {
+    "city": "Wendell Depot",
+    "county": "Franklin",
+    "state": "MA"
+  },
+  "01431": {
+    "city": "Ashby",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01432": {
+    "city": "Ayer",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01450": {
+    "city": "Groton",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01453": {
+    "city": "Leominster",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01460": {
+    "city": "Littleton",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01463": {
+    "city": "Pepperell",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01464": {
+    "city": "Shirley",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01469": {
+    "city": "Townsend",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01471": {
+    "city": "Westford",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01719": {
+    "city": "Boxborough",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01720": {
+    "city": "Acton",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01730": {
+    "city": "Bedford",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01741": {
+    "city": "Carlisle",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01742": {
+    "city": "Concord",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01754": {
+    "city": "Maynard",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01773": {
+    "city": "Lincoln",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01775": {
+    "city": "Stow",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01776": {
+    "city": "Sudbury",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01778": {
+    "city": "Wayland",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01821": {
+    "city": "Billerica",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01824": {
+    "city": "Chelmsford",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01826": {
+    "city": "Dracut",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01850": {
+    "city": "Lowell",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01851": {
+    "city": "Lowell",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01852": {
+    "city": "Lowell",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01853": {
+    "city": "Lowell",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01854": {
+    "city": "Lowell",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01862": {
+    "city": "North Billerica",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01863": {
+    "city": "North Chelmsford",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01876": {
+    "city": "Tewksbury",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "07418": {
+    "city": "Hamburg",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07419": {
+    "city": "Hamburg",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07422": {
+    "city": "Highland Lakes",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07428": {
+    "city": "McAfee",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07435": {
+    "city": "Newfoundland",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07439": {
+    "city": "Ogdensburg",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07460": {
+    "city": "Stockholm",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07461": {
+    "city": "Sussex",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07462": {
+    "city": "Vernon",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07801": {
+    "city": "Dover",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07803": {
+    "city": "Mine Hill",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07821": {
+    "city": "Andover",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07822": {
+    "city": "Augusta",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07826": {
+    "city": "Branchville",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07827": {
+    "city": "Montague",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07828": {
+    "city": "Budd Lake",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07834": {
+    "city": "Denville",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07836": {
+    "city": "Flanders",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07838": {
+    "city": "Great Meadows",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07839": {
+    "city": "Greendell",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07840": {
+    "city": "Hackettstown",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07842": {
+    "city": "Hibernia",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07843": {
+    "city": "Hopatcong",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07845": {
+    "city": "Ironia",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07846": {
+    "city": "Johnsonburg",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07847": {
+    "city": "Kenvil",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07848": {
+    "city": "Lafayette",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07849": {
+    "city": "Lake Hopatcong",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07850": {
+    "city": "Landing",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07851": {
+    "city": "Layton",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07852": {
+    "city": "Ledgewood",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07853": {
+    "city": "Long Valley",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07855": {
+    "city": "Middleville",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07856": {
+    "city": "Mount Arlington",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07857": {
+    "city": "Netcong",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07860": {
+    "city": "Newton",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07866": {
+    "city": "Rockaway",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07869": {
+    "city": "Randolph",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07870": {
+    "city": "Schooleys Mountain",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07871": {
+    "city": "Sparta",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07874": {
+    "city": "Stanhope",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07875": {
+    "city": "Stillwater",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07876": {
+    "city": "Succasunna",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07877": {
+    "city": "Swartswood",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07878": {
+    "city": "Mount Tabor",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07879": {
+    "city": "Tranquility",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07881": {
+    "city": "Wallpack Center",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07885": {
+    "city": "Wharton",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07890": {
+    "city": "Wantage",
+    "county": "Sussex",
+    "state": "NJ"
+  },
+  "07927": {
+    "city": "Cedar Knolls",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07928": {
+    "city": "Chatham",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07930": {
+    "city": "Chester",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07931": {
+    "city": "Far Hills",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07932": {
+    "city": "Florham Park",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07933": {
+    "city": "Gillette",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07935": {
+    "city": "Green Village",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07936": {
+    "city": "East Hanover",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07940": {
+    "city": "Madison",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07945": {
+    "city": "Mendham",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07946": {
+    "city": "Millington",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07950": {
+    "city": "Morris Plains",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07960": {
+    "city": "Morristown",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07961": {
+    "city": "Morristown",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07962": {
+    "city": "Morristown",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07963": {
+    "city": "Morristown",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07970": {
+    "city": "Mount Freedom",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07976": {
+    "city": "New Vernon",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07980": {
+    "city": "Stirling",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07981": {
+    "city": "Whippany",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "07983": {
+    "city": "Brookside",
+    "county": "Morris",
+    "state": "NJ"
+  },
+  "08512": {
+    "city": "Cranbury",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08520": {
+    "city": "Hightstown",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08525": {
+    "city": "Hopewell",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08530": {
+    "city": "Lambertville",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08534": {
+    "city": "Pennington",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08536": {
+    "city": "Plainsboro",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08540": {
+    "city": "Princeton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08541": {
+    "city": "Princeton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08542": {
+    "city": "Princeton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08543": {
+    "city": "Princeton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08544": {
+    "city": "Princeton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08550": {
+    "city": "Princeton Junction",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08560": {
+    "city": "Titusville",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08601": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08602": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08603": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08604": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08605": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08606": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08607": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08608": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08609": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08610": {
+    "city": "Hamilton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08611": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08618": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08619": {
+    "city": "Hamilton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08620": {
+    "city": "Hamilton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08625": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08628": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08629": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08638": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08640": {
+    "city": "Fort Dix",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08641": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08645": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08646": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08647": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08648": {
+    "city": "Lawrence Township",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08650": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08666": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08690": {
+    "city": "Hamilton",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08691": {
+    "city": "Robbinsville",
+    "county": "Mercer",
+    "state": "NJ"
+  },
+  "08695": {
+    "city": "Trenton",
+    "county": "Mercer",
+    "state": "NJ"
+  }
 }
