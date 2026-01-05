@@ -1,5 +1,5 @@
 // src/routes/analytics.js - Privacy-Compliant Analytics & Insights
-// V1.4.0: Added coverage gap reporting (check /api/analytics/coverage-gaps)
+// V1.4.1: Coverage gaps now persisted to database (survives restarts)
 const express = require('express');
 const { body, validationResult, param } = require('express-validator');
 const { v4: uuidv4 } = require('uuid');
@@ -10,8 +10,7 @@ let regionalConsumption = new Map(); // zipCode prefix -> aggregated data
 let marketInsights = new Map(); // zipCode prefix -> insights
 let anonymousUsagePatterns = []; // Anonymous consumption patterns
 
-// V1.4.0: Coverage gap tracking
-let coverageGapReports = new Map(); // ZIP -> { count, firstReported, lastReported, county }
+// Note: Coverage gap tracking moved to database (V1.4.1)
 
 // Validation middleware
 const validateZipCode = [param('zipCode').matches(/^\d{5}$/).withMessage('Invalid ZIP code format')];
@@ -561,8 +560,55 @@ try {
 }
 
 /**
+ * Infer state from ZIP code prefix
+ * Covers Northeast heating oil market states
+ */
+function inferStateFromZip(zipCode) {
+  const prefix2 = zipCode.substring(0, 2);
+  const prefix3 = zipCode.substring(0, 3);
+
+  // Use 3-digit prefix for more accuracy where ranges overlap
+  // Rhode Island: 028-029
+  if (['028', '029'].includes(prefix3)) return 'RI';
+
+  // 2-digit prefix mapping for most states
+  const stateMap = {
+    // New England
+    '01': 'MA', '02': 'MA',  // Massachusetts (except 028-029 = RI)
+    '03': 'NH',              // New Hampshire
+    '04': 'ME',              // Maine
+    '05': 'VT',              // Vermont
+    '06': 'CT',              // Connecticut
+
+    // Mid-Atlantic
+    '07': 'NJ', '08': 'NJ',  // New Jersey
+    '10': 'NY', '11': 'NY', '12': 'NY', '13': 'NY', '14': 'NY',  // New York
+    '15': 'PA', '16': 'PA', '17': 'PA', '18': 'PA', '19': 'PA',  // Pennsylvania
+
+    // DC/MD/VA/DE (less common for heating oil but included)
+    '20': 'DC',              // DC (partial, also VA/MD)
+    '21': 'MD',              // Maryland
+    '22': 'VA', '23': 'VA',  // Virginia
+    '19': 'DE',              // Delaware (shares with PA, DE is 197-199)
+  };
+
+  // Special case: Delaware is 197-199 (subset of 19xxx)
+  if (prefix3 === '197' || prefix3 === '198' || prefix3 === '199') return 'DE';
+
+  // Special case: DC is 200-205, MD is 206-219
+  if (prefix2 === '20') {
+    const prefix3Num = parseInt(prefix3);
+    if (prefix3Num <= 205) return 'DC';
+    return 'MD';
+  }
+
+  return stateMap[prefix2] || null;
+}
+
+/**
  * POST /api/analytics/coverage-gap
  * Report a coverage gap (no suppliers found for user's ZIP)
+ * V1.4.1: Now persisted to database for survival across restarts
  * Tracked for admin review at GET /api/analytics/coverage-gaps
  */
 router.post('/coverage-gap', [
@@ -572,28 +618,23 @@ router.post('/coverage-gap', [
   try {
     const { zipCode } = req.body;
     const logger = req.app.locals.logger;
+    const db = req.app.locals.db;
     const county = getCountyForZip(zipCode) || 'Unknown';
 
-    const existing = coverageGapReports.get(zipCode);
+    // Infer state from ZIP prefix (Northeast heating oil market)
+    const state = inferStateFromZip(zipCode);
 
-    if (existing) {
-      existing.count++;
-      existing.lastReported = new Date().toISOString();
-    } else {
-      coverageGapReports.set(zipCode, {
-        count: 1,
-        firstReported: new Date().toISOString(),
-        lastReported: new Date().toISOString(),
-        county
-      });
-    }
+    // Use database persistence
+    const result = await db.reportCoverageGap(zipCode, county, state);
 
-    logger?.info(`[CoverageGap] ZIP ${zipCode} (${county} County) - report #${coverageGapReports.get(zipCode).count}`);
+    logger?.info(`[CoverageGap] ZIP ${zipCode} (${county} County, ${state || 'Unknown'}) - report #${result.reportCount} [DB]`);
 
     res.json({
       received: true,
       county,
-      reportCount: coverageGapReports.get(zipCode).count
+      state,
+      reportCount: result.reportCount,
+      isNew: result.isNew
     });
 
   } catch (error) {
@@ -608,26 +649,79 @@ router.post('/coverage-gap', [
 /**
  * GET /api/analytics/coverage-gaps
  * Admin endpoint: List all reported coverage gaps
+ * V1.4.1: Now reads from database
+ * Supports query params: ?resolved=false&state=NY&limit=50
  */
-router.get('/coverage-gaps', (req, res) => {
-  const gaps = [];
-  coverageGapReports.forEach((data, zipCode) => {
-    gaps.push({
-      zipCode,
-      county: data.county,
-      reportCount: data.count,
-      firstReported: data.firstReported,
-      lastReported: data.lastReported
+router.get('/coverage-gaps', async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { resolved, state, limit } = req.query;
+
+    // Build filters from query params
+    const filters = {};
+    if (resolved !== undefined) {
+      filters.resolved = resolved === 'true';
+    }
+    if (state) {
+      filters.state = state;
+    }
+    if (limit) {
+      filters.limit = parseInt(limit, 10);
+    }
+
+    const result = await db.getCoverageGaps(filters);
+
+    res.json({
+      totalGaps: result.length,
+      gaps: result
     });
-  });
 
-  // Sort by report count (most reported first)
-  gaps.sort((a, b) => b.reportCount - a.reportCount);
+  } catch (error) {
+    req.app.locals.logger?.error('[CoverageGaps] Error fetching:', error.message);
+    res.status(500).json({
+      error: 'Failed to fetch coverage gaps',
+      message: error.message
+    });
+  }
+});
 
-  res.json({
-    totalGaps: gaps.length,
-    gaps
-  });
+/**
+ * PATCH /api/analytics/coverage-gaps/:zipCode/resolve
+ * Mark a coverage gap as resolved (e.g., supplier added)
+ */
+router.patch('/coverage-gaps/:zipCode/resolve', [
+  param('zipCode').matches(/^\d{5}$/).withMessage('Invalid ZIP code format'),
+  body('notes').optional().isString(),
+  handleValidationErrors
+], async (req, res) => {
+  try {
+    const { zipCode } = req.params;
+    const { notes } = req.body;
+    const db = req.app.locals.db;
+    const logger = req.app.locals.logger;
+
+    const result = await db.resolveCoverageGap(zipCode, notes);
+
+    if (result.success) {
+      logger?.info(`[CoverageGap] ZIP ${zipCode} marked as resolved`);
+      res.json({
+        success: true,
+        message: `Coverage gap for ZIP ${zipCode} marked as resolved`
+      });
+    } else {
+      res.status(404).json({
+        error: 'Coverage gap not found',
+        message: `No coverage gap record for ZIP ${zipCode}`
+      });
+    }
+
+  } catch (error) {
+    req.app.locals.logger?.error('[CoverageGap] Resolve error:', error.message);
+    res.status(500).json({
+      error: 'Failed to resolve coverage gap',
+      message: error.message
+    });
+  }
 });
 
 module.exports = router;

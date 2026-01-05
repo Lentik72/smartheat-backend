@@ -34,9 +34,119 @@ const IOS_RESOURCES_PATH = path.join(__dirname, '../../SmartHeatIOS/Resources/Su
 const IOS_ZIPDB_PATH = path.join(__dirname, '../../SmartHeatIOS/Resources/ZipDatabase.enc');
 const JSON_REFERENCE_PATH = '/tmp/SuppliersDirectory.json';
 const ZIPDB_REFERENCE_PATH = '/tmp/ZipDatabase.json';
+const BACKUP_DIR = '/tmp/supplier-backups';
+
+// Key ZIPs to validate coverage (high-value areas)
+const KEY_ZIPS_TO_VALIDATE = ['10549', '10601', '10701', '11701', '11550'];
+const MIN_SUPPLIERS_THRESHOLD = 20; // Warn if supplier count drops below this
 
 // Load ZIP database from backend
 const zipDatabase = require('../src/data/zip-database.json');
+
+/**
+ * Decrypt data for comparison (matching iOS CryptoKit)
+ */
+function decryptData(encryptedBuffer) {
+  const key = crypto.createHash('sha256').update(ENCRYPTION_PASSPHRASE).digest();
+  const iv = encryptedBuffer.subarray(0, 12);
+  const tag = encryptedBuffer.subarray(encryptedBuffer.length - 16);
+  const encrypted = encryptedBuffer.subarray(12, encryptedBuffer.length - 16);
+
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+  let decrypted = decipher.update(encrypted, null, 'utf8');
+  decrypted += decipher.final('utf8');
+  return JSON.parse(decrypted);
+}
+
+/**
+ * Create timestamped backup of current files
+ */
+function createBackup() {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+  if (!fs.existsSync(BACKUP_DIR)) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  }
+
+  const backups = [];
+
+  if (fs.existsSync(IOS_RESOURCES_PATH)) {
+    const backupPath = path.join(BACKUP_DIR, `SuppliersDirectory_${timestamp}.enc`);
+    fs.copyFileSync(IOS_RESOURCES_PATH, backupPath);
+    backups.push(backupPath);
+  }
+
+  if (fs.existsSync(IOS_ZIPDB_PATH)) {
+    const backupPath = path.join(BACKUP_DIR, `ZipDatabase_${timestamp}.enc`);
+    fs.copyFileSync(IOS_ZIPDB_PATH, backupPath);
+    backups.push(backupPath);
+  }
+
+  return backups;
+}
+
+/**
+ * Load previous suppliers for comparison
+ */
+function loadPreviousSuppliers() {
+  if (!fs.existsSync(IOS_RESOURCES_PATH)) {
+    return null;
+  }
+  try {
+    const data = fs.readFileSync(IOS_RESOURCES_PATH);
+    return decryptData(data);
+  } catch (e) {
+    console.warn('Warning: Could not decrypt previous suppliers file');
+    return null;
+  }
+}
+
+/**
+ * Validate new data against safeguards
+ */
+function validateData(newSuppliers, previousSuppliers) {
+  const warnings = [];
+  const errors = [];
+
+  // Check minimum supplier count
+  if (newSuppliers.length < MIN_SUPPLIERS_THRESHOLD) {
+    errors.push(`Supplier count (${newSuppliers.length}) is below minimum threshold (${MIN_SUPPLIERS_THRESHOLD})`);
+  }
+
+  // Check key ZIP coverage
+  for (const zip of KEY_ZIPS_TO_VALIDATE) {
+    const serving = newSuppliers.filter(s => s.postalCodesServed && s.postalCodesServed.includes(zip));
+    if (serving.length === 0) {
+      warnings.push(`No suppliers serving key ZIP ${zip}`);
+    } else if (serving.length < 3) {
+      warnings.push(`Only ${serving.length} supplier(s) serving key ZIP ${zip}`);
+    }
+  }
+
+  // Compare with previous if available
+  if (previousSuppliers) {
+    const prevNames = new Set(previousSuppliers.map(s => s.name));
+    const newNames = new Set(newSuppliers.map(s => s.name));
+
+    const removed = [...prevNames].filter(n => !newNames.has(n));
+    if (removed.length > 0) {
+      warnings.push(`${removed.length} supplier(s) removed: ${removed.slice(0, 5).join(', ')}${removed.length > 5 ? '...' : ''}`);
+    }
+
+    // Check for significant ZIP coverage drops
+    for (const zip of KEY_ZIPS_TO_VALIDATE) {
+      const prevServing = previousSuppliers.filter(s => s.postalCodesServed && s.postalCodesServed.includes(zip));
+      const newServing = newSuppliers.filter(s => s.postalCodesServed && s.postalCodesServed.includes(zip));
+
+      if (prevServing.length > 0 && newServing.length < prevServing.length * 0.5) {
+        errors.push(`ZIP ${zip} coverage dropped from ${prevServing.length} to ${newServing.length} suppliers (>50% loss)`);
+      }
+    }
+  }
+
+  return { warnings, errors };
+}
 
 /**
  * Encrypt data using AES-256-GCM (matching iOS CryptoKit)
@@ -57,6 +167,25 @@ function encryptData(jsonData) {
 
 async function main() {
   console.log('=== Generate Bundled Suppliers ===\n');
+
+  // Check for --force flag to skip validation errors
+  const forceMode = process.argv.includes('--force');
+
+  // Create backup of existing files
+  console.log('Creating backup of existing files...');
+  const backups = createBackup();
+  if (backups.length > 0) {
+    console.log(`Backed up ${backups.length} file(s) to ${BACKUP_DIR}`);
+  } else {
+    console.log('No existing files to backup');
+  }
+
+  // Load previous suppliers for comparison
+  const previousSuppliers = loadPreviousSuppliers();
+  if (previousSuppliers) {
+    console.log(`Previous bundle: ${previousSuppliers.length} suppliers`);
+  }
+  console.log();
 
   // Connect to database
   const databaseUrl = process.env.DATABASE_URL;
@@ -111,6 +240,7 @@ async function main() {
     }
 
     // Transform to DirectorySupplier format (matching iOS model with unified matching fields)
+    // NOTE: Validation happens AFTER transformation below
     const formatted = suppliers.map(s => ({
       id: s.id,
       name: s.name,
@@ -126,6 +256,36 @@ async function main() {
       serviceAreaRadius: s.serviceAreaRadius || 25,
       notes: s.notes || null
     }));
+
+    // =====================
+    // SAFEGUARD VALIDATION
+    // =====================
+    console.log('=== Validating Data ===');
+    const { warnings, errors } = validateData(formatted, previousSuppliers);
+
+    if (warnings.length > 0) {
+      console.log('\nWARNINGS:');
+      warnings.forEach(w => console.log(`  - ${w}`));
+    }
+
+    if (errors.length > 0) {
+      console.log('\nERRORS:');
+      errors.forEach(e => console.log(`  - ${e}`));
+
+      if (!forceMode) {
+        console.log('\nABORTED: Validation errors detected.');
+        console.log('Use --force flag to override and proceed anyway.');
+        console.log(`Backups available at: ${BACKUP_DIR}`);
+        process.exit(1);
+      } else {
+        console.log('\nWARNING: Proceeding despite errors (--force flag used)');
+      }
+    }
+
+    if (warnings.length === 0 && errors.length === 0) {
+      console.log('All validations passed');
+    }
+    console.log();
 
     // =====================
     // 1. SUPPLIERS DIRECTORY

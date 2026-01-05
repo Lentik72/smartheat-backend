@@ -7,9 +7,10 @@ let auditLogsMemory = new Map();
 let usersMemory = new Map();
 let communitySupplierMemory = new Map();
 let supplierReportsMemory = new Map();
+let coverageGapsMemory = new Map();  // V1.4.1: Coverage gaps fallback
 
 // Database Models
-let SupplierRequest, AuditLog, User, CommunitySupplier, SupplierReport;
+let SupplierRequest, AuditLog, User, CommunitySupplier, SupplierReport, CoverageGap;
 
 const initDatabase = (sequelize) => {
   if (!sequelize) {
@@ -281,16 +282,60 @@ const initDatabase = (sequelize) => {
       ]
     });
 
+    // V1.4.1: Define CoverageGap model for tracking supplier coverage gaps
+    CoverageGap = sequelize.define('CoverageGap', {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+      },
+      zipCode: {
+        type: DataTypes.STRING(5),
+        allowNull: false,
+        unique: true
+      },
+      county: DataTypes.STRING(100),
+      state: DataTypes.STRING(2),
+      reportCount: {
+        type: DataTypes.INTEGER,
+        defaultValue: 1
+      },
+      firstReportedAt: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+      },
+      lastReportedAt: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+      },
+      resolved: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },
+      resolvedAt: DataTypes.DATE,
+      notes: DataTypes.TEXT
+    }, {
+      tableName: 'coverage_gaps',
+      timestamps: true,
+      underscored: true,
+      indexes: [
+        { fields: ['zip_code'], unique: true },
+        { fields: ['report_count'] },
+        { fields: ['resolved'] },
+        { fields: ['last_reported_at'] }
+      ]
+    });
+
     // Define associations
     CommunitySupplier.hasMany(SupplierReport, { foreignKey: 'supplierId', as: 'reports' });
     SupplierReport.belongsTo(CommunitySupplier, { foreignKey: 'supplierId', as: 'supplier' });
 
     // Sync models (create tables if they don't exist)
-    sequelize.sync({ alter: false }) // Don't alter existing tables
+    sequelize.sync({ alter: true }) // Allow creating new tables
       .then(() => console.log('✅ Database models synchronized'))
       .catch(err => console.error('❌ Database sync error:', err.message));
 
-    return { SupplierRequest, AuditLog, User, CommunitySupplier, SupplierReport };
+    return { SupplierRequest, AuditLog, User, CommunitySupplier, SupplierReport, CoverageGap };
   } catch (error) {
     console.error('❌ Database model initialization error:', error.message);
     return null;
@@ -690,6 +735,120 @@ class DataPersistence {
       return updated;
     }
     return null;
+  }
+
+  // V1.4.1: Coverage Gap Methods
+  async reportCoverageGap(zipCode, county, state) {
+    if (this.hasDatabase && this.models.CoverageGap) {
+      try {
+        // Try to find existing gap
+        const existing = await this.models.CoverageGap.findOne({ where: { zipCode } });
+
+        if (existing) {
+          // Increment count and update timestamp
+          existing.reportCount += 1;
+          existing.lastReportedAt = new Date();
+          await existing.save();
+          return { ...existing.toJSON(), isNew: false };
+        } else {
+          // Create new gap record
+          const gap = await this.models.CoverageGap.create({
+            zipCode,
+            county,
+            state,
+            reportCount: 1,
+            firstReportedAt: new Date(),
+            lastReportedAt: new Date()
+          });
+          return { ...gap.toJSON(), isNew: true };
+        }
+      } catch (error) {
+        console.error('Database coverage gap error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    const existing = coverageGapsMemory.get(zipCode);
+    if (existing) {
+      existing.reportCount += 1;
+      existing.lastReportedAt = new Date().toISOString();
+      coverageGapsMemory.set(zipCode, existing);
+      return { ...existing, isNew: false };
+    } else {
+      const gap = {
+        id: require('uuid').v4(),
+        zipCode,
+        county,
+        state,
+        reportCount: 1,
+        firstReportedAt: new Date().toISOString(),
+        lastReportedAt: new Date().toISOString(),
+        resolved: false
+      };
+      coverageGapsMemory.set(zipCode, gap);
+      return { ...gap, isNew: true };
+    }
+  }
+
+  async getCoverageGaps(filters = {}) {
+    if (this.hasDatabase && this.models.CoverageGap) {
+      try {
+        const whereClause = {};
+        if (filters.resolved !== undefined) whereClause.resolved = filters.resolved;
+        if (filters.state) whereClause.state = filters.state;
+
+        const gaps = await this.models.CoverageGap.findAll({
+          where: whereClause,
+          order: [['reportCount', 'DESC'], ['lastReportedAt', 'DESC']],
+          limit: filters.limit || 100
+        });
+
+        return gaps.map(g => g.toJSON());
+      } catch (error) {
+        console.error('Database get coverage gaps error, falling back to memory:', error.message);
+      }
+    }
+
+    // Memory fallback
+    let gaps = Array.from(coverageGapsMemory.values());
+    if (filters.resolved !== undefined) {
+      gaps = gaps.filter(g => g.resolved === filters.resolved);
+    }
+    if (filters.state) {
+      gaps = gaps.filter(g => g.state === filters.state);
+    }
+    gaps.sort((a, b) => b.reportCount - a.reportCount);
+    return gaps.slice(0, filters.limit || 100);
+  }
+
+  async resolveCoverageGap(zipCode, notes) {
+    if (this.hasDatabase && this.models.CoverageGap) {
+      try {
+        const gap = await this.models.CoverageGap.findOne({ where: { zipCode } });
+        if (gap) {
+          gap.resolved = true;
+          gap.resolvedAt = new Date();
+          gap.notes = notes;
+          await gap.save();
+          return { success: true, gap: gap.toJSON() };
+        }
+        return { success: false };
+      } catch (error) {
+        console.error('Database resolve coverage gap error:', error.message);
+        return { success: false, error: error.message };
+      }
+    }
+
+    // Memory fallback
+    const existing = coverageGapsMemory.get(zipCode);
+    if (existing) {
+      existing.resolved = true;
+      existing.resolvedAt = new Date().toISOString();
+      existing.notes = notes;
+      coverageGapsMemory.set(zipCode, existing);
+      return { success: true, gap: existing };
+    }
+    return { success: false };
   }
 }
 
