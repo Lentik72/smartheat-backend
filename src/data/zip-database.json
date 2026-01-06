@@ -2864,13 +2864,103 @@
     "county": "Middlesex",
     "state": "MA"
   },
+  "06001": {
+    "city": "Avon",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06002": {
+    "city": "Bloomfield",
+    "county": "Hartford",
+    "state": "CT"
+  },
   "06010": {
     "city": "Bristol",
     "county": "Hartford",
     "state": "CT"
   },
+  "06019": {
+    "city": "Canton",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06035": {
+    "city": "Granby",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06057": {
+    "city": "New Hartford",
+    "county": "Litchfield",
+    "state": "CT"
+  },
+  "06058": {
+    "city": "Norfolk",
+    "county": "Litchfield",
+    "state": "CT"
+  },
+  "06060": {
+    "city": "North Granby",
+    "county": "Hartford",
+    "state": "CT"
+  },
   "06062": {
     "city": "Plainville",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06063": {
+    "city": "Barkhamsted",
+    "county": "Litchfield",
+    "state": "CT"
+  },
+  "06065": {
+    "city": "Riverton",
+    "county": "Litchfield",
+    "state": "CT"
+  },
+  "06070": {
+    "city": "Simsbury",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06081": {
+    "city": "Tariffville",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06082": {
+    "city": "Enfield",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06085": {
+    "city": "Unionville",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06089": {
+    "city": "Weatogue",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06090": {
+    "city": "West Granby",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06091": {
+    "city": "West Hartland",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06092": {
+    "city": "West Simsbury",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06095": {
+    "city": "Windsor",
     "county": "Hartford",
     "state": "CT"
   },
@@ -2886,6 +2976,76 @@
   },
   "06241": {
     "city": "Dayville",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06242": {
+    "city": "Eastford",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06247": {
+    "city": "Hampton",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06254": {
+    "city": "North Franklin",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06256": {
+    "city": "North Windham",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06259": {
+    "city": "Pomfret",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06260": {
+    "city": "Putnam",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06262": {
+    "city": "Quinebaug",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06263": {
+    "city": "Rogers",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06264": {
+    "city": "Scotland",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06266": {
+    "city": "South Windham",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06277": {
+    "city": "Thompson",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06279": {
+    "city": "Willington",
+    "county": "Tolland",
+    "state": "CT"
+  },
+  "06280": {
+    "city": "Windham",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06281": {
+    "city": "Woodstock",
     "county": "Windham",
     "state": "CT"
   },
@@ -2909,6 +3069,16 @@
     "county": "Windham",
     "state": "CT"
   },
+  "06333": {
+    "city": "East Lyme",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06334": {
+    "city": "Bozrah",
+    "county": "New London",
+    "state": "CT"
+  },
   "06339": {
     "city": "Ledyard",
     "county": "New London",
@@ -2916,6 +3086,11 @@
   },
   "06340": {
     "city": "Groton",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06351": {
+    "city": "Jewett City",
     "county": "New London",
     "state": "CT"
   },
@@ -2949,9 +3124,19 @@
     "county": "New London",
     "state": "CT"
   },
+  "06370": {
+    "city": "Oakdale",
+    "county": "New London",
+    "state": "CT"
+  },
   "06374": {
     "city": "Plainfield",
     "county": "Windham",
+    "state": "CT"
+  },
+  "06375": {
+    "city": "Quaker Hill",
+    "county": "New London",
     "state": "CT"
   },
   "06377": {
@@ -2969,9 +3154,29 @@
     "county": "New London",
     "state": "CT"
   },
+  "06380": {
+    "city": "Taftville",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06382": {
+    "city": "Uncasville",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06384": {
+    "city": "Voluntown",
+    "county": "New London",
+    "state": "CT"
+  },
   "06385": {
     "city": "Waterford",
     "county": "New London",
+    "state": "CT"
+  },
+  "06387": {
+    "city": "Wauregan",
+    "county": "Windham",
     "state": "CT"
   },
   "06410": {
@@ -2986,6 +3191,16 @@
   },
   "06419": {
     "city": "Killingworth",
+    "county": "Middlesex",
+    "state": "CT"
+  },
+  "06420": {
+    "city": "Salem",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06423": {
+    "city": "East Haddam",
     "county": "Middlesex",
     "state": "CT"
   },
@@ -3004,6 +3219,11 @@
     "county": "Fairfield",
     "state": "CT"
   },
+  "06469": {
+    "city": "Moodus",
+    "county": "Middlesex",
+    "state": "CT"
+  },
   "06470": {
     "city": "Newtown",
     "county": "Fairfield",
@@ -3019,9 +3239,19 @@
     "county": "New Haven",
     "state": "CT"
   },
+  "06478": {
+    "city": "Oxford",
+    "county": "New Haven",
+    "state": "CT"
+  },
   "06482": {
     "city": "Sandy Hook",
     "county": "Fairfield",
+    "state": "CT"
+  },
+  "06483": {
+    "city": "Seymour",
+    "county": "New Haven",
     "state": "CT"
   },
   "06484": {
@@ -3081,6 +3311,16 @@
   },
   "06519": {
     "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06524": {
+    "city": "Bethany",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06525": {
+    "city": "Woodbridge",
     "county": "New Haven",
     "state": "CT"
   },
