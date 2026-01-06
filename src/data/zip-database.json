@@ -4653,5 +4653,985 @@
     "city": "Trenton",
     "county": "Mercer",
     "state": "NJ"
+  },
+  "02860": {
+    "city": "Pawtucket",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02861": {
+    "city": "Pawtucket",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02862": {
+    "city": "Pawtucket",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02863": {
+    "city": "Central Falls",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02864": {
+    "city": "Cumberland",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02865": {
+    "city": "Lincoln",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02895": {
+    "city": "Woonsocket",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02896": {
+    "city": "North Smithfield",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02904": {
+    "city": "Providence",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02905": {
+    "city": "Providence",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02906": {
+    "city": "Providence",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02907": {
+    "city": "Providence",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02908": {
+    "city": "Providence",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02909": {
+    "city": "Providence",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02910": {
+    "city": "Cranston",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02911": {
+    "city": "North Providence",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02912": {
+    "city": "Providence",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02914": {
+    "city": "East Providence",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02915": {
+    "city": "Riverside",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02916": {
+    "city": "Rumford",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02917": {
+    "city": "Smithfield",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02919": {
+    "city": "Johnston",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02920": {
+    "city": "Cranston",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02921": {
+    "city": "Cranston",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02804": {
+    "city": "Ashaway",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02808": {
+    "city": "Bradford",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02812": {
+    "city": "Carolina",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02813": {
+    "city": "Charlestown",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02814": {
+    "city": "Chepachet",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02815": {
+    "city": "Clayville",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02816": {
+    "city": "Coventry",
+    "county": "Kent",
+    "state": "RI"
+  },
+  "02822": {
+    "city": "Exeter",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02824": {
+    "city": "Forestdale",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02825": {
+    "city": "Foster",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02827": {
+    "city": "Greene",
+    "county": "Kent",
+    "state": "RI"
+  },
+  "02831": {
+    "city": "Hope",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02832": {
+    "city": "Hope Valley",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02833": {
+    "city": "Hopkinton",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02835": {
+    "city": "Jamestown",
+    "county": "Newport",
+    "state": "RI"
+  },
+  "02836": {
+    "city": "Kenyon",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02837": {
+    "city": "Little Compton",
+    "county": "Newport",
+    "state": "RI"
+  },
+  "02840": {
+    "city": "Newport",
+    "county": "Newport",
+    "state": "RI"
+  },
+  "02841": {
+    "city": "Newport",
+    "county": "Newport",
+    "state": "RI"
+  },
+  "02842": {
+    "city": "Middletown",
+    "county": "Newport",
+    "state": "RI"
+  },
+  "02852": {
+    "city": "North Kingstown",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02857": {
+    "city": "North Scituate",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02873": {
+    "city": "Rockville",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02874": {
+    "city": "Saunderstown",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02875": {
+    "city": "Shannock",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02876": {
+    "city": "Slatersville",
+    "county": "Providence",
+    "state": "RI"
+  },
+  "02877": {
+    "city": "Slocum",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02878": {
+    "city": "Tiverton",
+    "county": "Newport",
+    "state": "RI"
+  },
+  "02879": {
+    "city": "Wakefield",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02881": {
+    "city": "Kingston",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02882": {
+    "city": "Narragansett",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02883": {
+    "city": "Peace Dale",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02891": {
+    "city": "Westerly",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02892": {
+    "city": "West Kingston",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02893": {
+    "city": "West Warwick",
+    "county": "Kent",
+    "state": "RI"
+  },
+  "02894": {
+    "city": "Wood River Junction",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02898": {
+    "city": "Wyoming",
+    "county": "Washington",
+    "state": "RI"
+  },
+  "02138": {
+    "city": "Cambridge",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02139": {
+    "city": "Cambridge",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02140": {
+    "city": "Cambridge",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02141": {
+    "city": "Cambridge",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02142": {
+    "city": "Cambridge",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02143": {
+    "city": "Somerville",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02144": {
+    "city": "Somerville",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02145": {
+    "city": "Somerville",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02148": {
+    "city": "Malden",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02149": {
+    "city": "Everett",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02150": {
+    "city": "Chelsea",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02151": {
+    "city": "Revere",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02152": {
+    "city": "Winthrop",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02453": {
+    "city": "Waltham",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02454": {
+    "city": "Waltham",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02458": {
+    "city": "Newton",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02459": {
+    "city": "Newton",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02460": {
+    "city": "Newton",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02461": {
+    "city": "Newton Highlands",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02462": {
+    "city": "Newton Lower Falls",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02464": {
+    "city": "Newton Upper Falls",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02465": {
+    "city": "West Newton",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02466": {
+    "city": "Auburndale",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02467": {
+    "city": "Chestnut Hill",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02468": {
+    "city": "Waban",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02472": {
+    "city": "Watertown",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02474": {
+    "city": "Arlington",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02476": {
+    "city": "Arlington",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02478": {
+    "city": "Belmont",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02493": {
+    "city": "Weston",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02134": {
+    "city": "Allston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02135": {
+    "city": "Brighton",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02445": {
+    "city": "Brookline",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02446": {
+    "city": "Brookline",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02481": {
+    "city": "Wellesley Hills",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02482": {
+    "city": "Wellesley",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02026": {
+    "city": "Dedham",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02032": {
+    "city": "East Walpole",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02071": {
+    "city": "South Walpole",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02093": {
+    "city": "Wrentham",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02169": {
+    "city": "Quincy",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02170": {
+    "city": "Quincy",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02171": {
+    "city": "Quincy",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02184": {
+    "city": "Braintree",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02185": {
+    "city": "Braintree",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02186": {
+    "city": "Milton",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02269": {
+    "city": "Quincy",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02368": {
+    "city": "Randolph",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02072": {
+    "city": "Stoughton",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02048": {
+    "city": "Mansfield",
+    "county": "Bristol",
+    "state": "MA"
+  },
+  "02356": {
+    "city": "Norton",
+    "county": "Bristol",
+    "state": "MA"
+  },
+  "02035": {
+    "city": "Foxboro",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02762": {
+    "city": "Plainville",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02703": {
+    "city": "Attleboro",
+    "county": "Bristol",
+    "state": "MA"
+  },
+  "02763": {
+    "city": "North Attleboro",
+    "county": "Bristol",
+    "state": "MA"
+  },
+  "02375": {
+    "city": "South Easton",
+    "county": "Bristol",
+    "state": "MA"
+  },
+  "02188": {
+    "city": "Weymouth",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02189": {
+    "city": "East Weymouth",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02190": {
+    "city": "South Weymouth",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02191": {
+    "city": "North Weymouth",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02043": {
+    "city": "Hingham",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02045": {
+    "city": "Hull",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02066": {
+    "city": "Scituate",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02050": {
+    "city": "Marshfield",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02020": {
+    "city": "Brant Rock",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02025": {
+    "city": "Cohasset",
+    "county": "Norfolk",
+    "state": "MA"
+  },
+  "02341": {
+    "city": "Hanson",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02339": {
+    "city": "Hanover",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02340": {
+    "city": "Hanover",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02382": {
+    "city": "Whitman",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02351": {
+    "city": "Abington",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02360": {
+    "city": "Plymouth",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02361": {
+    "city": "Plymouth",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02362": {
+    "city": "Plymouth",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02364": {
+    "city": "Kingston",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02359": {
+    "city": "Pembroke",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02367": {
+    "city": "Plympton",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02370": {
+    "city": "Rockland",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02346": {
+    "city": "Middleborough",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02347": {
+    "city": "Lakeville",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02301": {
+    "city": "Brockton",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02302": {
+    "city": "Brockton",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02303": {
+    "city": "Brockton",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02304": {
+    "city": "Brockton",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02305": {
+    "city": "Brockton",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02345": {
+    "city": "Manomet",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02738": {
+    "city": "Marion",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02739": {
+    "city": "Mattapoisett",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "01581": {
+    "city": "Westborough",
+    "county": "Worcester",
+    "state": "MA"
+  },
+  "01536": {
+    "city": "Grafton",
+    "county": "Worcester",
+    "state": "MA"
+  },
+  "01568": {
+    "city": "Upton",
+    "county": "Worcester",
+    "state": "MA"
+  },
+  "01545": {
+    "city": "Shrewsbury",
+    "county": "Worcester",
+    "state": "MA"
+  },
+  "01532": {
+    "city": "Northborough",
+    "county": "Worcester",
+    "state": "MA"
+  },
+  "01503": {
+    "city": "Berlin",
+    "county": "Worcester",
+    "state": "MA"
+  },
+  "01772": {
+    "city": "Southborough",
+    "county": "Worcester",
+    "state": "MA"
+  },
+  "01748": {
+    "city": "Hopkinton",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01752": {
+    "city": "Marlborough",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01749": {
+    "city": "Hudson",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01701": {
+    "city": "Framingham",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01702": {
+    "city": "Framingham",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01703": {
+    "city": "Framingham",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01704": {
+    "city": "Framingham",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "01705": {
+    "city": "Framingham",
+    "county": "Middlesex",
+    "state": "MA"
+  },
+  "02536": {
+    "city": "East Falmouth",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02540": {
+    "city": "Falmouth",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02556": {
+    "city": "West Falmouth",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02574": {
+    "city": "Woods Hole",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02534": {
+    "city": "Cataumet",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02532": {
+    "city": "Buzzards Bay",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02553": {
+    "city": "Monument Beach",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02559": {
+    "city": "Pocasset",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02561": {
+    "city": "Sagamore",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02562": {
+    "city": "Sagamore Beach",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02563": {
+    "city": "Sandwich",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02537": {
+    "city": "East Sandwich",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02644": {
+    "city": "Forestdale",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02648": {
+    "city": "Marstons Mills",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02649": {
+    "city": "Mashpee",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02655": {
+    "city": "Osterville",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02632": {
+    "city": "Centerville",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02630": {
+    "city": "Barnstable",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02601": {
+    "city": "Hyannis",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02647": {
+    "city": "Hyannis Port",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02668": {
+    "city": "West Barnstable",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02635": {
+    "city": "Cotuit",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02637": {
+    "city": "Cummaquid",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02638": {
+    "city": "Dennis",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02660": {
+    "city": "South Dennis",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02670": {
+    "city": "West Dennis",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02673": {
+    "city": "West Yarmouth",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02664": {
+    "city": "South Yarmouth",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02675": {
+    "city": "Yarmouth Port",
+    "county": "Barnstable",
+    "state": "MA"
+  },
+  "02571": {
+    "city": "Wareham",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02558": {
+    "city": "Onset",
+    "county": "Plymouth",
+    "state": "MA"
+  },
+  "02576": {
+    "city": "West Wareham",
+    "county": "Plymouth",
+    "state": "MA"
   }
 }
