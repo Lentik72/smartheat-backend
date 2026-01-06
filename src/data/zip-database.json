@@ -3159,6 +3159,156 @@
     "county": "Philadelphia",
     "state": "PA"
   },
+  "19310": {
+    "city": "Atglen",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19311": {
+    "city": "Avondale",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19312": {
+    "city": "Berwyn",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19317": {
+    "city": "Chadds Ford",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19318": {
+    "city": "Chatham",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19319": {
+    "city": "Cheyney",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19320": {
+    "city": "Coatesville",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19330": {
+    "city": "Cochranville",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19333": {
+    "city": "Devon",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19335": {
+    "city": "Downingtown",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19340": {
+    "city": "Concordville",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19341": {
+    "city": "Exton",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19342": {
+    "city": "Glen Mills",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19343": {
+    "city": "Glenmoore",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19344": {
+    "city": "Honey Brook",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19348": {
+    "city": "Kennett Square",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19350": {
+    "city": "Landenberg",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19352": {
+    "city": "Lincoln University",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19355": {
+    "city": "Malvern",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19358": {
+    "city": "Modena",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19360": {
+    "city": "New London",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19362": {
+    "city": "Nottingham",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19363": {
+    "city": "Oxford",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19365": {
+    "city": "Parkesburg",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19372": {
+    "city": "Thorndale",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19373": {
+    "city": "Thornton",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19374": {
+    "city": "Toughkenamon",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19380": {
+    "city": "West Chester",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19382": {
+    "city": "West Chester",
+    "county": "Chester",
+    "state": "PA"
+  },
+  "19390": {
+    "city": "West Grove",
+    "county": "Chester",
+    "state": "PA"
+  },
   "19401": {
     "city": "Norristown",
     "county": "Montgomery",
@@ -3243,6 +3393,236 @@
     "city": "Royersford",
     "county": "Montgomery",
     "state": "PA"
+  },
+  "19701": {
+    "city": "Bear",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19702": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19703": {
+    "city": "Claymont",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19706": {
+    "city": "Delaware City",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19707": {
+    "city": "Hockessin",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19708": {
+    "city": "Kirkwood",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19709": {
+    "city": "Middletown",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19710": {
+    "city": "Montchanin",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19711": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19713": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19716": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19717": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19718": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19720": {
+    "city": "New Castle",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19730": {
+    "city": "Odessa",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19731": {
+    "city": "Port Penn",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19732": {
+    "city": "Rockland",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19733": {
+    "city": "Saint Georges",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19734": {
+    "city": "Townsend",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19735": {
+    "city": "Winterthur",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19736": {
+    "city": "Yorklyn",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19801": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19802": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19803": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19804": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19805": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19806": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19807": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19808": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19809": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "19810": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE"
+  },
+  "21901": {
+    "city": "North East",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21902": {
+    "city": "Perry Point",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21903": {
+    "city": "Perryville",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21904": {
+    "city": "Port Deposit",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21911": {
+    "city": "Rising Sun",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21912": {
+    "city": "Warwick",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21913": {
+    "city": "Cecilton",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21914": {
+    "city": "Charlestown",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21915": {
+    "city": "Chesapeake City",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21917": {
+    "city": "Colora",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21918": {
+    "city": "Conowingo",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21919": {
+    "city": "Earleville",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21920": {
+    "city": "Elk Mills",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21921": {
+    "city": "Elkton",
+    "county": "Cecil",
+    "state": "MD"
+  },
+  "21922": {
+    "city": "Elkton",
+    "county": "Cecil",
+    "state": "MD"
   },
   "01002": {
     "city": "Amherst",
