@@ -2209,6 +2209,306 @@
     "county": "Saratoga",
     "state": "NY"
   },
+  "18001": {
+    "city": "Bethlehem",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18002": {
+    "city": "Bethlehem",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18003": {
+    "city": "Bethlehem",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18011": {
+    "city": "Alburtis",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18013": {
+    "city": "Bangor",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18014": {
+    "city": "Bath",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18015": {
+    "city": "Bethlehem",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18016": {
+    "city": "Bethlehem",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18017": {
+    "city": "Bethlehem",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18018": {
+    "city": "Bethlehem",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18020": {
+    "city": "Bethlehem",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18025": {
+    "city": "Bethlehem",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18030": {
+    "city": "Bowmanstown",
+    "county": "Carbon",
+    "state": "PA"
+  },
+  "18031": {
+    "city": "Breinigsville",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18032": {
+    "city": "Catasauqua",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18034": {
+    "city": "Center Valley",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18035": {
+    "city": "Cherryville",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18036": {
+    "city": "Coopersburg",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18037": {
+    "city": "Coplay",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18038": {
+    "city": "Danielsville",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18040": {
+    "city": "Easton",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18042": {
+    "city": "Easton",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18043": {
+    "city": "Easton",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18044": {
+    "city": "Easton",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18045": {
+    "city": "Easton",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18046": {
+    "city": "East Texas",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18049": {
+    "city": "Emmaus",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18051": {
+    "city": "Fogelsville",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18052": {
+    "city": "Whitehall",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18053": {
+    "city": "Germansville",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18054": {
+    "city": "Green Lane",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "18055": {
+    "city": "Hellertown",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18059": {
+    "city": "Laurys Station",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18060": {
+    "city": "Limeport",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18062": {
+    "city": "Macungie",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18063": {
+    "city": "Martins Creek",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18064": {
+    "city": "Nazareth",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18065": {
+    "city": "Neffs",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18066": {
+    "city": "New Tripoli",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18067": {
+    "city": "Northampton",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18068": {
+    "city": "Old Zionsville",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18069": {
+    "city": "Orefield",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18071": {
+    "city": "Palmerton",
+    "county": "Carbon",
+    "state": "PA"
+  },
+  "18072": {
+    "city": "Pen Argyl",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18078": {
+    "city": "Schnecksville",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18080": {
+    "city": "Slatington",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18083": {
+    "city": "Stockertown",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18085": {
+    "city": "Tatamy",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18086": {
+    "city": "Treichlers",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18087": {
+    "city": "Trexlertown",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18088": {
+    "city": "Walnutport",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18091": {
+    "city": "Wind Gap",
+    "county": "Northampton",
+    "state": "PA"
+  },
+  "18092": {
+    "city": "Zionsville",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18101": {
+    "city": "Allentown",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18102": {
+    "city": "Allentown",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18103": {
+    "city": "Allentown",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18104": {
+    "city": "Allentown",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18105": {
+    "city": "Allentown",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18106": {
+    "city": "Allentown",
+    "county": "Lehigh",
+    "state": "PA"
+  },
+  "18109": {
+    "city": "Allentown",
+    "county": "Lehigh",
+    "state": "PA"
+  },
   "18901": {
     "city": "Doylestown",
     "county": "Bucks",
