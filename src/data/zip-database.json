@@ -3179,14 +3179,34 @@
     "county": "Windham",
     "state": "CT"
   },
+  "06409": {
+    "city": "Centerbrook",
+    "county": "Middlesex",
+    "state": "CT"
+  },
   "06410": {
     "city": "Cheshire",
     "county": "New Haven",
     "state": "CT"
   },
+  "06412": {
+    "city": "Chester",
+    "county": "Middlesex",
+    "state": "CT"
+  },
+  "06413": {
+    "city": "Clinton",
+    "county": "Middlesex",
+    "state": "CT"
+  },
   "06415": {
     "city": "Colchester",
     "county": "New London",
+    "state": "CT"
+  },
+  "06417": {
+    "city": "Deep River",
+    "county": "Middlesex",
     "state": "CT"
   },
   "06419": {
@@ -3199,8 +3219,53 @@
     "county": "New London",
     "state": "CT"
   },
+  "06422": {
+    "city": "Durham",
+    "county": "Middlesex",
+    "state": "CT"
+  },
   "06423": {
     "city": "East Haddam",
+    "county": "Middlesex",
+    "state": "CT"
+  },
+  "06426": {
+    "city": "Essex",
+    "county": "Middlesex",
+    "state": "CT"
+  },
+  "06437": {
+    "city": "Guilford",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06438": {
+    "city": "Haddam",
+    "county": "Middlesex",
+    "state": "CT"
+  },
+  "06441": {
+    "city": "Higganum",
+    "county": "Middlesex",
+    "state": "CT"
+  },
+  "06442": {
+    "city": "Ivoryton",
+    "county": "Middlesex",
+    "state": "CT"
+  },
+  "06443": {
+    "city": "Madison",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06455": {
+    "city": "Middlefield",
+    "county": "Middlesex",
+    "state": "CT"
+  },
+  "06457": {
+    "city": "Middletown",
     "county": "Middlesex",
     "state": "CT"
   },
@@ -3229,6 +3294,16 @@
     "county": "Fairfield",
     "state": "CT"
   },
+  "06471": {
+    "city": "North Branford",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06473": {
+    "city": "North Haven",
+    "county": "New Haven",
+    "state": "CT"
+  },
   "06475": {
     "city": "Old Saybrook",
     "county": "Middlesex",
@@ -3242,6 +3317,11 @@
   "06478": {
     "city": "Oxford",
     "county": "New Haven",
+    "state": "CT"
+  },
+  "06480": {
+    "city": "Portland",
+    "county": "Middlesex",
     "state": "CT"
   },
   "06482": {
@@ -3262,6 +3342,11 @@
   "06489": {
     "city": "Southington",
     "county": "Hartford",
+    "state": "CT"
+  },
+  "06498": {
+    "city": "Westbrook",
+    "county": "Middlesex",
     "state": "CT"
   },
   "06510": {
