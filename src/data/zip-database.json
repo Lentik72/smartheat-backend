@@ -1699,6 +1699,11 @@
     "county": "Montgomery",
     "state": "NY"
   },
+  "12017": {
+    "city": "Austerlitz",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
   "12019": {
     "city": "Ballston Lake",
     "county": "Saratoga",
@@ -1709,14 +1714,29 @@
     "county": "Saratoga",
     "state": "NY"
   },
+  "12023": {
+    "city": "Berlin",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
   "12027": {
     "city": "Burnt Hills",
     "county": "Saratoga",
     "state": "NY"
   },
+  "12029": {
+    "city": "Canaan",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
   "12033": {
     "city": "Castleton On Hudson",
     "county": "Schenectady",
+    "state": "NY"
+  },
+  "12040": {
+    "city": "Cherry Plain",
+    "county": "Rensselaer",
     "state": "NY"
   },
   "12041": {
@@ -1727,6 +1747,11 @@
   "12047": {
     "city": "Cohoes",
     "county": "Albany",
+    "state": "NY"
+  },
+  "12052": {
+    "city": "Cropseyville",
+    "county": "Rensselaer",
     "state": "NY"
   },
   "12053": {
@@ -1742,6 +1767,16 @@
   "12056": {
     "city": "Duanesburg",
     "county": "Schenectady",
+    "state": "NY"
+  },
+  "12057": {
+    "city": "Eagle Bridge",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12061": {
+    "city": "East Greenbush",
+    "county": "Rensselaer",
     "state": "NY"
   },
   "12065": {
@@ -1774,9 +1809,24 @@
     "county": "Albany",
     "state": "NY"
   },
+  "12083": {
+    "city": "Grafton",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
   "12084": {
     "city": "Guilderland Center",
     "county": "Albany",
+    "state": "NY"
+  },
+  "12090": {
+    "city": "Hoosick",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12092": {
+    "city": "Hoosick Falls",
+    "county": "Rensselaer",
     "state": "NY"
   },
   "12110": {
@@ -1789,14 +1839,44 @@
     "county": "Saratoga",
     "state": "NY"
   },
+  "12121": {
+    "city": "Melrose",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12123": {
+    "city": "Nassau",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12128": {
+    "city": "North Greenbush",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
   "12137": {
     "city": "Pattersonville",
     "county": "Schenectady",
     "state": "NY"
   },
+  "12138": {
+    "city": "Petersburg",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12140": {
+    "city": "Poestenkill",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
   "12143": {
     "city": "Ravena",
     "county": "Albany",
+    "state": "NY"
+  },
+  "12144": {
+    "city": "Rensselaer",
+    "county": "Rensselaer",
     "state": "NY"
   },
   "12148": {
@@ -1814,6 +1894,16 @@
     "county": "Saratoga",
     "state": "NY"
   },
+  "12153": {
+    "city": "Sand Lake",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12154": {
+    "city": "Schaghticoke",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
   "12158": {
     "city": "Slingerlands",
     "county": "Albany",
@@ -1824,9 +1914,39 @@
     "county": "Albany",
     "state": "NY"
   },
+  "12168": {
+    "city": "Stephentown",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
   "12170": {
     "city": "Stillwater",
     "county": "Saratoga",
+    "state": "NY"
+  },
+  "12180": {
+    "city": "Troy",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12181": {
+    "city": "Troy",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12182": {
+    "city": "Troy",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12183": {
+    "city": "Troy",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12185": {
+    "city": "Valley Falls",
+    "county": "Rensselaer",
     "state": "NY"
   },
   "12186": {
@@ -1842,6 +1962,16 @@
   "12189": {
     "city": "Watervliet",
     "county": "Albany",
+    "state": "NY"
+  },
+  "12196": {
+    "city": "West Sand Lake",
+    "county": "Rensselaer",
+    "state": "NY"
+  },
+  "12198": {
+    "city": "Wynantskill",
+    "county": "Rensselaer",
     "state": "NY"
   },
   "12203": {
@@ -1944,6 +2074,201 @@
     "county": "Schenectady",
     "state": "NY"
   },
+  "12401": {
+    "city": "Kingston",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12402": {
+    "city": "Kingston",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12404": {
+    "city": "Accord",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12405": {
+    "city": "Acra",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12409": {
+    "city": "Bearsville",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12410": {
+    "city": "Big Indian",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12411": {
+    "city": "Bloomington",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12412": {
+    "city": "Boiceville",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12416": {
+    "city": "Chichester",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12417": {
+    "city": "Connelly",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12419": {
+    "city": "Cottekill",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12420": {
+    "city": "Cragsmoor",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12428": {
+    "city": "Ellenville",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12429": {
+    "city": "Esopus",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12433": {
+    "city": "Glenford",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12440": {
+    "city": "High Falls",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12443": {
+    "city": "Hurley",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12446": {
+    "city": "Kerhonkson",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12448": {
+    "city": "Lake Hill",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12449": {
+    "city": "Lake Katrine",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12457": {
+    "city": "Mount Tremper",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12458": {
+    "city": "Napanoch",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12461": {
+    "city": "New Paltz",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12464": {
+    "city": "Phoenicia",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12466": {
+    "city": "Port Ewen",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12471": {
+    "city": "Rifton",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12472": {
+    "city": "Rosendale",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12477": {
+    "city": "Saugerties",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12480": {
+    "city": "Shandaken",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12481": {
+    "city": "Shokan",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12484": {
+    "city": "Stone Ridge",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12486": {
+    "city": "Tillson",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12487": {
+    "city": "Ulster Park",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12489": {
+    "city": "Wawarsing",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12491": {
+    "city": "West Hurley",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12493": {
+    "city": "West Park",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12494": {
+    "city": "West Shokan",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12495": {
+    "city": "Willow",
+    "county": "Ulster",
+    "state": "NY"
+  },
+  "12498": {
+    "city": "Woodstock",
+    "county": "Ulster",
+    "state": "NY"
+  },
   "12501": {
     "city": "Amenia",
     "county": "Dutchess",
@@ -1969,6 +2294,11 @@
     "county": "Dutchess",
     "state": "NY"
   },
+  "12515": {
+    "city": "Clintondale",
+    "county": "Ulster",
+    "state": "NY"
+  },
   "12522": {
     "city": "Dover Plains",
     "county": "Dutchess",
@@ -1977,6 +2307,11 @@
   "12524": {
     "city": "Fishkill",
     "county": "Dutchess",
+    "state": "NY"
+  },
+  "12528": {
+    "city": "Highland",
+    "county": "Ulster",
     "state": "NY"
   },
   "12531": {
@@ -2034,6 +2369,11 @@
     "county": "Orange",
     "state": "NY"
   },
+  "12561": {
+    "city": "New Paltz",
+    "county": "Ulster",
+    "state": "NY"
+  },
   "12564": {
     "city": "Pawling",
     "county": "Dutchess",
@@ -2047,6 +2387,11 @@
   "12567": {
     "city": "Pine Plains",
     "county": "Dutchess",
+    "state": "NY"
+  },
+  "12568": {
+    "city": "Plattekill",
+    "county": "Ulster",
     "state": "NY"
   },
   "12569": {
