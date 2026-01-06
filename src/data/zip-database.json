@@ -1689,6 +1689,261 @@
     "county": "Suffolk",
     "state": "NY"
   },
+  "12009": {
+    "city": "Altamont",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12010": {
+    "city": "Amsterdam",
+    "county": "Montgomery",
+    "state": "NY"
+  },
+  "12019": {
+    "city": "Ballston Lake",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12020": {
+    "city": "Ballston Spa",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12027": {
+    "city": "Burnt Hills",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12033": {
+    "city": "Castleton On Hudson",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12041": {
+    "city": "Clarksville",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12047": {
+    "city": "Cohoes",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12053": {
+    "city": "Delanson",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12054": {
+    "city": "Delmar",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12056": {
+    "city": "Duanesburg",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12065": {
+    "city": "Clifton Park",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12067": {
+    "city": "Voorheesville",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12068": {
+    "city": "Fonda",
+    "county": "Montgomery",
+    "state": "NY"
+  },
+  "12072": {
+    "city": "Fultonville",
+    "county": "Montgomery",
+    "state": "NY"
+  },
+  "12074": {
+    "city": "Galway",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12077": {
+    "city": "Glenmont",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12084": {
+    "city": "Guilderland Center",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12110": {
+    "city": "Latham",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12118": {
+    "city": "Mechanicville",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12137": {
+    "city": "Pattersonville",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12143": {
+    "city": "Ravena",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12148": {
+    "city": "Rexford",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12150": {
+    "city": "Rotterdam Junction",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12151": {
+    "city": "Round Lake",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12158": {
+    "city": "Slingerlands",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12159": {
+    "city": "Slingerlands",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12170": {
+    "city": "Stillwater",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12186": {
+    "city": "Voorheesville",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12188": {
+    "city": "Waterford",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12189": {
+    "city": "Watervliet",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12203": {
+    "city": "Albany",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12204": {
+    "city": "Albany",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12205": {
+    "city": "Albany",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12206": {
+    "city": "Albany",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12207": {
+    "city": "Albany",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12208": {
+    "city": "Albany",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12209": {
+    "city": "Albany",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12210": {
+    "city": "Albany",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12211": {
+    "city": "Albany",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12212": {
+    "city": "Albany",
+    "county": "Albany",
+    "state": "NY"
+  },
+  "12301": {
+    "city": "Schenectady",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12302": {
+    "city": "Scotia",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12303": {
+    "city": "Schenectady",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12304": {
+    "city": "Schenectady",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12305": {
+    "city": "Schenectady",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12306": {
+    "city": "Schenectady",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12307": {
+    "city": "Schenectady",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12308": {
+    "city": "Schenectady",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12309": {
+    "city": "Schenectady",
+    "county": "Schenectady",
+    "state": "NY"
+  },
+  "12345": {
+    "city": "Schenectady",
+    "county": "Schenectady",
+    "state": "NY"
+  },
   "12501": {
     "city": "Amenia",
     "county": "Dutchess",
@@ -1897,6 +2152,61 @@
   "12604": {
     "city": "Poughkeepsie",
     "county": "Dutchess",
+    "state": "NY"
+  },
+  "12803": {
+    "city": "South Glens Falls",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12822": {
+    "city": "Corinth",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12831": {
+    "city": "Gansevoort",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12833": {
+    "city": "Greenfield Center",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12835": {
+    "city": "Hadley",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12850": {
+    "city": "Middle Grove",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12859": {
+    "city": "Porter Corners",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12863": {
+    "city": "Rock City Falls",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12866": {
+    "city": "Saratoga Springs",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12871": {
+    "city": "Schuylerville",
+    "county": "Saratoga",
+    "state": "NY"
+  },
+  "12884": {
+    "city": "Victory Mills",
+    "county": "Saratoga",
     "state": "NY"
   },
   "01002": {
