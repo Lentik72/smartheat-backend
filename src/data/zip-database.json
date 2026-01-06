@@ -2209,6 +2209,741 @@
     "county": "Saratoga",
     "state": "NY"
   },
+  "18901": {
+    "city": "Doylestown",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18902": {
+    "city": "Doylestown",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18912": {
+    "city": "Buckingham",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18914": {
+    "city": "Chalfont",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18925": {
+    "city": "Furlong",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18929": {
+    "city": "Jamison",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18932": {
+    "city": "Line Lexington",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18938": {
+    "city": "New Hope",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18940": {
+    "city": "Newtown",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18942": {
+    "city": "Ottsville",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18944": {
+    "city": "Perkasie",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18947": {
+    "city": "Pipersville",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18954": {
+    "city": "Richboro",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18955": {
+    "city": "Richlandtown",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18956": {
+    "city": "Rushland",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18966": {
+    "city": "Southampton",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18974": {
+    "city": "Warminster",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18976": {
+    "city": "Warrington",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "18977": {
+    "city": "Washington Crossing",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19001": {
+    "city": "Abington",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19002": {
+    "city": "Ambler",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19003": {
+    "city": "Ardmore",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19004": {
+    "city": "Bala Cynwyd",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19006": {
+    "city": "Huntingdon Valley",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19007": {
+    "city": "Bristol",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19008": {
+    "city": "Broomall",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19009": {
+    "city": "Bryn Athyn",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19010": {
+    "city": "Bryn Mawr",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19012": {
+    "city": "Cheltenham",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19013": {
+    "city": "Chester",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19014": {
+    "city": "Aston",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19015": {
+    "city": "Brookhaven",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19018": {
+    "city": "Clifton Heights",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19020": {
+    "city": "Bensalem",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19021": {
+    "city": "Croydon",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19022": {
+    "city": "Crum Lynne",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19023": {
+    "city": "Darby",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19025": {
+    "city": "Dresher",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19026": {
+    "city": "Drexel Hill",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19027": {
+    "city": "Elkins Park",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19029": {
+    "city": "Essington",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19030": {
+    "city": "Fairless Hills",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19031": {
+    "city": "Flourtown",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19032": {
+    "city": "Folcroft",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19033": {
+    "city": "Folsom",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19034": {
+    "city": "Fort Washington",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19035": {
+    "city": "Gladwyne",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19036": {
+    "city": "Glenolden",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19038": {
+    "city": "Glenside",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19040": {
+    "city": "Hatboro",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19041": {
+    "city": "Haverford",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19044": {
+    "city": "Horsham",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19046": {
+    "city": "Jenkintown",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19047": {
+    "city": "Langhorne",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19050": {
+    "city": "Lansdowne",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19053": {
+    "city": "Trevose",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19054": {
+    "city": "Levittown",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19055": {
+    "city": "Levittown",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19056": {
+    "city": "Levittown",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19057": {
+    "city": "Levittown",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19063": {
+    "city": "Media",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19064": {
+    "city": "Springfield",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19066": {
+    "city": "Merion Station",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19067": {
+    "city": "Yardley",
+    "county": "Bucks",
+    "state": "PA"
+  },
+  "19070": {
+    "city": "Morton",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19072": {
+    "city": "Narberth",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19074": {
+    "city": "Norwood",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19075": {
+    "city": "Oreland",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19076": {
+    "city": "Prospect Park",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19078": {
+    "city": "Ridley Park",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19079": {
+    "city": "Sharon Hill",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19081": {
+    "city": "Swarthmore",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19082": {
+    "city": "Upper Darby",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19083": {
+    "city": "Havertown",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19085": {
+    "city": "Villanova",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19086": {
+    "city": "Wallingford",
+    "county": "Delaware",
+    "state": "PA"
+  },
+  "19087": {
+    "city": "Wayne",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19090": {
+    "city": "Willow Grove",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19095": {
+    "city": "Wyncote",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19096": {
+    "city": "Wynnewood",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19102": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19103": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19104": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19106": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19107": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19109": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19110": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19111": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19112": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19113": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19114": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19115": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19116": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19118": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19119": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19120": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19121": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19122": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19123": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19124": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19125": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19126": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19127": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19128": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19129": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19130": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19131": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19132": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19133": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19134": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19135": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19136": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19137": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19138": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19139": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19140": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19141": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19142": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19143": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19144": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19145": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19146": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19147": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19148": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19149": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19150": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19151": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19152": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19153": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19154": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA"
+  },
+  "19401": {
+    "city": "Norristown",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19403": {
+    "city": "Norristown",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19405": {
+    "city": "Bridgeport",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19406": {
+    "city": "King of Prussia",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19422": {
+    "city": "Blue Bell",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19426": {
+    "city": "Collegeville",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19428": {
+    "city": "Conshohocken",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19436": {
+    "city": "Gwynedd",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19437": {
+    "city": "Gwynedd Valley",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19438": {
+    "city": "Harleysville",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19440": {
+    "city": "Hatfield",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19444": {
+    "city": "Lafayette Hill",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19446": {
+    "city": "Lansdale",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19453": {
+    "city": "Mont Clare",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19454": {
+    "city": "North Wales",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19462": {
+    "city": "Plymouth Meeting",
+    "county": "Montgomery",
+    "state": "PA"
+  },
+  "19468": {
+    "city": "Royersford",
+    "county": "Montgomery",
+    "state": "PA"
+  },
   "01002": {
     "city": "Amherst",
     "county": "Hampshire",
