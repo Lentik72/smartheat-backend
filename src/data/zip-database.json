@@ -2864,6 +2864,141 @@
     "county": "Middlesex",
     "state": "MA"
   },
+  "06010": {
+    "city": "Bristol",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06062": {
+    "city": "Plainville",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06234": {
+    "city": "Brooklyn",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06239": {
+    "city": "Danielson",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06241": {
+    "city": "Dayville",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06320": {
+    "city": "New London",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06330": {
+    "city": "Baltic",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06331": {
+    "city": "Canterbury",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06332": {
+    "city": "Central Village",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06339": {
+    "city": "Ledyard",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06340": {
+    "city": "Groton",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06354": {
+    "city": "Moosup",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06355": {
+    "city": "Mystic",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06357": {
+    "city": "Niantic",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06359": {
+    "city": "North Stonington",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06360": {
+    "city": "Norwich",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06365": {
+    "city": "Preston",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06374": {
+    "city": "Plainfield",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06377": {
+    "city": "Sterling",
+    "county": "Windham",
+    "state": "CT"
+  },
+  "06378": {
+    "city": "Stonington",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06379": {
+    "city": "Pawcatuck",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06385": {
+    "city": "Waterford",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06410": {
+    "city": "Cheshire",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06415": {
+    "city": "Colchester",
+    "county": "New London",
+    "state": "CT"
+  },
+  "06419": {
+    "city": "Killingworth",
+    "county": "Middlesex",
+    "state": "CT"
+  },
+  "06460": {
+    "city": "Milford",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06461": {
+    "city": "Milford",
+    "county": "New Haven",
+    "state": "CT"
+  },
   "06468": {
     "city": "Monroe",
     "county": "Fairfield",
@@ -2874,6 +3009,16 @@
     "county": "Fairfield",
     "state": "CT"
   },
+  "06475": {
+    "city": "Old Saybrook",
+    "county": "Middlesex",
+    "state": "CT"
+  },
+  "06477": {
+    "city": "Orange",
+    "county": "New Haven",
+    "state": "CT"
+  },
   "06482": {
     "city": "Sandy Hook",
     "county": "Fairfield",
@@ -2882,6 +3027,61 @@
   "06484": {
     "city": "Shelton",
     "county": "Fairfield",
+    "state": "CT"
+  },
+  "06489": {
+    "city": "Southington",
+    "county": "Hartford",
+    "state": "CT"
+  },
+  "06510": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06511": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06512": {
+    "city": "East Haven",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06513": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06514": {
+    "city": "Hamden",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06515": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06516": {
+    "city": "West Haven",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06517": {
+    "city": "Hamden",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06518": {
+    "city": "Hamden",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06519": {
+    "city": "New Haven",
+    "county": "New Haven",
     "state": "CT"
   },
   "06601": {
@@ -2942,6 +3142,76 @@
   "06615": {
     "city": "Stratford",
     "county": "Fairfield",
+    "state": "CT"
+  },
+  "06702": {
+    "city": "Waterbury",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06704": {
+    "city": "Waterbury",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06705": {
+    "city": "Waterbury",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06706": {
+    "city": "Waterbury",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06708": {
+    "city": "Waterbury",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06712": {
+    "city": "Prospect",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06716": {
+    "city": "Wolcott",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06762": {
+    "city": "Middlebury",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06770": {
+    "city": "Naugatuck",
+    "county": "New Haven",
+    "state": "CT"
+  },
+  "06779": {
+    "city": "Oakville",
+    "county": "Litchfield",
+    "state": "CT"
+  },
+  "06782": {
+    "city": "Plymouth",
+    "county": "Litchfield",
+    "state": "CT"
+  },
+  "06786": {
+    "city": "Terryville",
+    "county": "Litchfield",
+    "state": "CT"
+  },
+  "06787": {
+    "city": "Thomaston",
+    "county": "Litchfield",
+    "state": "CT"
+  },
+  "06795": {
+    "city": "Watertown",
+    "county": "Litchfield",
     "state": "CT"
   },
   "06801": {
