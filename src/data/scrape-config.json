@@ -1,5 +1,5 @@
 {
-  "_comment": "Scrape configuration for supplier websites. Pattern: 'direct' = single price, 'table' = tiered pricing",
+  "_comment": "V1.6.0: Scrape configuration for supplier websites. Pattern: 'direct' = single price, 'table' = tiered pricing. pricePath = custom URL path for price page.",
 
   "_section_NY": "=== NEW YORK ===",
 
@@ -11,10 +11,11 @@
   },
 
   "oilcompanylongisland.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "Long Island - American Fuel Oil",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "enabled": false,
+    "pattern": "table",
+    "notes": "DISABLED: Price requires zip code entry (dynamic form)",
+    "pricePath": "/todays-oil-prices-on-long-island/",
+    "priceRegex": "([0-9]+\\.[0-9]{2,3})\\s*/\\s*gallon"
   },
 
   "precisionheatingoil.com": {
@@ -25,30 +26,30 @@
   },
 
   "longislandcod.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "Long Island COD delivery",
+    "notes": "DISABLED: Price behind email form - cannot scrape",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "economyfuelny.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY - Economy Fuel",
+    "notes": "DISABLED: Page too large / no static price",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "economy-oil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NY - Economy Oil",
+    "notes": "NY - Economy Oil Hudson Valley",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "wisechoicefuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY - Wise Choice",
+    "notes": "DISABLED: No static price on page",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -60,51 +61,51 @@
   },
 
   "putnamoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY - Putnam County",
+    "notes": "DISABLED: No price displayed, requires account login",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "stormvilleoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NY - Dutchess County",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "NY - Dutchess County - shows X.XXX without $ sign",
+    "priceRegex": "([0-9]+\\.[0-9]{3})\\s*(?:per gallon|/gallon)?"
   },
 
   "yorktownfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY - Westchester",
+    "notes": "DISABLED: HTTP 404",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "palisadesfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY - Rockland County",
+    "notes": "DISABLED: No price on homepage, requires contact",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "jfjfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY - JFJ Fuel Oil",
+    "notes": "DISABLED: Shows as Valley Oil, no price displayed",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "onsiteoil.org": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY - On Site Oil",
+    "notes": "DISABLED: Timeout - site unreliable",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "townandcountryoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY - Town & Country Oil",
+    "notes": "DISABLED: No price found on page",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -123,17 +124,17 @@
   },
 
   "fornofuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY - Forno Fuel",
+    "notes": "DISABLED: Price behind dynamic button",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "ezpayoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NY - EZ Pay Oil",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "NY - EZ Pay Oil - has space after $ sign",
+    "priceRegex": "\\$\\s*([0-9]+\\.[0-9]{2,3})"
   },
 
   "justoil.com": {
@@ -144,95 +145,102 @@
   },
 
   "castlefuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY - Castle Fuel",
+    "notes": "DISABLED: HTTP 403 - blocked",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "huntingtondiscountoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: Dole Fuel Oil - no price found",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "valleyoilpok.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NY - Dole Fuel Oil / Huntington",
+    "notes": "NY - Valley Oil Poughkeepsie",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "_section_NJ": "=== NEW JERSEY ===",
 
   "cashoilco.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NJ - Cash Oil Co",
+    "notes": "DISABLED: No price found on page",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "bondedoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NJ - Bonded Oil",
+    "notes": "DISABLED: Domain not found / dead site",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "bottomdollarheatingoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NJ - Bottom Dollar",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "NJ - Bottom Dollar - price in JS var price = 'X.XX'",
+    "priceRegex": "var price\\s*=\\s*'([0-9]+\\.[0-9]{2})'"
   },
 
   "majesticoilnj.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NJ - Majestic Oil",
+    "notes": "DISABLED: No price on homepage, requires quote",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "oildepotsj.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NJ - Oil Depot SJ",
+    "notes": "DISABLED: No price found on page",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "cencoheatingoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NJ - Cenco Heating Oil",
+    "notes": "DISABLED: No price on site, requires call",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "mhoexpress.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NJ - MHOexpress",
+    "notes": "DISABLED: Price behind zip code form",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "7oil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NJ - 7 Oil Plus",
+    "notes": "DISABLED: Price behind ordering portal",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "eaglepetroleumco.com": {
     "enabled": true,
-    "pattern": "direct",
-    "notes": "NJ - Eagle Petroleum",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "pattern": "table",
+    "notes": "NJ/PA - Eagle Petroleum - tiered pricing without $ in HTML",
+    "priceRegex": "([3-4]\\.[0-9]{2,3})"
   },
 
   "forceten.org": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NJ - Force Ten Heating",
+    "notes": "DISABLED: SSL certificate error",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "reisfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NJ - Reis Fuel",
+    "notes": "DISABLED: Price behind zip code form",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -253,14 +261,14 @@
   "centraljerseyheatingoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NJ - Central Jersey Heating",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "NJ - Central Jersey Heating - shows X.XXX / Gallon without $",
+    "priceRegex": "([0-9]+\\.[0-9]{2,3})\\s*/\\s*Gallon"
   },
 
   "globepetroleumonline.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NJ - Globe Petroleum",
+    "notes": "DISABLED: Price behind quote tool",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -302,9 +310,9 @@
   },
 
   "brasscityfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "CT - Brass City Fuel",
+    "notes": "DISABLED: HTTP 403 - blocked",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -316,30 +324,31 @@
   },
 
   "brazosoilct.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "CT - Brazos Oil",
+    "notes": "DISABLED: Dynamic JS pricing from API",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "fjboil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "CT - FJB Oil",
+    "notes": "DISABLED: Price behind zip code form",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "nikkooil.com": {
     "enabled": true,
-    "pattern": "direct",
-    "notes": "CT - Nikko Oil",
+    "pattern": "table",
+    "notes": "CT - Nikko Oil - price on separate page",
+    "pricePath": "/order-oil/oil-prices/",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "pattiandson.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "CT - Patti & Sons",
+    "notes": "DISABLED: HTTP 403 - blocked",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -351,32 +360,60 @@
   },
 
   "anytimefueloil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "CT - Anytime Fuel Oil",
+    "notes": "DISABLED: No price displayed on site",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "norwichdiscountoilct.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "CT - Norwich Discount Oil",
+    "notes": "DISABLED: No price found",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "vikingfuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: No price on site, call for quote",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "fuelcohomeheatingoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: No price, call for quote",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "clearriverfueloil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: Price behind dynamic tool",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "wilcoxoilonline.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: Price behind quote tool",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "_section_MA": "=== MASSACHUSETTS ===",
 
   "basileoilco.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "MA - Basile Oil Company",
+    "notes": "DISABLED: Timeout - unreliable",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "coddiscountfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "MA - COD Discount Fuel",
+    "notes": "DISABLED: No price found",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -402,16 +439,16 @@
   },
 
   "just-oil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "MA - Just Oil Inc",
+    "notes": "DISABLED: No price found",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "preiteoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "MA - Preite Oil Company",
+    "notes": "DISABLED: No price found",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -425,30 +462,30 @@
   "_section_PA": "=== PENNSYLVANIA ===",
 
   "libertybelldiscountoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "PA - Liberty Bell Discount Oil",
+    "notes": "DISABLED: HTTP 403 - blocked",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "oil4lessallentown.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "PA - Oil4Less Allentown",
+    "notes": "DISABLED: Domain for sale / dead",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "lehighfuels.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "PA - Lehigh Fuels",
+    "notes": "DISABLED: No price found",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "claytondiscountfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "PA - Clayton Discount Fuel",
+    "notes": "DISABLED: No price found",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -474,16 +511,16 @@
   },
 
   "heatingoillevittown.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "PA - Rex Fuel Oil / Levittown",
+    "notes": "DISABLED: Rex Fuel - no price found",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "samedayoildelivery.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "PA - Same Day Oil Delivery",
+    "notes": "DISABLED: No price found",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -494,12 +531,20 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "werleyenergy.com": {
+    "enabled": true,
+    "pattern": "table",
+    "notes": "PA - Werley Energy - price on current-fuel-prices page",
+    "pricePath": "/current-fuel-prices/",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_RI": "=== RHODE ISLAND ===",
 
   "minerdiscountfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "RI - Miner Discount Fuel",
+    "notes": "DISABLED: No price found",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -520,9 +565,9 @@
   },
 
   "discount-oil.net": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "DE - Discount Oil DE",
+    "notes": "DISABLED: No price found",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   }
 }

@@ -90,6 +90,13 @@ async function scrapeSupplierPrice(supplier, config) {
       url = 'https://' + url;
     }
 
+    // V1.6.0: Support custom price page path from config
+    if (config.pricePath) {
+      const urlObj = new URL(url);
+      urlObj.pathname = config.pricePath;
+      url = urlObj.toString();
+    }
+
     // Fetch with timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
