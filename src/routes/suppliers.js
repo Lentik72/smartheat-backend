@@ -69,8 +69,39 @@ const signPayload = (payload) => {
   return signature;
 };
 
-// Directory version - increment when data changes significantly
-const DIRECTORY_VERSION = 1;
+// V2.1.0: Dynamic directory version from database
+// Increments automatically when supplier data changes
+// Used by iOS app for cache invalidation
+let cachedDirectoryMeta = null;
+let lastMetaFetch = 0;
+const META_CACHE_TTL = 60 * 1000; // 1 minute cache for meta
+
+const getDirectoryMeta = async (sequelize) => {
+  const now = Date.now();
+  if (cachedDirectoryMeta && (now - lastMetaFetch) < META_CACHE_TTL) {
+    return cachedDirectoryMeta;
+  }
+
+  try {
+    const [rows] = await sequelize.query(
+      'SELECT version, supplier_count, last_modified FROM directory_meta WHERE id = 1'
+    );
+    if (rows.length > 0) {
+      cachedDirectoryMeta = {
+        version: rows[0].version,
+        supplierCount: rows[0].supplier_count,
+        lastModified: rows[0].last_modified
+      };
+      lastMetaFetch = now;
+      return cachedDirectoryMeta;
+    }
+  } catch (error) {
+    console.error('[suppliers] Failed to fetch directory meta:', error.message);
+  }
+
+  // Fallback if table doesn't exist
+  return { version: 1, supplierCount: 0, lastModified: null };
+};
 
 // V2.0.0: Signature version - changed when signing contract changes
 // Version 2: currentPrice excluded from signed payload (fixes float precision mismatch)
@@ -103,6 +134,10 @@ const stripForSignature = (supplier) => {
 router.get('/', async (req, res) => {
   const { zip, city, county, state, name, limit = 15 } = req.query;
   const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  // V2.1.0: Fetch dynamic directory version for cache invalidation
+  const directoryMeta = await getDirectoryMeta(sequelize);
 
   // Validate: exactly one search type must be provided
   const hasZip = zip && zip.trim();
@@ -205,7 +240,8 @@ router.get('/', async (req, res) => {
         ...(searchCounty && { searchCounty }),
         ...(searchName && { query: searchName }),
         count: 0,
-        version: DIRECTORY_VERSION,
+        version: directoryMeta.version,
+      supplierCount: directoryMeta.supplierCount,
         signatureVersion: SIGNATURE_VERSION,
         generatedAt: new Date().toISOString(),
         source: 'fallback'
@@ -276,7 +312,8 @@ router.get('/', async (req, res) => {
         searchType: 'name',
         query: searchName,
         count: responseData.length,
-        version: DIRECTORY_VERSION,
+        version: directoryMeta.version,
+      supplierCount: directoryMeta.supplierCount,
         signatureVersion: SIGNATURE_VERSION,
         generatedAt: new Date().toISOString(),
         source: 'database'
@@ -436,7 +473,8 @@ router.get('/', async (req, res) => {
       // Existing fields
       zip: resolvedZips[0] || null,
       count: limitedSuppliers.length,
-      version: DIRECTORY_VERSION,
+      version: directoryMeta.version,
+      supplierCount: directoryMeta.supplierCount,
       // V2.0.0: Signature version for contract tracking
       signatureVersion: SIGNATURE_VERSION,
       generatedAt: new Date().toISOString(),
@@ -478,7 +516,8 @@ router.get('/', async (req, res) => {
       ...(searchCounty && { searchCounty }),
       ...(searchName && { query: searchName }),
       count: 0,
-      version: DIRECTORY_VERSION,
+      version: directoryMeta.version,
+      supplierCount: directoryMeta.supplierCount,
       signatureVersion: SIGNATURE_VERSION,
       generatedAt: new Date().toISOString(),
       source: 'error',
@@ -493,10 +532,16 @@ router.get('/', async (req, res) => {
  * GET /api/v1/suppliers/version
  *
  * Returns current directory version for cache invalidation checks
+ * V2.1.0: Now returns dynamic version from database + supplierCount
  */
-router.get('/version', (req, res) => {
+router.get('/version', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const meta = await getDirectoryMeta(sequelize);
+
   const payload = {
-    version: DIRECTORY_VERSION,
+    version: meta.version,
+    supplierCount: meta.supplierCount,
+    lastModified: meta.lastModified,
     generatedAt: new Date().toISOString()
   };
   const signature = signPayload(payload);
