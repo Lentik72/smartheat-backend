@@ -45,6 +45,7 @@ try {
 // Import model initializers
 const { initSupplierModel } = require('./src/models/Supplier');
 const { initCommunityDeliveryModel } = require('./src/models/CommunityDelivery');
+const { initSupplierPriceModel } = require('./src/models/SupplierPrice');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -191,6 +192,15 @@ if (API_KEYS.DATABASE_URL) {
           logger.info('✅ CommunityDelivery model synced');
         } else {
           logger.error('❌ CommunityDelivery model failed to initialize');
+        }
+
+        // V2.0.2: Initialize SupplierPrice model for price tracking
+        const SupplierPrice = initSupplierPriceModel(sequelize);
+        if (SupplierPrice) {
+          await SupplierPrice.sync({ alter: false });
+          logger.info('✅ SupplierPrice model synced');
+        } else {
+          logger.error('❌ SupplierPrice model failed to initialize');
         }
 
         logger.info('📊 Database ready for operations');
