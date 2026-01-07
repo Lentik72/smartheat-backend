@@ -5,6 +5,8 @@
 // V1.5.1: City and county search parameters with location→ZIP resolution
 // V1.5.2: Terminal proximity as silent ranking factor (closer to terminal = ranked higher)
 // V1.5.3: Added currentPrice from scraped/manual price data
+// V2.0.0: Fixed HMAC signature - currentPrice excluded from signing to avoid float precision issues
+// V2.0.1: Added name search parameter for supplier name lookup
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
@@ -70,6 +72,20 @@ const signPayload = (payload) => {
 // Directory version - increment when data changes significantly
 const DIRECTORY_VERSION = 1;
 
+// V2.0.0: Signature version - changed when signing contract changes
+// Version 2: currentPrice excluded from signed payload (fixes float precision mismatch)
+const SIGNATURE_VERSION = 2;
+
+/**
+ * Strip volatile fields from supplier for signature computation
+ * currentPrice contains floats that serialize differently in Node.js vs Swift
+ * V2.0.0: This ensures identical HMAC signatures across platforms
+ */
+const stripForSignature = (supplier) => {
+  const { currentPrice, ...rest } = supplier;
+  return rest;
+};
+
 /**
  * GET /api/v1/suppliers
  *
@@ -77,37 +93,48 @@ const DIRECTORY_VERSION = 1;
  *   - zip: ZIP code to find suppliers for
  *   - city + state: City name and state code (e.g., city=Armonk&state=NY)
  *   - county + state: County name and state code (e.g., county=Westchester&state=NY)
+ *   - name: Supplier name search (e.g., name=Domino)
  *   - limit (optional): Max results (default 15, max 30)
  *
  * Returns signed JSON response with suppliers serving that area
  * V1.5.1: Added city and county search support
+ * V2.0.1: Added name search parameter
  */
 router.get('/', async (req, res) => {
-  const { zip, city, county, state, limit = 15 } = req.query;
+  const { zip, city, county, state, name, limit = 15 } = req.query;
   const logger = req.app.locals.logger;
 
-  // Validate: exactly one location type must be provided
+  // Validate: exactly one search type must be provided
   const hasZip = zip && zip.trim();
   const hasCity = city && city.trim();
   const hasCounty = county && county.trim();
   const hasState = state && state.trim();
+  const hasName = name && String(name).trim().length > 0;
 
-  // Check for conflicting parameters
-  const locationTypes = [hasZip, hasCity, hasCounty].filter(Boolean).length;
-  if (locationTypes === 0) {
+  // Check for conflicting parameters (mutually exclusive)
+  const searchModes = [hasZip, hasCity, hasCounty, hasName].filter(Boolean).length;
+  if (searchModes === 0) {
     return res.status(400).json({
-      error: 'Location required: provide zip, city+state, or county+state',
+      error: 'Provide exactly one search parameter',
+      allowed: ['zip', 'city+state', 'county+state', 'name'],
       examples: [
         '/api/v1/suppliers?zip=10549',
         '/api/v1/suppliers?city=Armonk&state=NY',
-        '/api/v1/suppliers?county=Westchester&state=NY'
+        '/api/v1/suppliers?county=Westchester&state=NY',
+        '/api/v1/suppliers?name=Domino'
       ]
     });
   }
-  if (locationTypes > 1) {
+  if (searchModes > 1) {
     return res.status(400).json({
-      error: 'Only one location type allowed: zip, city, or county',
-      received: { zip: hasZip ? zip : undefined, city: hasCity ? city : undefined, county: hasCounty ? county : undefined }
+      error: 'Provide exactly one search parameter',
+      allowed: ['zip', 'city+state', 'county+state', 'name'],
+      received: {
+        zip: hasZip ? zip : undefined,
+        city: hasCity ? city : undefined,
+        county: hasCounty ? county : undefined,
+        name: hasName ? name : undefined
+      }
     });
   }
 
@@ -132,9 +159,15 @@ router.get('/', async (req, res) => {
   let resolvedZips = [];
   let searchCity = null;
   let searchCounty = null;
+  let searchName = null;
   let normalizedState = hasState ? state.trim().toUpperCase() : null;
 
-  if (hasZip) {
+  if (hasName) {
+    // V2.0.1: Name search - handles separately, no ZIP resolution needed
+    searchType = 'name';
+    // Normalize for Unicode handling (accents, etc.)
+    searchName = String(name).normalize('NFKD').trim();
+  } else if (hasZip) {
     searchType = 'zip';
     resolvedZips = [zip.trim().substring(0, 5)];
   } else if (hasCity) {
@@ -161,25 +194,24 @@ router.get('/', async (req, res) => {
 
     if (!Supplier) {
       // Fallback: return empty with signature
-      const payload = {
-        data: [],
-        meta: {
-          searchType,
-          coverageLevel: searchType,
-          dataSource: 'fallback',
-          resolvedZips,
-          resolvedZipCount: resolvedZips.length,
-          ambiguousLocation,
-          ...(searchCity && { searchCity }),
-          ...(searchCounty && { searchCounty }),
-          count: 0,
-          version: DIRECTORY_VERSION,
-          generatedAt: new Date().toISOString(),
-          source: 'fallback'
-        }
+      const fallbackMeta = {
+        searchType,
+        coverageLevel: searchType,
+        dataSource: 'fallback',
+        resolvedZips,
+        resolvedZipCount: resolvedZips.length,
+        ambiguousLocation,
+        ...(searchCity && { searchCity }),
+        ...(searchCounty && { searchCounty }),
+        ...(searchName && { query: searchName }),
+        count: 0,
+        version: DIRECTORY_VERSION,
+        signatureVersion: SIGNATURE_VERSION,
+        generatedAt: new Date().toISOString(),
+        source: 'fallback'
       };
-      const signature = signPayload(payload);
-      return res.json({ ...payload, signature });
+      const signature = signPayload({ data: [], meta: fallbackMeta });
+      return res.json({ data: [], meta: fallbackMeta, signature });
     }
 
     // Get all active suppliers for unified matching
@@ -195,7 +227,73 @@ router.get('/', async (req, res) => {
 
     const suppliersJson = allSuppliers.map(s => s.toJSON());
 
-    // For city/county search: aggregate results across all resolved ZIPs
+    // V2.0.1: Handle name search separately (no ZIP-based matching)
+    if (searchType === 'name') {
+      const nameLower = searchName.toLowerCase();
+
+      // Filter suppliers by name match
+      const matchingSuppliers = suppliersJson.filter(s =>
+        (s.name || '').toLowerCase().includes(nameLower)
+      );
+
+      // Limit and sort alphabetically
+      const limitedSuppliers = matchingSuppliers
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .slice(0, maxLimit);
+
+      // Fetch prices for matching suppliers
+      const supplierIds = limitedSuppliers.map(s => s.id);
+      const priceMap = await getLatestPrices(supplierIds);
+
+      // Build response with prices
+      const responseData = limitedSuppliers.map(s => {
+        const price = priceMap[s.id];
+        return {
+          id: s.id,
+          name: s.name,
+          phone: s.phone,
+          email: s.email,
+          website: s.website,
+          addressLine1: s.addressLine1,
+          city: s.city,
+          state: s.state,
+          postalCodesServed: s.postalCodesServed || [],
+          serviceCities: s.serviceCities || [],
+          serviceCounties: s.serviceCounties || [],
+          serviceAreaRadius: s.serviceAreaRadius,
+          notes: s.notes,
+          currentPrice: price ? {
+            pricePerGallon: parseFloat(price.pricePerGallon),
+            minGallons: price.minGallons,
+            sourceType: price.sourceType,
+            scrapedAt: price.scrapedAt,
+            expiresAt: price.expiresAt
+          } : null
+        };
+      });
+
+      const meta = {
+        searchType: 'name',
+        query: searchName,
+        count: responseData.length,
+        version: DIRECTORY_VERSION,
+        signatureVersion: SIGNATURE_VERSION,
+        generatedAt: new Date().toISOString(),
+        source: 'database'
+      };
+
+      // V2.0.0: Sign WITHOUT currentPrice to avoid float precision issues
+      const signedData = responseData.map(stripForSignature);
+      const signature = signPayload({ data: signedData, meta });
+
+      // Observability log
+      console.info(`[suppliers] searchType=${meta.searchType} count=${responseData.length}`);
+      logger?.info(`[Suppliers] Returned ${responseData.length} suppliers for name search '${searchName}'`);
+
+      return res.json({ data: responseData, meta, signature });
+    }
+
+    // For city/county/zip search: aggregate results across all resolved ZIPs
     // Track how many ZIPs each supplier matches (for ranking)
     const supplierMatchCounts = new Map(); // supplier.id -> { supplier, matchCount, bestMatchType }
     let aggregatedUserInfo = null;
@@ -296,59 +394,65 @@ router.get('/', async (req, res) => {
       ? limitedSuppliers[0].matchType
       : 'none';
 
-    // Build response payload with new metadata fields
-    const payload = {
-      data: limitedSuppliers.map(s => {
-        const price = priceMap[s.id];
-        return {
-          id: s.id,
-          name: s.name,
-          phone: s.phone,
-          email: s.email,
-          website: s.website,
-          addressLine1: s.addressLine1,
-          city: s.city,
-          state: s.state,
-          postalCodesServed: s.postalCodesServed || [],
-          serviceCities: s.serviceCities || [],
-          serviceCounties: s.serviceCounties || [],
-          serviceAreaRadius: s.serviceAreaRadius,
-          notes: s.notes,
-          // V1.5.3: Current price if available and not opted out
-          currentPrice: price ? {
-            pricePerGallon: parseFloat(price.pricePerGallon),
-            minGallons: price.minGallons,
-            sourceType: price.sourceType,
-            scrapedAt: price.scrapedAt,
-            expiresAt: price.expiresAt
-          } : null
-        };
-      }),
-      meta: {
-        // V1.5.1: New metadata fields
-        searchType,
-        coverageLevel: searchType,
-        dataSource: 'api',
-        resolvedZipCount: resolvedZips.length,
-        ambiguousLocation,
-        ...(searchCity && { searchCity }),
-        ...(searchCounty && { searchCounty }),
-        ...(searchType !== 'zip' && { resolvedZips: resolvedZips.slice(0, 10) }), // Limit for response size
-        // Existing fields
-        zip: resolvedZips[0] || null,
-        count: limitedSuppliers.length,
-        version: DIRECTORY_VERSION,
-        generatedAt: new Date().toISOString(),
-        source: 'database',
-        matchType: primaryMatchType,
-        userCity: aggregatedUserInfo?.city,
-        userCounty: aggregatedUserInfo?.county,
-        gapType: aggregatedGapType
-      }
+    // Build response data with prices
+    const responseData = limitedSuppliers.map(s => {
+      const price = priceMap[s.id];
+      return {
+        id: s.id,
+        name: s.name,
+        phone: s.phone,
+        email: s.email,
+        website: s.website,
+        addressLine1: s.addressLine1,
+        city: s.city,
+        state: s.state,
+        postalCodesServed: s.postalCodesServed || [],
+        serviceCities: s.serviceCities || [],
+        serviceCounties: s.serviceCounties || [],
+        serviceAreaRadius: s.serviceAreaRadius,
+        notes: s.notes,
+        // V1.5.3: Current price if available and not opted out
+        currentPrice: price ? {
+          pricePerGallon: parseFloat(price.pricePerGallon),
+          minGallons: price.minGallons,
+          sourceType: price.sourceType,
+          scrapedAt: price.scrapedAt,
+          expiresAt: price.expiresAt
+        } : null
+      };
+    });
+
+    // Build metadata
+    const meta = {
+      // V1.5.1: New metadata fields
+      searchType,
+      coverageLevel: searchType,
+      dataSource: 'api',
+      resolvedZipCount: resolvedZips.length,
+      ambiguousLocation,
+      ...(searchCity && { searchCity }),
+      ...(searchCounty && { searchCounty }),
+      ...(searchType !== 'zip' && { resolvedZips: resolvedZips.slice(0, 10) }), // Limit for response size
+      // Existing fields
+      zip: resolvedZips[0] || null,
+      count: limitedSuppliers.length,
+      version: DIRECTORY_VERSION,
+      // V2.0.0: Signature version for contract tracking
+      signatureVersion: SIGNATURE_VERSION,
+      generatedAt: new Date().toISOString(),
+      source: 'database',
+      matchType: primaryMatchType,
+      userCity: aggregatedUserInfo?.city,
+      userCounty: aggregatedUserInfo?.county,
+      gapType: aggregatedGapType
     };
 
-    // Sign the payload
-    const signature = signPayload(payload);
+    // V2.0.0: Sign WITHOUT currentPrice to avoid float precision issues
+    const signedData = responseData.map(stripForSignature);
+    const signature = signPayload({ data: signedData, meta });
+
+    // Observability log
+    console.info(`[suppliers] searchType=${meta.searchType} count=${responseData.length}`);
 
     const searchDesc = searchType === 'zip'
       ? `ZIP ${resolvedZips[0]}`
@@ -356,36 +460,32 @@ router.get('/', async (req, res) => {
         ? `city ${searchCity}, ${normalizedState} (${resolvedZips.length} ZIPs)`
         : `county ${searchCounty}, ${normalizedState} (${resolvedZips.length} ZIPs)`;
 
-    logger?.info(`[Suppliers] Returned ${limitedSuppliers.length} suppliers for ${searchDesc} via ${primaryMatchType} match`);
+    logger?.info(`[Suppliers] Returned ${responseData.length} suppliers for ${searchDesc} via ${primaryMatchType} match`);
 
-    res.json({
-      ...payload,
-      signature
-    });
+    res.json({ data: responseData, meta, signature });
 
   } catch (error) {
     logger?.error('[Suppliers] Error fetching suppliers:', error.message);
 
     // Return empty with signature on error (graceful degradation)
-    const payload = {
-      data: [],
-      meta: {
-        searchType,
-        coverageLevel: searchType,
-        dataSource: 'error',
-        resolvedZipCount: resolvedZips.length,
-        ambiguousLocation,
-        ...(searchCity && { searchCity }),
-        ...(searchCounty && { searchCounty }),
-        count: 0,
-        version: DIRECTORY_VERSION,
-        generatedAt: new Date().toISOString(),
-        source: 'error',
-        error: 'Service temporarily unavailable'
-      }
+    const errorMeta = {
+      searchType,
+      coverageLevel: searchType,
+      dataSource: 'error',
+      resolvedZipCount: resolvedZips.length,
+      ambiguousLocation,
+      ...(searchCity && { searchCity }),
+      ...(searchCounty && { searchCounty }),
+      ...(searchName && { query: searchName }),
+      count: 0,
+      version: DIRECTORY_VERSION,
+      signatureVersion: SIGNATURE_VERSION,
+      generatedAt: new Date().toISOString(),
+      source: 'error',
+      error: 'Service temporarily unavailable'
     };
-    const signature = signPayload(payload);
-    res.status(503).json({ ...payload, signature });
+    const signature = signPayload({ data: [], meta: errorMeta });
+    res.status(503).json({ data: [], meta: errorMeta, signature });
   }
 });
 
