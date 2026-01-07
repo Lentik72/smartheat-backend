@@ -1,0 +1,108 @@
+{
+  "_comment": "Scrape configuration for supplier websites. Pattern: 'direct' = single price, 'table' = tiered pricing",
+
+  "dominofuel.com": {
+    "enabled": true,
+    "pattern": "table",
+    "notes": "Long Island - shows tiered pricing table",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "coddiscountfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "Long Island - COD discount supplier",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "precisionheatingoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "Long Island",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "cashoilco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "7oil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "advancedheatingoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bestdiscountoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bottomdollarheatingoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bethanyfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "brasscityfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "castlefuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bondedoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "oilcompanylongisland.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "Long Island - American Fuel Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "basileoilco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bandbfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  }
+}

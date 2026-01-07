@@ -1,5 +1,6 @@
 // Supplier Directory Model
 // V1.4.0: Added serviceCities, lat, lng for unified matching
+// V1.5.0: Added allowPriceDisplay for price scraping opt-out
 const { DataTypes } = require('sequelize');
 
 let Supplier;
@@ -94,6 +95,12 @@ const initSupplierModel = (sequelize) => {
         type: DataTypes.STRING(50),
         allowNull: true,
         comment: 'Where this supplier data came from (manual, user_submitted, web_scrape)'
+      },
+      // V1.5.0: Price display opt-out
+      allowPriceDisplay: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        comment: 'If false, supplier has opted out of price display'
       }
     }, {
       tableName: 'suppliers',

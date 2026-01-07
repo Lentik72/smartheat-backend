@@ -4,11 +4,13 @@
 // V1.5.0: Unified matching with ZIP → City → County → Radius + ranking
 // V1.5.1: City and county search parameters with location→ZIP resolution
 // V1.5.2: Terminal proximity as silent ranking factor (closer to terminal = ranked higher)
+// V1.5.3: Added currentPrice from scraped/manual price data
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const { getSupplierModel } = require('../models/Supplier');
+const { getLatestPrices } = require('../models/SupplierPrice');
 const { Op } = require('sequelize');
 const { findSuppliersForZip, getZipInfo } = require('../services/supplierMatcher');
 const { getZipsForCity, getZipsForCounty, normalizeLocation } = require('../services/locationResolver');
@@ -285,6 +287,10 @@ router.get('/', async (req, res) => {
     // Limit results
     const limitedSuppliers = aggregatedSuppliers.slice(0, maxLimit);
 
+    // V1.5.3: Fetch current prices for returned suppliers
+    const supplierIds = limitedSuppliers.map(s => s.id);
+    const priceMap = await getLatestPrices(supplierIds);
+
     // Determine primary match type from top result
     const primaryMatchType = limitedSuppliers.length > 0
       ? limitedSuppliers[0].matchType
@@ -292,21 +298,32 @@ router.get('/', async (req, res) => {
 
     // Build response payload with new metadata fields
     const payload = {
-      data: limitedSuppliers.map(s => ({
-        id: s.id,
-        name: s.name,
-        phone: s.phone,
-        email: s.email,
-        website: s.website,
-        addressLine1: s.addressLine1,
-        city: s.city,
-        state: s.state,
-        postalCodesServed: s.postalCodesServed || [],
-        serviceCities: s.serviceCities || [],
-        serviceCounties: s.serviceCounties || [],
-        serviceAreaRadius: s.serviceAreaRadius,
-        notes: s.notes
-      })),
+      data: limitedSuppliers.map(s => {
+        const price = priceMap[s.id];
+        return {
+          id: s.id,
+          name: s.name,
+          phone: s.phone,
+          email: s.email,
+          website: s.website,
+          addressLine1: s.addressLine1,
+          city: s.city,
+          state: s.state,
+          postalCodesServed: s.postalCodesServed || [],
+          serviceCities: s.serviceCities || [],
+          serviceCounties: s.serviceCounties || [],
+          serviceAreaRadius: s.serviceAreaRadius,
+          notes: s.notes,
+          // V1.5.3: Current price if available and not opted out
+          currentPrice: price ? {
+            pricePerGallon: parseFloat(price.pricePerGallon),
+            minGallons: price.minGallons,
+            sourceType: price.sourceType,
+            scrapedAt: price.scrapedAt,
+            expiresAt: price.expiresAt
+          } : null
+        };
+      }),
       meta: {
         // V1.5.1: New metadata fields
         searchType,

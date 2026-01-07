@@ -19,6 +19,7 @@ const communityRoutes = require('./routes/community');
 const analyticsRoutes = require('./routes/analytics');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const suppliersRoutes = require('./routes/suppliers');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -158,11 +159,17 @@ if (API_KEYS.DATABASE_URL) {
       .then(async () => {
         logger.info('✅ Connected to PostgreSQL database');
         logger.info('📊 Database ready for operations');
-        
+
         // Initialize ML tables
         const { initializeMLTables, seedMLData } = require('./models/init-ml-tables');
         await initializeMLTables(sequelize);
         await seedMLData(sequelize);
+
+        // Initialize Supplier models
+        const { initSupplierModel } = require('./models/Supplier');
+        const { initSupplierPriceModel } = require('./models/SupplierPrice');
+        initSupplierModel(sequelize);
+        initSupplierPriceModel(sequelize);
       })
       .catch(err => {
         logger.warn('⚠️  PostgreSQL connection failed:', err.message || err);
@@ -187,6 +194,7 @@ app.use('/api/ml', require('./routes/ml-predictions'));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/v1/suppliers', suppliersRoutes);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
