@@ -22,3 +22,40 @@
 [32minfo[39m: GET /health 200 1ms {"meta":{"req":{"headers":{"accept":"*/*","host":"localhost:8080","user-agent":"curl/8.7.1"},"httpVersion":"1.1","method":"GET","originalUrl":"/health","query":{},"url":"/health"},"res":{"statusCode":200},"responseTime":1},"timestamp":"2025-07-25T01:15:14.227Z"}
 [32minfo[39m: GET /health 200 0ms {"meta":{"req":{"headers":{"accept":"*/*","host":"localhost:8080","user-agent":"curl/8.7.1"},"httpVersion":"1.1","method":"GET","originalUrl":"/health","query":{},"url":"/health"},"res":{"statusCode":200},"responseTime":0},"timestamp":"2025-07-25T10:28:35.307Z"}
 [32minfo[39m: SIGTERM received, shutting down gracefully {"timestamp":"2025-07-25T19:45:46.813Z"}
+[31merror[39m: Missing required environment variables: {"0":"OPENWEATHER","1":"JWT_SECRET","timestamp":"2026-01-07T05:22:29.442Z"}
+[33mwarn[39m: ⚠️  Running in degraded mode without all API keys {"timestamp":"2026-01-07T05:22:29.443Z"}
+[32minfo[39m: ✅ All required API keys loaded successfully {"timestamp":"2026-01-07T05:22:29.443Z"}
+[32minfo[39m: 🚀 SmartHeat Backend API Server running on port 8080 {"timestamp":"2026-01-07T05:22:29.466Z"}
+[32minfo[39m: 📍 Health check: http://localhost:8080/health {"timestamp":"2026-01-07T05:22:29.466Z"}
+[32minfo[39m: 📖 API docs: http://localhost:8080/api/docs {"timestamp":"2026-01-07T05:22:29.466Z"}
+[32minfo[39m: 🌍 Environment: development {"timestamp":"2026-01-07T05:22:29.466Z"}
+[32minfo[39m: 🔒 Security: Helmet, CORS, Rate limiting enabled {"timestamp":"2026-01-07T05:22:29.466Z"}
+[32minfo[39m: ✅ Connected to PostgreSQL database {"timestamp":"2026-01-07T05:22:30.015Z"}
+[32minfo[39m: 📊 Database ready for operations {"timestamp":"2026-01-07T05:22:30.016Z"}
+[32minfo[39m: SIGTERM received, shutting down gracefully {"timestamp":"2026-01-07T05:23:01.430Z"}
+[31merror[39m: Missing required environment variables: {"0":"OPENWEATHER","1":"JWT_SECRET","timestamp":"2026-01-07T05:23:17.710Z"}
+[33mwarn[39m: ⚠️  Running in degraded mode without all API keys {"timestamp":"2026-01-07T05:23:17.710Z"}
+[32minfo[39m: ✅ All required API keys loaded successfully {"timestamp":"2026-01-07T05:23:17.711Z"}
+[32minfo[39m: 🚀 SmartHeat Backend API Server running on port 8080 {"timestamp":"2026-01-07T05:23:17.726Z"}
+[32minfo[39m: 📍 Health check: http://localhost:8080/health {"timestamp":"2026-01-07T05:23:17.727Z"}
+[32minfo[39m: 📖 API docs: http://localhost:8080/api/docs {"timestamp":"2026-01-07T05:23:17.727Z"}
+[32minfo[39m: 🌍 Environment: development {"timestamp":"2026-01-07T05:23:17.727Z"}
+[32minfo[39m: 🔒 Security: Helmet, CORS, Rate limiting enabled {"timestamp":"2026-01-07T05:23:17.727Z"}
+[32minfo[39m: ✅ Connected to PostgreSQL database {"timestamp":"2026-01-07T05:23:18.312Z"}
+[32minfo[39m: 📊 Database ready for operations {"timestamp":"2026-01-07T05:23:18.313Z"}
+[32minfo[39m: [Suppliers] Returned 15 suppliers for ZIP 11731 via zip match {"timestamp":"2026-01-07T05:23:22.699Z"}
+[32minfo[39m: GET /api/v1/suppliers?zip=11731 200 146ms {"meta":{"req":{"headers":{"accept":"*/*","host":"localhost:8080","user-agent":"curl/8.7.1"},"httpVersion":"1.1","method":"GET","originalUrl":"/api/v1/suppliers?zip=11731","query":{"zip":"11731"},"url":"/api/v1/suppliers?zip=11731"},"res":{"statusCode":200},"responseTime":146},"timestamp":"2026-01-07T05:23:22.702Z"}
+[32minfo[39m: SIGTERM received, shutting down gracefully {"timestamp":"2026-01-07T05:35:08.732Z"}
+[31merror[39m: Missing required environment variables: {"0":"OPENWEATHER","1":"JWT_SECRET","timestamp":"2026-01-07T05:35:24.475Z"}
+[33mwarn[39m: ⚠️  Running in degraded mode without all API keys {"timestamp":"2026-01-07T05:35:24.476Z"}
+[32minfo[39m: ✅ All required API keys loaded successfully {"timestamp":"2026-01-07T05:35:24.476Z"}
+[32minfo[39m: 🚀 SmartHeat Backend API Server running on port 8080 {"timestamp":"2026-01-07T05:35:24.493Z"}
+[32minfo[39m: 📍 Health check: http://localhost:8080/health {"timestamp":"2026-01-07T05:35:24.493Z"}
+[32minfo[39m: 📖 API docs: http://localhost:8080/api/docs {"timestamp":"2026-01-07T05:35:24.493Z"}
+[32minfo[39m: 🌍 Environment: development {"timestamp":"2026-01-07T05:35:24.493Z"}
+[32minfo[39m: 🔒 Security: Helmet, CORS, Rate limiting enabled {"timestamp":"2026-01-07T05:35:24.493Z"}
+[32minfo[39m: ✅ Connected to PostgreSQL database {"timestamp":"2026-01-07T05:35:25.035Z"}
+[32minfo[39m: 📊 Database ready for operations {"timestamp":"2026-01-07T05:35:25.036Z"}
+[32minfo[39m: [Suppliers] Returned 15 suppliers for ZIP 11731 via zip match {"timestamp":"2026-01-07T05:35:40.480Z"}
+[32minfo[39m: GET /api/v1/suppliers?zip=11731 200 343ms {"meta":{"req":{"headers":{"accept":"*/*","host":"localhost:8080","user-agent":"curl/8.7.1"},"httpVersion":"1.1","method":"GET","originalUrl":"/api/v1/suppliers?zip=11731","query":{"zip":"11731"},"url":"/api/v1/suppliers?zip=11731"},"res":{"statusCode":200},"responseTime":343},"timestamp":"2026-01-07T05:35:40.484Z"}
+[32minfo[39m: SIGTERM received, shutting down gracefully {"timestamp":"2026-01-07T05:35:52.865Z"}

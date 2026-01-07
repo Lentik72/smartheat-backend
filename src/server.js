@@ -167,9 +167,17 @@ if (API_KEYS.DATABASE_URL) {
 
         // Initialize Supplier models
         const { initSupplierModel } = require('./models/Supplier');
-        const { initSupplierPriceModel } = require('./models/SupplierPrice');
+        const { initSupplierPriceModel, getSupplierPriceModel } = require('./models/SupplierPrice');
+        logger.info('🔧 Initializing Supplier models...');
         initSupplierModel(sequelize);
-        initSupplierPriceModel(sequelize);
+        const priceModel = initSupplierPriceModel(sequelize);
+        logger.info(`🔧 SupplierPrice model result: ${priceModel ? 'SUCCESS' : 'FAILED'}`);
+
+        // Sync SupplierPrice table
+        if (priceModel) {
+          await priceModel.sync({ alter: false });
+          logger.info('✅ SupplierPrice model synced');
+        }
       })
       .catch(err => {
         logger.warn('⚠️  PostgreSQL connection failed:', err.message || err);
