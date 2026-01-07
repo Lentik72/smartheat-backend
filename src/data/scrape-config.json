@@ -1,87 +1,12 @@
 {
   "_comment": "Scrape configuration for supplier websites. Pattern: 'direct' = single price, 'table' = tiered pricing",
 
+  "_section_NY": "=== NEW YORK ===",
+
   "dominofuel.com": {
     "enabled": true,
     "pattern": "table",
     "notes": "Long Island - shows tiered pricing table",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "coddiscountfuel.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "Long Island - COD discount supplier",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "precisionheatingoil.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "Long Island",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "cashoilco.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "NY area",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "7oil.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "CT area",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "advancedheatingoil.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "CT area",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "bestdiscountoil.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "CT area",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "bottomdollarheatingoil.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "NJ area",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "bethanyfuel.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "CT area",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "brasscityfuel.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "CT area",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "castlefuel.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "CT area",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "bondedoil.com": {
-    "enabled": true,
-    "pattern": "direct",
-    "notes": "NY area",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -92,17 +17,512 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
-  "basileoilco.com": {
+  "precisionheatingoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "MA area",
+    "notes": "Long Island",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "longislandcod.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "Long Island COD delivery",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "economyfuelny.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Economy Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "economy-oil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Economy Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "wisechoicefuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Wise Choice",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "huntersoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Hunter's Heating Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "putnamoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Putnam County",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "stormvilleoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Dutchess County",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "yorktownfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Westchester",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "palisadesfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Rockland County",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "jfjfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - JFJ Fuel Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "onsiteoil.org": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - On Site Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "townandcountryoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Town & Country Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "superiorfueloilinc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Superior Fuel Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "brynmawrfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Bryn Mawr Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "fornofuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Forno Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "ezpayoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - EZ Pay Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "justoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Just Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "castlefuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Castle Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "huntingtondiscountoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Dole Fuel Oil / Huntington",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "_section_NJ": "=== NEW JERSEY ===",
+
+  "cashoilco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Cash Oil Co",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bondedoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Bonded Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bottomdollarheatingoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Bottom Dollar",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "majesticoilnj.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Majestic Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "oildepotsj.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Oil Depot SJ",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "cencoheatingoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Cenco Heating Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "mhoexpress.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - MHOexpress",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "7oil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - 7 Oil Plus",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "eaglepetroleumco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Eagle Petroleum",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "forceten.org": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Force Ten Heating",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "reisfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Reis Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "ajsfuelinc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - AJ's Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bacardioilservice.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Bacardi Oil Service",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "centraljerseyheatingoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Central Jersey Heating",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "globepetroleumonline.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Globe Petroleum",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "skylandsenergyonline.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Skylands Energy",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "princetonfuelonline.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ - Princeton Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "_section_CT": "=== CONNECTICUT ===",
+
+  "advancedheatingoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - Advanced Heating Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bestdiscountoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - Best Discount Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bethanyfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - Bethany Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "brasscityfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - Brass City Fuel",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "bandbfuel.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "CT area",
+    "notes": "CT - B&B Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "brazosoilct.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - Brazos Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "fjboil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - FJB Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "nikkooil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - Nikko Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "pattiandson.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - Patti & Sons",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "premierenergyct.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - Premier Energy",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "anytimefueloil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - Anytime Fuel Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "norwichdiscountoilct.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - Norwich Discount Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "_section_MA": "=== MASSACHUSETTS ===",
+
+  "basileoilco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA - Basile Oil Company",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "coddiscountfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA - COD Discount Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "oilonly.net": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA - Oil Only",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "careysoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA - Carey Discount Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "countyenergyproducts.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA - County Energy Products",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "just-oil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA - Just Oil Inc",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "preiteoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA - Preite Oil Company",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "surnerheat.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA - Surner Heating",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "_section_PA": "=== PENNSYLVANIA ===",
+
+  "libertybelldiscountoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA - Liberty Bell Discount Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "oil4lessallentown.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA - Oil4Less Allentown",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "lehighfuels.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA - Lehigh Fuels",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "claytondiscountfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA - Clayton Discount Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "loveenergyfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA - Love Energy",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "oilpatchfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA - Oil Patch Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "pipelineonline.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA - Pipeline Petroleum",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "heatingoillevittown.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA - Rex Fuel Oil / Levittown",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "samedayoildelivery.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA - Same Day Oil Delivery",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "thriftyfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA - Thrifty Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "_section_RI": "=== RHODE ISLAND ===",
+
+  "minerdiscountfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "RI - Miner Discount Fuel",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "theoilladyhho.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "RI - The Heating Oil Lady",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "_section_DE": "=== DELAWARE ===",
+
+  "aweoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "DE - Awe Oil",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "discount-oil.net": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "DE - Discount Oil DE",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   }
 }
