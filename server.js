@@ -18,7 +18,7 @@ const { runScraper } = require('./scripts/scrape-prices');
 const { initScheduler } = require('./src/services/DistributedScheduler');
 
 // Import route modules with error handling
-let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes;
+let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes;
 
 try {
   weatherRoutes = require('./src/routes/weather');
@@ -28,6 +28,7 @@ try {
   authRoutes = require('./src/routes/auth');
   adminRoutes = require('./src/routes/admin');
   suppliersRoutes = require('./src/routes/suppliers');  // V1.3.0: Dynamic supplier directory
+  intelligenceRoutes = require('./src/routes/intelligence');  // V2.2.0: Market intelligence
 } catch (error) {
   console.error('Error loading route modules:', error.message);
   // Create placeholder routers if routes fail to load
@@ -38,6 +39,7 @@ try {
   authRoutes = express.Router();
   adminRoutes = express.Router();
   suppliersRoutes = express.Router();
+  intelligenceRoutes = express.Router();
 
   // Add basic error responses
   weatherRoutes.get('*', (req, res) => res.status(503).json({ error: 'Weather service temporarily unavailable' }));
@@ -47,6 +49,7 @@ try {
   authRoutes.get('*', (req, res) => res.status(503).json({ error: 'Auth service temporarily unavailable' }));
   adminRoutes.get('*', (req, res) => res.status(503).json({ error: 'Admin service temporarily unavailable' }));
   suppliersRoutes.get('*', (req, res) => res.status(503).json({ error: 'Suppliers service temporarily unavailable' }));
+  intelligenceRoutes.get('*', (req, res) => res.status(503).json({ error: 'Intelligence service temporarily unavailable' }));
 }
 
 // Import model initializers
@@ -345,6 +348,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/v1/suppliers', suppliersRoutes);  // V1.3.0: Dynamic supplier directory
+app.use('/api/v1/market', intelligenceRoutes);  // V2.2.0: Market intelligence
 
 // Cache status endpoint
 app.get('/api/cache/status', (req, res) => {
