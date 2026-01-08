@@ -2,10 +2,11 @@
 /**
  * Daily Price Scraper
  * V1.5.0: Scrapes prices from configured supplier websites
+ * V1.6.0: Exported for use by cron scheduler in server.js
  *
- * Run daily at 10:00 AM EST (15:00 UTC)
+ * Runs daily at 10:00 AM EST (15:00 UTC) via node-cron in server.js
  *
- * Usage:
+ * CLI Usage:
  *   DATABASE_URL="..." node scripts/scrape-prices.js
  *   DATABASE_URL="..." node scripts/scrape-prices.js --dry-run
  *   DATABASE_URL="..." node scripts/scrape-prices.js --supplier "Domino"
@@ -22,29 +23,43 @@ const {
   sleep
 } = require('../src/services/priceScraper');
 
-// Parse command line args
+// Parse command line args (only when run directly)
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const supplierFilter = args.includes('--supplier')
   ? args[args.indexOf('--supplier') + 1]
   : null;
 
-async function runScraper() {
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('  HomeHeat Price Scraper - V1.5.0');
-  console.log('  ' + new Date().toLocaleString());
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('');
+/**
+ * Run the price scraper
+ * @param {object} options - Optional config
+ * @param {boolean} options.dryRun - Don't save to DB
+ * @param {string} options.supplierFilter - Filter by supplier name
+ * @param {object} options.logger - Logger instance (defaults to console)
+ * @returns {object} Results summary
+ */
+async function runScraper(options = {}) {
+  const opts = {
+    dryRun: options.dryRun ?? dryRun,
+    supplierFilter: options.supplierFilter ?? supplierFilter,
+    logger: options.logger ?? console
+  };
+  const log = opts.logger;
+  log.info('═══════════════════════════════════════════════════════════');
+  log.info('  HomeHeat Price Scraper - V1.6.0');
+  log.info('  ' + new Date().toLocaleString());
+  log.info('═══════════════════════════════════════════════════════════');
+  log.info('');
 
-  if (dryRun) {
-    console.log('🔍 DRY RUN - No prices will be saved');
-    console.log('');
+  if (opts.dryRun) {
+    log.info('🔍 DRY RUN - No prices will be saved');
+    log.info('');
   }
 
   // Load scrape config
   const scrapeConfig = loadScrapeConfig();
   const configuredDomains = Object.keys(scrapeConfig).filter(k => !k.startsWith('_'));
-  console.log(`📋 Loaded config for ${configuredDomains.length} domains`);
+  log.info(`📋 Loaded config for ${configuredDomains.length} domains`);
 
   // Connect to database
   const sequelize = new Sequelize(process.env.DATABASE_URL, {
@@ -60,8 +75,8 @@ async function runScraper() {
 
   try {
     await sequelize.authenticate();
-    console.log('✅ Database connected');
-    console.log('');
+    log.info('✅ Database connected');
+    log.info('');
 
     // Get suppliers with websites that allow price display
     let query = `
@@ -74,28 +89,28 @@ async function runScraper() {
     `;
     const binds = [];
 
-    if (supplierFilter) {
+    if (opts.supplierFilter) {
       query += ` AND name ILIKE $1`;
-      binds.push(`%${supplierFilter}%`);
+      binds.push(`%${opts.supplierFilter}%`);
     }
 
     query += ` ORDER BY name`;
 
     const [suppliers] = await sequelize.query(query, { bind: binds });
-    console.log(`📍 Found ${suppliers.length} suppliers with websites`);
+    log.info(`📍 Found ${suppliers.length} suppliers with websites`);
 
     // Filter to configured suppliers
     const scrapableSuppliers = suppliers.filter(s => {
       const config = getConfigForSupplier(s.website, scrapeConfig);
       return config && config.enabled;
     });
-    console.log(`📋 ${scrapableSuppliers.length} have scrape config`);
-    console.log('');
+    log.info(`📋 ${scrapableSuppliers.length} have scrape config`);
+    log.info('');
 
     if (scrapableSuppliers.length === 0) {
-      console.log('⚠️  No suppliers configured for scraping');
+      log.warn('⚠️  No suppliers configured for scraping');
       await sequelize.close();
-      return;
+      return { success: 0, failed: 0, skipped: 0 };
     }
 
     // Scrape each supplier
@@ -111,16 +126,16 @@ async function runScraper() {
       const supplier = scrapableSuppliers[i];
       const config = getConfigForSupplier(supplier.website, scrapeConfig);
 
-      console.log(`[${i + 1}/${scrapableSuppliers.length}] Scraping ${supplier.name}...`);
+      log.info(`[${i + 1}/${scrapableSuppliers.length}] Scraping ${supplier.name}...`);
 
       const result = await scrapeSupplierPrice(supplier, config);
 
       if (result.success) {
-        console.log(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal (${result.duration}ms)`);
+        log.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal (${result.duration}ms)`);
         results.success.push(result);
 
         // Save to database (unless dry run)
-        if (!dryRun) {
+        if (!opts.dryRun) {
           await sequelize.query(`
             INSERT INTO supplier_prices (
               id, supplier_id, price_per_gallon, min_gallons, fuel_type,
@@ -143,7 +158,7 @@ async function runScraper() {
           });
         }
       } else {
-        console.log(`   ❌ ${result.error} (${result.duration}ms)`);
+        log.info(`   ❌ ${result.error} (${result.duration}ms)`);
         results.failed.push(result);
       }
 
@@ -154,36 +169,36 @@ async function runScraper() {
     }
 
     // Summary
-    console.log('');
-    console.log('═══════════════════════════════════════════════════════════');
-    console.log('  SCRAPE SUMMARY');
-    console.log('═══════════════════════════════════════════════════════════');
-    console.log(`  ✅ Success: ${results.success.length}`);
-    console.log(`  ❌ Failed:  ${results.failed.length}`);
-    console.log(`  ⏭️  Skipped: ${suppliers.length - scrapableSuppliers.length} (no config)`);
-    console.log('');
+    log.info('');
+    log.info('═══════════════════════════════════════════════════════════');
+    log.info('  SCRAPE SUMMARY');
+    log.info('═══════════════════════════════════════════════════════════');
+    log.info(`  ✅ Success: ${results.success.length}`);
+    log.info(`  ❌ Failed:  ${results.failed.length}`);
+    log.info(`  ⏭️  Skipped: ${suppliers.length - scrapableSuppliers.length} (no config)`);
+    log.info('');
 
     // Calculate failure rate
     const total = results.success.length + results.failed.length;
     if (total > 0) {
       const failRate = results.failed.length / total;
       if (failRate > 0.20) {
-        console.log(`⚠️  ALERT: ${(failRate * 100).toFixed(0)}% failure rate exceeds 20% threshold`);
-        console.log('   Check supplier websites for changes');
+        log.warn(`⚠️  ALERT: ${(failRate * 100).toFixed(0)}% failure rate exceeds 20% threshold`);
+        log.warn('   Check supplier websites for changes');
       }
     }
 
     // Show failed suppliers
     if (results.failed.length > 0) {
-      console.log('');
-      console.log('Failed suppliers:');
+      log.info('');
+      log.info('Failed suppliers:');
       results.failed.forEach(r => {
-        console.log(`  - ${r.supplierName}: ${r.error}`);
+        log.info(`  - ${r.supplierName}: ${r.error}`);
       });
     }
 
     // Show price summary if not dry run
-    if (!dryRun && results.success.length > 0) {
+    if (!opts.dryRun && results.success.length > 0) {
       const [priceStats] = await sequelize.query(`
         SELECT
           COUNT(*) as total,
@@ -199,24 +214,46 @@ async function runScraper() {
 
       if (priceStats[0]) {
         const stats = priceStats[0];
-        console.log('');
-        console.log('📊 Active prices:');
-        console.log(`   Total: ${stats.total} (${stats.scraped} scraped, ${stats.manual} manual)`);
-        console.log(`   Range: $${parseFloat(stats.min_price).toFixed(2)} - $${parseFloat(stats.max_price).toFixed(2)}`);
-        console.log(`   Average: $${parseFloat(stats.avg_price).toFixed(2)}`);
+        log.info('');
+        log.info('📊 Active prices:');
+        log.info(`   Total: ${stats.total} (${stats.scraped} scraped, ${stats.manual} manual)`);
+        log.info(`   Range: $${parseFloat(stats.min_price).toFixed(2)} - $${parseFloat(stats.max_price).toFixed(2)}`);
+        log.info(`   Average: $${parseFloat(stats.avg_price).toFixed(2)}`);
       }
     }
 
     await sequelize.close();
-    console.log('');
-    console.log('🎉 Scrape complete!');
+    log.info('');
+    log.info('🎉 Scrape complete!');
+
+    return {
+      success: results.success.length,
+      failed: results.failed.length,
+      skipped: suppliers.length - scrapableSuppliers.length
+    };
 
   } catch (error) {
-    console.error('❌ Scraper error:', error.message);
-    console.error(error.stack);
+    log.error('❌ Scraper error:', error.message);
+    log.error(error.stack);
     await sequelize.close();
-    process.exit(1);
+    throw error;
   }
 }
 
-runScraper();
+// Export for use by cron scheduler
+module.exports = { runScraper };
+
+// Run directly if executed from command line
+if (require.main === module) {
+  runScraper()
+    .then(result => {
+      if (result) {
+        console.log(`\nResults: ${result.success} success, ${result.failed} failed, ${result.skipped} skipped`);
+      }
+      process.exit(0);
+    })
+    .catch(error => {
+      console.error('Fatal error:', error);
+      process.exit(1);
+    });
+}

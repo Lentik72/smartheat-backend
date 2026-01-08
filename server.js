@@ -8,7 +8,11 @@ const NodeCache = require('node-cache');
 const winston = require('winston');
 const expressWinston = require('express-winston');
 const { Sequelize } = require('sequelize');
+const cron = require('node-cron');
 require('dotenv').config();
+
+// V1.6.0: Import price scraper for scheduled runs
+const { runScraper } = require('./scripts/scrape-prices');
 
 // Import route modules with error handling
 let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes;
@@ -377,6 +381,22 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`📖 API docs: http://localhost:${PORT}/api/docs`);
   logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info('🔒 Security: Helmet, CORS, Rate limiting enabled');
+
+  // V1.6.0: Schedule daily price scraping at 10:00 AM EST (15:00 UTC)
+  // Cron format: minute hour day month weekday
+  // '0 15 * * *' = 15:00 UTC = 10:00 AM EST / 11:00 AM EDT
+  cron.schedule('0 15 * * *', async () => {
+    logger.info('⏰ Starting scheduled price scrape (10:00 AM EST)...');
+    try {
+      const result = await runScraper({ logger });
+      logger.info(`✅ Scheduled scrape complete: ${result.success} success, ${result.failed} failed`);
+    } catch (error) {
+      logger.error('❌ Scheduled scrape failed:', error.message);
+    }
+  }, {
+    timezone: 'America/New_York'  // Ensures DST is handled correctly
+  });
+  logger.info('⏰ Price scraper scheduled: daily at 10:00 AM EST');
 });
 
 // Handle server errors
