@@ -1,14 +1,17 @@
 /**
  * Market Intelligence API Routes
- * V2.1.0: Endpoints for market snapshot and intelligence data
+ * V2.3.0: Unified market summary with data-driven progressive disclosure
  *
  * Endpoints:
  * - GET /api/v1/market/snapshot - Get market snapshot for a ZIP code
+ * - GET /api/v1/market/summary - Consolidated market intelligence (V2.3.0)
  *
  * Design notes:
  * - Aggregator data is NEVER exposed in responses
  * - Urgency pre-gate is evaluated server-side
- * - Responses are cached for 1 hour
+ * - Backend decides what to show via "show" flags - iOS just renders
+ * - "Tracked prices" = scraped, "Logged deliveries" = community
+ * - Maturity levels unlock features as data grows
  */
 
 const express = require('express');
@@ -18,9 +21,55 @@ const router = express.Router();
 const MarketIntelligenceService = require('../services/MarketIntelligenceService');
 const { getCommunityDeliveryModel, FUEL_TYPES, DEFAULT_FUEL_TYPE } = require('../models/CommunityDelivery');
 const { getSupplierModel } = require('../models/Supplier');
-const { getLatestPrices } = require('../models/SupplierPrice');
+const { getSupplierPriceModel } = require('../models/SupplierPrice');
 const { findSuppliersForZip } = require('../services/supplierMatcher');
 const { Op } = require('sequelize');
+
+// V2.3.0: Visibility thresholds for progressive disclosure
+const VISIBILITY_THRESHOLDS = {
+  priceContext: {
+    minTotal: 3,           // At least 3 data points
+    maxAgeDays: 14         // Oldest data within 14 days
+  },
+  trend: {
+    minTotal: 5,           // At least 5 data points
+    minSpanDays: 7,        // Data spanning at least 7 days
+    minPercentChange: 1.0  // At least 1% change to be meaningful
+  },
+  chart: {
+    minTotal: 5,           // At least 5 data points
+    minSpanDays: 14,       // Data spanning at least 14 days
+    minVariancePercent: 2.0 // At least 2% variance to be interesting
+  }
+};
+
+// V2.3.0: Maturity level definitions
+const MATURITY_LEVELS = [
+  {
+    level: 0,
+    label: 'Getting Started',
+    requirement: 'First data point',
+    unlocks: 'Basic market signals'
+  },
+  {
+    level: 1,
+    label: 'Building Data',
+    requirement: '3+ tracked prices or logged deliveries',
+    unlocks: 'Price range display'
+  },
+  {
+    level: 2,
+    label: 'Tracking Trends',
+    requirement: '5+ data points over 7+ days',
+    unlocks: 'Price trends'
+  },
+  {
+    level: 3,
+    label: 'Full Insights',
+    requirement: '5+ data points over 14+ days with variance',
+    unlocks: 'Price charts and detailed analysis'
+  }
+];
 
 // Validation middleware
 const handleValidationErrors = (req, res, next) => {
@@ -204,35 +253,33 @@ router.get('/health', async (req, res) => {
 /**
  * GET /api/v1/market/summary
  *
- * Consolidated market intelligence for dashboard and full market view.
- * Combines: Market Snapshot + Local Benchmark + Suppliers + Seasonal Context
+ * V2.3.0: Consolidated market intelligence with progressive disclosure.
+ * Backend decides what to show via "show" flags - iOS just renders.
  *
  * Query params:
  * - zip (required): 5-digit ZIP code
  * - tankLevel (optional): Tank level 0.0 to 1.0
  * - fuelType (optional): 'heating_oil' or 'propane' (default: heating_oil)
- * - supplierLimit (optional): Max suppliers to return (default: 10, max: 20)
  *
  * Response structure:
  * {
- *   market: { state, displayText, direction, confidence, explanation },
- *   localBenchmark: { hasData, medianPrice, typicalRange, deliveryCount, freshness },
- *   suppliers: { count, list, hasScrapedPrices },
- *   seasonalContext: { text, season }
+ *   market: { state, displayText, icon, color, explanation, confidence },
+ *   priceContext: { show, range, sources, freshness, label },
+ *   trend: { show, direction, percentChange, icon },
+ *   chart: { show, hasVariance, variancePercent, data, spanDays },
+ *   seasonalContext: { season, text, icon },
+ *   maturity: { level, label, nextLevel },
+ *   truthNotes: [...],
+ *   meta: { zip, fuelType, computeTime, generatedAt }
  * }
  */
 // Middleware to disable ETag for this route (prevents 304 issues on iOS)
-// Sets app.etag to false for this request only, then restores it
 const disableETag = (req, res, next) => {
-  // Store original etag setting and disable for this request
   const originalEtag = req.app.get('etag');
   req.app.set('etag', false);
-
-  // Restore after response is sent
   res.on('finish', () => {
     req.app.set('etag', originalEtag);
   });
-
   next();
 };
 
@@ -249,23 +296,18 @@ router.get('/summary', disableETag, [
     .optional()
     .isIn(FUEL_TYPES)
     .withMessage(`Fuel type must be one of: ${FUEL_TYPES.join(', ')}`),
-  query('supplierLimit')
-    .optional()
-    .isInt({ min: 1, max: 20 })
-    .withMessage('Supplier limit must be 1-20')
-    .toInt(),
   handleValidationErrors
 ], async (req, res) => {
   const startTime = Date.now();
 
   try {
-    const { zip, tankLevel, supplierLimit = 10 } = req.query;
+    const { zip, tankLevel } = req.query;
     const fuelType = req.query.fuelType || DEFAULT_FUEL_TYPE;
     const cache = req.app.locals.cache;
     const logger = req.app.locals.logger || console;
 
-    // Cache key includes all parameters
-    const cacheKey = `market_summary_${zip}_${fuelType}_${tankLevel !== undefined ? Math.round(tankLevel * 100) : 'none'}`;
+    // Cache key
+    const cacheKey = `market_summary_v2_${zip}_${fuelType}_${tankLevel !== undefined ? Math.round(tankLevel * 100) : 'none'}`;
 
     // Check cache
     const cached = cache?.get(cacheKey);
@@ -276,25 +318,31 @@ router.get('/summary', disableETag, [
 
     logger.info(`📊 Computing market summary for ZIP ${zip} (${fuelType})`);
 
-    // Run all data fetches in parallel
+    // Step 1: Gather all raw data in parallel
     const [
       marketSnapshot,
-      localBenchmark,
-      supplierData
+      priceData
     ] = await Promise.all([
       computeMarketSection(zip, tankLevel),
-      computeLocalBenchmark(zip, fuelType, logger),
-      computeSupplierSection(zip, supplierLimit, req.app.locals)
+      gatherPriceData(zip, fuelType, logger)
     ]);
 
-    // Compute seasonal context
+    // Step 2: Compute derived sections based on data
+    const priceContext = computePriceContext(priceData);
+    const trend = computeTrend(priceData);
+    const chart = computeChart(priceData);
+    const maturity = computeMaturityLevel(priceData);
     const seasonalContext = computeSeasonalContext();
+    const truthNotes = generateTruthNotes(priceData, priceContext, trend);
 
     const response = {
       market: marketSnapshot,
-      localBenchmark,
-      suppliers: supplierData,
+      priceContext,
+      trend,
+      chart,
       seasonalContext,
+      maturity,
+      truthNotes,
       meta: {
         zip,
         fuelType,
@@ -303,15 +351,14 @@ router.get('/summary', disableETag, [
       }
     };
 
-    // Cache for 30 minutes (shorter than snapshot to keep benchmark fresh)
+    // Cache for 30 minutes
     if (cache) {
       cache.set(cacheKey, response, 1800);
     }
 
-    logger.info(`✅ Market summary for ${zip}: ${marketSnapshot.state} (${Date.now() - startTime}ms)`);
+    logger.info(`✅ Market summary for ${zip}: ${marketSnapshot.state}, maturity L${maturity.level} (${Date.now() - startTime}ms)`);
 
-    // Disable HTTP caching - app handles its own caching in UserDefaults
-    // This prevents 304 responses that can cause empty body issues on iOS
+    // Disable HTTP caching
     res.set({
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
       'Pragma': 'no-cache',
@@ -374,195 +421,415 @@ async function computeMarketSection(zip, tankLevel) {
 }
 
 /**
- * Helper: Compute local benchmark from delivery data
- * Uses 7-day primary window, 14-day fallback
- * Language: "local deliveries" not "community"
+ * V2.3.0: Gather all price data from both scraped and community sources
+ * Returns unified data structure for computing priceContext, trend, and chart
  */
-async function computeLocalBenchmark(zip, fuelType, logger) {
+async function gatherPriceData(zip, fuelType, logger) {
   const CommunityDelivery = getCommunityDeliveryModel();
-  if (!CommunityDelivery) {
-    return {
-      hasData: false,
-      message: 'Local delivery data unavailable'
-    };
-  }
+  const SupplierPrice = getSupplierPriceModel();
+  const Supplier = getSupplierModel();
 
-  const zipPrefix = zip.substring(0, 3);
   const now = new Date();
-
-  // 7-day primary window
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  // 14-day fallback
   const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const zipPrefix = zip.substring(0, 3);
+
+  const result = {
+    trackedPrices: [],   // Scraped from supplier websites
+    loggedDeliveries: [], // User-submitted community deliveries
+    allDataPoints: [],   // Combined for calculations
+    stats: {
+      trackedCount: 0,
+      loggedCount: 0,
+      totalCount: 0,
+      newestTimestamp: null,
+      oldestTimestamp: null,
+      spanDays: 0
+    }
+  };
 
   try {
-    // Try 7-day window first
-    let deliveries = await CommunityDelivery.findAll({
-      where: {
-        zipPrefix,
-        fuelType,
-        validationStatus: 'valid',
-        createdAt: { [Op.gte]: sevenDaysAgo }
-      },
-      order: [['createdAt', 'DESC']]
-    });
+    // 1. Get scraped prices from suppliers serving this ZIP
+    if (SupplierPrice && Supplier) {
+      // Get suppliers for this ZIP
+      const allSuppliers = await Supplier.findAll({
+        where: { active: true },
+        attributes: ['id', 'name', 'postalCodesServed']
+      });
 
-    let freshness = '7_days';
-    let freshnessText = 'this week';
+      const suppliersJson = allSuppliers.map(s => s.toJSON());
+      const { suppliers: matchedSuppliers } = findSuppliersForZip(zip, suppliersJson, { includeRadius: true });
+      const supplierIds = matchedSuppliers.map(s => s.id);
 
-    // Fallback to 14-day if insufficient data
-    if (deliveries.length < 3) {
-      deliveries = await CommunityDelivery.findAll({
+      if (supplierIds.length > 0) {
+        // Get scraped prices (not aggregator_signal) from last 14 days
+        const scrapedPrices = await SupplierPrice.findAll({
+          where: {
+            supplierId: { [Op.in]: supplierIds },
+            isValid: true,
+            sourceType: { [Op.ne]: 'aggregator_signal' },
+            scrapedAt: { [Op.gte]: fourteenDaysAgo }
+          },
+          order: [['scrapedAt', 'DESC']]
+        });
+
+        result.trackedPrices = scrapedPrices.map(p => ({
+          price: parseFloat(p.pricePerGallon),
+          timestamp: p.scrapedAt,
+          source: 'tracked',
+          supplierId: p.supplierId
+        }));
+      }
+    }
+
+    // 2. Get community deliveries (user-logged)
+    if (CommunityDelivery) {
+      const deliveries = await CommunityDelivery.findAll({
         where: {
           zipPrefix,
           fuelType,
           validationStatus: 'valid',
-          createdAt: { [Op.gte]: fourteenDaysAgo }
+          createdAt: { [Op.gte]: thirtyDaysAgo }
         },
         order: [['createdAt', 'DESC']]
       });
-      freshness = '14_days';
-      freshnessText = 'in the last 2 weeks';
+
+      result.loggedDeliveries = deliveries.map(d => ({
+        price: parseFloat(d.pricePerGallon),
+        timestamp: d.createdAt,
+        source: 'logged',
+        contributorHash: d.contributorHash
+      }));
     }
 
-    // Need at least 3 deliveries from 2+ contributors
-    const contributors = new Set(deliveries.map(d => d.contributorHash));
-    if (deliveries.length < 3 || contributors.size < 2) {
-      return {
-        hasData: false,
-        deliveryCount: deliveries.length,
-        contributorCount: contributors.size,
-        message: deliveries.length === 0
-          ? 'No recent local deliveries'
-          : 'Not enough local data yet'
-      };
+    // 3. Combine all data points (community weighted slightly higher)
+    result.allDataPoints = [
+      ...result.trackedPrices.map(p => ({ ...p, weight: 1.0 })),
+      ...result.loggedDeliveries.map(p => ({ ...p, weight: 1.2 })) // Community weighted 1.2x
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // 4. Calculate stats
+    result.stats.trackedCount = result.trackedPrices.length;
+    result.stats.loggedCount = result.loggedDeliveries.length;
+    result.stats.totalCount = result.allDataPoints.length;
+
+    if (result.allDataPoints.length > 0) {
+      result.stats.newestTimestamp = result.allDataPoints[0].timestamp;
+      result.stats.oldestTimestamp = result.allDataPoints[result.allDataPoints.length - 1].timestamp;
+      result.stats.spanDays = Math.ceil(
+        (new Date(result.stats.newestTimestamp) - new Date(result.stats.oldestTimestamp)) / (1000 * 60 * 60 * 24)
+      );
     }
-
-    // Calculate stats
-    const prices = deliveries.map(d => parseFloat(d.pricePerGallon)).sort((a, b) => a - b);
-    const medianPrice = prices[Math.floor(prices.length / 2)];
-    const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length;
-
-    // IQR for typical range (if enough data)
-    let typicalRange = null;
-    if (prices.length >= 5) {
-      const q1Idx = Math.floor(prices.length * 0.25);
-      const q3Idx = Math.floor(prices.length * 0.75);
-      typicalRange = {
-        low: prices[q1Idx],
-        high: prices[q3Idx]
-      };
-    }
-
-    // Calculate days since newest delivery
-    const newestDelivery = deliveries[0];
-    const daysSinceNewest = Math.floor((now - new Date(newestDelivery.createdAt)) / (1000 * 60 * 60 * 24));
-
-    return {
-      hasData: true,
-      medianPrice: Math.round(medianPrice * 100) / 100,
-      avgPrice: Math.round(avgPrice * 100) / 100,
-      typicalRange,
-      deliveryCount: deliveries.length,
-      contributorCount: contributors.size,
-      freshness,
-      freshnessText: `Based on ${deliveries.length} local ${deliveries.length === 1 ? 'delivery' : 'deliveries'} ${freshnessText}`,
-      daysSinceNewest,
-      lastUpdated: newestDelivery.createdAt
-    };
 
   } catch (error) {
-    logger.error('Local benchmark error:', error.message);
-    return {
-      hasData: false,
-      message: 'Could not load local data'
-    };
+    logger.error('gatherPriceData error:', error.message);
   }
+
+  return result;
 }
 
 /**
- * Helper: Compute supplier section
- * Returns suppliers with scraped prices where available
+ * V2.3.0: Compute price context with source tracking
+ * Show flag based on visibility thresholds
  */
-async function computeSupplierSection(zip, limit, appLocals) {
-  const Supplier = getSupplierModel();
-  if (!Supplier) {
+function computePriceContext(priceData) {
+  const { allDataPoints, stats } = priceData;
+  const threshold = VISIBILITY_THRESHOLDS.priceContext;
+
+  // Base response when not showing
+  const baseResponse = {
+    show: false,
+    range: null,
+    sources: {
+      trackedPrices: stats.trackedCount,
+      loggedDeliveries: stats.loggedCount,
+      total: stats.totalCount
+    },
+    freshness: null,
+    label: null
+  };
+
+  // Check visibility thresholds
+  if (stats.totalCount < threshold.minTotal) {
+    return baseResponse;
+  }
+
+  // Check data freshness (oldest data within threshold)
+  const now = new Date();
+  const oldestAgeDays = stats.oldestTimestamp
+    ? Math.ceil((now - new Date(stats.oldestTimestamp)) / (1000 * 60 * 60 * 24))
+    : 999;
+
+  if (oldestAgeDays > threshold.maxAgeDays) {
+    return baseResponse;
+  }
+
+  // Calculate price range
+  const prices = allDataPoints.map(d => d.price).sort((a, b) => a - b);
+  const low = prices[0];
+  const high = prices[prices.length - 1];
+
+  // Calculate freshness
+  const newestAgeHours = stats.newestTimestamp
+    ? Math.floor((now - new Date(stats.newestTimestamp)) / (1000 * 60 * 60))
+    : null;
+
+  // Build label based on sources
+  let label = '';
+  if (stats.trackedCount > 0 && stats.loggedCount > 0) {
+    label = 'Tracked prices and logged deliveries in your area';
+  } else if (stats.trackedCount > 0) {
+    label = 'Tracked prices in your area';
+  } else {
+    label = 'Logged deliveries in your area';
+  }
+
+  return {
+    show: true,
+    range: {
+      low: Math.round(low * 100) / 100,
+      high: Math.round(high * 100) / 100
+    },
+    sources: {
+      trackedPrices: stats.trackedCount,
+      loggedDeliveries: stats.loggedCount,
+      total: stats.totalCount
+    },
+    freshness: {
+      newestAgeHours,
+      newestTimestamp: stats.newestTimestamp,
+      oldestAgeDays
+    },
+    label
+  };
+}
+
+/**
+ * V2.3.0: Compute trend with visibility thresholds
+ */
+function computeTrend(priceData) {
+  const { allDataPoints, stats } = priceData;
+  const threshold = VISIBILITY_THRESHOLDS.trend;
+
+  // Base response when not showing
+  const baseResponse = {
+    show: false,
+    direction: null,
+    percentChange: null,
+    icon: null
+  };
+
+  // Check visibility thresholds
+  if (stats.totalCount < threshold.minTotal || stats.spanDays < threshold.minSpanDays) {
+    return baseResponse;
+  }
+
+  // Calculate week-over-week change using weighted averages
+  const now = new Date();
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const recentPrices = allDataPoints.filter(d => new Date(d.timestamp) >= oneWeekAgo);
+  const olderPrices = allDataPoints.filter(d => new Date(d.timestamp) < oneWeekAgo);
+
+  if (recentPrices.length === 0 || olderPrices.length === 0) {
+    return baseResponse;
+  }
+
+  // Weighted averages
+  const recentAvg = recentPrices.reduce((sum, d) => sum + d.price * d.weight, 0) /
+    recentPrices.reduce((sum, d) => sum + d.weight, 0);
+  const olderAvg = olderPrices.reduce((sum, d) => sum + d.price * d.weight, 0) /
+    olderPrices.reduce((sum, d) => sum + d.weight, 0);
+
+  const percentChange = ((recentAvg - olderAvg) / olderAvg) * 100;
+
+  // Check if change is meaningful
+  if (Math.abs(percentChange) < threshold.minPercentChange) {
     return {
-      count: 0,
-      list: [],
-      hasScrapedPrices: false,
-      message: 'Supplier data unavailable'
+      show: true,
+      direction: 'stable',
+      percentChange: Math.round(percentChange * 10) / 10,
+      icon: 'arrow.right'
     };
   }
 
-  try {
-    // Get all active suppliers
-    const allSuppliers = await Supplier.findAll({
-      where: { active: true },
-      attributes: [
-        'id', 'name', 'phone', 'email', 'website',
-        'city', 'state', 'postalCodesServed', 'notes'
-      ]
-    });
+  return {
+    show: true,
+    direction: percentChange < 0 ? 'down' : 'up',
+    percentChange: Math.round(percentChange * 10) / 10,
+    icon: percentChange < 0 ? 'arrow.down' : 'arrow.up'
+  };
+}
 
-    const suppliersJson = allSuppliers.map(s => s.toJSON());
+/**
+ * V2.3.0: Compute chart eligibility with variance check
+ */
+function computeChart(priceData) {
+  const { allDataPoints, stats } = priceData;
+  const threshold = VISIBILITY_THRESHOLDS.chart;
 
-    // Find suppliers for this ZIP
-    const { suppliers: matchedSuppliers } = findSuppliersForZip(
-      zip,
-      suppliersJson,
-      { includeRadius: true }
-    );
+  // Base response when not showing
+  const baseResponse = {
+    show: false,
+    hasVariance: false,
+    variancePercent: null,
+    data: [],
+    spanDays: stats.spanDays
+  };
 
-    // Limit results
-    const limitedSuppliers = matchedSuppliers.slice(0, limit);
+  // Check visibility thresholds
+  if (stats.totalCount < threshold.minTotal || stats.spanDays < threshold.minSpanDays) {
+    return baseResponse;
+  }
 
-    // Fetch current prices
-    const supplierIds = limitedSuppliers.map(s => s.id);
-    const priceMap = await getLatestPrices(supplierIds);
+  // Calculate variance
+  const prices = allDataPoints.map(d => d.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const variancePercent = ((maxPrice - minPrice) / minPrice) * 100;
 
-    // Count how many have scraped prices
-    const suppliersWithPrices = supplierIds.filter(id => priceMap[id]).length;
+  // Check if chart would be interesting (has variance)
+  const hasVariance = variancePercent >= threshold.minVariancePercent;
 
-    // Build response list
-    const supplierList = limitedSuppliers.map(s => {
-      const price = priceMap[s.id];
-      return {
-        id: s.id,
-        name: s.name,
-        phone: s.phone,
-        website: s.website,
-        city: s.city,
-        state: s.state,
-        // Price info (if available) - framed positively
-        currentPrice: price ? {
-          pricePerGallon: parseFloat(price.pricePerGallon),
-          minGallons: price.minGallons,
-          scrapedAt: price.scrapedAt
-        } : null,
-        // "Call for today's price" framing when no scraped price
-        callForPrice: !price
-      };
-    });
-
+  if (!hasVariance) {
     return {
-      count: supplierList.length,
-      totalAvailable: matchedSuppliers.length,
-      list: supplierList,
-      hasScrapedPrices: suppliersWithPrices > 0,
-      scrapedPriceCount: suppliersWithPrices
-    };
-
-  } catch (error) {
-    const logger = appLocals?.logger || console;
-    logger.error('Supplier section error:', error.message);
-    return {
-      count: 0,
-      list: [],
-      hasScrapedPrices: false,
-      message: 'Could not load suppliers'
+      ...baseResponse,
+      hasVariance: false,
+      variancePercent: Math.round(variancePercent * 10) / 10
     };
   }
+
+  // Prepare chart data (limit to 30 points for performance)
+  const chartData = allDataPoints
+    .slice(0, 30)
+    .map(d => ({
+      date: d.timestamp,
+      price: d.price,
+      source: d.source
+    }))
+    .reverse(); // Oldest first for chart
+
+  return {
+    show: true,
+    hasVariance: true,
+    variancePercent: Math.round(variancePercent * 10) / 10,
+    data: chartData,
+    spanDays: stats.spanDays
+  };
+}
+
+/**
+ * V2.3.0: Compute maturity level based on data availability
+ */
+function computeMaturityLevel(priceData) {
+  const { stats } = priceData;
+  const chartThreshold = VISIBILITY_THRESHOLDS.chart;
+  const trendThreshold = VISIBILITY_THRESHOLDS.trend;
+  const contextThreshold = VISIBILITY_THRESHOLDS.priceContext;
+
+  // Calculate variance for level 3 check
+  let variancePercent = 0;
+  if (priceData.allDataPoints.length > 0) {
+    const prices = priceData.allDataPoints.map(d => d.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    variancePercent = ((maxPrice - minPrice) / minPrice) * 100;
+  }
+
+  // Level 3: Full Insights - 5+ data over 14+ days with variance
+  if (stats.totalCount >= chartThreshold.minTotal &&
+      stats.spanDays >= chartThreshold.minSpanDays &&
+      variancePercent >= chartThreshold.minVariancePercent) {
+    return {
+      level: 3,
+      label: MATURITY_LEVELS[3].label,
+      nextLevel: null // Already at max
+    };
+  }
+
+  // Level 2: Tracking Trends - 5+ data over 7+ days
+  if (stats.totalCount >= trendThreshold.minTotal &&
+      stats.spanDays >= trendThreshold.minSpanDays) {
+    return {
+      level: 2,
+      label: MATURITY_LEVELS[2].label,
+      nextLevel: {
+        requirement: MATURITY_LEVELS[3].requirement,
+        unlocks: MATURITY_LEVELS[3].unlocks
+      }
+    };
+  }
+
+  // Level 1: Building Data - 3+ data points
+  if (stats.totalCount >= contextThreshold.minTotal) {
+    return {
+      level: 1,
+      label: MATURITY_LEVELS[1].label,
+      nextLevel: {
+        requirement: MATURITY_LEVELS[2].requirement,
+        unlocks: MATURITY_LEVELS[2].unlocks
+      }
+    };
+  }
+
+  // Level 0: Getting Started
+  return {
+    level: 0,
+    label: MATURITY_LEVELS[0].label,
+    nextLevel: {
+      requirement: MATURITY_LEVELS[1].requirement,
+      unlocks: MATURITY_LEVELS[1].unlocks
+    }
+  };
+}
+
+/**
+ * V2.3.0: Generate truthNotes - transparency about data sources
+ */
+function generateTruthNotes(priceData, priceContext, trend) {
+  const notes = [];
+  const { stats } = priceData;
+
+  // Source composition note
+  if (stats.totalCount > 0) {
+    const parts = [];
+    if (stats.trackedCount > 0) {
+      parts.push(`${stats.trackedCount} tracked ${stats.trackedCount === 1 ? 'price' : 'prices'}`);
+    }
+    if (stats.loggedCount > 0) {
+      parts.push(`${stats.loggedCount} logged ${stats.loggedCount === 1 ? 'delivery' : 'deliveries'}`);
+    }
+    notes.push(`Based on ${parts.join(' and ')}`);
+  }
+
+  // Freshness note
+  if (priceContext.show && priceContext.freshness?.newestAgeHours !== null) {
+    const hours = priceContext.freshness.newestAgeHours;
+    if (hours < 24) {
+      notes.push('Includes data from today');
+    } else if (hours < 48) {
+      notes.push('Most recent data from yesterday');
+    } else {
+      const days = Math.floor(hours / 24);
+      notes.push(`Most recent data ${days} days ago`);
+    }
+  }
+
+  // Limited data note
+  if (stats.totalCount < VISIBILITY_THRESHOLDS.priceContext.minTotal) {
+    notes.push('Limited local data - market signal based on regional trends');
+  }
+
+  // Trend confidence note
+  if (trend.show && trend.direction !== 'stable') {
+    if (stats.spanDays >= 14) {
+      notes.push('Trend based on 2+ weeks of data');
+    } else {
+      notes.push('Short-term trend - may not reflect longer patterns');
+    }
+  }
+
+  return notes;
 }
 
 /**
