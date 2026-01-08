@@ -44,9 +44,10 @@ const initSupplierPriceModel = (sequelize) => {
         comment: 'Only heating oil supported initially'
       },
       sourceType: {
-        type: DataTypes.ENUM('scraped', 'manual', 'user_reported'),
+        type: DataTypes.ENUM('scraped', 'manual', 'user_reported', 'aggregator_signal'),
         defaultValue: 'scraped',
-        allowNull: false
+        allowNull: false,
+        comment: 'aggregator_signal prices are for market signals only, never displayed'
       },
       sourceUrl: {
         type: DataTypes.STRING(500),
@@ -111,15 +112,20 @@ const initSupplierPriceModel = (sequelize) => {
 const getSupplierPriceModel = () => SupplierPrice;
 
 // Helper function to get latest valid price for a supplier
+// V2.1.0: Excludes aggregator_signal prices (those are for market intelligence only)
 const getLatestPrice = async (supplierId) => {
   if (!SupplierPrice) return null;
+
+  const { Op } = require('sequelize');
 
   try {
     const price = await SupplierPrice.findOne({
       where: {
         supplierId,
         isValid: true,
-        expiresAt: { [require('sequelize').Op.gt]: new Date() }
+        expiresAt: { [Op.gt]: new Date() },
+        // V2.1.0: Never show aggregator prices to users
+        sourceType: { [Op.ne]: 'aggregator_signal' }
       },
       order: [['scrapedAt', 'DESC']]
     });
@@ -131,18 +137,21 @@ const getLatestPrice = async (supplierId) => {
 };
 
 // Helper function to get latest prices for multiple suppliers
+// V2.1.0: Excludes aggregator_signal prices (those are for market intelligence only)
 const getLatestPrices = async (supplierIds) => {
   if (!SupplierPrice || !supplierIds || supplierIds.length === 0) return {};
 
-  const { Op, fn, col } = require('sequelize');
+  const { Op } = require('sequelize');
 
   try {
-    // Get all valid, non-expired prices
+    // Get all valid, non-expired prices (excluding aggregator signals)
     const prices = await SupplierPrice.findAll({
       where: {
         supplierId: { [Op.in]: supplierIds },
         isValid: true,
-        expiresAt: { [Op.gt]: new Date() }
+        expiresAt: { [Op.gt]: new Date() },
+        // V2.1.0: Never show aggregator prices to users
+        sourceType: { [Op.ne]: 'aggregator_signal' }
       },
       order: [['scrapedAt', 'DESC']]
     });
@@ -163,9 +172,40 @@ const getLatestPrices = async (supplierIds) => {
   }
 };
 
+// V2.1.0: Get ALL prices including aggregator signals (for market intelligence only)
+// This function should NEVER be used for user-facing endpoints
+const getAllPricesForSignals = async (options = {}) => {
+  if (!SupplierPrice) return [];
+
+  const { Op } = require('sequelize');
+  const {
+    sourceTypes = ['scraped', 'aggregator_signal'],
+    lookbackHours = 168 // 7 days default
+  } = options;
+
+  try {
+    const cutoffDate = new Date(Date.now() - lookbackHours * 60 * 60 * 1000);
+
+    const prices = await SupplierPrice.findAll({
+      where: {
+        isValid: true,
+        scrapedAt: { [Op.gte]: cutoffDate },
+        sourceType: { [Op.in]: sourceTypes }
+      },
+      order: [['scrapedAt', 'DESC']]
+    });
+
+    return prices.map(p => p.toJSON());
+  } catch (error) {
+    console.error('Error getting prices for signals:', error.message);
+    return [];
+  }
+};
+
 module.exports = {
   initSupplierPriceModel,
   getSupplierPriceModel,
   getLatestPrice,
-  getLatestPrices
+  getLatestPrices,
+  getAllPricesForSignals // V2.1.0: For market intelligence service only
 };

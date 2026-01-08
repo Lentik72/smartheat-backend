@@ -3,6 +3,7 @@
  * Daily Price Scraper
  * V1.5.0: Scrapes prices from configured supplier websites
  * V1.6.0: Exported for use by cron scheduler in server.js
+ * V2.1.0: Support for aggregator_signal source type (displayable=false)
  *
  * Runs daily at 10:00 AM EST (15:00 UTC) via node-cron in server.js
  *
@@ -131,10 +132,13 @@ async function runScraper(options = {}) {
       const result = await scrapeSupplierPrice(supplier, config);
 
       if (result.success) {
-        log.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal (${result.duration}ms)`);
+        // V2.1.0: Log aggregator status
+        const aggLabel = result.isAggregator ? ' [AGGREGATOR]' : '';
+        log.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal (${result.duration}ms)${aggLabel}`);
         results.success.push(result);
 
         // Save to database (unless dry run)
+        // V2.1.0: Use result.sourceType to distinguish scraped vs aggregator_signal
         if (!opts.dryRun) {
           await sequelize.query(`
             INSERT INTO supplier_prices (
@@ -143,7 +147,7 @@ async function runScraper(options = {}) {
               created_at, updated_at
             ) VALUES (
               gen_random_uuid(), $1, $2, $3, 'heating_oil',
-              'scraped', $4, $5, $6, true, NULL,
+              $4, $5, $6, $7, true, NULL,
               NOW(), NOW()
             )
           `, {
@@ -151,6 +155,7 @@ async function runScraper(options = {}) {
               result.supplierId,
               result.pricePerGallon,
               result.minGallons,
+              result.sourceType, // V2.1.0: 'scraped' or 'aggregator_signal'
               result.sourceUrl,
               result.scrapedAt.toISOString(),
               result.expiresAt.toISOString()

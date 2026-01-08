@@ -20,6 +20,7 @@ const analyticsRoutes = require('./routes/analytics');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const suppliersRoutes = require('./routes/suppliers');
+const intelligenceRoutes = require('./routes/intelligence');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -203,6 +204,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/v1/suppliers', suppliersRoutes);
+app.use('/api/v1/market', intelligenceRoutes);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {

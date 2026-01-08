@@ -1,0 +1,70 @@
+{
+  "_comment": "V2.1.0: Signal weights for Market Intelligence Engine. Weights sum to 1.0.",
+  "_updated": "2026-01-07",
+
+  "weights": {
+    "scraped": 0.45,
+    "aggregator": 0.15,
+    "community": 0.15,
+    "market": 0.25
+  },
+
+  "_notes": {
+    "scraped": "Direct supplier prices - highest trust when coverage is good",
+    "aggregator": "Aggregator prices - used for direction/trends only, never displayed",
+    "community": "User-submitted delivery prices - starts low (sparse data), increase as density grows",
+    "market": "FRED/EIA wholesale market data - reliable baseline, always available"
+  },
+
+  "coverage_adjustments": {
+    "_comment": "When scraped coverage is sparse, shift weight to market",
+    "sparse_scraped": {
+      "scraped": 0.25,
+      "aggregator": 0.15,
+      "community": 0.15,
+      "market": 0.45
+    }
+  },
+
+  "thresholds": {
+    "direction": {
+      "_comment": "Week-over-week change thresholds for direction detection",
+      "rising": 2.0,
+      "falling": -2.0
+    },
+    "coverage": {
+      "_comment": "Data point thresholds for coverage levels",
+      "good": 10,
+      "adequate": 5,
+      "sparse": 0
+    },
+    "market_state": {
+      "_comment": "Weighted direction thresholds for market state",
+      "favorable": -0.3,
+      "elevated": 0.3
+    },
+    "confidence": {
+      "_comment": "Thresholds for discrete confidence levels",
+      "high": 0.70,
+      "medium": 0.40,
+      "low": 0.0
+    },
+    "urgency": {
+      "_comment": "Tank level thresholds for urgency pre-gate",
+      "critical": 0.15,
+      "low_tank": 0.25
+    }
+  },
+
+  "staleness_decay": {
+    "_comment": "Reduce weight by this percentage per 24 hours of staleness",
+    "rate_per_24h": 0.10,
+    "minimum_weight": 0.30
+  },
+
+  "aggregator_caps": {
+    "_comment": "Aggregator signals are capped for safety",
+    "max_strength": 0.60,
+    "max_weight": 0.15
+  }
+}

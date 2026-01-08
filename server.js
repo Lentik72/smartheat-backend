@@ -14,6 +14,9 @@ require('dotenv').config();
 // V1.6.0: Import price scraper for scheduled runs
 const { runScraper } = require('./scripts/scrape-prices');
 
+// V2.1.0: Import distributed scheduler (shadow mode initially)
+const { initScheduler } = require('./src/services/DistributedScheduler');
+
 // Import route modules with error handling
 let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes;
 
@@ -397,6 +400,20 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     timezone: 'America/New_York'  // Ensures DST is handled correctly
   });
   logger.info('⏰ Price scraper scheduled: daily at 10:00 AM EST');
+
+  // V2.1.0: Initialize distributed scheduler in SHADOW MODE
+  // Shadow mode logs what it would do without actually scraping
+  // After comparing results with fixed cron for 1 week, switch to active mode
+  const distributedScheduler = initScheduler({
+    sequelize,
+    logger,
+    shadowMode: true  // SHADOW MODE: Compare with fixed cron before enabling
+  });
+
+  if (distributedScheduler) {
+    distributedScheduler.start();
+    logger.info('📅 Distributed scheduler started (SHADOW MODE)');
+  }
 });
 
 // Handle server errors

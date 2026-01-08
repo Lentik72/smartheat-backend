@@ -1,6 +1,7 @@
 /**
  * Price Scraper Service
  * V1.5.0: Scrapes published prices from supplier websites
+ * V2.1.0: Added displayable flag support for aggregator signals
  *
  * Architecture:
  * - Honest User-Agent (HomeHeatBot)
@@ -8,6 +9,7 @@
  * - Filter to #2 heating oil only
  * - Rate limiting: 2-second delay between requests
  * - Failure alerting: >20% fail rate triggers warning
+ * - Aggregator signals: displayable=false -> sourceType='aggregator_signal'
  */
 
 const fs = require('fs');
@@ -148,6 +150,10 @@ async function scrapeSupplierPrice(supplier, config) {
       };
     }
 
+    // V2.1.0: Determine source type based on displayable flag
+    // Aggregator prices (displayable=false) are for market signals only, never shown to users
+    const sourceType = config.displayable === false ? 'aggregator_signal' : 'scraped';
+
     return {
       supplierId: supplier.id,
       supplierName: supplier.name,
@@ -155,11 +161,13 @@ async function scrapeSupplierPrice(supplier, config) {
       pricePerGallon: price,
       minGallons: 150,
       fuelType: 'heating_oil',
-      sourceType: 'scraped',
+      sourceType,
       sourceUrl: url,
       scrapedAt: new Date(),
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
+      // V2.1.0: Include displayable flag for logging/debugging
+      isAggregator: config.displayable === false
     };
 
   } catch (error) {
@@ -222,11 +230,32 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * V2.1.0: Check if a config represents an aggregator (signal-only, not displayed)
+ * @param {object} config - Scrape config for a supplier
+ * @returns {boolean} - True if this is an aggregator (displayable=false)
+ */
+function isAggregatorConfig(config) {
+  return config && config.displayable === false;
+}
+
+/**
+ * V2.1.0: Get source type for a config
+ * @param {object} config - Scrape config for a supplier
+ * @returns {string} - 'aggregator_signal' or 'scraped'
+ */
+function getSourceType(config) {
+  return isAggregatorConfig(config) ? 'aggregator_signal' : 'scraped';
+}
+
 module.exports = {
   USER_AGENT,
   extractPrice,
   scrapeSupplierPrice,
   loadScrapeConfig,
   getConfigForSupplier,
-  sleep
+  sleep,
+  // V2.1.0: Aggregator helpers
+  isAggregatorConfig,
+  getSourceType
 };
