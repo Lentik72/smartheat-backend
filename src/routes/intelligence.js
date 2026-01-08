@@ -221,7 +221,22 @@ router.get('/health', async (req, res) => {
  *   seasonalContext: { text, season }
  * }
  */
-router.get('/summary', [
+// Middleware to disable ETag for this route (prevents 304 issues on iOS)
+// Sets app.etag to false for this request only, then restores it
+const disableETag = (req, res, next) => {
+  // Store original etag setting and disable for this request
+  const originalEtag = req.app.get('etag');
+  req.app.set('etag', false);
+
+  // Restore after response is sent
+  res.on('finish', () => {
+    req.app.set('etag', originalEtag);
+  });
+
+  next();
+};
+
+router.get('/summary', disableETag, [
   query('zip')
     .matches(/^\d{5}$/)
     .withMessage('ZIP code must be exactly 5 digits'),
@@ -294,6 +309,14 @@ router.get('/summary', [
     }
 
     logger.info(`✅ Market summary for ${zip}: ${marketSnapshot.state} (${Date.now() - startTime}ms)`);
+
+    // Disable HTTP caching - app handles its own caching in UserDefaults
+    // This prevents 304 responses that can cause empty body issues on iOS
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     res.json(response);
 
   } catch (error) {
