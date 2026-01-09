@@ -568,6 +568,7 @@ router.get('/activity', (req, res) => {
 // POST /api/community/deliveries - Submit anonymous delivery for community benchmarking
 // V18.6: Now accepts optional fullZipCode for distance-based community
 // V20.1: Now requires fuelType for propane/oil isolation
+// V2.2.0: Now accepts optional supplier tracking data
 router.post('/deliveries', [
   body('zipPrefix').matches(/^\d{3}$/).withMessage('ZIP prefix must be 3 digits'),
   body('fullZipCode').optional().matches(/^\d{5}$/).withMessage('Full ZIP code must be 5 digits'),
@@ -577,7 +578,11 @@ router.post('/deliveries', [
   body('marketPriceAtTime').optional().isFloat({ min: 1.00, max: 8.00 }),
   body('contributorHash').isLength({ min: 64, max: 64 }).withMessage('Invalid contributor hash'),
   // V20.1: Fuel type is required for new submissions
-  body('fuelType').isIn(FUEL_TYPES).withMessage(`Fuel type must be one of: ${FUEL_TYPES.join(', ')}`)
+  body('fuelType').isIn(FUEL_TYPES).withMessage(`Fuel type must be one of: ${FUEL_TYPES.join(', ')}`),
+  // V2.2.0: Optional supplier tracking
+  body('supplierName').optional().trim().isLength({ max: 255 }).withMessage('Supplier name too long'),
+  body('supplierId').optional().isUUID().withMessage('Invalid supplier ID format'),
+  body('isDirectorySupplier').optional().isBoolean().withMessage('isDirectorySupplier must be boolean')
 ], handleValidationErrors, async (req, res) => {
   const logger = req.app.locals.logger;
 
@@ -599,7 +604,11 @@ router.post('/deliveries', [
       gallonsBucket,
       marketPriceAtTime,
       contributorHash,
-      fuelType  // V20.1: Required fuel type
+      fuelType,  // V20.1: Required fuel type
+      // V2.2.0: Optional supplier tracking
+      supplierName,
+      supplierId,
+      isDirectorySupplier
     } = req.body;
 
     // Round price to nearest $0.05 for anonymization
@@ -747,6 +756,7 @@ router.post('/deliveries', [
     // Create the delivery record
     // V18.6: Include fullZipCode for distance-based queries
     // V20.1: Include fuelType for propane/oil isolation
+    // V2.2.0: Include supplier tracking data
     const delivery = await CommunityDelivery.create({
       zipPrefix,
       fullZipCode: fullZipCode || null,
@@ -758,7 +768,11 @@ router.post('/deliveries', [
       validationStatus,
       rejectionReason,
       contributorHash,
-      contributionWeight: Math.min(cappedWeight, 1.0)
+      contributionWeight: Math.min(cappedWeight, 1.0),
+      // V2.2.0: Supplier tracking
+      supplierName: supplierName || null,
+      supplierId: supplierId || null,
+      isDirectorySupplier: isDirectorySupplier || false
     });
 
     // Get updated area stats
@@ -786,7 +800,9 @@ router.post('/deliveries', [
     const thresholdMet = updatedStats >= 3 && uniqueContributors >= 2;
     const unlockedFeature = thresholdMet && areaDeliveries < 3;
 
-    logger.info(`[V20.1] Delivery submitted: ZIP ${zipPrefix}, $${roundedPrice}, ${fuelType}, bucket ${gallonsBucket}, status ${validationStatus}`);
+    // V2.2.0: Log supplier if provided
+    const supplierInfo = supplierName ? `, supplier: ${supplierName}${isDirectorySupplier ? ' (directory)' : ''}` : '';
+    logger.info(`[V2.2.0] Delivery submitted: ZIP ${zipPrefix}, $${roundedPrice}, ${fuelType}, bucket ${gallonsBucket}, status ${validationStatus}${supplierInfo}`);
 
     // Response based on validation status
     if (validationStatus === 'soft_excluded') {

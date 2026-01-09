@@ -2,6 +2,7 @@
 // V18.0: Community Benchmarking - Anonymous delivery price sharing
 // V18.6: Added fullZipCode for distance-based community grouping
 // V20.1: Added fuelType for propane/oil isolation
+// V2.2.0: Added supplier tracking fields
 const { DataTypes } = require('sequelize');
 
 // V20.1: Valid fuel types
@@ -95,6 +96,22 @@ const initCommunityDeliveryModel = (sequelize) => {
         type: DataTypes.DECIMAL(3, 2),
         defaultValue: 1.00,
         allowNull: false
+      },
+      // V2.2.0: Supplier tracking - which supplier user ordered from
+      supplierName: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+      },
+      // V2.2.0: UUID of supplier if from directory
+      supplierId: {
+        type: DataTypes.UUID,
+        allowNull: true
+      },
+      // V2.2.0: Whether supplier was from our directory vs user-added
+      isDirectorySupplier: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: true
       }
     }, {
       tableName: 'community_deliveries',
@@ -124,7 +141,10 @@ const initCommunityDeliveryModel = (sequelize) => {
         {
           name: 'community_deliveries_fuel_benchmark_idx',
           fields: ['zip_prefix', 'fuel_type', 'delivery_month', 'validation_status']
-        }
+        },
+        // V2.2.0: Supplier tracking indexes
+        { fields: ['supplier_name'] },
+        { fields: ['is_directory_supplier'] }
       ]
     });
 
