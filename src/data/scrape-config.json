@@ -6,7 +6,13 @@
     "paragonoil.com": "Not COD - requires account/contract. Serves NYC 5 boroughs + Westchester.",
     "huntingtondiscountoil.com": "Dole Fuel Oil - no price found on site.",
     "sunrisefuel.com": "Aggregator - not a direct supplier.",
-    "affordablefuels.com": "No phone number on site - cannot verify business."
+    "affordablefuels.com": "No phone number on site - cannot verify business.",
+    "cheapcheapoil.com": "Reseller - not a direct supplier.",
+    "sosxtremecomfort.com": "HVAC company - not primarily heating oil.",
+    "blackbearfuelonline.com": "No phone number on site.",
+    "bondedoil.com": "No phone number on site.",
+    "charityoil.com": "No phone number on site.",
+    "oilforless.com": "Broker/aggregator - 1-800 number."
   },
 
   "_section_NY": "=== NEW YORK ===",
