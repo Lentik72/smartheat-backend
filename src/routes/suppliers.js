@@ -257,7 +257,7 @@ router.get('/', async (req, res) => {
         'id', 'name', 'phone', 'email', 'website',
         'addressLine1', 'city', 'state',
         'postalCodesServed', 'serviceCities', 'serviceCounties',
-        'serviceAreaRadius', 'lat', 'lng', 'notes', 'verified'
+        'serviceAreaRadius', 'lat', 'lng', 'verified'
       ]
     });
 
@@ -297,7 +297,6 @@ router.get('/', async (req, res) => {
           serviceCities: s.serviceCities || [],
           serviceCounties: s.serviceCounties || [],
           serviceAreaRadius: s.serviceAreaRadius,
-          notes: s.notes,
           currentPrice: price ? {
             pricePerGallon: parseFloat(price.pricePerGallon),
             minGallons: price.minGallons,
@@ -447,7 +446,6 @@ router.get('/', async (req, res) => {
         serviceCities: s.serviceCities || [],
         serviceCounties: s.serviceCounties || [],
         serviceAreaRadius: s.serviceAreaRadius,
-        notes: s.notes,
         // V1.5.3: Current price if available and not opted out
         currentPrice: price ? {
           pricePerGallon: parseFloat(price.pricePerGallon),

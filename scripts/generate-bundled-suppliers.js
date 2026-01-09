@@ -225,8 +225,7 @@ async function main() {
         postal_codes_served as "postalCodesServed",
         service_cities as "serviceCities",
         service_counties as "serviceCounties",
-        service_area_radius as "serviceAreaRadius",
-        notes
+        service_area_radius as "serviceAreaRadius"
       FROM suppliers
       WHERE active = true
       ORDER BY name;
@@ -253,8 +252,7 @@ async function main() {
       postalCodesServed: s.postalCodesServed || [],
       serviceCities: s.serviceCities || [],
       serviceCounties: s.serviceCounties || [],
-      serviceAreaRadius: s.serviceAreaRadius || 25,
-      notes: s.notes || null
+      serviceAreaRadius: s.serviceAreaRadius || 25
     }));
 
     // =====================
