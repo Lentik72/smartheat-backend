@@ -7,6 +7,7 @@
 // V1.5.3: Added currentPrice from scraped/manual price data
 // V2.0.0: Fixed HMAC signature - currentPrice excluded from signing to avoid float precision issues
 // V2.0.1: Added name search parameter for supplier name lookup
+// V2.0.2: Removed notes field from API response (internal only)
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
