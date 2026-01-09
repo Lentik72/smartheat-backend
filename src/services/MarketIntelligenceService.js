@@ -127,6 +127,7 @@ async function computeScrapedSignal(zipCode, radiusMiles = 20) {
     const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
     // First try: exact ZIP match
+    // Note: postal_codes_served is JSONB array, use ? operator
     let [prices] = await db.query(`
       SELECT sp.price_per_gallon, sp.scraped_at, sp.source_type
       FROM supplier_prices sp
@@ -134,7 +135,7 @@ async function computeScrapedSignal(zipCode, radiusMiles = 20) {
       WHERE sp.is_valid = true
       AND sp.scraped_at >= $1
       AND sp.source_type = 'scraped'
-      AND $2 = ANY(s.postal_codes_served)
+      AND s.postal_codes_served ? $2
     `, { bind: [twoWeeksAgo.toISOString(), zipCode] });
 
     let scope = 'zip';
@@ -142,6 +143,7 @@ async function computeScrapedSignal(zipCode, radiusMiles = 20) {
     // Expand search if sparse
     if (prices.length < 5) {
       // Get nearby ZIPs (simplified: same first 3 digits = ~20mi radius)
+      // Note: postal_codes_served is JSONB, use jsonb_array_elements_text
       const zipPrefix = zipCode.substring(0, 3);
       [prices] = await db.query(`
         SELECT sp.price_per_gallon, sp.scraped_at, sp.source_type
@@ -151,7 +153,7 @@ async function computeScrapedSignal(zipCode, radiusMiles = 20) {
         AND sp.scraped_at >= $1
         AND sp.source_type = 'scraped'
         AND EXISTS (
-          SELECT 1 FROM unnest(s.postal_codes_served) AS z
+          SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS z
           WHERE z LIKE $2
         )
       `, { bind: [twoWeeksAgo.toISOString(), `${zipPrefix}%`] });
@@ -170,7 +172,7 @@ async function computeScrapedSignal(zipCode, radiusMiles = 20) {
         AND sp.scraped_at >= $1
         AND sp.source_type = 'scraped'
         AND EXISTS (
-          SELECT 1 FROM unnest(s.postal_codes_served) AS z
+          SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS z
           WHERE z LIKE $2
         )
       `, { bind: [twoWeeksAgo.toISOString(), `${statePrefix}%`] });
