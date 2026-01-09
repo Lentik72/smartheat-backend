@@ -14,8 +14,12 @@
 
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 
 const USER_AGENT = 'HomeHeatBot/1.0 (gethomeheat.com; published-price-aggregation)';
+
+// Agent for sites with SSL certificate issues
+const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
 /**
  * Extract price from HTML using config selectors
@@ -55,12 +59,12 @@ function extractPrice(html, config) {
 }
 
 /**
- * Fetch and scrape price from a supplier website
+ * Fetch and scrape price from a supplier website (single attempt)
  * @param {object} supplier - Supplier record with id, name, website
  * @param {object} config - Scrape config for this supplier
  * @returns {object} - Result with price data or error
  */
-async function scrapeSupplierPrice(supplier, config) {
+async function scrapeSupplierPriceOnce(supplier, config) {
   const startTime = Date.now();
 
   try {
@@ -71,7 +75,8 @@ async function scrapeSupplierPrice(supplier, config) {
         supplierName: supplier.name,
         success: false,
         error: 'No website configured',
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
+        retryable: false
       };
     }
 
@@ -82,7 +87,8 @@ async function scrapeSupplierPrice(supplier, config) {
         supplierName: supplier.name,
         success: false,
         error: 'Not configured for scraping',
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
+        retryable: false
       };
     }
 
@@ -103,24 +109,49 @@ async function scrapeSupplierPrice(supplier, config) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
 
-    const response = await fetch(url, {
+    // Build fetch options
+    const fetchOptions = {
       headers: {
         'User-Agent': USER_AGENT,
         'Accept': 'text/html,application/xhtml+xml',
         'Accept-Language': 'en-US,en;q=0.9'
       },
       signal: controller.signal
-    });
+    };
+
+    // V2.2.0: Support for sites with SSL certificate issues
+    let savedTLSReject;
+    if (config.ignoreSSL) {
+      savedTLSReject = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    }
+
+    let response;
+    try {
+      response = await fetch(url, fetchOptions);
+    } finally {
+      // Restore SSL verification
+      if (config.ignoreSSL) {
+        if (savedTLSReject !== undefined) {
+          process.env.NODE_TLS_REJECT_UNAUTHORIZED = savedTLSReject;
+        } else {
+          delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+        }
+      }
+    }
 
     clearTimeout(timeout);
 
     if (!response.ok) {
+      // 5xx errors are retryable, 4xx usually are not
+      const retryable = response.status >= 500;
       return {
         supplierId: supplier.id,
         supplierName: supplier.name,
         success: false,
         error: `HTTP ${response.status}`,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
+        retryable
       };
     }
 
@@ -135,7 +166,8 @@ async function scrapeSupplierPrice(supplier, config) {
         supplierName: supplier.name,
         success: false,
         error: 'Price not found in HTML',
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
+        retryable: false // HTML structure issue, retry won't help
       };
     }
 
@@ -146,7 +178,8 @@ async function scrapeSupplierPrice(supplier, config) {
         supplierName: supplier.name,
         success: false,
         error: `Price $${price} outside valid range`,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
+        retryable: false
       };
     }
 
@@ -171,14 +204,57 @@ async function scrapeSupplierPrice(supplier, config) {
     };
 
   } catch (error) {
+    // Timeouts and network errors are retryable
+    const retryable = error.name === 'AbortError' || error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT';
     return {
       supplierId: supplier.id,
       supplierName: supplier.name,
       success: false,
       error: error.name === 'AbortError' ? 'Timeout' : error.message,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
+      retryable
     };
   }
+}
+
+/**
+ * Fetch and scrape price from a supplier website with retries
+ * V2.2.0: Added retry logic to handle transient network errors
+ * @param {object} supplier - Supplier record with id, name, website
+ * @param {object} config - Scrape config for this supplier
+ * @param {object} options - Retry options
+ * @param {number} options.maxRetries - Max retry attempts (default: 2)
+ * @param {number} options.retryDelay - Delay between retries in ms (default: 3000)
+ * @returns {object} - Result with price data or error
+ */
+async function scrapeSupplierPrice(supplier, config, options = {}) {
+  const maxRetries = options.maxRetries ?? 2;
+  const retryDelay = options.retryDelay ?? 3000;
+
+  let lastResult;
+  let attempts = 0;
+
+  while (attempts <= maxRetries) {
+    lastResult = await scrapeSupplierPriceOnce(supplier, config);
+    attempts++;
+
+    // Success or non-retryable error - return immediately
+    if (lastResult.success || !lastResult.retryable) {
+      if (attempts > 1 && lastResult.success) {
+        lastResult.retriedAttempts = attempts - 1;
+      }
+      return lastResult;
+    }
+
+    // Retryable failure - wait and try again (unless we've exhausted retries)
+    if (attempts <= maxRetries) {
+      await sleep(retryDelay);
+    }
+  }
+
+  // All retries exhausted
+  lastResult.retriedAttempts = maxRetries;
+  return lastResult;
 }
 
 /**

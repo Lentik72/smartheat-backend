@@ -133,8 +133,10 @@ async function runScraper(options = {}) {
 
       if (result.success) {
         // V2.1.0: Log aggregator status
+        // V2.2.0: Log retry info
         const aggLabel = result.isAggregator ? ' [AGGREGATOR]' : '';
-        log.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal (${result.duration}ms)${aggLabel}`);
+        const retryLabel = result.retriedAttempts ? ` [RETRIED ${result.retriedAttempts}x]` : '';
+        log.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal (${result.duration}ms)${aggLabel}${retryLabel}`);
         results.success.push(result);
 
         // Save to database (unless dry run)
@@ -163,7 +165,9 @@ async function runScraper(options = {}) {
           });
         }
       } else {
-        log.info(`   ❌ ${result.error} (${result.duration}ms)`);
+        // V2.2.0: Log retry attempts for failures
+        const retryLabel = result.retriedAttempts ? ` [after ${result.retriedAttempts} retries]` : '';
+        log.info(`   ❌ ${result.error} (${result.duration}ms)${retryLabel}`);
         results.failed.push(result);
       }
 

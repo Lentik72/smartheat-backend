@@ -1,6 +1,11 @@
 {
   "_comment": "V1.6.0: Scrape configuration for supplier websites. Pattern: 'direct' = single price, 'table' = tiered pricing. pricePath = custom URL path for price page.",
 
+  "_ignore_list": {
+    "_comment": "Suppliers we will NOT add - do not contact or re-evaluate",
+    "paragonoil.com": "Not COD - requires account/contract. Serves NYC 5 boroughs + Westchester."
+  },
+
   "_section_NY": "=== NEW YORK ===",
 
   "dominofuel.com": {
@@ -147,7 +152,36 @@
   "castlefuel.com": {
     "enabled": false,
     "pattern": "direct",
-    "notes": "DISABLED: HTTP 403 - blocked",
+    "notes": "DISABLED: HTTP 403 - blocking HomeHeatBot user agent",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "supremeoil.us": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Westchester County - Will Call price (no $ sign format)",
+    "priceRegex": "([0-9]+\\.[0-9]{2})\\s*Per\\s*Gal"
+  },
+
+  "actionfueloil.net": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY - Upper Westchester/Putnam/Lower Dutchess",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})\\s*per\\s*gallon"
+  },
+
+  "buyritefuel.net": {
+    "enabled": true,
+    "pattern": "table",
+    "ignoreSSL": true,
+    "notes": "NY - Westchester/Putnam/CT - SSL cert issues (ignoreSSL enabled)",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "chrysalisfuelinc.com": {
+    "enabled": true,
+    "pattern": "table",
+    "notes": "NY - Hudson Valley - Westchester/Putnam/Dutchess",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -167,9 +201,8 @@
 
   "servallfuel.com": {
     "enabled": true,
-    "displayable": false,
     "pattern": "direct",
-    "notes": "SIGNAL ONLY: NY Dutchess/Putnam/Ulster/N.Westchester - not true COD, requires account. Price scraping only.",
+    "notes": "NY Dutchess/Putnam/Ulster/Northern Westchester",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
