@@ -72,6 +72,17 @@
       "exclusionReasons": ["Not true COD - full-service contracts", "Large corporate chain"],
       "notes": "Major regional chain. Contract/budget plan focused, not COD.",
       "evaluatedDate": "2026-01-08"
+    },
+    {
+      "name": "Servall Fuel",
+      "website": "https://www.servallfuel.com",
+      "location": "Pawling, NY",
+      "coverage": ["Dutchess County NY", "Putnam County NY", "Ulster County NY", "Northern Westchester County NY"],
+      "inDirectory": false,
+      "scrapable": true,
+      "exclusionReasons": ["Not true COD - requires account/registration before ordering"],
+      "notes": "Good price display ($3.199/gal). Use for price scraping only. Covers Hudson Valley region.",
+      "evaluatedDate": "2026-01-09"
     }
   ],
 
