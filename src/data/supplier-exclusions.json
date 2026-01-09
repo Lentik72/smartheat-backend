@@ -1,0 +1,85 @@
+{
+  "_meta": {
+    "description": "Companies evaluated and excluded from the supplier directory",
+    "lastUpdated": "2026-01-08",
+    "criteria": {
+      "excluded_from_directory": [
+        "Requires account/registration before ordering",
+        "Has own mobile app (competitor)",
+        "Not true COD - requires contracts or auto-delivery",
+        "No longer in business"
+      ],
+      "excluded_from_scraping": [
+        "No price displayed on website",
+        "Price behind login wall",
+        "Dynamic pricing requires interaction"
+      ]
+    }
+  },
+
+  "excluded": [
+    {
+      "name": "Surner Discount Oil",
+      "website": "https://surnerdiscountoil.com",
+      "location": "Amherst, MA",
+      "coverage": ["Franklin County", "Hampshire County"],
+      "inDirectory": false,
+      "scrapable": true,
+      "exclusionReasons": ["Requires account registration before ordering"],
+      "notes": "Good prices ($3.298/gal), displays price on homepage. Use for price scraping only.",
+      "evaluatedDate": "2026-01-08"
+    },
+    {
+      "name": "Rowley Fuel",
+      "website": "https://rowleyfuel.com",
+      "location": "Adams, MA",
+      "coverage": ["Berkshire County", "Parts of Franklin County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Requires account before ordering", "No price displayed on website"],
+      "notes": "Full-service company, not COD-focused. No value for scraping.",
+      "evaluatedDate": "2026-01-08"
+    },
+    {
+      "name": "Wilcox Oil Online",
+      "website": "https://www.wilcoxoilonline.com",
+      "location": "Westbrook, CT",
+      "coverage": ["Middlesex County CT", "New Haven County CT", "New London County CT"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Has own mobile app (competitor)", "Requires login", "No price on homepage"],
+      "notes": "Direct competitor with app. Exclude entirely.",
+      "evaluatedDate": "2026-01-08"
+    },
+    {
+      "name": "Country Oil",
+      "website": null,
+      "location": "Bernardston, MA",
+      "coverage": ["Franklin County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["No longer in business"],
+      "notes": "Closed. Location now operated by Dead River Company.",
+      "evaluatedDate": "2026-01-08"
+    },
+    {
+      "name": "Dead River Company",
+      "website": "https://www.deadriver.com",
+      "location": "Multiple locations",
+      "coverage": ["New England wide"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Not true COD - full-service contracts", "Large corporate chain"],
+      "notes": "Major regional chain. Contract/budget plan focused, not COD.",
+      "evaluatedDate": "2026-01-08"
+    }
+  ],
+
+  "competitors_with_apps": [
+    {
+      "name": "Wilcox Oil Online",
+      "app": "Wilcox Energy app",
+      "notes": "CT-based, has mobile ordering"
+    }
+  ]
+}
