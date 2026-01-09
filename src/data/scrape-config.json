@@ -3,7 +3,10 @@
 
   "_ignore_list": {
     "_comment": "Suppliers we will NOT add - do not contact or re-evaluate",
-    "paragonoil.com": "Not COD - requires account/contract. Serves NYC 5 boroughs + Westchester."
+    "paragonoil.com": "Not COD - requires account/contract. Serves NYC 5 boroughs + Westchester.",
+    "huntingtondiscountoil.com": "Dole Fuel Oil - no price found on site.",
+    "sunrisefuel.com": "Aggregator - not a direct supplier.",
+    "affordablefuels.com": "No phone number on site - cannot verify business."
   },
 
   "_section_NY": "=== NEW YORK ===",
@@ -27,6 +30,50 @@
     "enabled": true,
     "pattern": "direct",
     "notes": "Long Island",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "jcdiscountoil.com": {
+    "enabled": true,
+    "pattern": "table",
+    "notes": "Long Island Suffolk County - tiered pricing",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "expresscod.com": {
+    "enabled": false,
+    "pattern": "table",
+    "notes": "DISABLED: Long Island Nassau/Suffolk - prices rendered via JavaScript",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "ssfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "Long Island Nassau/Suffolk/Queens",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "atyourserviceoil.com": {
+    "enabled": true,
+    "pattern": "table",
+    "pricePath": "/Fuel-Prices",
+    "notes": "Long Island Nassau County - Hempstead area - tiered pricing",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "oilexfuelli.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "Long Island Nassau/Suffolk - Mineola based",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bayshorefuel.com": {
+    "enabled": true,
+    "pattern": "table",
+    "pricePath": "/order-your-fuel/#order-by-gallons-new",
+    "notes": "Long Island Suffolk County - use 275 gal tier",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
