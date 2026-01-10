@@ -529,14 +529,16 @@ async function gatherPriceData(zip, fuelType, logger) {
 }
 
 /**
- * V2.3.0: Compute price context with source tracking
- * Show flag based on visibility thresholds
+ * V2.3.1: Compute price context with source tracking
+ * Always show scraped prices if available - they're reliable supplier data
+ * Threshold only affects confidence messaging, not visibility
  */
 function computePriceContext(priceData) {
-  const { allDataPoints, stats } = priceData;
+  const { allDataPoints, trackedPrices, stats } = priceData;
   const threshold = VISIBILITY_THRESHOLDS.priceContext;
+  const now = new Date();
 
-  // Base response when not showing
+  // Base response when no data at all
   const baseResponse = {
     show: false,
     range: null,
@@ -549,22 +551,12 @@ function computePriceContext(priceData) {
     label: null
   };
 
-  // Check visibility thresholds
-  if (stats.totalCount < threshold.minTotal) {
+  // No data at all - show empty state
+  if (stats.totalCount === 0) {
     return baseResponse;
   }
 
-  // Check data freshness (oldest data within threshold)
-  const now = new Date();
-  const oldestAgeDays = stats.oldestTimestamp
-    ? Math.ceil((now - new Date(stats.oldestTimestamp)) / (1000 * 60 * 60 * 24))
-    : 999;
-
-  if (oldestAgeDays > threshold.maxAgeDays) {
-    return baseResponse;
-  }
-
-  // Calculate price range
+  // Calculate price range from all available data
   const prices = allDataPoints.map(d => d.price).sort((a, b) => a - b);
   const low = prices[0];
   const high = prices[prices.length - 1];
@@ -574,14 +566,27 @@ function computePriceContext(priceData) {
     ? Math.floor((now - new Date(stats.newestTimestamp)) / (1000 * 60 * 60))
     : null;
 
-  // Build label based on sources
+  const oldestAgeDays = stats.oldestTimestamp
+    ? Math.ceil((now - new Date(stats.oldestTimestamp)) / (1000 * 60 * 60 * 24))
+    : 999;
+
+  // Build label based on data sources and quality
   let label = '';
+  const meetsThreshold = stats.totalCount >= threshold.minTotal && oldestAgeDays <= threshold.maxAgeDays;
+
   if (stats.trackedCount > 0 && stats.loggedCount > 0) {
-    label = 'Tracked prices and logged deliveries in your area';
+    label = `Based on ${stats.trackedCount} supplier${stats.trackedCount > 1 ? 's' : ''} and ${stats.loggedCount} logged deliver${stats.loggedCount > 1 ? 'ies' : 'y'}`;
   } else if (stats.trackedCount > 0) {
-    label = 'Tracked prices in your area';
+    label = `Based on ${stats.trackedCount} supplier${stats.trackedCount > 1 ? 's' : ''} in your area`;
   } else {
-    label = 'Logged deliveries in your area';
+    label = `Based on ${stats.loggedCount} logged deliver${stats.loggedCount > 1 ? 'ies' : 'y'}`;
+  }
+
+  // Add freshness info if data is recent
+  if (newestAgeHours !== null && newestAgeHours < 24) {
+    label += ' • Updated today';
+  } else if (newestAgeHours !== null && newestAgeHours < 48) {
+    label += ' • Updated yesterday';
   }
 
   return {
@@ -784,49 +789,44 @@ function computeMaturityLevel(priceData) {
 }
 
 /**
- * V2.3.0: Generate truthNotes - transparency about data sources
+ * V2.3.1: Generate truthNotes - transparency about data sources
  */
 function generateTruthNotes(priceData, priceContext, trend) {
   const notes = [];
   const { stats } = priceData;
 
-  // Source composition note
+  // Source composition note - more concise
   if (stats.totalCount > 0) {
-    const parts = [];
-    if (stats.trackedCount > 0) {
-      parts.push(`${stats.trackedCount} tracked ${stats.trackedCount === 1 ? 'price' : 'prices'}`);
+    if (stats.trackedCount > 0 && stats.loggedCount === 0) {
+      notes.push(`Prices tracked from ${stats.trackedCount} local supplier${stats.trackedCount > 1 ? 's' : ''}`);
+    } else if (stats.loggedCount > 0 && stats.trackedCount === 0) {
+      notes.push(`Based on ${stats.loggedCount} community-logged deliver${stats.loggedCount > 1 ? 'ies' : 'y'}`);
+    } else if (stats.trackedCount > 0 && stats.loggedCount > 0) {
+      notes.push(`Combines ${stats.trackedCount} supplier price${stats.trackedCount > 1 ? 's' : ''} and ${stats.loggedCount} logged deliver${stats.loggedCount > 1 ? 'ies' : 'y'}`);
     }
-    if (stats.loggedCount > 0) {
-      parts.push(`${stats.loggedCount} logged ${stats.loggedCount === 1 ? 'delivery' : 'deliveries'}`);
-    }
-    notes.push(`Based on ${parts.join(' and ')}`);
   }
 
-  // Freshness note
+  // Data freshness note (only if older than 2 days)
   if (priceContext.show && priceContext.freshness?.newestAgeHours !== null) {
     const hours = priceContext.freshness.newestAgeHours;
-    if (hours < 24) {
-      notes.push('Includes data from today');
-    } else if (hours < 48) {
-      notes.push('Most recent data from yesterday');
-    } else {
+    if (hours >= 48) {
       const days = Math.floor(hours / 24);
-      notes.push(`Most recent data ${days} days ago`);
+      notes.push(`Most recent price update ${days} days ago`);
     }
-  }
-
-  // Limited data note
-  if (stats.totalCount < VISIBILITY_THRESHOLDS.priceContext.minTotal) {
-    notes.push('Limited local data - market signal based on regional trends');
   }
 
   // Trend confidence note
   if (trend.show && trend.direction !== 'stable') {
     if (stats.spanDays >= 14) {
       notes.push('Trend based on 2+ weeks of data');
-    } else {
-      notes.push('Short-term trend - may not reflect longer patterns');
+    } else if (stats.spanDays >= 7) {
+      notes.push('Trend based on past week');
     }
+  }
+
+  // No data note - only if truly empty
+  if (stats.totalCount === 0) {
+    notes.push('No local price data yet - log a delivery to help');
   }
 
   return notes;
