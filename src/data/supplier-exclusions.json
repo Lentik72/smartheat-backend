@@ -83,6 +83,216 @@
       "exclusionReasons": ["Not true COD - requires account/registration before ordering"],
       "notes": "Good price display ($3.199/gal). Use for price scraping only. Covers Hudson Valley region.",
       "evaluatedDate": "2026-01-09"
+    },
+    {
+      "name": "MainCare Express",
+      "website": "https://www.maincareexpress.com",
+      "location": "Albany, NY",
+      "coverage": ["Albany County", "Rensselaer County", "Saratoga County", "Schenectady County", "Columbia County", "Greene County", "Ulster County", "Warren County", "Washington County", "Dutchess County", "Orange County"],
+      "inDirectory": false,
+      "scrapable": true,
+      "exclusionReasons": ["Large employee-owned company - may require account"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Collins & Son Inc",
+      "website": "https://collinsandsoninc.com",
+      "location": "Ravena, NY",
+      "coverage": ["Albany County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Trucking/excavation company - oil is secondary business", "Very limited oil delivery"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Haskin Fuel Service",
+      "website": null,
+      "location": "Hoosick Falls, NY",
+      "coverage": ["Rensselaer County", "Washington County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Small service area (6 towns)", "Annual contracts mentioned"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "G.A. Bove & Sons",
+      "website": "https://bovefuels.com",
+      "location": "Mechanicville, NY",
+      "coverage": ["Saratoga County", "Albany County", "Rensselaer County", "Warren County", "Washington County", "Fulton County", "Montgomery County", "Hamilton County", "Schenectady County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Full-service company - contract-oriented", "90+ years, 78 employees - not COD focused"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Long Energy",
+      "website": "https://www.longenergy.com",
+      "location": "Schenectady, NY",
+      "coverage": ["Columbia County", "Albany County", "Schenectady County", "Saratoga County", "Schoharie County", "Rensselaer County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Full-service since 1945", "HVAC focus", "Contract accounts"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Main Brothers Oil",
+      "website": null,
+      "location": "Albany, NY",
+      "coverage": ["Albany County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Same as MainCare Express (parent company)", "Employee-owned full-service"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Family Danz",
+      "website": "https://familydanz.com",
+      "location": "Albany, NY",
+      "coverage": ["Albany County", "Rensselaer County", "Saratoga County", "Schenectady County", "Greene County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Full-service 45+ years", "Price guarantee = contract", "Account-based"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "C.A. Albright & Sons",
+      "website": "https://www.ca-albright.com",
+      "location": "Hannacroix, NY",
+      "coverage": ["Greene County", "Albany County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["110+ years full-service", "Auto repair + HVAC + fuel combo", "Not COD-focused"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "H & M Oil (Hoffman Miller)",
+      "website": "https://www.hoffmanmillerheatingandcooling.com",
+      "location": "Schenectady, NY",
+      "coverage": ["Albany County", "Schenectady County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Full-service since 1966", "HVAC + fuel combo", "Contract accounts"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Helderberg Oil",
+      "website": null,
+      "location": "Delmar, NY",
+      "coverage": ["Albany County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Full-service", "Automatic delivery + furnace repair", "Small operation (2 employees)"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "G. Urschel",
+      "website": null,
+      "location": "Averill Park, NY",
+      "coverage": ["Rensselaer County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["No website or contact info found", "Small (8 towns)"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Kokosa Oil",
+      "website": null,
+      "location": "Averill Park, NY",
+      "coverage": ["Rensselaer County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["No information found"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Eagle Energy",
+      "website": "http://www.eagleenergy.info",
+      "location": "Berlin, NY",
+      "coverage": ["Rensselaer County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Yellow Pages shows CLOSED - may be out of business"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Fowler Fuels",
+      "website": null,
+      "location": "Petersburg, NY",
+      "coverage": ["Rensselaer County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["No information found"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Miller-Wilkins",
+      "website": null,
+      "location": "Valatie, NY",
+      "coverage": ["Columbia County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["No information found"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "P & D Maintenance",
+      "website": null,
+      "location": "Albany, NY",
+      "coverage": ["Albany County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["No information found"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Persico Oil",
+      "website": null,
+      "location": "Ravena, NY",
+      "coverage": ["Albany County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["No information found"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Ray Energy Corp",
+      "website": null,
+      "location": "Troy, NY",
+      "coverage": ["Rensselaer County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Listed on aggregators but no website found"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Wever Petroleum",
+      "website": null,
+      "location": "Mechanicville, NY",
+      "coverage": ["Saratoga County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["No information found"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Harts Fuel",
+      "website": null,
+      "location": "Wynantskill, NY",
+      "coverage": ["Rensselaer County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["No information found"],
+      "evaluatedDate": "2026-01-12"
+    },
+    {
+      "name": "Polsinello Fuels",
+      "website": "https://www.polsinello.com",
+      "location": "Rensselaer, NY",
+      "coverage": ["Rensselaer County", "Albany County"],
+      "inDirectory": false,
+      "scrapable": false,
+      "exclusionReasons": ["Exited fuel delivery business 2018-2020", "Now Polsinello Lubricants"],
+      "evaluatedDate": "2026-01-12"
     }
   ],
 
