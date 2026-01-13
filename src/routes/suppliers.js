@@ -559,5 +559,23 @@ router.get('/version', async (req, res) => {
   res.json({ ...payload, signature });
 });
 
+// Diagnostic: Check if ZIP is in database
+router.get('/debug/zip/:zip', async (req, res) => {
+  const { zipDatabase } = require('../services/supplierMatcher');
+  const zip = req.params.zip?.trim();
+  const info = zipDatabase[zip];
+  const totalZips = Object.keys(zipDatabase).length;
+  const bostonZips = Object.keys(zipDatabase).filter(z => z.startsWith('021')).slice(0, 20);
+
+  res.json({
+    zip,
+    found: !!info,
+    info: info || null,
+    totalZipsInDatabase: totalZips,
+    sampleBostonZips: bostonZips,
+    buildTimestamp: require('../../package.json').buildTimestamp || 'not set'
+  });
+});
+
 module.exports = router;
-// Deploy Fri Jan  9 10:46:08 EST 2026
+// Deploy Mon Jan 13 06:17:00 EST 2026
