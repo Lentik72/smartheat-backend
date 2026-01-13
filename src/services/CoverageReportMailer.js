@@ -371,12 +371,14 @@ class CoverageReportMailer {
 
   /**
    * Format activity analytics report HTML
+   * V2.5.0: Now includes oil vs propane breakdown
    */
   formatActivityReport(report) {
     const styles = `
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 600px; margin: 0 auto; }
       h2 { color: #1a1a1a; border-bottom: 2px solid #007AFF; padding-bottom: 8px; }
       h3 { color: #444; margin-top: 24px; margin-bottom: 12px; }
+      h4 { color: #555; margin-top: 16px; margin-bottom: 8px; }
       .stat-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
       .stat-box { background: #f5f5f5; padding: 16px; border-radius: 8px; flex: 1; min-width: 120px; text-align: center; }
       .stat-value { font-size: 28px; font-weight: 700; color: #007AFF; }
@@ -389,6 +391,15 @@ class CoverageReportMailer {
       th { background: #f5f5f5; font-weight: 600; }
       .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
       .section { margin: 24px 0; }
+      .fuel-section { background: #fafafa; border-radius: 8px; padding: 16px; margin: 16px 0; }
+      .fuel-oil { border-left: 4px solid #FF9800; }
+      .fuel-propane { border-left: 4px solid #2196F3; }
+      .fuel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+      .fuel-title { font-weight: 600; font-size: 16px; }
+      .fuel-stats { display: flex; gap: 16px; }
+      .fuel-stat { text-align: center; }
+      .fuel-stat-value { font-size: 20px; font-weight: 700; }
+      .fuel-stat-label { font-size: 11px; color: #666; }
     `;
 
     const trendIcon = (change) => {
@@ -429,6 +440,69 @@ class CoverageReportMailer {
   <div class="section">
     <p><strong>Week-over-Week:</strong> Users ${trendIcon(report.trend.usersChange)} | Requests ${trendIcon(report.trend.requestsChange)}</p>
   </div>
+
+  <!-- V2.5.0: Fuel Type Breakdown -->
+  ${report.byFuelType ? `
+    <h3>🛢️ Activity by Fuel Type</h3>
+
+    <!-- Heating Oil Section -->
+    <div class="fuel-section fuel-oil">
+      <div class="fuel-header">
+        <span class="fuel-title">🔥 Heating Oil</span>
+        <div class="fuel-stats">
+          <div class="fuel-stat">
+            <div class="fuel-stat-value">${report.byFuelType.heating_oil?.users || 0}</div>
+            <div class="fuel-stat-label">Users</div>
+          </div>
+          <div class="fuel-stat">
+            <div class="fuel-stat-value">${report.byFuelType.heating_oil?.zips || 0}</div>
+            <div class="fuel-stat-label">ZIPs</div>
+          </div>
+          <div class="fuel-stat">
+            <div class="fuel-stat-value">${report.byFuelType.heating_oil?.requests || 0}</div>
+            <div class="fuel-stat-label">Requests</div>
+          </div>
+        </div>
+      </div>
+      ${report.byFuelType.heating_oil?.byState?.length > 0 ? `
+        <table>
+          <tr><th>State</th><th>Users</th><th>Requests</th></tr>
+          ${report.byFuelType.heating_oil.byState.slice(0, 5).map(s => `
+            <tr><td>${s.state}</td><td>${s.users}</td><td>${s.requests}</td></tr>
+          `).join('')}
+        </table>
+      ` : '<p><em>No state data</em></p>'}
+    </div>
+
+    <!-- Propane Section -->
+    <div class="fuel-section fuel-propane">
+      <div class="fuel-header">
+        <span class="fuel-title">💨 Propane</span>
+        <div class="fuel-stats">
+          <div class="fuel-stat">
+            <div class="fuel-stat-value">${report.byFuelType.propane?.users || 0}</div>
+            <div class="fuel-stat-label">Users</div>
+          </div>
+          <div class="fuel-stat">
+            <div class="fuel-stat-value">${report.byFuelType.propane?.zips || 0}</div>
+            <div class="fuel-stat-label">ZIPs</div>
+          </div>
+          <div class="fuel-stat">
+            <div class="fuel-stat-value">${report.byFuelType.propane?.requests || 0}</div>
+            <div class="fuel-stat-label">Requests</div>
+          </div>
+        </div>
+      </div>
+      ${report.byFuelType.propane?.byState?.length > 0 ? `
+        <table>
+          <tr><th>State</th><th>Users</th><th>Requests</th></tr>
+          ${report.byFuelType.propane.byState.slice(0, 5).map(s => `
+            <tr><td>${s.state}</td><td>${s.users}</td><td>${s.requests}</td></tr>
+          `).join('')}
+        </table>
+      ` : '<p><em>No propane activity</em></p>'}
+    </div>
+  ` : ''}
 
   <!-- Geographic Distribution -->
   ${report.byState.length > 0 ? `
@@ -493,11 +567,13 @@ class CoverageReportMailer {
   ${report.dauHistory.length > 1 ? `
     <h3>📈 7-Day History</h3>
     <table>
-      <tr><th>Date</th><th>Users</th><th>Requests</th></tr>
+      <tr><th>Date</th><th>Users</th><th>Oil</th><th>Propane</th><th>Requests</th></tr>
       ${report.dauHistory.map(d => `
         <tr>
           <td>${d.date}</td>
           <td>${d.users || 0}</td>
+          <td>${d.usersByFuel?.heating_oil || 0}</td>
+          <td>${d.usersByFuel?.propane || 0}</td>
           <td>${d.requests || 0}</td>
         </tr>
       `).join('')}

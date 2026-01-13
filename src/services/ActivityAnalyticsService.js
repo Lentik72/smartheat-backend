@@ -77,6 +77,9 @@ class ActivityAnalyticsService {
                     req.query?.zipCode || req.query?.zip ||
                     req.body?.zipCode || req.body?.zip || null;
 
+    // V2.5.0: Capture fuel type from request (default: heating_oil)
+    const fuelType = req.query?.fuelType || req.body?.fuelType || null;
+
     this.requestBuffer.push({
       endpoint: req.route?.path || req.path,
       method: req.method,
@@ -84,6 +87,7 @@ class ActivityAnalyticsService {
       response_time_ms: responseTimeMs,
       zip_code: zipCode?.substring(0, 5) || null,
       state: this.getStateFromZip(zipCode),
+      fuel_type: fuelType,
       ip_hash: this.hashIP(req.ip),
       user_agent_hash: this.hashUserAgent(req.get('User-Agent')),
       created_at: new Date()
@@ -105,7 +109,7 @@ class ActivityAnalyticsService {
     this.requestBuffer = [];
 
     try {
-      // Bulk insert
+      // Bulk insert (V2.5.0: now includes fuel_type)
       const values = requests.map(r => `(
         '${r.endpoint.replace(/'/g, "''")}',
         '${r.method}',
@@ -113,13 +117,14 @@ class ActivityAnalyticsService {
         ${r.response_time_ms || 'NULL'},
         ${r.zip_code ? `'${r.zip_code}'` : 'NULL'},
         ${r.state ? `'${r.state}'` : 'NULL'},
+        ${r.fuel_type ? `'${r.fuel_type}'` : 'NULL'},
         ${r.ip_hash ? `'${r.ip_hash}'` : 'NULL'},
         ${r.user_agent_hash ? `'${r.user_agent_hash}'` : 'NULL'},
         '${r.created_at.toISOString()}'
       )`).join(',');
 
       await this.sequelize.query(`
-        INSERT INTO api_activity (endpoint, method, status_code, response_time_ms, zip_code, state, ip_hash, user_agent_hash, created_at)
+        INSERT INTO api_activity (endpoint, method, status_code, response_time_ms, zip_code, state, fuel_type, ip_hash, user_agent_hash, created_at)
         VALUES ${values}
       `);
     } catch (error) {
@@ -270,6 +275,7 @@ class ActivityAnalyticsService {
 
   /**
    * Aggregate DAU metrics from api_activity (run hourly or on-demand)
+   * V2.5.0: Now includes fuel type segmentation (oil vs propane)
    */
   async aggregateDAU(date = null) {
     const targetDate = date || new Date().toISOString().split('T')[0];
@@ -303,10 +309,28 @@ class ActivityAnalyticsService {
         usersByState[row.state] = parseInt(row.users);
       });
 
-      // Update DAU record
+      // V2.5.0: Get users and requests by fuel type
+      const [byFuel] = await this.sequelize.query(`
+        SELECT
+          COALESCE(fuel_type, 'heating_oil') as fuel_type,
+          COUNT(DISTINCT ip_hash) as users,
+          COUNT(*) as requests
+        FROM api_activity
+        WHERE DATE(created_at) = :targetDate
+        GROUP BY COALESCE(fuel_type, 'heating_oil')
+      `, { replacements: { targetDate } });
+
+      const usersByFuel = {};
+      const requestsByFuel = {};
+      byFuel.forEach(row => {
+        usersByFuel[row.fuel_type] = parseInt(row.users);
+        requestsByFuel[row.fuel_type] = parseInt(row.requests);
+      });
+
+      // Update DAU record (V2.5.0: now includes fuel breakdown)
       await this.sequelize.query(`
-        INSERT INTO daily_active_users (date, unique_users, unique_zips, total_requests, avg_response_time_ms, error_count, supplier_lookups, price_checks, directory_views, users_by_state, updated_at)
-        VALUES (:date, :uniqueUsers, :uniqueZips, :totalRequests, :avgResponseTime, :errorCount, :supplierLookups, :priceChecks, :directoryViews, :usersByState::jsonb, NOW())
+        INSERT INTO daily_active_users (date, unique_users, unique_zips, total_requests, avg_response_time_ms, error_count, supplier_lookups, price_checks, directory_views, users_by_state, users_by_fuel, requests_by_fuel, updated_at)
+        VALUES (:date, :uniqueUsers, :uniqueZips, :totalRequests, :avgResponseTime, :errorCount, :supplierLookups, :priceChecks, :directoryViews, :usersByState::jsonb, :usersByFuel::jsonb, :requestsByFuel::jsonb, NOW())
         ON CONFLICT (date) DO UPDATE SET
           unique_users = EXCLUDED.unique_users,
           unique_zips = EXCLUDED.unique_zips,
@@ -317,6 +341,8 @@ class ActivityAnalyticsService {
           price_checks = EXCLUDED.price_checks,
           directory_views = EXCLUDED.directory_views,
           users_by_state = EXCLUDED.users_by_state,
+          users_by_fuel = EXCLUDED.users_by_fuel,
+          requests_by_fuel = EXCLUDED.requests_by_fuel,
           updated_at = NOW()
       `, {
         replacements: {
@@ -329,11 +355,13 @@ class ActivityAnalyticsService {
           supplierLookups: parseInt(stats[0]?.supplier_lookups) || 0,
           priceChecks: parseInt(stats[0]?.price_checks) || 0,
           directoryViews: parseInt(stats[0]?.directory_views) || 0,
-          usersByState: JSON.stringify(usersByState)
+          usersByState: JSON.stringify(usersByState),
+          usersByFuel: JSON.stringify(usersByFuel),
+          requestsByFuel: JSON.stringify(requestsByFuel)
         }
       });
 
-      console.log(`[ActivityAnalytics] DAU aggregated for ${targetDate}: ${stats[0]?.unique_users || 0} users`);
+      console.log(`[ActivityAnalytics] DAU aggregated for ${targetDate}: ${stats[0]?.unique_users || 0} users (oil: ${usersByFuel.heating_oil || 0}, propane: ${usersByFuel.propane || 0})`);
       return stats[0];
     } catch (error) {
       console.error('[ActivityAnalytics] Failed to aggregate DAU:', error.message);
@@ -402,6 +430,7 @@ class ActivityAnalyticsService {
 
   /**
    * Generate daily activity report for email
+   * V2.5.0: Now includes fuel type segmentation (oil vs propane)
    */
   async generateDailyReport() {
     try {
@@ -468,6 +497,50 @@ class ActivityAnalyticsService {
         requestsChange: (today.total_requests || 0) - (weekAgo.total_requests || 0)
       };
 
+      // V2.5.0: Get fuel type breakdown for last 24h
+      const [byFuelType] = await this.sequelize.query(`
+        SELECT
+          COALESCE(fuel_type, 'heating_oil') as fuel_type,
+          COUNT(DISTINCT ip_hash) as users,
+          COUNT(DISTINCT zip_code) as zips,
+          COUNT(*) as requests
+        FROM api_activity
+        WHERE created_at >= NOW() - INTERVAL '24 hours'
+        GROUP BY COALESCE(fuel_type, 'heating_oil')
+        ORDER BY users DESC
+      `);
+
+      // V2.5.0: Get geographic breakdown BY fuel type
+      const [byStateFuel] = await this.sequelize.query(`
+        SELECT
+          state,
+          COALESCE(fuel_type, 'heating_oil') as fuel_type,
+          COUNT(DISTINCT ip_hash) as users,
+          COUNT(*) as requests
+        FROM api_activity
+        WHERE created_at >= NOW() - INTERVAL '24 hours'
+          AND state IS NOT NULL
+        GROUP BY state, COALESCE(fuel_type, 'heating_oil')
+        ORDER BY users DESC
+        LIMIT 20
+      `);
+
+      // Organize by fuel type for easy email rendering
+      const oilStats = byFuelType.find(f => f.fuel_type === 'heating_oil') || { users: 0, zips: 0, requests: 0 };
+      const propaneStats = byFuelType.find(f => f.fuel_type === 'propane') || { users: 0, zips: 0, requests: 0 };
+
+      const oilByState = byStateFuel.filter(s => s.fuel_type === 'heating_oil').map(s => ({
+        state: s.state,
+        users: parseInt(s.users),
+        requests: parseInt(s.requests)
+      }));
+
+      const propaneByState = byStateFuel.filter(s => s.fuel_type === 'propane').map(s => ({
+        state: s.state,
+        users: parseInt(s.users),
+        requests: parseInt(s.requests)
+      }));
+
       return {
         date: new Date(),
         reportDate,
@@ -477,6 +550,21 @@ class ActivityAnalyticsService {
           totalRequests: parseInt(realTime.summary?.total_requests_24h) || 0,
           avgResponseTimeMs: parseInt(realTime.summary?.avg_response_time_ms) || 0,
           errors: parseInt(realTime.summary?.errors_24h) || 0
+        },
+        // V2.5.0: Fuel type breakdown
+        byFuelType: {
+          heating_oil: {
+            users: parseInt(oilStats.users) || 0,
+            zips: parseInt(oilStats.zips) || 0,
+            requests: parseInt(oilStats.requests) || 0,
+            byState: oilByState
+          },
+          propane: {
+            users: parseInt(propaneStats.users) || 0,
+            zips: parseInt(propaneStats.zips) || 0,
+            requests: parseInt(propaneStats.requests) || 0,
+            byState: propaneByState
+          }
         },
         trend,
         byState: byState.map(s => ({
@@ -498,7 +586,8 @@ class ActivityAnalyticsService {
         dauHistory: dauHistory.slice(0, 7).map(d => ({
           date: d.date,
           users: d.unique_users,
-          requests: d.total_requests
+          requests: d.total_requests,
+          usersByFuel: d.users_by_fuel || {}
         }))
       };
     } catch (error) {
