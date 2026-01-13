@@ -25,6 +25,10 @@ const intelligenceRoutes = require('./routes/intelligence');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Trust proxy for Railway/reverse proxy deployments
+// Required for express-rate-limit to correctly identify users by X-Forwarded-For header
+app.set('trust proxy', 1);
+
 // Configure Winston Logger
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
