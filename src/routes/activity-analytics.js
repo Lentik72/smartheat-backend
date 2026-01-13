@@ -374,4 +374,45 @@ router.post('/supplier-engagement', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/admin/activity/send-report
+ * Manually trigger and send the activity report email
+ */
+router.post('/send-report', async (req, res) => {
+  try {
+    const analytics = req.app.locals.activityAnalytics;
+    const mailer = req.app.locals.coverageMailer;
+
+    if (!analytics) {
+      return res.status(503).json({ error: 'Analytics service not available' });
+    }
+    if (!mailer) {
+      return res.status(503).json({ error: 'Mailer service not available' });
+    }
+
+    console.log('[ActivityAnalytics] Manual report requested');
+    const report = await analytics.generateDailyReport();
+
+    if (!report) {
+      return res.status(500).json({ error: 'Failed to generate report' });
+    }
+
+    const success = await mailer.sendActivityReport(report);
+
+    res.json({
+      success,
+      summary: {
+        users: report.summary.uniqueUsers,
+        zips: report.summary.uniqueZips,
+        requests: report.summary.totalRequests,
+        oilUsers: report.byFuelType?.heating_oil?.users || 0,
+        propaneUsers: report.byFuelType?.propane?.users || 0
+      }
+    });
+  } catch (error) {
+    console.error('[ActivityAnalytics] Send report error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

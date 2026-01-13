@@ -20,6 +20,9 @@ const { initScheduler } = require('./src/services/DistributedScheduler');
 // V2.4.0: Import Activity Analytics
 const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsService');
 
+// V2.5.0: Import Coverage Report Mailer for manual report sending
+const CoverageReportMailer = require('./src/services/CoverageReportMailer');
+
 // Import route modules with error handling
 let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes;
 
@@ -233,6 +236,11 @@ if (API_KEYS.DATABASE_URL) {
         const activityAnalytics = new ActivityAnalyticsService(sequelize);
         app.locals.activityAnalytics = activityAnalytics;
         logger.info('✅ Activity Analytics Service initialized');
+
+        // V2.5.0: Initialize Coverage Report Mailer for manual reports
+        const coverageMailer = new CoverageReportMailer();
+        app.locals.coverageMailer = coverageMailer;
+        logger.info('✅ Coverage Report Mailer initialized');
 
         // Run migration for activity analytics tables (idempotent - won't fail if tables exist)
         const { up: runActivityMigration } = require('./src/migrations/006-activity-analytics');
