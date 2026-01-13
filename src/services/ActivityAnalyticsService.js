@@ -72,7 +72,10 @@ class ActivityAnalyticsService {
    * Log an API request (buffered for performance)
    */
   logRequest(req, res, responseTimeMs) {
-    const zipCode = req.params?.zipCode || req.body?.zipCode || req.query?.zipCode || null;
+    // Check both 'zip' and 'zipCode' query params (suppliers API uses 'zip')
+    const zipCode = req.params?.zipCode || req.params?.zip ||
+                    req.query?.zipCode || req.query?.zip ||
+                    req.body?.zipCode || req.body?.zip || null;
 
     this.requestBuffer.push({
       endpoint: req.route?.path || req.path,
