@@ -17,6 +17,20 @@
 
   "_section_NY": "=== NEW YORK ===",
 
+  "aceoilandpropane.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY Kingston/Ulster County - clear price display",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "afcofuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY Kingston/Ulster County - COD price shown",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "dominofuel.com": {
     "enabled": true,
     "pattern": "table",
@@ -47,9 +61,9 @@
   },
 
   "expresscod.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "table",
-    "notes": "DISABLED: Long Island Nassau/Suffolk - prices rendered via JavaScript",
+    "notes": "Long Island Nassau/Suffolk - tiered pricing table $2.699-$2.819",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -203,10 +217,10 @@
   },
 
   "castlefuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: HTTP 403 - blocking HomeHeatBot user agent",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "NY Ossining/Westchester - clear price display",
+    "priceRegex": "([0-9]+\\.[0-9]{2})\\s*(?:per gallon|/gallon)?"
   },
 
   "supremeoil.us": {
@@ -267,6 +281,13 @@
   },
 
   "_section_NJ": "=== NEW JERSEY ===",
+
+  "lawmansoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ Camden/Burlington/Gloucester - clear price display",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
 
   "cashoilco.com": {
     "enabled": false,
@@ -395,6 +416,20 @@
   },
 
   "_section_CT": "=== CONNECTICUT ===",
+
+  "joesfuelct.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Bridgeport/Fairfield - daily updated price",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "polarenergyct.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Monroe/Fairfield County - clear price table",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
 
   "advancedheatingoil.com": {
     "enabled": true,
@@ -535,9 +570,9 @@
   },
 
   "coddiscountfuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: No price found",
+    "notes": "MA Cape Cod - daily updated price",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -624,9 +659,9 @@
   },
 
   "lehighfuels.com": {
-    "enabled": false,
-    "pattern": "direct",
-    "notes": "DISABLED: No price found",
+    "enabled": true,
+    "pattern": "table",
+    "notes": "PA Lehigh Valley - tiered web pricing $2.869-$2.989",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
