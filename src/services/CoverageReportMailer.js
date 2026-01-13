@@ -1,37 +1,26 @@
 /**
  * Coverage Report Mailer
- * V2.3.0: Email reports for Coverage Intelligence
+ * V2.4.0: Uses Resend API (HTTPS) instead of SMTP
  *
  * Sends:
  * - Daily reports (when actionable items exist)
  * - Weekly summaries (every Monday)
  * - Instant alerts (critical gaps)
+ *
+ * Railway blocks SMTP ports, so we use Resend's HTTP API instead.
  */
-
-const nodemailer = require('nodemailer');
 
 class CoverageReportMailer {
   constructor() {
-    this.transporter = null;
     this.initialized = false;
+    this.apiKey = process.env.RESEND_API_KEY;
+    this.fromEmail = process.env.EMAIL_FROM || 'SmartHeat <onboarding@resend.dev>';
 
-    // Initialize if credentials available
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      try {
-        this.transporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-          }
-        });
-        this.initialized = true;
-        console.log('[CoverageReportMailer] Initialized with Gmail');
-      } catch (error) {
-        console.error('[CoverageReportMailer] Failed to initialize:', error.message);
-      }
+    if (this.apiKey) {
+      this.initialized = true;
+      console.log('[CoverageReportMailer] Initialized with Resend API');
     } else {
-      console.log('[CoverageReportMailer] Email credentials not configured');
+      console.log('[CoverageReportMailer] RESEND_API_KEY not configured');
     }
   }
 
@@ -39,18 +28,52 @@ class CoverageReportMailer {
    * Get recipient email
    */
   getRecipient() {
-    return process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+    return process.env.ADMIN_EMAIL || 'ltsoir@gmail.com';
+  }
+
+  /**
+   * Send email via Resend API
+   */
+  async sendEmail(to, subject, html) {
+    if (!this.initialized) {
+      console.log('[CoverageReportMailer] Not initialized - skipping email');
+      return false;
+    }
+
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: this.fromEmail,
+          to: [to],
+          subject,
+          html
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log(`[CoverageReportMailer] Email sent: ${result.id}`);
+        return true;
+      } else {
+        console.error('[CoverageReportMailer] Resend API error:', result);
+        return false;
+      }
+    } catch (error) {
+      console.error('[CoverageReportMailer] Failed to send email:', error.message);
+      return false;
+    }
   }
 
   /**
    * Send daily coverage report
    */
   async sendDailyReport(report) {
-    if (!this.initialized) {
-      console.log('[CoverageReportMailer] Not initialized - skipping email');
-      return false;
-    }
-
     const recipient = this.getRecipient();
     if (!recipient) {
       console.log('[CoverageReportMailer] No recipient configured');
@@ -60,19 +83,11 @@ class CoverageReportMailer {
     const html = this.formatDailyReport(report);
     const subject = this.getDailySubject(report);
 
-    try {
-      await this.transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: recipient,
-        subject,
-        html
-      });
+    const success = await this.sendEmail(recipient, subject, html);
+    if (success) {
       console.log(`[CoverageReportMailer] Daily report sent to ${recipient}`);
-      return true;
-    } catch (error) {
-      console.error('[CoverageReportMailer] Failed to send daily report:', error.message);
-      return false;
     }
+    return success;
   }
 
   /**
@@ -230,8 +245,6 @@ class CoverageReportMailer {
    * Send weekly summary
    */
   async sendWeeklySummary(stats) {
-    if (!this.initialized) return false;
-
     const recipient = this.getRecipient();
     if (!recipient) return false;
 
@@ -239,20 +252,12 @@ class CoverageReportMailer {
     const subject = `SmartHeat Weekly Summary - ${date}`;
 
     const html = this.formatWeeklySummary(stats);
+    const success = await this.sendEmail(recipient, subject, html);
 
-    try {
-      await this.transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: recipient,
-        subject,
-        html
-      });
+    if (success) {
       console.log(`[CoverageReportMailer] Weekly summary sent to ${recipient}`);
-      return true;
-    } catch (error) {
-      console.error('[CoverageReportMailer] Failed to send weekly summary:', error.message);
-      return false;
     }
+    return success;
   }
 
   /**
@@ -316,29 +321,22 @@ class CoverageReportMailer {
    * Send instant alert for critical gaps
    */
   async sendCriticalAlert(zipCode, city, state, requestCount) {
-    if (!this.initialized) return false;
-
     const recipient = this.getRecipient();
     if (!recipient) return false;
 
-    try {
-      await this.transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: recipient,
-        subject: `[CRITICAL] No suppliers for ${city || zipCode}, ${state}`,
-        html: `
-          <h2>Critical Coverage Gap Detected</h2>
-          <p>A user in <strong>${city || 'Unknown'}, ${state}</strong> (ZIP: ${zipCode}) has no supplier options.</p>
-          <p>This location has received <strong>${requestCount}</strong> API requests.</p>
-          <p>Please add suppliers for this area as soon as possible.</p>
-        `
-      });
+    const subject = `[CRITICAL] No suppliers for ${city || zipCode}, ${state}`;
+    const html = `
+      <h2>Critical Coverage Gap Detected</h2>
+      <p>A user in <strong>${city || 'Unknown'}, ${state}</strong> (ZIP: ${zipCode}) has no supplier options.</p>
+      <p>This location has received <strong>${requestCount}</strong> API requests.</p>
+      <p>Please add suppliers for this area as soon as possible.</p>
+    `;
+
+    const success = await this.sendEmail(recipient, subject, html);
+    if (success) {
       console.log(`[CoverageReportMailer] Critical alert sent for ${zipCode}`);
-      return true;
-    } catch (error) {
-      console.error('[CoverageReportMailer] Failed to send critical alert:', error.message);
-      return false;
     }
+    return success;
   }
 }
 
