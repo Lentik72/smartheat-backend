@@ -213,6 +213,16 @@ if (API_KEYS.DATABASE_URL) {
           logger.error('❌ SupplierPrice model failed to initialize');
         }
 
+        // V2.3.0: Initialize UserLocation model for Coverage Intelligence
+        const { initUserLocationModel } = require('./src/models/UserLocation');
+        const UserLocation = initUserLocationModel(sequelize);
+        if (UserLocation) {
+          await UserLocation.sync({ alter: false });
+          logger.info('✅ UserLocation model synced');
+        } else {
+          logger.warn('⚠️  UserLocation model failed to initialize');
+        }
+
         logger.info('📊 Database ready for operations');
       })
       .catch(err => {
@@ -347,6 +357,7 @@ app.use('/api/community', communityRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/coverage', require('./src/routes/coverage')); // V2.3.0: Coverage Intelligence
 app.use('/api/v1/suppliers', suppliersRoutes);  // V1.3.0: Dynamic supplier directory
 app.use('/api/v1/market', intelligenceRoutes);  // V2.2.0: Market intelligence
 
@@ -418,7 +429,92 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     distributedScheduler.start();
     logger.info('📅 Distributed scheduler started (SHADOW MODE)');
   }
+
+  // V2.3.0: Schedule Coverage Intelligence daily analysis
+  scheduleCoverageIntelligence();
 });
+
+// V2.3.0: Coverage Intelligence Scheduler
+function scheduleCoverageIntelligence() {
+  const CoverageIntelligenceService = require('./src/services/CoverageIntelligenceService');
+  const CoverageReportMailer = require('./src/services/CoverageReportMailer');
+
+  if (!sequelize) {
+    logger.warn('[CoverageIntelligence] No database connection - scheduler disabled');
+    return;
+  }
+
+  const mailer = new CoverageReportMailer();
+  const intelligence = new CoverageIntelligenceService(sequelize, mailer);
+
+  // Calculate time until 6 AM EST (11 AM UTC)
+  const TARGET_HOUR_UTC = 11; // 6 AM EST = 11 AM UTC
+
+  const scheduleNextRun = () => {
+    const now = new Date();
+    const target = new Date(now);
+    target.setUTCHours(TARGET_HOUR_UTC, 0, 0, 0);
+
+    // If past today's target time, schedule for tomorrow
+    if (now >= target) {
+      target.setDate(target.getDate() + 1);
+    }
+
+    const msUntilTarget = target - now;
+    const hoursUntil = Math.round(msUntilTarget / (1000 * 60 * 60) * 10) / 10;
+
+    logger.info(`[CoverageIntelligence] Daily analysis scheduled for ${target.toISOString()} (${hoursUntil}h from now)`);
+
+    setTimeout(async () => {
+      logger.info('[CoverageIntelligence] Running scheduled daily analysis...');
+      try {
+        const report = await intelligence.runDailyAnalysis();
+        logger.info(`[CoverageIntelligence] Analysis complete: ${report.newLocations.length} new locations, ${report.coverageGaps.length} gaps`);
+      } catch (error) {
+        logger.error('[CoverageIntelligence] Scheduled analysis failed:', error.message);
+      }
+
+      // Schedule next run (tomorrow)
+      scheduleNextRun();
+    }, msUntilTarget);
+  };
+
+  // Also schedule weekly summary for Monday 8 AM EST (1 PM UTC)
+  const scheduleWeeklySummary = () => {
+    const now = new Date();
+    const target = new Date(now);
+
+    // Find next Monday
+    const daysUntilMonday = (8 - now.getUTCDay()) % 7 || 7;
+    target.setDate(target.getDate() + daysUntilMonday);
+    target.setUTCHours(13, 0, 0, 0); // 8 AM EST = 1 PM UTC
+
+    const msUntilTarget = target - now;
+
+    logger.info(`[CoverageIntelligence] Weekly summary scheduled for ${target.toISOString()}`);
+
+    setTimeout(async () => {
+      logger.info('[CoverageIntelligence] Running weekly summary...');
+      try {
+        const stats = await intelligence.getCoverageStats();
+        if (stats) {
+          await mailer.sendWeeklySummary(stats);
+        }
+      } catch (error) {
+        logger.error('[CoverageIntelligence] Weekly summary failed:', error.message);
+      }
+
+      // Schedule next week
+      scheduleWeeklySummary();
+    }, msUntilTarget);
+  };
+
+  // Start schedulers
+  scheduleNextRun();
+  scheduleWeeklySummary();
+
+  logger.info('[CoverageIntelligence] Scheduler initialized');
+}
 
 // Handle server errors
 server.on('error', (error) => {

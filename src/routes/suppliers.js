@@ -18,6 +18,7 @@ const { Op } = require('sequelize');
 const { findSuppliersForZip, getZipInfo } = require('../services/supplierMatcher');
 const { getZipsForCity, getZipsForCounty, normalizeLocation } = require('../services/locationResolver');
 const { getTerminalProximityScore } = require('../services/terminalProximity');
+const { trackLocation } = require('../models/UserLocation');
 
 // Rate limiting specifically for supplier endpoint
 // More restrictive than global limit to prevent scraping
@@ -498,6 +499,17 @@ router.get('/', async (req, res) => {
         : `county ${searchCounty}, ${normalizedState} (${resolvedZips.length} ZIPs)`;
 
     logger?.info(`[Suppliers] Returned ${responseData.length} suppliers for ${searchDesc} via ${primaryMatchType} match`);
+
+    // V2.3.0: Track user location for Coverage Intelligence
+    // Non-blocking - fire and forget
+    if (searchType === 'zip' && resolvedZips.length > 0) {
+      const primaryZip = resolvedZips[0];
+      trackLocation(primaryZip, {
+        city: aggregatedUserInfo?.city,
+        county: aggregatedUserInfo?.county,
+        state: normalizedState
+      }).catch(err => console.error('[UserLocation] Track error:', err.message));
+    }
 
     res.json({ data: responseData, meta, signature });
 
