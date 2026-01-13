@@ -17,8 +17,11 @@ const { runScraper } = require('./scripts/scrape-prices');
 // V2.1.0: Import distributed scheduler (shadow mode initially)
 const { initScheduler } = require('./src/services/DistributedScheduler');
 
+// V2.4.0: Import Activity Analytics
+const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsService');
+
 // Import route modules with error handling
-let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes;
+let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes;
 
 try {
   weatherRoutes = require('./src/routes/weather');
@@ -29,6 +32,7 @@ try {
   adminRoutes = require('./src/routes/admin');
   suppliersRoutes = require('./src/routes/suppliers');  // V1.3.0: Dynamic supplier directory
   intelligenceRoutes = require('./src/routes/intelligence');  // V2.2.0: Market intelligence
+  activityAnalyticsRoutes = require('./src/routes/activity-analytics');  // V2.4.0: Activity analytics
 } catch (error) {
   console.error('Error loading route modules:', error.message);
   // Create placeholder routers if routes fail to load
@@ -40,6 +44,7 @@ try {
   adminRoutes = express.Router();
   suppliersRoutes = express.Router();
   intelligenceRoutes = express.Router();
+  activityAnalyticsRoutes = express.Router();
 
   // Add basic error responses
   weatherRoutes.get('*', (req, res) => res.status(503).json({ error: 'Weather service temporarily unavailable' }));
@@ -223,6 +228,18 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  UserLocation model failed to initialize');
         }
 
+        // V2.4.0: Initialize Activity Analytics Service
+        logger.info('🔧 Initializing Activity Analytics Service...');
+        const activityAnalytics = new ActivityAnalyticsService(sequelize);
+        app.locals.activityAnalytics = activityAnalytics;
+        logger.info('✅ Activity Analytics Service initialized');
+
+        // Run migration for activity analytics tables (idempotent - won't fail if tables exist)
+        const { up: runActivityMigration } = require('./src/migrations/006-activity-analytics');
+        runActivityMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Activity analytics migration:', err.message);
+        });
+
         logger.info('📊 Database ready for operations');
       })
       .catch(err => {
@@ -244,6 +261,19 @@ app.locals.cache = cache;
 app.locals.logger = logger;
 app.locals.apiKeys = API_KEYS;
 app.locals.sequelize = sequelize;
+
+// V2.4.0: Request logging middleware (captures all API requests for analytics)
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  res.on('finish', () => {
+    const responseTime = Date.now() - startTime;
+    const analytics = req.app.locals.activityAnalytics;
+    if (analytics && req.path.startsWith('/api/') && !req.path.includes('/health')) {
+      analytics.logRequest(req, res, responseTime);
+    }
+  });
+  next();
+});
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -358,6 +388,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/coverage', require('./src/routes/coverage')); // V2.3.0: Coverage Intelligence
+app.use('/api/admin/activity', activityAnalyticsRoutes); // V2.4.0: Activity Analytics (admin)
+app.use('/api/activity', activityAnalyticsRoutes); // V2.4.0: Activity Analytics (app)
 app.use('/api/v1/suppliers', suppliersRoutes);  // V1.3.0: Dynamic supplier directory
 app.use('/api/v1/market', intelligenceRoutes);  // V2.2.0: Market intelligence
 
