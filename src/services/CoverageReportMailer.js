@@ -338,6 +338,185 @@ class CoverageReportMailer {
     }
     return success;
   }
+
+  /**
+   * Send daily activity analytics report
+   */
+  async sendActivityReport(report) {
+    const recipient = this.getRecipient();
+    if (!recipient) {
+      console.log('[CoverageReportMailer] No recipient configured for activity report');
+      return false;
+    }
+
+    if (!report) {
+      console.log('[CoverageReportMailer] No activity report data');
+      return false;
+    }
+
+    const date = new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+
+    const subject = `SmartHeat Activity Report - ${date} | ${report.summary.uniqueUsers} users, ${report.summary.totalRequests} requests`;
+    const html = this.formatActivityReport(report);
+
+    const success = await this.sendEmail(recipient, subject, html);
+    if (success) {
+      console.log(`[CoverageReportMailer] Activity report sent to ${recipient}`);
+    }
+    return success;
+  }
+
+  /**
+   * Format activity analytics report HTML
+   */
+  formatActivityReport(report) {
+    const styles = `
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 600px; margin: 0 auto; }
+      h2 { color: #1a1a1a; border-bottom: 2px solid #007AFF; padding-bottom: 8px; }
+      h3 { color: #444; margin-top: 24px; margin-bottom: 12px; }
+      .stat-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+      .stat-box { background: #f5f5f5; padding: 16px; border-radius: 8px; flex: 1; min-width: 120px; text-align: center; }
+      .stat-value { font-size: 28px; font-weight: 700; color: #007AFF; }
+      .stat-label { font-size: 12px; color: #666; margin-top: 4px; }
+      .trend-up { color: #4caf50; }
+      .trend-down { color: #f44336; }
+      .trend-neutral { color: #666; }
+      table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+      th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; font-size: 14px; }
+      th { background: #f5f5f5; font-weight: 600; }
+      .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+      .section { margin: 24px 0; }
+    `;
+
+    const trendIcon = (change) => {
+      if (change > 0) return `<span class="trend-up">↑ +${change}</span>`;
+      if (change < 0) return `<span class="trend-down">↓ ${change}</span>`;
+      return `<span class="trend-neutral">→ 0</span>`;
+    };
+
+    return `
+<!DOCTYPE html>
+<html>
+<head><style>${styles}</style></head>
+<body>
+  <h2>📊 SmartHeat Activity Report</h2>
+  <p><strong>Date:</strong> ${report.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+
+  <!-- Summary Stats -->
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-value">${report.summary.uniqueUsers}</div>
+      <div class="stat-label">Unique Users (24h)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${report.summary.uniqueZips}</div>
+      <div class="stat-label">ZIP Codes</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${report.summary.totalRequests}</div>
+      <div class="stat-label">API Requests</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${report.summary.avgResponseTimeMs}ms</div>
+      <div class="stat-label">Avg Response</div>
+    </div>
+  </div>
+
+  <!-- Trend -->
+  <div class="section">
+    <p><strong>Week-over-Week:</strong> Users ${trendIcon(report.trend.usersChange)} | Requests ${trendIcon(report.trend.requestsChange)}</p>
+  </div>
+
+  <!-- Geographic Distribution -->
+  ${report.byState.length > 0 ? `
+    <h3>📍 Users by State</h3>
+    <table>
+      <tr><th>State</th><th>Users</th><th>Requests</th></tr>
+      ${report.byState.map(s => `
+        <tr>
+          <td><strong>${s.state}</strong></td>
+          <td>${s.users}</td>
+          <td>${s.requests}</td>
+        </tr>
+      `).join('')}
+    </table>
+  ` : ''}
+
+  <!-- Top ZIP Codes -->
+  ${report.topZips.length > 0 ? `
+    <h3>🔝 Top ZIP Codes</h3>
+    <table>
+      <tr><th>ZIP</th><th>State</th><th>Users</th><th>Requests</th></tr>
+      ${report.topZips.slice(0, 5).map(z => `
+        <tr>
+          <td><strong>${z.zipCode}</strong></td>
+          <td>${z.state}</td>
+          <td>${z.users}</td>
+          <td>${z.requests}</td>
+        </tr>
+      `).join('')}
+    </table>
+  ` : ''}
+
+  <!-- Top Endpoints -->
+  ${report.topEndpoints.length > 0 ? `
+    <h3>🔗 Top Endpoints</h3>
+    <table>
+      <tr><th>Endpoint</th><th>Hits</th></tr>
+      ${report.topEndpoints.slice(0, 5).map(e => `
+        <tr>
+          <td><code>${e.endpoint}</code></td>
+          <td>${e.hits}</td>
+        </tr>
+      `).join('')}
+    </table>
+  ` : ''}
+
+  <!-- Supplier Engagements -->
+  ${report.engagements.length > 0 ? `
+    <h3>👆 Supplier Engagements</h3>
+    <table>
+      <tr><th>Action</th><th>Count</th></tr>
+      ${report.engagements.map(e => `
+        <tr>
+          <td>${e.type}</td>
+          <td>${e.count}</td>
+        </tr>
+      `).join('')}
+    </table>
+  ` : '<p><em>No supplier engagements in last 24 hours.</em></p>'}
+
+  <!-- 7-Day History -->
+  ${report.dauHistory.length > 1 ? `
+    <h3>📈 7-Day History</h3>
+    <table>
+      <tr><th>Date</th><th>Users</th><th>Requests</th></tr>
+      ${report.dauHistory.map(d => `
+        <tr>
+          <td>${d.date}</td>
+          <td>${d.users || 0}</td>
+          <td>${d.requests || 0}</td>
+        </tr>
+      `).join('')}
+    </table>
+  ` : ''}
+
+  <!-- Errors -->
+  ${report.summary.errors > 0 ? `
+    <h3>⚠️ Errors</h3>
+    <p><strong>${report.summary.errors}</strong> API errors in the last 24 hours.</p>
+  ` : ''}
+
+  <div class="footer">
+    <p>This report is auto-generated daily at 6 AM EST by SmartHeat Activity Analytics.</p>
+  </div>
+</body>
+</html>
+    `;
+  }
 }
 
 module.exports = CoverageReportMailer;

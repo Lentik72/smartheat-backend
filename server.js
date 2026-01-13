@@ -467,9 +467,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 });
 
 // V2.3.0: Coverage Intelligence Scheduler
+// V2.4.0: Also sends Activity Analytics report
 function scheduleCoverageIntelligence() {
   const CoverageIntelligenceService = require('./src/services/CoverageIntelligenceService');
   const CoverageReportMailer = require('./src/services/CoverageReportMailer');
+  const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsService');
 
   if (!sequelize) {
     logger.warn('[CoverageIntelligence] No database connection - scheduler disabled');
@@ -478,6 +480,7 @@ function scheduleCoverageIntelligence() {
 
   const mailer = new CoverageReportMailer();
   const intelligence = new CoverageIntelligenceService(sequelize, mailer);
+  const activityAnalytics = new ActivityAnalyticsService(sequelize);
 
   // Calculate time until 6 AM EST (11 AM UTC)
   const TARGET_HOUR_UTC = 11; // 6 AM EST = 11 AM UTC
@@ -495,15 +498,29 @@ function scheduleCoverageIntelligence() {
     const msUntilTarget = target - now;
     const hoursUntil = Math.round(msUntilTarget / (1000 * 60 * 60) * 10) / 10;
 
-    logger.info(`[CoverageIntelligence] Daily analysis scheduled for ${target.toISOString()} (${hoursUntil}h from now)`);
+    logger.info(`[DailyReports] Scheduled for ${target.toISOString()} (${hoursUntil}h from now)`);
 
     setTimeout(async () => {
-      logger.info('[CoverageIntelligence] Running scheduled daily analysis...');
+      logger.info('[DailyReports] Running scheduled daily reports...');
+
+      // 1. Coverage Intelligence Report
       try {
         const report = await intelligence.runDailyAnalysis();
         logger.info(`[CoverageIntelligence] Analysis complete: ${report.newLocations.length} new locations, ${report.coverageGaps.length} gaps`);
       } catch (error) {
         logger.error('[CoverageIntelligence] Scheduled analysis failed:', error.message);
+      }
+
+      // 2. Activity Analytics Report (V2.4.0)
+      try {
+        logger.info('[ActivityAnalytics] Generating daily report...');
+        const activityReport = await activityAnalytics.generateDailyReport();
+        if (activityReport) {
+          await mailer.sendActivityReport(activityReport);
+          logger.info(`[ActivityAnalytics] Daily report sent: ${activityReport.summary.uniqueUsers} users, ${activityReport.summary.totalRequests} requests`);
+        }
+      } catch (error) {
+        logger.error('[ActivityAnalytics] Daily report failed:', error.message);
       }
 
       // Schedule next run (tomorrow)
@@ -545,7 +562,7 @@ function scheduleCoverageIntelligence() {
   scheduleNextRun();
   scheduleWeeklySummary();
 
-  logger.info('[CoverageIntelligence] Scheduler initialized');
+  logger.info('[DailyReports] Scheduler initialized (Coverage + Activity Analytics at 6 AM EST)');
 }
 
 // Handle server errors

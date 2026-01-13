@@ -401,6 +401,113 @@ class ActivityAnalyticsService {
   }
 
   /**
+   * Generate daily activity report for email
+   */
+  async generateDailyReport() {
+    try {
+      // Flush any pending requests first
+      await this.flushRequestBuffer();
+
+      // Get yesterday's date for the report
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const reportDate = yesterday.toISOString().split('T')[0];
+
+      // Aggregate yesterday's data
+      await this.aggregateDAU(reportDate);
+
+      // Get the aggregated data
+      const [dauData] = await this.sequelize.query(`
+        SELECT * FROM daily_active_users WHERE date = :date
+      `, { replacements: { date: reportDate } });
+
+      // Get real-time stats (last 24h)
+      const realTime = await this.getRealTimeStats();
+
+      // Get geographic breakdown for last 24h
+      const [byState] = await this.sequelize.query(`
+        SELECT state, COUNT(DISTINCT ip_hash) as users, COUNT(*) as requests
+        FROM api_activity
+        WHERE created_at >= NOW() - INTERVAL '24 hours'
+          AND state IS NOT NULL
+        GROUP BY state
+        ORDER BY users DESC
+        LIMIT 10
+      `);
+
+      // Get top ZIP codes
+      const [topZips] = await this.sequelize.query(`
+        SELECT zip_code, state, COUNT(DISTINCT ip_hash) as users, COUNT(*) as requests
+        FROM api_activity
+        WHERE created_at >= NOW() - INTERVAL '24 hours'
+          AND zip_code IS NOT NULL
+        GROUP BY zip_code, state
+        ORDER BY users DESC
+        LIMIT 10
+      `);
+
+      // Get supplier engagement stats
+      const [engagements] = await this.sequelize.query(`
+        SELECT
+          engagement_type,
+          COUNT(*) as count
+        FROM supplier_engagements
+        WHERE created_at >= NOW() - INTERVAL '24 hours'
+        GROUP BY engagement_type
+        ORDER BY count DESC
+      `);
+
+      // Get 7-day trend
+      const dauHistory = await this.getDAUHistory(7);
+
+      // Calculate week-over-week trend
+      const today = dauData[0] || {};
+      const weekAgo = dauHistory[6] || {};
+      const trend = {
+        usersChange: (today.unique_users || 0) - (weekAgo.unique_users || 0),
+        requestsChange: (today.total_requests || 0) - (weekAgo.total_requests || 0)
+      };
+
+      return {
+        date: new Date(),
+        reportDate,
+        summary: {
+          uniqueUsers: parseInt(realTime.summary?.unique_users_24h) || 0,
+          uniqueZips: parseInt(realTime.summary?.unique_zips_24h) || 0,
+          totalRequests: parseInt(realTime.summary?.total_requests_24h) || 0,
+          avgResponseTimeMs: parseInt(realTime.summary?.avg_response_time_ms) || 0,
+          errors: parseInt(realTime.summary?.errors_24h) || 0
+        },
+        trend,
+        byState: byState.map(s => ({
+          state: s.state,
+          users: parseInt(s.users),
+          requests: parseInt(s.requests)
+        })),
+        topZips: topZips.map(z => ({
+          zipCode: z.zip_code,
+          state: z.state,
+          users: parseInt(z.users),
+          requests: parseInt(z.requests)
+        })),
+        topEndpoints: realTime.topEndpoints.slice(0, 10),
+        engagements: engagements.map(e => ({
+          type: e.engagement_type,
+          count: parseInt(e.count)
+        })),
+        dauHistory: dauHistory.slice(0, 7).map(d => ({
+          date: d.date,
+          users: d.unique_users,
+          requests: d.total_requests
+        }))
+      };
+    } catch (error) {
+      console.error('[ActivityAnalytics] Failed to generate daily report:', error.message);
+      return null;
+    }
+  }
+
+  /**
    * Cleanup - stop flush interval
    */
   shutdown() {
