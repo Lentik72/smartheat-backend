@@ -21,6 +21,8 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const suppliersRoutes = require('./routes/suppliers');
 const intelligenceRoutes = require('./routes/intelligence');
+const activityAnalyticsRoutes = require('./routes/activity-analytics');
+const ActivityAnalyticsService = require('./services/ActivityAnalyticsService');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -189,6 +191,18 @@ if (API_KEYS.DATABASE_URL) {
         logger.info('🔧 Initializing UserLocation model...');
         const userLocationModel = initUserLocationModel(sequelize);
         logger.info(`🔧 UserLocation model result: ${userLocationModel ? 'SUCCESS' : 'FAILED'}`);
+
+        // V2.4.0: Initialize Activity Analytics Service
+        logger.info('🔧 Initializing Activity Analytics Service...');
+        const activityAnalytics = new ActivityAnalyticsService(sequelize);
+        app.locals.activityAnalytics = activityAnalytics;
+        logger.info('✅ Activity Analytics Service initialized');
+
+        // Run migration for activity analytics tables
+        const { up: runActivityMigration } = require('./migrations/006-activity-analytics');
+        runActivityMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Activity analytics migration:', err.message);
+        });
       })
       .catch(err => {
         logger.warn('⚠️  PostgreSQL connection failed:', err.message || err);
@@ -205,6 +219,19 @@ app.locals.cache = cache;
 app.locals.logger = logger;
 app.locals.sequelize = sequelize;
 
+// V2.4.0: Request logging middleware (captures all API requests for analytics)
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  res.on('finish', () => {
+    const responseTime = Date.now() - startTime;
+    const analytics = req.app.locals.activityAnalytics;
+    if (analytics && req.path.startsWith('/api/') && !req.path.includes('/health')) {
+      analytics.logRequest(req, res, responseTime);
+    }
+  });
+  next();
+});
+
 // Routes
 app.use('/api/weather', weatherRoutes);
 app.use('/api/market', marketRoutes);
@@ -214,6 +241,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/coverage', require('./routes/coverage')); // V2.3.0: Coverage Intelligence
+app.use('/api/admin/activity', activityAnalyticsRoutes); // V2.4.0: Activity Analytics (admin)
+app.use('/api/activity', activityAnalyticsRoutes); // V2.4.0: Activity Analytics (app)
 app.use('/api/v1/suppliers', suppliersRoutes);
 app.use('/api/v1/market', intelligenceRoutes);
 
@@ -345,7 +374,38 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 
   // V2.3.0: Schedule Coverage Intelligence daily analysis
   scheduleCoverageIntelligence();
+
+  // V2.4.0: Schedule DAU aggregation (hourly)
+  scheduleDAUAggregation();
 });
+
+// V2.4.0: DAU Aggregation Scheduler
+function scheduleDAUAggregation() {
+  const analytics = app.locals.activityAnalytics;
+  if (!analytics) {
+    logger.warn('[DAU] Analytics service not available - scheduler disabled');
+    return;
+  }
+
+  // Run immediately, then every hour
+  setTimeout(async () => {
+    try {
+      await analytics.aggregateDAU();
+    } catch (err) {
+      logger.warn('[DAU] Initial aggregation failed:', err.message);
+    }
+  }, 5000); // 5 seconds after startup
+
+  setInterval(async () => {
+    try {
+      await analytics.aggregateDAU();
+    } catch (err) {
+      logger.warn('[DAU] Hourly aggregation failed:', err.message);
+    }
+  }, 60 * 60 * 1000); // Every hour
+
+  logger.info('[DAU] Hourly aggregation scheduled');
+}
 
 // V2.3.0: Coverage Intelligence Scheduler
 function scheduleCoverageIntelligence() {
