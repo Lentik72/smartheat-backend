@@ -45,5 +45,6 @@
     "privacy-compliant"
   ],
   "author": "SmartHeat Team",
-  "license": "MIT"
+  "license": "MIT",
+  "buildTimestamp": 1768302592934
 }
