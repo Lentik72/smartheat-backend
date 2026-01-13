@@ -219,7 +219,7 @@
   "castlefuel.com": {
     "enabled": false,
     "pattern": "direct",
-    "notes": "DISABLED: Domain not matching supplier record",
+    "notes": "DISABLED: No clear price display on site - complex WordPress with no pricing section",
     "priceRegex": "([0-9]+\\.[0-9]{2})\\s*(?:per gallon|/gallon)?"
   },
 
@@ -570,10 +570,10 @@
   },
 
   "coddiscountfuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: Price regex not matching current site format",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "MA Cape Cod - price in bomb-large-text span without $ sign",
+    "priceRegex": "bomb-large-text[^>]*>([0-9]+\\.[0-9]{2,3})<"
   },
 
   "oilonly.net": {
@@ -659,10 +659,10 @@
   },
 
   "lehighfuels.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "table",
-    "notes": "DISABLED: Price regex not matching current site format",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "PA Lehigh Valley - prices in plain <p> tags without $ sign",
+    "priceRegex": "<p>([0-9]\\.[0-9]{2,3})</p>"
   },
 
   "claytondiscountfuel.com": {
