@@ -231,7 +231,7 @@ class CoverageIntelligenceService {
 
   /**
    * Check supplier health
-   * Finds suppliers with no recent price updates
+   * Only checks suppliers that have scraping enabled - no point reporting on non-scrapable ones
    */
   async checkSupplierHealth() {
     const Supplier = getSupplierModel();
@@ -240,22 +240,44 @@ class CoverageIntelligenceService {
     const staleThreshold = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     try {
-      // Find active suppliers with no recent price data
-      const [results] = await this.sequelize.query(`
-        SELECT s.id, s.name, s.state, s.city,
+      // Load scrape config to know which suppliers are scrapable
+      const scrapeConfig = require('../data/scrape-config.json');
+      const scrapableDomains = new Set(
+        Object.entries(scrapeConfig)
+          .filter(([key, val]) => typeof val === 'object' && val.enabled === true)
+          .map(([key]) => key.toLowerCase())
+      );
+
+      // Find active suppliers with websites
+      const [allSuppliers] = await this.sequelize.query(`
+        SELECT s.id, s.name, s.state, s.city, s.website,
                MAX(sp.scraped_at) as last_price_update
         FROM suppliers s
         LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id
-        WHERE s.active = true
-        GROUP BY s.id, s.name, s.state, s.city
-        HAVING MAX(sp.scraped_at) IS NULL
-           OR MAX(sp.scraped_at) < $1
+        WHERE s.active = true AND s.website IS NOT NULL
+        GROUP BY s.id, s.name, s.state, s.city, s.website
         ORDER BY s.name
-      `, {
-        bind: [staleThreshold]
+      `);
+
+      // Filter to only scrapable suppliers with stale/no data
+      const staleSuppliers = allSuppliers.filter(s => {
+        // Extract domain from website
+        try {
+          const url = new URL(s.website);
+          const domain = url.hostname.replace(/^www\./, '').toLowerCase();
+
+          // Only include if this supplier is configured for scraping
+          if (!scrapableDomains.has(domain)) return false;
+
+          // Check if stale or never scraped
+          if (!s.last_price_update) return true;
+          return new Date(s.last_price_update) < staleThreshold;
+        } catch {
+          return false;
+        }
       });
 
-      return results.map(r => ({
+      return staleSuppliers.map(r => ({
         id: r.id,
         name: r.name,
         state: r.state,
