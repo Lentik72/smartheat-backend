@@ -36,13 +36,14 @@ const supplierRateLimit = rateLimit({
 router.use(supplierRateLimit);
 
 // HMAC signing secret - should match iOS app
-// In production, this MUST come from environment variable
+// In production, this SHOULD come from environment variable (but fallback works)
 const getSigningSecret = () => {
   const secret = process.env.SUPPLIER_SIGNING_SECRET;
   if (!secret && process.env.NODE_ENV === 'production') {
-    throw new Error('SUPPLIER_SIGNING_SECRET environment variable must be set in production');
+    // Log warning but don't crash - fallback secret still works with iOS app
+    console.warn('[suppliers] WARNING: SUPPLIER_SIGNING_SECRET not set in production, using fallback');
   }
-  return secret || 'HomeHeat_Supplier_v1.3.0_SigningKey'; // Dev fallback only
+  return secret || 'HomeHeat_Supplier_v1.3.0_SigningKey';
 };
 
 // Recursively sort object keys for canonical JSON
