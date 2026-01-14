@@ -11,6 +11,9 @@ const { Sequelize } = require('sequelize');
 const cron = require('node-cron');
 require('dotenv').config();
 
+// Load package.json for version info
+const pkg = require('./package.json');
+
 // V1.6.0: Import price scraper for scheduled runs
 const { runScraper } = require('./scripts/scrape-prices');
 
@@ -304,7 +307,7 @@ app.get('/health', async (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    version: '2.0.0',
+    version: pkg.version,
     services: {
       weather: !!API_KEYS.OPENWEATHER,
       marketData: !!(API_KEYS.FRED || API_KEYS.ALPHA_VANTAGE),
@@ -336,7 +339,7 @@ app.get('/health', async (req, res) => {
 app.get('/api/docs', (req, res) => {
   res.json({
     name: 'SmartHeat Backend API',
-    version: '2.0.0',
+    version: pkg.version,
     description: 'Community & Market Intelligence Platform for Heating Oil',
     endpoints: {
       health: '/health',

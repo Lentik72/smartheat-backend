@@ -36,9 +36,13 @@ const supplierRateLimit = rateLimit({
 router.use(supplierRateLimit);
 
 // HMAC signing secret - should match iOS app
-// In production, this comes from environment variable
+// In production, this MUST come from environment variable
 const getSigningSecret = () => {
-  return process.env.SUPPLIER_SIGNING_SECRET || 'HomeHeat_Supplier_v1.3.0_SigningKey';
+  const secret = process.env.SUPPLIER_SIGNING_SECRET;
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('SUPPLIER_SIGNING_SECRET environment variable must be set in production');
+  }
+  return secret || 'HomeHeat_Supplier_v1.3.0_SigningKey'; // Dev fallback only
 };
 
 // Recursively sort object keys for canonical JSON
@@ -79,6 +83,12 @@ let lastMetaFetch = 0;
 const META_CACHE_TTL = 60 * 1000; // 1 minute cache for meta
 
 const getDirectoryMeta = async (sequelize) => {
+  // Null-safety: return fallback if sequelize not initialized
+  if (!sequelize) {
+    console.warn('[suppliers] getDirectoryMeta called with null sequelize');
+    return { version: 1, supplierCount: 0, lastModified: null };
+  }
+
   const now = Date.now();
   if (cachedDirectoryMeta && (now - lastMetaFetch) < META_CACHE_TTL) {
     return cachedDirectoryMeta;
