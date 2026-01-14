@@ -71,6 +71,9 @@ const { initSupplierPriceModel } = require('./src/models/SupplierPrice');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Trust Railway's proxy for accurate IP detection in rate limiting
+app.set('trust proxy', 1);
+
 // Configure Winston Logger (Railway-compatible)
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
