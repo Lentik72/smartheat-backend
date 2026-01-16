@@ -517,24 +517,45 @@ function scheduleCoverageIntelligence() {
     setTimeout(async () => {
       logger.info('[DailyReports] Running scheduled daily reports...');
 
-      // 1. Coverage Intelligence Report
+      let coverageReport = null;
+      let activityReport = null;
+
+      // 1. Generate Coverage Intelligence Report
       try {
-        const report = await intelligence.runDailyAnalysis();
-        logger.info(`[CoverageIntelligence] Analysis complete: ${report.newLocations.length} new locations, ${report.coverageGaps.length} gaps`);
+        coverageReport = await intelligence.runDailyAnalysis();
+        logger.info(`[CoverageIntelligence] Analysis complete: ${coverageReport.newLocations.length} new locations, ${coverageReport.coverageGaps.length} gaps`);
       } catch (error) {
         logger.error('[CoverageIntelligence] Scheduled analysis failed:', error.message);
       }
 
-      // 2. Activity Analytics Report (V2.4.0)
+      // 2. Generate Activity Analytics Report
       try {
         logger.info('[ActivityAnalytics] Generating daily report...');
-        const activityReport = await activityAnalytics.generateDailyReport();
+        activityReport = await activityAnalytics.generateDailyReport();
         if (activityReport) {
-          await mailer.sendActivityReport(activityReport);
-          logger.info(`[ActivityAnalytics] Daily report sent: ${activityReport.summary.uniqueUsers} users, ${activityReport.summary.totalRequests} requests`);
+          logger.info(`[ActivityAnalytics] Report ready: ${activityReport.summary.uniqueUsers} users, ${activityReport.summary.totalRequests} requests`);
         }
       } catch (error) {
         logger.error('[ActivityAnalytics] Daily report failed:', error.message);
+      }
+
+      // 3. V2.5.2: Send combined report (single email)
+      try {
+        const hasActionable = coverageReport && (
+          coverageReport.newLocations.length > 0 ||
+          coverageReport.recommendations.some(r => r.priority === 'HIGH') ||
+          coverageReport.expansionPatterns.length > 0
+        );
+        const hasActivity = activityReport && activityReport.summary.uniqueUsers > 0;
+
+        if (hasActionable || hasActivity) {
+          await mailer.sendCombinedDailyReport(coverageReport, activityReport);
+          logger.info('[DailyReports] Combined report sent');
+        } else {
+          logger.info('[DailyReports] No actionable items or activity - skipping email');
+        }
+      } catch (error) {
+        logger.error('[DailyReports] Failed to send combined report:', error.message);
       }
 
       // Schedule next run (tomorrow)

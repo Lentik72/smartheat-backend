@@ -340,6 +340,263 @@ class CoverageReportMailer {
   }
 
   /**
+   * V2.5.2: Send combined daily report (Coverage + Activity in one email)
+   * Reduces inbox clutter by combining both reports
+   */
+  async sendCombinedDailyReport(coverageReport, activityReport) {
+    const recipient = this.getRecipient();
+    if (!recipient) {
+      console.log('[CoverageReportMailer] No recipient configured');
+      return false;
+    }
+
+    const html = this.formatCombinedReport(coverageReport, activityReport);
+    const subject = this.getCombinedSubject(coverageReport, activityReport);
+
+    const success = await this.sendEmail(recipient, subject, html);
+    if (success) {
+      console.log(`[CoverageReportMailer] Combined daily report sent to ${recipient}`);
+    }
+    return success;
+  }
+
+  /**
+   * Generate subject line for combined report
+   */
+  getCombinedSubject(coverageReport, activityReport) {
+    const date = new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+
+    const users = activityReport?.summary?.uniqueUsers || 0;
+    const newLocs = coverageReport?.newLocations?.length || 0;
+    const criticalGaps = coverageReport?.coverageGaps?.filter(g => g.supplierCount === 0).length || 0;
+
+    if (criticalGaps > 0) {
+      return `[ACTION] SmartHeat: ${criticalGaps} gap${criticalGaps > 1 ? 's' : ''}, ${users} users - ${date}`;
+    }
+
+    if (newLocs > 0) {
+      return `SmartHeat: ${newLocs} new location${newLocs > 1 ? 's' : ''}, ${users} users - ${date}`;
+    }
+
+    return `SmartHeat Daily Report: ${users} users - ${date}`;
+  }
+
+  /**
+   * Format combined daily report HTML
+   */
+  formatCombinedReport(coverageReport, activityReport) {
+    const styles = `
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 650px; margin: 0 auto; }
+      h2 { color: #1a1a1a; border-bottom: 2px solid #007AFF; padding-bottom: 8px; margin-top: 0; }
+      h3 { color: #444; margin-top: 28px; margin-bottom: 12px; }
+      .section-divider { border-top: 2px solid #e0e0e0; margin: 32px 0; padding-top: 24px; }
+      .stat-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+      .stat-box { background: #f5f5f5; padding: 14px; border-radius: 8px; flex: 1; min-width: 100px; text-align: center; }
+      .stat-value { font-size: 26px; font-weight: 700; color: #007AFF; }
+      .stat-label { font-size: 11px; color: #666; margin-top: 4px; }
+      .trend-up { color: #4caf50; }
+      .trend-down { color: #f44336; }
+      .trend-neutral { color: #666; }
+      table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+      th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; font-size: 13px; }
+      th { background: #f5f5f5; font-weight: 600; }
+      .critical { background: #fee; }
+      .warning { background: #fff8e1; }
+      .success { background: #e8f5e9; }
+      .priority-high { background: #ffcdd2; padding: 12px; margin: 8px 0; border-radius: 4px; }
+      .priority-medium { background: #fff9c4; padding: 12px; margin: 8px 0; border-radius: 4px; }
+      .priority-low { background: #f5f5f5; padding: 12px; margin: 8px 0; border-radius: 4px; }
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+      .badge-critical { background: #f44336; color: white; }
+      .badge-warning { background: #ff9800; color: white; }
+      .badge-good { background: #4caf50; color: white; }
+      ul { margin: 8px 0; padding-left: 20px; }
+      .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+      .fuel-section { background: #fafafa; border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
+      .fuel-oil { border-left: 4px solid #FF9800; }
+      .fuel-propane { border-left: 4px solid #2196F3; }
+    `;
+
+    const trendIcon = (change) => {
+      if (change > 0) return `<span class="trend-up">↑ +${change}</span>`;
+      if (change < 0) return `<span class="trend-down">↓ ${change}</span>`;
+      return `<span class="trend-neutral">→ 0</span>`;
+    };
+
+    const report = coverageReport || { newLocations: [], coverageGaps: [], expansionPatterns: [], supplierHealth: [], recommendations: [], date: new Date() };
+    const activity = activityReport || { summary: { uniqueUsers: 0, totalRequests: 0, uniqueZips: 0, avgResponseTimeMs: 0, errors: 0 }, trend: {}, byState: [], topZips: [], topEndpoints: [], engagements: [], dauHistory: [] };
+
+    return `
+<!DOCTYPE html>
+<html>
+<head><style>${styles}</style></head>
+<body>
+  <h2>SmartHeat Daily Report</h2>
+  <p><strong>Date:</strong> ${report.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+
+  <!-- ===== ACTIVITY SUMMARY ===== -->
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-value">${activity.summary.uniqueUsers}</div>
+      <div class="stat-label">Users (24h)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${report.newLocations.length}</div>
+      <div class="stat-label">New Locations</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${activity.summary.totalRequests}</div>
+      <div class="stat-label">API Requests</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${activity.summary.avgResponseTimeMs}ms</div>
+      <div class="stat-label">Avg Response</div>
+    </div>
+  </div>
+
+  ${activity.trend ? `<p><strong>Week-over-Week:</strong> Users ${trendIcon(activity.trend.usersChange)} | Requests ${trendIcon(activity.trend.requestsChange)}</p>` : ''}
+
+  <!-- ===== COVERAGE RECOMMENDATIONS ===== -->
+  ${report.recommendations.length > 0 ? `
+    <h3>🎯 Action Items</h3>
+    ${report.recommendations.map(rec => `
+      <div class="priority-${rec.priority.toLowerCase()}">
+        <strong>[${rec.priority}]</strong> ${rec.message}
+        <ul>
+          ${rec.details.map(d => `<li>${d}</li>`).join('')}
+        </ul>
+      </div>
+    `).join('')}
+  ` : ''}
+
+  <!-- ===== NEW LOCATIONS ===== -->
+  ${report.newLocations.length > 0 ? `
+    <h3>📍 New User Locations (${report.newLocations.length})</h3>
+    <table>
+      <tr>
+        <th>City</th>
+        <th>State</th>
+        <th>ZIP</th>
+        <th>Suppliers</th>
+        <th>Status</th>
+      </tr>
+      ${report.newLocations.map(loc => `
+        <tr class="${loc.supplierCount === 0 ? 'critical' : loc.supplierCount < 3 ? 'warning' : 'success'}">
+          <td>${loc.city || '—'}</td>
+          <td>${loc.state || '—'}</td>
+          <td>${loc.zipCode}</td>
+          <td>${loc.supplierCount}</td>
+          <td>
+            <span class="badge ${loc.supplierCount === 0 ? 'badge-critical' : loc.supplierCount < 3 ? 'badge-warning' : 'badge-good'}">
+              ${loc.supplierCount === 0 ? 'No Coverage' : loc.supplierCount < 3 ? 'Limited' : 'Good'}
+            </span>
+          </td>
+        </tr>
+      `).join('')}
+    </table>
+  ` : ''}
+
+  <!-- ===== COVERAGE GAPS ===== -->
+  ${report.coverageGaps.length > 0 ? `
+    <h3>⚠️ Coverage Gaps (${report.coverageGaps.length})</h3>
+    <table>
+      <tr>
+        <th>City</th>
+        <th>State</th>
+        <th>ZIP</th>
+        <th>Suppliers</th>
+        <th>User Requests</th>
+      </tr>
+      ${report.coverageGaps.slice(0, 10).map(gap => `
+        <tr class="${gap.supplierCount === 0 ? 'critical' : 'warning'}">
+          <td>${gap.city || '—'}</td>
+          <td>${gap.state || '—'}</td>
+          <td>${gap.zipCode}</td>
+          <td>${gap.supplierCount}</td>
+          <td>${gap.requestCount}</td>
+        </tr>
+      `).join('')}
+    </table>
+    ${report.coverageGaps.length > 10 ? `<p><em>...and ${report.coverageGaps.length - 10} more</em></p>` : ''}
+  ` : '<p>✅ All tracked locations have adequate coverage.</p>'}
+
+  <!-- ===== ACTIVITY DETAILS ===== -->
+  <div class="section-divider">
+    <h3>📊 Activity by State</h3>
+    ${activity.byState.length > 0 ? `
+      <table>
+        <tr><th>State</th><th>Users</th><th>Requests</th></tr>
+        ${activity.byState.slice(0, 8).map(s => `
+          <tr>
+            <td><strong>${s.state}</strong></td>
+            <td>${s.users}</td>
+            <td>${s.requests}</td>
+          </tr>
+        `).join('')}
+      </table>
+    ` : '<p><em>No state data available</em></p>'}
+  </div>
+
+  <!-- ===== FUEL TYPE BREAKDOWN ===== -->
+  ${activity.byFuelType ? `
+    <h3>🛢️ By Fuel Type</h3>
+    <div class="fuel-section fuel-oil">
+      <strong>Heating Oil:</strong> ${activity.byFuelType.heating_oil?.users || 0} users, ${activity.byFuelType.heating_oil?.requests || 0} requests
+    </div>
+    <div class="fuel-section fuel-propane">
+      <strong>Propane:</strong> ${activity.byFuelType.propane?.users || 0} users, ${activity.byFuelType.propane?.requests || 0} requests
+    </div>
+  ` : ''}
+
+  <!-- ===== SUPPLIER ENGAGEMENTS ===== -->
+  ${activity.engagements.length > 0 ? `
+    <h3>👆 Supplier Engagements</h3>
+    <table>
+      <tr><th>Action</th><th>Count</th></tr>
+      ${activity.engagements.map(e => `
+        <tr>
+          <td>${e.type}</td>
+          <td>${e.count}</td>
+        </tr>
+      `).join('')}
+    </table>
+  ` : ''}
+
+  <!-- ===== EXPANSION PATTERNS ===== -->
+  ${report.expansionPatterns.length > 0 ? `
+    <h3>🚀 Expansion Patterns</h3>
+    <p>Regions with multiple new ZIPs in the last 7 days:</p>
+    <ul>
+      ${report.expansionPatterns.map(p => `
+        <li><strong>${p.county}, ${p.state}</strong>: ${p.newZipCount} new ZIPs (${p.zips.join(', ')})</li>
+      `).join('')}
+    </ul>
+  ` : ''}
+
+  <!-- ===== ERRORS ===== -->
+  ${activity.summary.errors > 0 ? `
+    <h3>⚠️ Errors</h3>
+    <p><strong>${activity.summary.errors}</strong> API errors in the last 24 hours.</p>
+  ` : ''}
+
+  <!-- ===== SUPPLIER HEALTH ===== -->
+  ${report.supplierHealth.length > 0 ? `
+    <h3>🩺 Supplier Health</h3>
+    <p>${report.supplierHealth.length} supplier${report.supplierHealth.length !== 1 ? 's have' : ' has'} no price updates in 7+ days.</p>
+  ` : ''}
+
+  <div class="footer">
+    <p>This report is auto-generated daily at 6 AM EST by SmartHeat.</p>
+  </div>
+</body>
+</html>
+    `;
+  }
+
+  /**
    * Send daily activity analytics report
    */
   async sendActivityReport(report) {

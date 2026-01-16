@@ -16,6 +16,19 @@ const { getUserLocationModel, getNewLocations, getCoverageGaps } = require('../m
 const { getSupplierModel } = require('../models/Supplier');
 const { findSuppliersForZip } = require('./supplierMatcher');
 
+// V2.5.2: Commercial/non-market ZIPs to exclude from gap reporting
+// These are downtown business districts with no residential oil heat customers
+const EXCLUDED_ZIPS = new Set([
+  // Manhattan (NYC) - commercial high-rises, ConEd steam, no oil tanks
+  '10001', '10002', '10003', '10004', '10005', '10006', '10007', '10008', '10009',
+  '10010', '10011', '10012', '10013', '10014', '10016', '10017', '10018', '10019',
+  '10020', '10021', '10022', '10023', '10024', '10025', '10026', '10027', '10028',
+  '10029', '10030', '10031', '10032', '10033', '10034', '10035', '10036', '10037',
+  '10038', '10039', '10040', '10044', '10065', '10069', '10075', '10128', '10280',
+  // Center City Philadelphia - downtown business district
+  '19101', '19102', '19103', '19105', '19106', '19107', '19108', '19109'
+]);
+
 class CoverageIntelligenceService {
   constructor(sequelize, mailer = null) {
     this.sequelize = sequelize;
@@ -85,17 +98,8 @@ class CoverageIntelligenceService {
       report.recommendations = this.generateRecommendations(report);
       console.log(`[CoverageIntelligence] Generated ${report.recommendations.length} recommendations`);
 
-      // 6. Send report if actionable
-      if (this.hasActionableItems(report)) {
-        if (this.mailer) {
-          await this.mailer.sendDailyReport(report);
-          console.log('[CoverageIntelligence] Daily report sent');
-        } else {
-          console.log('[CoverageIntelligence] No mailer configured - skipping email');
-        }
-      } else {
-        console.log('[CoverageIntelligence] No actionable items - skipping email');
-      }
+      // V2.5.2: No longer sends email directly - server.js combines with activity report
+      // Email is sent by server.js via mailer.sendCombinedDailyReport()
 
       console.log('[CoverageIntelligence] Daily analysis completed');
       return report;
@@ -108,6 +112,7 @@ class CoverageIntelligenceService {
 
   /**
    * Find locations first seen in last 24 hours
+   * V2.5.2: Skips excluded commercial ZIPs
    */
   async findNewLocations() {
     const UserLocation = getUserLocationModel();
@@ -123,9 +128,12 @@ class CoverageIntelligenceService {
     // Load suppliers for coverage checking
     const allSuppliers = await this.loadSuppliers();
 
-    // Enrich with coverage info
+    // Enrich with coverage info (skip excluded ZIPs)
     const enriched = [];
     for (const loc of locations) {
+      // V2.5.2: Skip excluded commercial ZIPs
+      if (EXCLUDED_ZIPS.has(loc.zipCode)) continue;
+
       const result = findSuppliersForZip(loc.zipCode, allSuppliers, { includeRadius: false });
       enriched.push({
         zipCode: loc.zipCode,
@@ -143,6 +151,7 @@ class CoverageIntelligenceService {
   /**
    * Analyze coverage for all tracked locations
    * Updates coverage quality in database
+   * V2.5.2: Skips excluded commercial ZIPs
    */
   async analyzeCoverage() {
     const UserLocation = getUserLocationModel();
@@ -155,6 +164,17 @@ class CoverageIntelligenceService {
     const gaps = [];
 
     for (const loc of locations) {
+      // V2.5.2: Skip excluded commercial ZIPs
+      if (EXCLUDED_ZIPS.has(loc.zipCode)) {
+        // Update as "excluded" but don't report as gap
+        await loc.update({
+          supplierCount: 0,
+          coverageQuality: 'excluded',
+          lastCoverageCheck: new Date()
+        });
+        continue;
+      }
+
       // Get supplier count for this ZIP
       const result = findSuppliersForZip(loc.zipCode, allSuppliers, { includeRadius: false });
       const supplierCount = result?.suppliers?.length || 0;
