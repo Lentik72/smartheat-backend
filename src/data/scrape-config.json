@@ -728,6 +728,127 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "bandbfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bridgewaterfuelco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "curtinbrosoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "daddysoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "directfuel.net": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})"
+  },
+
+  "gandgfueloilinc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})"
+  },
+
+  "gogreenbiodiesel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})"
+  },
+
+  "guardoil.net": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})"
+  },
+
+  "johnsonfueloil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "kenduvaloil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "midcapediscountoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "myeasyoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "niccolienergy.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "northeastoildelivery.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "raynardbrothersoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "richardsfuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: Price widget loaded via JavaScript",
+    "priceRegex": "fuel-price\"><span>([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "shermanoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})"
+  },
+
+  "trojanoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})"
+  },
+
+  "waverlyoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "yankeefuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_PA": "=== PENNSYLVANIA ===",
 
   "libertybelldiscountoil.com": {
