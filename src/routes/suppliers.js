@@ -8,6 +8,7 @@
 // V2.0.0: Fixed HMAC signature - currentPrice excluded from signing to avoid float precision issues
 // V2.0.1: Added name search parameter for supplier name lookup
 // V2.0.2: Removed notes field from API response (internal only)
+// V2.4.0: Price-first sorting - priced suppliers first (sorted by price), then unpriced (sorted by match quality)
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
@@ -19,6 +20,19 @@ const { findSuppliersForZip, getZipInfo } = require('../services/supplierMatcher
 const { getZipsForCity, getZipsForCounty, normalizeLocation } = require('../services/locationResolver');
 const { getTerminalProximityScore } = require('../services/terminalProximity');
 const { trackLocation } = require('../models/UserLocation');
+
+// V2.4.0: Price freshness thresholds for sorting and display
+const PRICE_FRESH_MS = 48 * 60 * 60 * 1000;   // 48 hours = "fresh" (updated today/yesterday)
+const PRICE_RECENT_MS = 96 * 60 * 60 * 1000;  // 96 hours = "recent" (still valid for display)
+
+// Compute price status based on freshness
+const getPriceStatus = (price) => {
+  if (!price || !price.scrapedAt) return 'none';
+  const age = Date.now() - new Date(price.scrapedAt).getTime();
+  if (age < PRICE_FRESH_MS) return 'fresh';
+  if (age < PRICE_RECENT_MS) return 'recent';
+  return 'stale';
+};
 
 // Rate limiting specifically for supplier endpoint
 // More restrictive than global limit to prevent scraping
@@ -126,7 +140,8 @@ const SIGNATURE_VERSION = 2;
  * V2.0.0: This ensures identical HMAC signatures across platforms
  */
 const stripForSignature = (supplier) => {
-  const { currentPrice, ...rest } = supplier;
+  // V2.4.0: Exclude price-derived fields from signing
+  const { currentPrice, priceStatus, sortGroup, ...rest } = supplier;
   return rest;
 };
 
@@ -389,35 +404,74 @@ router.get('/', async (req, res) => {
       }
     }
 
-    // Convert to array and sort by match count (descending), then alphabetically
-    // V1.5.2: Added terminal proximity as silent ranking factor
-    const aggregatedSuppliers = Array.from(supplierMatchCounts.values())
-      .sort((a, b) => {
-        // Primary: more matching ZIPs = higher rank
-        if (b.matchCount !== a.matchCount) {
-          return b.matchCount - a.matchCount;
-        }
-        // Secondary: better match type
-        const matchOrder = ['zip', 'city', 'county', 'radius'];
-        const aOrder = matchOrder.indexOf(a.bestMatchType);
-        const bOrder = matchOrder.indexOf(b.bestMatchType);
-        if (aOrder !== bOrder) {
-          return aOrder - bOrder;
-        }
-        // Tertiary: terminal proximity (closer to wholesale terminal = likely better pricing)
-        const aProximity = getTerminalProximityScore(a.supplier.city, a.supplier.state);
-        const bProximity = getTerminalProximityScore(b.supplier.city, b.supplier.state);
-        if (bProximity !== aProximity) {
-          return bProximity - aProximity; // Higher score = closer to terminal = ranked higher
-        }
-        // Quaternary: alphabetical
-        return a.supplier.name.localeCompare(b.supplier.name);
-      })
+    // V2.4.0: Price-first sorting - fetch prices before sorting
+    // Convert to array with match data
+    const unsortedSuppliers = Array.from(supplierMatchCounts.values())
       .map(item => ({
         ...item.supplier,
         matchType: item.bestMatchType,
         matchingZipCount: item.matchCount
       }));
+
+    // Fetch prices for ALL matched suppliers (needed for price-first sort)
+    const allSupplierIds = unsortedSuppliers.map(s => s.id);
+    const priceMap = await getLatestPrices(allSupplierIds);
+
+    // V2.4.0: Price-first sorting with freshness tiers
+    // Priced suppliers (fresh/recent) first, sorted by price ASC
+    // Unpriced suppliers (stale/none) second, sorted by match quality
+    const aggregatedSuppliers = unsortedSuppliers.sort((a, b) => {
+      const priceA = priceMap[a.id];
+      const priceB = priceMap[b.id];
+      const statusA = getPriceStatus(priceA);
+      const statusB = getPriceStatus(priceB);
+
+      const isPricedA = statusA === 'fresh' || statusA === 'recent';
+      const isPricedB = statusB === 'fresh' || statusB === 'recent';
+
+      // Primary: priced suppliers before unpriced
+      if (isPricedA !== isPricedB) {
+        return isPricedA ? -1 : 1;
+      }
+
+      // Within priced group: sort by price ASC (cheapest first)
+      if (isPricedA && isPricedB) {
+        const priceValA = parseFloat(priceA.pricePerGallon);
+        const priceValB = parseFloat(priceB.pricePerGallon);
+        if (priceValA !== priceValB) {
+          return priceValA - priceValB;
+        }
+        // Tie-breaker for same price: terminal proximity
+        const aProximity = getTerminalProximityScore(a.city, a.state);
+        const bProximity = getTerminalProximityScore(b.city, b.state);
+        if (bProximity !== aProximity) {
+          return bProximity - aProximity;
+        }
+        // Final tie-breaker: alphabetical
+        return a.name.localeCompare(b.name);
+      }
+
+      // Within unpriced group: original sorting logic
+      // Primary: more matching ZIPs = higher rank
+      if (b.matchingZipCount !== a.matchingZipCount) {
+        return b.matchingZipCount - a.matchingZipCount;
+      }
+      // Secondary: better match type
+      const matchOrder = ['zip', 'city', 'county', 'radius'];
+      const aOrder = matchOrder.indexOf(a.matchType);
+      const bOrder = matchOrder.indexOf(b.matchType);
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
+      }
+      // Tertiary: terminal proximity
+      const aProximity = getTerminalProximityScore(a.city, a.state);
+      const bProximity = getTerminalProximityScore(b.city, b.state);
+      if (bProximity !== aProximity) {
+        return bProximity - aProximity;
+      }
+      // Quaternary: alphabetical
+      return a.name.localeCompare(b.name);
+    });
 
     // Log gap detection for future enrichment (only for single-ZIP search)
     if (searchType === 'zip' && aggregatedGapType) {
@@ -434,18 +488,16 @@ router.get('/', async (req, res) => {
     // Limit results
     const limitedSuppliers = aggregatedSuppliers.slice(0, maxLimit);
 
-    // V1.5.3: Fetch current prices for returned suppliers
-    const supplierIds = limitedSuppliers.map(s => s.id);
-    const priceMap = await getLatestPrices(supplierIds);
-
     // Determine primary match type from top result
     const primaryMatchType = limitedSuppliers.length > 0
       ? limitedSuppliers[0].matchType
       : 'none';
 
-    // Build response data with prices
+    // Build response data with prices and V2.4.0 sorting metadata
     const responseData = limitedSuppliers.map(s => {
       const price = priceMap[s.id];
+      const priceStatus = getPriceStatus(price);
+      const sortGroup = (priceStatus === 'fresh' || priceStatus === 'recent') ? 'priced' : 'unpriced';
       return {
         id: s.id,
         name: s.name,
@@ -466,9 +518,15 @@ router.get('/', async (req, res) => {
           sourceType: price.sourceType,
           scrapedAt: price.scrapedAt,
           expiresAt: price.expiresAt
-        } : null
+        } : null,
+        // V2.4.0: Sorting metadata for iOS display
+        priceStatus,  // 'fresh' | 'recent' | 'stale' | 'none'
+        sortGroup     // 'priced' | 'unpriced'
       };
     });
+
+    // V2.4.0: Count suppliers with prices for iOS display logic
+    const pricedCount = responseData.filter(s => s.sortGroup === 'priced').length;
 
     // Build metadata
     const meta = {
@@ -484,6 +542,8 @@ router.get('/', async (req, res) => {
       // Existing fields
       zip: resolvedZips[0] || null,
       count: limitedSuppliers.length,
+      // V2.4.0: Price sorting metadata
+      pricedCount,
       version: directoryMeta.version,
       supplierCount: directoryMeta.supplierCount,
       // V2.0.0: Signature version for contract tracking
