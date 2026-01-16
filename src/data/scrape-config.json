@@ -1173,5 +1173,64 @@
     "pattern": "direct",
     "notes": "NH Plaistow/Seacoast - Price has 9/10ths in SUP tag (captured as .XX not .XX9).",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2})<SUP>"
+  },
+
+  "_section_ME": "=== MAINE ===",
+
+  "aceoilmaine.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "ME Scarborough - Cash price $2.919 displayed. Serves Cumberland/York County.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "desrochersoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "ME Biddeford - Cash price $2.929 displayed. 60+ years in business.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "dalesoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "ME Richmond - Dale's Cash Fuel. Two-zone pricing ($2.91/$2.98). Serves Portland area.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "cleavesenergy.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/price.php",
+    "notes": "ME Buxton - Serves Cumberland/York County. $ in span tag, number separate.",
+    "priceRegex": "\\$</span>([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "lowestpriceoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Portland - 403 Forbidden. Blocks automated requests.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "orderoilonline.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Portland - 403 Forbidden. Blocks automated requests.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "onlinefuel.net": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Scarborough - No current price displayed (Pre-Buy page only).",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "discountenergy.org": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Scarborough - No price on homepage. Order form only.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   }
 }
