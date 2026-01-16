@@ -140,8 +140,9 @@ const SIGNATURE_VERSION = 2;
  * V2.0.0: This ensures identical HMAC signatures across platforms
  */
 const stripForSignature = (supplier) => {
-  // V2.4.0: Exclude price-derived fields from signing
-  const { currentPrice, priceStatus, sortGroup, ...rest } = supplier;
+  // V2.4.1: Only strip currentPrice (float precision issues)
+  // priceStatus and sortGroup are strings - safe to include in signature
+  const { currentPrice, ...rest } = supplier;
   return rest;
 };
 
