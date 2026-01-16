@@ -318,6 +318,13 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2})/gal"
   },
 
+  "fossilfueloil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ Wharton/Morris County - Will Call COD price shown",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "rigginsoil.com": {
     "enabled": true,
     "pattern": "direct",
@@ -962,6 +969,13 @@
     "pattern": "table",
     "notes": "PA - Werley Energy - price on current-fuel-prices page",
     "pricePath": "/current-fuel-prices/",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "ransonfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA Pottstown - COD heating oil - price displayed on homepage",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
