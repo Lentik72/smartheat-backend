@@ -280,6 +280,35 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "lakewoodfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY Queens/Brooklyn - True COD. Price displayed on homepage.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bonillasfuelservices.com": {
+    "enabled": true,
+    "pattern": "table",
+    "pricePath": "/pricing/",
+    "notes": "NY Suffolk - Bay Shore - True COD. Tiered pricing on pricing page.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "belmaroilco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY Nassau - Inwood - True COD. Cash/credit prices displayed.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "aaafuelandservice.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY Ulster/Dutchess - Kingston area - True COD. Price includes .X99 format.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_NJ": "=== NEW JERSEY ===",
 
   "hackettstownoil.net": {
