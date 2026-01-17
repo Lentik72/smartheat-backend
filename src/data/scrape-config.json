@@ -675,6 +675,49 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2})\\s*/\\s*150"
   },
 
+  "gaskienergy.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})\\s*per gallon"
+  },
+
+  "statelineoilonline.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: CT Hartford County - Price behind login/quote form"
+  },
+
+  "toptierfuelllc.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: CT Hartford County - Price behind online ordering portal"
+  },
+
+  "trinksbrothers.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: CT Hartford County - No price on homepage"
+  },
+
+  "robertsdiscountfuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: CT Hartford County - Price behind quote form"
+  },
+
+  "springbrookiceandfuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: CT Hartford County - No price on site"
+  },
+
+  "eazyoil.net": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Hartford County - Plantsville. True COD. Cash/debit 150g+ price.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_MA": "=== MASSACHUSETTS ===",
 
   "auburnoil.com": {
