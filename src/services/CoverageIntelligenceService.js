@@ -74,7 +74,8 @@ class CoverageIntelligenceService {
       coverageGaps: [],
       expansionPatterns: [],
       supplierHealth: [],
-      recommendations: []
+      recommendations: [],
+      scrapeResults: null  // V1.7.0: Include scrape results for email report
     };
 
     try {
@@ -97,6 +98,12 @@ class CoverageIntelligenceService {
       // 5. Generate recommendations
       report.recommendations = this.generateRecommendations(report);
       console.log(`[CoverageIntelligence] Generated ${report.recommendations.length} recommendations`);
+
+      // 6. V1.7.0: Get recent scrape results (from yesterday's 10 AM run)
+      report.scrapeResults = await this.getRecentScrapeFailures();
+      if (report.scrapeResults) {
+        console.log(`[CoverageIntelligence] Scrape results: ${report.scrapeResults.successCount} success, ${report.scrapeResults.failedCount} failed`);
+      }
 
       // V2.5.2: No longer sends email directly - server.js combines with activity report
       // Email is sent by server.js via mailer.sendCombinedDailyReport()
@@ -398,6 +405,45 @@ class CoverageIntelligenceService {
     `);
 
     return stats[0];
+  }
+
+  /**
+   * V1.7.0: Get most recent scrape run results for daily report
+   * Returns failures from the last 24 hours
+   */
+  async getRecentScrapeFailures() {
+    try {
+      const [runs] = await this.sequelize.query(`
+        SELECT
+          run_at,
+          success_count,
+          failed_count,
+          skipped_count,
+          duration_ms,
+          failures
+        FROM scrape_runs
+        WHERE run_at > NOW() - INTERVAL '24 hours'
+        ORDER BY run_at DESC
+        LIMIT 1
+      `);
+
+      if (runs.length === 0) {
+        return null;
+      }
+
+      const run = runs[0];
+      return {
+        runAt: run.run_at,
+        successCount: run.success_count,
+        failedCount: run.failed_count,
+        skippedCount: run.skipped_count,
+        durationMs: run.duration_ms,
+        failures: run.failures || []
+      };
+    } catch (error) {
+      console.error('[CoverageIntelligence] Error getting scrape failures:', error.message);
+      return null;
+    }
   }
 }
 

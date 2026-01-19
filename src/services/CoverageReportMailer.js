@@ -582,6 +582,27 @@ class CoverageReportMailer {
     <p><strong>${activity.summary.errors}</strong> API errors in the last 24 hours.</p>
   ` : ''}
 
+  <!-- ===== SCRAPE RESULTS ===== -->
+  ${report.scrapeResults ? `
+    <h3>🔄 Price Scraper Results</h3>
+    <p><strong>${report.scrapeResults.successCount}</strong> successful, <strong>${report.scrapeResults.failedCount}</strong> failed, <strong>${report.scrapeResults.skippedCount}</strong> skipped</p>
+    ${report.scrapeResults.failures && report.scrapeResults.failures.length > 0 ? `
+      <table>
+        <tr>
+          <th>Supplier</th>
+          <th>Error</th>
+        </tr>
+        ${report.scrapeResults.failures.slice(0, 15).map(f => `
+          <tr class="warning">
+            <td>${f.supplierName}</td>
+            <td>${f.error}${f.retriedAttempts > 0 ? ` (retried ${f.retriedAttempts}x)` : ''}</td>
+          </tr>
+        `).join('')}
+      </table>
+      ${report.scrapeResults.failures.length > 15 ? `<p><em>...and ${report.scrapeResults.failures.length - 15} more</em></p>` : ''}
+    ` : '<p>✅ All configured suppliers scraped successfully.</p>'}
+  ` : ''}
+
   <!-- ===== SUPPLIER HEALTH ===== -->
   ${report.supplierHealth.length > 0 ? `
     <h3>🩺 Supplier Health</h3>

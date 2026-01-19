@@ -37,9 +37,10 @@ const supplierFilter = args.includes('--supplier')
  * @param {boolean} options.dryRun - Don't save to DB
  * @param {string} options.supplierFilter - Filter by supplier name
  * @param {object} options.logger - Logger instance (defaults to console)
- * @returns {object} Results summary
+ * @returns {object} Results summary with failures array
  */
 async function runScraper(options = {}) {
+  const runStartTime = Date.now();
   const opts = {
     dryRun: options.dryRun ?? dryRun,
     supplierFilter: options.supplierFilter ?? supplierFilter,
@@ -47,7 +48,7 @@ async function runScraper(options = {}) {
   };
   const log = opts.logger;
   log.info('═══════════════════════════════════════════════════════════');
-  log.info('  HomeHeat Price Scraper - V1.6.0');
+  log.info('  HomeHeat Price Scraper - V1.7.0');
   log.info('  ' + new Date().toLocaleString());
   log.info('═══════════════════════════════════════════════════════════');
   log.info('');
@@ -231,6 +232,34 @@ async function runScraper(options = {}) {
       }
     }
 
+    // V1.7.0: Log scrape run to database for daily report
+    const runDuration = Date.now() - runStartTime;
+    const failuresArray = results.failed.map(f => ({
+      supplierName: f.supplierName,
+      error: f.error,
+      retriedAttempts: f.retriedAttempts || 0
+    }));
+
+    if (!opts.dryRun) {
+      try {
+        await sequelize.query(`
+          INSERT INTO scrape_runs (run_at, success_count, failed_count, skipped_count, duration_ms, failures)
+          VALUES (NOW(), $1, $2, $3, $4, $5::jsonb)
+        `, {
+          bind: [
+            results.success.length,
+            results.failed.length,
+            suppliers.length - scrapableSuppliers.length,
+            runDuration,
+            JSON.stringify(failuresArray)
+          ]
+        });
+        log.info('📝 Scrape run logged to database');
+      } catch (logError) {
+        log.warn('⚠️  Failed to log scrape run:', logError.message);
+      }
+    }
+
     await sequelize.close();
     log.info('');
     log.info('🎉 Scrape complete!');
@@ -238,7 +267,9 @@ async function runScraper(options = {}) {
     return {
       success: results.success.length,
       failed: results.failed.length,
-      skipped: suppliers.length - scrapableSuppliers.length
+      skipped: suppliers.length - scrapableSuppliers.length,
+      failures: failuresArray,
+      durationMs: runDuration
     };
 
   } catch (error) {
