@@ -112,9 +112,9 @@
   },
 
   "economy-oil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status).",
+    "notes": "NY - Economy Oil Hudson Valley. May be CAPTCHA blocked intermittently.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -126,9 +126,9 @@
   },
 
   "huntersoil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status).",
+    "notes": "NY - Hunter's Heating Oil. May be CAPTCHA blocked intermittently.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -140,9 +140,9 @@
   },
 
   "stormvilleoil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status). Shows X.XXX without $ sign.",
+    "notes": "NY - Dutchess County - shows X.XXX without $ sign. May be CAPTCHA blocked intermittently.",
     "priceRegex": "([0-9]+\\.[0-9]{3})\\s*(?:per gallon|/gallon)?"
   },
 
@@ -267,16 +267,16 @@
   },
 
   "servallfuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status). NY Dutchess/Putnam/Ulster/Northern Westchester.",
+    "notes": "NY Dutchess/Putnam/Ulster/Northern Westchester. May be CAPTCHA blocked intermittently.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "jurassicfuelsinc.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status). NY - Dutchess/Putnam/Ulster/Orange/Westchester.",
+    "notes": "NY - Jurassic Fuels - Dutchess/Putnam/Ulster/Orange/Westchester. True COD. May be CAPTCHA blocked intermittently.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -334,9 +334,9 @@
   },
 
   "lawmansoil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status). NJ Camden/Burlington/Gloucester.",
+    "notes": "NJ Camden/Burlington/Gloucester - clear price display. May be CAPTCHA blocked intermittently.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -397,9 +397,9 @@
   },
 
   "eaglepetroleumco.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "table",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status). NJ/PA.",
+    "notes": "NJ/PA - Eagle Petroleum - tiered pricing without $ in HTML. May be CAPTCHA blocked intermittently.",
     "priceRegex": "([3-4]\\.[0-9]{2,3})"
   },
 
@@ -735,9 +735,9 @@
   },
 
   "coddiscountfuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status). MA Cape Cod.",
+    "notes": "MA Cape Cod - price in bomb-large-text span without $ sign. May be CAPTCHA blocked intermittently.",
     "priceRegex": "bomb-large-text[^>]*>([0-9]+\\.[0-9]{2,3})<"
   },
 
@@ -756,9 +756,9 @@
   },
 
   "countyenergyproducts.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status). MA.",
+    "notes": "MA - County Energy Products. May be CAPTCHA blocked intermittently.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -905,9 +905,9 @@
   },
 
   "shermanoil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status). MA Worcester.",
+    "notes": "MA Worcester. May be CAPTCHA blocked intermittently.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2})"
   },
 
@@ -995,9 +995,9 @@
   },
 
   "thriftyfuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status). PA.",
+    "notes": "PA - Thrifty Fuel. May be CAPTCHA blocked intermittently.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -1235,9 +1235,9 @@
   },
 
   "603oil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SiteGround CAPTCHA blocking scraper (202 status). NH Lakes Region/Freedom.",
+    "notes": "NH Lakes Region/Freedom - Explicitly COD. May be CAPTCHA blocked intermittently.",
     "priceRegex": "Oil Price[^$]*\\$([0-9]+\\.[0-9]{2,3})"
   },
 
