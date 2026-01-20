@@ -9,6 +9,7 @@ const winston = require('winston');
 const expressWinston = require('express-winston');
 const { Sequelize } = require('sequelize');
 const cron = require('node-cron');
+const path = require('path');
 require('dotenv').config();
 
 // Load package.json for version info
@@ -133,6 +134,10 @@ app.use(limiter);
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// V2.6.0: Serve static website files
+// This allows Railway to host both API and website
+app.use(express.static(path.join(__dirname, 'website')));
 
 // Request logging
 app.use(expressWinston.logger({
@@ -462,29 +467,33 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   });
   logger.info('⏰ Price scraper scheduled: daily at 10:00 AM EST');
 
-  // V2.6.0: Schedule SEO page readiness check at 7:00 PM EST (after scraping window closes)
-  // Note: Actual page generation runs locally and uploads to GoDaddy
-  // This cron just logs data availability for monitoring
+  // V2.6.0: Schedule SEO page generation at 7:00 PM EST (after scraping window closes)
+  // Generates static HTML pages directly on Railway for Google indexability
   cron.schedule('0 19 * * *', async () => {
-    logger.info('📄 Checking SEO page generation readiness (7:00 PM EST)...');
+    logger.info('📄 Starting SEO page generation (7:00 PM EST)...');
     try {
       const { generateSEOPages } = require('./scripts/generate-seo-pages');
-      // Dry run to check data availability without writing files
-      const result = await generateSEOPages({ sequelize, logger, dryRun: true });
+      const websiteDir = path.join(__dirname, 'website');
+
+      const result = await generateSEOPages({
+        sequelize,
+        logger,
+        outputDir: websiteDir,
+        dryRun: false
+      });
 
       if (result.success) {
-        logger.info(`✅ SEO data ready: ${result.statePages} states, ${result.totalSuppliers} suppliers`);
-        logger.info('   Run locally: DATABASE_URL="..." node scripts/generate-seo-pages.js');
+        logger.info(`✅ SEO pages generated: ${result.statePages} state pages, ${result.totalSuppliers} suppliers`);
       } else {
-        logger.warn(`⚠️ SEO data insufficient: ${result.reason} (${result.totalSuppliers} suppliers)`);
+        logger.warn(`⚠️ SEO generation skipped: ${result.reason} (${result.totalSuppliers} suppliers)`);
       }
     } catch (error) {
-      logger.error('❌ SEO readiness check failed:', error.message);
+      logger.error('❌ SEO page generation failed:', error.message);
     }
   }, {
     timezone: 'America/New_York'
   });
-  logger.info('📄 SEO readiness check scheduled: daily at 7:00 PM EST');
+  logger.info('📄 SEO page generator scheduled: daily at 7:00 PM EST');
 
   // V2.1.0: Initialize distributed scheduler in SHADOW MODE
   // Shadow mode logs what it would do without actually scraping
