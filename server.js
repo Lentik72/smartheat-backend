@@ -388,8 +388,9 @@ app.get('/api/docs', (req, res) => {
   });
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
+// Root endpoint - moved to /api for website hosting
+// Website is now served at / via express.static
+app.get('/api', (req, res) => {
   res.json({
     message: 'SmartHeat Backend API v2.0.0',
     status: 'Production Ready',
