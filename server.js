@@ -21,6 +21,9 @@ const { runScraper } = require('./scripts/scrape-prices');
 // V2.1.0: Import distributed scheduler (shadow mode initially)
 const { initScheduler } = require('./src/services/DistributedScheduler');
 
+// V2.6.0: Import scrape backoff for monthly reset
+const { monthlyReset } = require('./src/services/scrapeBackoff');
+
 // V2.4.0: Import Activity Analytics
 const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsService');
 
@@ -496,6 +499,25 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     timezone: 'America/New_York'
   });
   logger.info('📄 SEO page generator scheduled: daily at 7:00 PM EST');
+
+  // V2.6.0: Monthly reset of phone_only suppliers (1st of each month at 6 AM EST)
+  // Gives blocked sites another chance after a month
+  cron.schedule('0 11 1 * *', async () => {
+    logger.info('🔄 Starting monthly phone_only reset (1st of month)...');
+    try {
+      const count = await monthlyReset(sequelize, logger);
+      if (count > 0) {
+        logger.info(`✅ Monthly reset complete: ${count} suppliers reset to active`);
+      } else {
+        logger.info('✅ Monthly reset: No phone_only suppliers to reset');
+      }
+    } catch (error) {
+      logger.error('❌ Monthly reset failed:', error.message);
+    }
+  }, {
+    timezone: 'UTC' // 11 AM UTC = 6 AM EST
+  });
+  logger.info('🔄 Monthly phone_only reset scheduled: 1st of each month at 6 AM EST');
 
   // V2.6.0: Distributed scheduler - ACTIVE MODE
   // Spreads scrapes across 8AM-6PM to reduce detection risk

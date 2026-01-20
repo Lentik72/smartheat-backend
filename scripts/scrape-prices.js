@@ -4,6 +4,7 @@
  * V1.5.0: Scrapes prices from configured supplier websites
  * V1.6.0: Exported for use by cron scheduler in server.js
  * V2.1.0: Support for aggregator_signal source type (displayable=false)
+ * V2.6.0: Backoff logic for blocked sites (cooldown + phone_only)
  *
  * Runs daily at 10:00 AM EST (15:00 UTC) via node-cron in server.js
  *
@@ -23,6 +24,14 @@ const {
   getConfigForSupplier,
   sleep
 } = require('../src/services/priceScraper');
+
+// V2.6.0: Import backoff service
+const {
+  shouldScrapeSupplier,
+  recordSuccess,
+  recordFailure,
+  getBackoffStats
+} = require('../src/services/scrapeBackoff');
 
 // Parse command line args (only when run directly)
 const args = process.argv.slice(2);
@@ -81,8 +90,10 @@ async function runScraper(options = {}) {
     log.info('');
 
     // Get suppliers with websites that allow price display
+    // V2.6.0: Include backoff fields for cooldown/phone_only logic
     let query = `
-      SELECT id, name, website, city, state
+      SELECT id, name, website, city, state,
+             scrape_status, scrape_cooldown_until, consecutive_scrape_failures
       FROM suppliers
       WHERE active = true
       AND allow_price_display = true
@@ -119,7 +130,9 @@ async function runScraper(options = {}) {
     const results = {
       success: [],
       failed: [],
-      skipped: []
+      skipped: [],
+      cooldown: [],    // V2.6.0: Suppliers in cooldown
+      phoneOnly: []    // V2.6.0: Suppliers marked phone_only
     };
 
     const DELAY_MS = 2000; // 2 seconds between requests
@@ -127,6 +140,19 @@ async function runScraper(options = {}) {
     for (let i = 0; i < scrapableSuppliers.length; i++) {
       const supplier = scrapableSuppliers[i];
       const config = getConfigForSupplier(supplier.website, scrapeConfig);
+
+      // V2.6.0: Check backoff status before scraping
+      const backoffCheck = shouldScrapeSupplier(supplier);
+      if (!backoffCheck.shouldScrape) {
+        if (supplier.scrape_status === 'phone_only') {
+          log.info(`[${i + 1}/${scrapableSuppliers.length}] ⛔ ${supplier.name} - ${backoffCheck.reason}`);
+          results.phoneOnly.push({ supplierName: supplier.name, reason: backoffCheck.reason });
+        } else {
+          log.info(`[${i + 1}/${scrapableSuppliers.length}] 🕐 ${supplier.name} - ${backoffCheck.reason}`);
+          results.cooldown.push({ supplierName: supplier.name, reason: backoffCheck.reason });
+        }
+        continue;
+      }
 
       log.info(`[${i + 1}/${scrapableSuppliers.length}] Scraping ${supplier.name}...`);
 
@@ -139,6 +165,11 @@ async function runScraper(options = {}) {
         const retryLabel = result.retriedAttempts ? ` [RETRIED ${result.retriedAttempts}x]` : '';
         log.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal (${result.duration}ms)${aggLabel}${retryLabel}`);
         results.success.push(result);
+
+        // V2.6.0: Record success - reset failure counters
+        if (!opts.dryRun) {
+          await recordSuccess(sequelize, supplier.id);
+        }
 
         // Save to database (unless dry run)
         // V2.1.0: Use result.sourceType to distinguish scraped vs aggregator_signal
@@ -170,6 +201,14 @@ async function runScraper(options = {}) {
         const retryLabel = result.retriedAttempts ? ` [after ${result.retriedAttempts} retries]` : '';
         log.info(`   ❌ ${result.error} (${result.duration}ms)${retryLabel}`);
         results.failed.push(result);
+
+        // V2.6.0: Record failure - update counters, potentially set cooldown/phone_only
+        if (!opts.dryRun) {
+          const backoffResult = await recordFailure(sequelize, supplier.id, supplier.name, log);
+          if (backoffResult.action !== 'none') {
+            // Already logged by recordFailure
+          }
+        }
       }
 
       // Rate limiting - don't hammer servers
@@ -183,9 +222,11 @@ async function runScraper(options = {}) {
     log.info('═══════════════════════════════════════════════════════════');
     log.info('  SCRAPE SUMMARY');
     log.info('═══════════════════════════════════════════════════════════');
-    log.info(`  ✅ Success: ${results.success.length}`);
-    log.info(`  ❌ Failed:  ${results.failed.length}`);
-    log.info(`  ⏭️  Skipped: ${suppliers.length - scrapableSuppliers.length} (no config)`);
+    log.info(`  ✅ Success:    ${results.success.length}`);
+    log.info(`  ❌ Failed:     ${results.failed.length}`);
+    log.info(`  🕐 Cooldown:   ${results.cooldown.length}`);
+    log.info(`  ⛔ Phone-only: ${results.phoneOnly.length}`);
+    log.info(`  ⏭️  No config:  ${suppliers.length - scrapableSuppliers.length}`);
     log.info('');
 
     // Calculate failure rate
@@ -205,6 +246,19 @@ async function runScraper(options = {}) {
       results.failed.forEach(r => {
         log.info(`  - ${r.supplierName}: ${r.error}`);
       });
+    }
+
+    // V2.6.0: Show backoff stats
+    if (!opts.dryRun) {
+      const backoffStats = await getBackoffStats(sequelize);
+      log.info('');
+      log.info('📊 Backoff Status:');
+      log.info(`   Active: ${backoffStats.active_count}`);
+      log.info(`   Cooldown: ${backoffStats.cooldown_count}`);
+      log.info(`   Phone-only: ${backoffStats.phone_only_count}`);
+      if (backoffStats.with_recent_failures > 0) {
+        log.info(`   With recent failures: ${backoffStats.with_recent_failures}`);
+      }
     }
 
     // Show price summary if not dry run
@@ -268,6 +322,8 @@ async function runScraper(options = {}) {
       success: results.success.length,
       failed: results.failed.length,
       skipped: suppliers.length - scrapableSuppliers.length,
+      cooldown: results.cooldown.length,     // V2.6.0
+      phoneOnly: results.phoneOnly.length,   // V2.6.0
       failures: failuresArray,
       durationMs: runDuration
     };
