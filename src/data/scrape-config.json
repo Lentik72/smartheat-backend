@@ -718,6 +718,34 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "westconnenergy.com": {
+    "enabled": true,
+    "pattern": "table",
+    "notes": "CT Southwestern - 17 towns - cash/credit pricing",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "blueflameoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Southern - New Haven/Shoreline - multiple towns",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "reddooroil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Hartford County - Simsbury area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "residentialfuelsystems.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: CT Fairfield County - Price loaded via JavaScript",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_MA": "=== MASSACHUSETTS ===",
 
   "auburnoil.com": {
