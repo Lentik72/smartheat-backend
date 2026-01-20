@@ -331,6 +331,20 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "countylinefuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ Hunterdon County - 26 towns",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "longvalleyoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ Morris/Hunterdon/Somerset/Warren - 30 towns",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "rigginsoil.com": {
     "enabled": true,
     "pattern": "direct",
