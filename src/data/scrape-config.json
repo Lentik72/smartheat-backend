@@ -768,6 +768,27 @@
 
   "_section_MA": "=== MASSACHUSETTS ===",
 
+  "priceriteheatingoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Seekonk/Southern MA - COD price shown",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "handfordoil.com": {
+    "enabled": true,
+    "pattern": "table",
+    "notes": "MA Springfield area - tiered pricing",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "orangeoilco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA New Salem/Franklin County - COD price shown",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "auburnoil.com": {
     "enabled": false,
     "pattern": "direct",
@@ -1098,13 +1119,6 @@
     "enabled": true,
     "pattern": "direct",
     "notes": "RI - Save-On Oil - Providence - COD rate displayed",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "priceriteheatingoil.com": {
-    "enabled": false,
-    "pattern": "direct",
-    "notes": "DISABLED: RI Coventry - NOT COD. Offers automatic delivery + budget plans.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
