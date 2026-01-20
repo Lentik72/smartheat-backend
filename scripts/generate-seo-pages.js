@@ -36,26 +36,39 @@ const STATES = {
   'NH': { name: 'New Hampshire', slug: 'new-hampshire' }
 };
 
-// Parse args
+// Parse args (for CLI mode)
 const args = process.argv.slice(2);
-const dryRun = args.includes('--dry-run');
+const cliDryRun = args.includes('--dry-run');
 
 /**
  * Main entry point
+ * @param {object} options - Configuration options
+ * @param {object} options.sequelize - Existing Sequelize instance (optional)
+ * @param {object} options.logger - Logger instance (default: console)
+ * @param {string} options.outputDir - Output directory (null = use default WEBSITE_DIR)
+ * @param {boolean} options.dryRun - If true, don't write files
  */
-async function generateSEOPages() {
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('  HomeHeat SEO Page Generator - V1.0.0');
-  console.log('  ' + new Date().toLocaleString());
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('');
+async function generateSEOPages(options = {}) {
+  const {
+    sequelize: externalSequelize = null,
+    logger = console,
+    outputDir = WEBSITE_DIR,
+    dryRun = cliDryRun
+  } = options;
+
+  const log = (msg) => logger.info ? logger.info(msg) : console.log(msg);
+
+  log('═══════════════════════════════════════════════════════════');
+  log('  HomeHeat SEO Page Generator - V1.0.0');
+  log('  ' + new Date().toLocaleString());
+  log('═══════════════════════════════════════════════════════════');
 
   if (dryRun) {
-    console.log('🔍 DRY RUN - No files will be written\n');
+    log('🔍 DRY RUN - No files will be written');
   }
 
-  // Connect to database
-  const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  // Use provided sequelize or create new connection
+  const sequelize = externalSequelize || new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     logging: false,
     dialectOptions: {
@@ -66,44 +79,51 @@ async function generateSEOPages() {
     }
   });
 
+  const shouldCloseConnection = !externalSequelize; // Only close if we created it
+
   try {
-    await sequelize.authenticate();
-    console.log('✅ Database connected\n');
+    if (!externalSequelize) {
+      await sequelize.authenticate();
+      log('✅ Database connected');
+    }
+
+    // Determine output paths
+    const pricesDir = outputDir ? path.join(outputDir, 'prices') : PRICES_DIR;
+    const websiteDir = outputDir || WEBSITE_DIR;
 
     // 1. Get all suppliers with fresh prices
     const suppliers = await getSupplierPrices(sequelize);
-    console.log(`📊 Found ${suppliers.length} suppliers with prices\n`);
+    log(`📊 Found ${suppliers.length} suppliers with prices`);
 
     // 2. SAFETY CHECK: Abort if insufficient data
     if (suppliers.length < MIN_SUPPLIERS_REQUIRED) {
-      console.log(`❌ CRITICAL: Only ${suppliers.length} suppliers found (need ${MIN_SUPPLIERS_REQUIRED}+)`);
-      console.log('   Aborting to prevent blank pages.');
-      await sequelize.close();
-      return { success: false, reason: 'insufficient_data' };
+      log(`❌ CRITICAL: Only ${suppliers.length} suppliers found (need ${MIN_SUPPLIERS_REQUIRED}+)`);
+      log('   Aborting to prevent blank pages.');
+      if (shouldCloseConnection) await sequelize.close();
+      return { success: false, reason: 'insufficient_data', totalSuppliers: suppliers.length };
     }
 
     // 3. Group by state
     const byState = groupByState(suppliers);
-    console.log('📍 Suppliers by state:');
+    log('📍 Suppliers by state:');
     for (const [state, list] of Object.entries(byState)) {
-      console.log(`   ${state}: ${list.length} suppliers`);
+      log(`   ${state}: ${list.length} suppliers`);
     }
-    console.log('');
 
     // 4. Create prices directory if needed
     if (!dryRun) {
-      await fs.mkdir(PRICES_DIR, { recursive: true });
+      await fs.mkdir(pricesDir, { recursive: true });
     }
 
     // 5. Generate national dashboard data
     const dashboard = generateDashboardData(byState);
-    console.log('📊 Generated national dashboard data');
+    log('📊 Generated national dashboard data');
 
     // 6. Generate state pages
     let stateCount = 0;
     for (const [stateCode, stateSuppliers] of Object.entries(byState)) {
       if (stateSuppliers.length < 3) {
-        console.log(`   ⏭️  Skipping ${stateCode} (only ${stateSuppliers.length} suppliers)`);
+        log(`   ⏭️  Skipping ${stateCode} (only ${stateSuppliers.length} suppliers)`);
         continue;
       }
 
@@ -111,46 +131,45 @@ async function generateSEOPages() {
       if (!stateInfo) continue;
 
       const html = generateStatePage(stateCode, stateInfo, stateSuppliers, byState);
-      const outputPath = path.join(PRICES_DIR, `${stateInfo.slug}.html`);
+      const outputPath = path.join(pricesDir, `${stateInfo.slug}.html`);
 
       if (!dryRun) {
         await fs.writeFile(outputPath, html, 'utf-8');
       }
-      console.log(`   ✅ Generated ${stateInfo.slug}.html (${stateSuppliers.length} suppliers)`);
+      log(`   ✅ Generated ${stateInfo.slug}.html (${stateSuppliers.length} suppliers)`);
       stateCount++;
     }
 
     // 7. Generate leaderboard HTML snippet for prices.html injection
     const leaderboardHtml = generateLeaderboardSnippet(dashboard);
-    const leaderboardPath = path.join(PRICES_DIR, '_leaderboard-snippet.html');
+    const leaderboardPath = path.join(pricesDir, '_leaderboard-snippet.html');
     if (!dryRun) {
       await fs.writeFile(leaderboardPath, leaderboardHtml, 'utf-8');
     }
-    console.log(`   ✅ Generated _leaderboard-snippet.html`);
+    log(`   ✅ Generated _leaderboard-snippet.html`);
 
     // 8. Update sitemap
-    const sitemapPath = path.join(WEBSITE_DIR, 'sitemap.xml');
+    const sitemapPath = path.join(websiteDir, 'sitemap.xml');
     const sitemap = await generateSitemap(Object.keys(byState).filter(s => byState[s].length >= 3));
     if (!dryRun) {
       await fs.writeFile(sitemapPath, sitemap, 'utf-8');
     }
-    console.log(`   ✅ Updated sitemap.xml\n`);
+    log(`   ✅ Updated sitemap.xml`);
 
     // Summary
-    console.log('═══════════════════════════════════════════════════════════');
-    console.log('  GENERATION COMPLETE');
-    console.log('═══════════════════════════════════════════════════════════');
-    console.log(`  State pages: ${stateCount}`);
-    console.log(`  Total suppliers: ${suppliers.length}`);
-    console.log(`  Output directory: ${PRICES_DIR}`);
-    console.log('');
+    log('═══════════════════════════════════════════════════════════');
+    log('  GENERATION COMPLETE');
+    log('═══════════════════════════════════════════════════════════');
+    log(`  State pages: ${stateCount}`);
+    log(`  Total suppliers: ${suppliers.length}`);
+    log(`  Output directory: ${pricesDir}`);
 
-    await sequelize.close();
-    return { success: true, stateCount, supplierCount: suppliers.length };
+    if (shouldCloseConnection) await sequelize.close();
+    return { success: true, statePages: stateCount, totalSuppliers: suppliers.length };
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
-    await sequelize.close();
+    log(`❌ Error: ${error.message}`);
+    if (shouldCloseConnection) await sequelize.close();
     throw error;
   }
 }

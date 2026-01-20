@@ -462,6 +462,30 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   });
   logger.info('⏰ Price scraper scheduled: daily at 10:00 AM EST');
 
+  // V2.6.0: Schedule SEO page readiness check at 7:00 PM EST (after scraping window closes)
+  // Note: Actual page generation runs locally and uploads to GoDaddy
+  // This cron just logs data availability for monitoring
+  cron.schedule('0 19 * * *', async () => {
+    logger.info('📄 Checking SEO page generation readiness (7:00 PM EST)...');
+    try {
+      const { generateSEOPages } = require('./scripts/generate-seo-pages');
+      // Dry run to check data availability without writing files
+      const result = await generateSEOPages({ sequelize, logger, dryRun: true });
+
+      if (result.success) {
+        logger.info(`✅ SEO data ready: ${result.statePages} states, ${result.totalSuppliers} suppliers`);
+        logger.info('   Run locally: DATABASE_URL="..." node scripts/generate-seo-pages.js');
+      } else {
+        logger.warn(`⚠️ SEO data insufficient: ${result.reason} (${result.totalSuppliers} suppliers)`);
+      }
+    } catch (error) {
+      logger.error('❌ SEO readiness check failed:', error.message);
+    }
+  }, {
+    timezone: 'America/New_York'
+  });
+  logger.info('📄 SEO readiness check scheduled: daily at 7:00 PM EST');
+
   // V2.1.0: Initialize distributed scheduler in SHADOW MODE
   // Shadow mode logs what it would do without actually scraping
   // After comparing results with fixed cron for 1 week, switch to active mode
