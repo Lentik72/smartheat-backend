@@ -75,7 +75,8 @@ class CoverageIntelligenceService {
       expansionPatterns: [],
       supplierHealth: [],
       recommendations: [],
-      scrapeResults: null  // V1.7.0: Include scrape results for email report
+      scrapeResults: null,  // V1.7.0: Include scrape results for email report
+      scrapeHealth: null    // V2.6.0: Track blocked/stale sites for trend monitoring
     };
 
     try {
@@ -103,6 +104,12 @@ class CoverageIntelligenceService {
       report.scrapeResults = await this.getRecentScrapeFailures();
       if (report.scrapeResults) {
         console.log(`[CoverageIntelligence] Scrape results: ${report.scrapeResults.successCount} success, ${report.scrapeResults.failedCount} failed`);
+      }
+
+      // 7. V2.6.0: Get scrape health (blocked/stale sites trend)
+      report.scrapeHealth = await this.getScrapeHealth();
+      if (report.scrapeHealth) {
+        console.log(`[CoverageIntelligence] Scrape health: ${report.scrapeHealth.scrapedToday}/${report.scrapeHealth.totalScrapable} scraped today, ${report.scrapeHealth.blockedCount} blocked`);
       }
 
       // V2.5.2: No longer sends email directly - server.js combines with activity report
@@ -442,6 +449,113 @@ class CoverageIntelligenceService {
       };
     } catch (error) {
       console.error('[CoverageIntelligence] Error getting scrape failures:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * V2.6.0: Get scrape health metrics for daily report
+   * Tracks blocked/stale sites and trend over time
+   */
+  async getScrapeHealth() {
+    try {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+      const weekAgoStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      // Get all suppliers with scrape history
+      const [suppliers] = await this.sequelize.query(`
+        SELECT
+          s.id, s.name, s.website,
+          sp.scraped_at, sp.price_per_gallon, sp.expires_at
+        FROM suppliers s
+        LEFT JOIN (
+          SELECT DISTINCT ON (supplier_id) *
+          FROM supplier_prices
+          ORDER BY supplier_id, scraped_at DESC
+        ) sp ON s.id = sp.supplier_id
+        WHERE s.active = true
+          AND s.website IS NOT NULL
+          AND s.website != ''
+        ORDER BY sp.scraped_at DESC NULLS LAST
+      `);
+
+      // Categorize suppliers
+      let scrapedToday = 0;
+      let scrapedYesterday = 0;
+      let staleCount = 0;  // 2+ days old
+      let neverScraped = 0;
+      let blockedSites = [];
+
+      for (const s of suppliers) {
+        if (!s.scraped_at) {
+          neverScraped++;
+        } else {
+          const scrapeDate = new Date(s.scraped_at);
+          const expiresAt = s.expires_at ? new Date(s.expires_at) : null;
+
+          if (scrapeDate >= todayStart) {
+            scrapedToday++;
+          } else if (scrapeDate >= yesterdayStart) {
+            scrapedYesterday++;
+          } else {
+            staleCount++;
+            // Track as blocked if it was working before (has price) but now stale
+            if (s.price_per_gallon) {
+              const daysSinceUpdate = Math.floor((now - scrapeDate) / (24 * 60 * 60 * 1000));
+              blockedSites.push({
+                name: s.name,
+                website: s.website,
+                lastPrice: parseFloat(s.price_per_gallon),
+                lastScrape: s.scraped_at,
+                daysSinceUpdate
+              });
+            }
+          }
+        }
+      }
+
+      const totalScrapable = suppliers.length - neverScraped;
+      const successRate = totalScrapable > 0
+        ? Math.round((scrapedToday / totalScrapable) * 100)
+        : 0;
+
+      // Get historical data for trend (from scrape_runs)
+      const [historicalRuns] = await this.sequelize.query(`
+        SELECT
+          DATE(run_at) as run_date,
+          success_count,
+          failed_count,
+          skipped_count
+        FROM scrape_runs
+        WHERE run_at > NOW() - INTERVAL '7 days'
+        ORDER BY run_at DESC
+      `);
+
+      // Calculate 7-day trend
+      let weeklyTrend = null;
+      if (historicalRuns.length >= 2) {
+        const recentFailures = historicalRuns.slice(0, 3).reduce((sum, r) => sum + (r.failed_count || 0), 0);
+        const olderFailures = historicalRuns.slice(-3).reduce((sum, r) => sum + (r.failed_count || 0), 0);
+        weeklyTrend = recentFailures > olderFailures ? 'increasing' :
+                      recentFailures < olderFailures ? 'decreasing' : 'stable';
+      }
+
+      return {
+        scrapedToday,
+        scrapedYesterday,
+        staleCount,
+        neverScraped,
+        blockedCount: blockedSites.length,
+        totalScrapable,
+        successRate,
+        blockedSites: blockedSites.slice(0, 15),  // Top 15 for report
+        weeklyTrend,
+        historicalRuns: historicalRuns.slice(0, 7)  // Last 7 days
+      };
+    } catch (error) {
+      console.error('[CoverageIntelligence] Error getting scrape health:', error.message);
       return null;
     }
   }

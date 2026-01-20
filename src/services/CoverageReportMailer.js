@@ -582,9 +582,53 @@ class CoverageReportMailer {
     <p><strong>${activity.summary.errors}</strong> API errors in the last 24 hours.</p>
   ` : ''}
 
+  <!-- ===== SCRAPE HEALTH (V2.6.0) ===== -->
+  ${report.scrapeHealth ? `
+    <h3>🔄 Scrape Health</h3>
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-value">${report.scrapeHealth.scrapedToday}</div>
+        <div class="stat-label">Scraped Today</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${report.scrapeHealth.blockedCount}</div>
+        <div class="stat-label">Blocked/Stale</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${report.scrapeHealth.successRate}%</div>
+        <div class="stat-label">Success Rate</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${report.scrapeHealth.weeklyTrend === 'increasing' ? '📈' : report.scrapeHealth.weeklyTrend === 'decreasing' ? '📉' : '➡️'}</div>
+        <div class="stat-label">Blocking Trend</div>
+      </div>
+    </div>
+    ${report.scrapeHealth.blockedCount > 0 ? `
+      <p><strong>Blocked sites (${report.scrapeHealth.blockedCount}):</strong></p>
+      <table>
+        <tr>
+          <th>Supplier</th>
+          <th>Last Price</th>
+          <th>Days Stale</th>
+        </tr>
+        ${report.scrapeHealth.blockedSites.slice(0, 10).map(s => `
+          <tr class="warning">
+            <td>${s.name}</td>
+            <td>$${s.lastPrice.toFixed(2)}</td>
+            <td>${s.daysSinceUpdate}d</td>
+          </tr>
+        `).join('')}
+      </table>
+      ${report.scrapeHealth.blockedCount > 10 ? `<p><em>...and ${report.scrapeHealth.blockedCount - 10} more</em></p>` : ''}
+      ${report.scrapeHealth.weeklyTrend === 'increasing' ? `
+        <p class="priority-medium">⚠️ <strong>Blocking trend increasing.</strong> Consider adding rotating proxies if this continues.</p>
+      ` : ''}
+    ` : '<p>✅ All scrapable sites working.</p>'}
+  ` : ''}
+
   <!-- ===== SCRAPE RESULTS ===== -->
   ${report.scrapeResults ? `
-    <h3>🔄 Price Scraper Results</h3>
+    <h3>📋 Yesterday's Scrape Run</h3>
     <p><strong>${report.scrapeResults.successCount}</strong> successful, <strong>${report.scrapeResults.failedCount}</strong> failed, <strong>${report.scrapeResults.skippedCount}</strong> skipped</p>
     ${report.scrapeResults.failures && report.scrapeResults.failures.length > 0 ? `
       <table>

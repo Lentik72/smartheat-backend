@@ -453,21 +453,21 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info('🔒 Security: Helmet, CORS, Rate limiting enabled');
 
-  // V1.6.0: Schedule daily price scraping at 10:00 AM EST (15:00 UTC)
-  // Cron format: minute hour day month weekday
-  // '0 15 * * *' = 15:00 UTC = 10:00 AM EST / 11:00 AM EDT
-  cron.schedule('0 15 * * *', async () => {
-    logger.info('⏰ Starting scheduled price scrape (10:00 AM EST)...');
-    try {
-      const result = await runScraper({ logger });
-      logger.info(`✅ Scheduled scrape complete: ${result.success} success, ${result.failed} failed`);
-    } catch (error) {
-      logger.error('❌ Scheduled scrape failed:', error.message);
-    }
-  }, {
-    timezone: 'America/New_York'  // Ensures DST is handled correctly
-  });
-  logger.info('⏰ Price scraper scheduled: daily at 10:00 AM EST');
+  // V2.6.0: DISABLED fixed 10 AM scrape - now using distributed scheduler (8AM-6PM)
+  // Keeping commented for rollback if needed
+  // cron.schedule('0 15 * * *', async () => {
+  //   logger.info('⏰ Starting scheduled price scrape (10:00 AM EST)...');
+  //   try {
+  //     const result = await runScraper({ logger });
+  //     logger.info(`✅ Scheduled scrape complete: ${result.success} success, ${result.failed} failed`);
+  //   } catch (error) {
+  //     logger.error('❌ Scheduled scrape failed:', error.message);
+  //   }
+  // }, {
+  //   timezone: 'America/New_York'
+  // });
+  // logger.info('⏰ Price scraper scheduled: daily at 10:00 AM EST');
+  logger.info('⏰ Fixed 10 AM scrape DISABLED - using distributed scheduler instead');
 
   // V2.6.0: Schedule SEO page generation at 7:00 PM EST (after scraping window closes)
   // Generates static HTML pages directly on Railway for Google indexability
@@ -497,18 +497,18 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   });
   logger.info('📄 SEO page generator scheduled: daily at 7:00 PM EST');
 
-  // V2.1.0: Initialize distributed scheduler in SHADOW MODE
-  // Shadow mode logs what it would do without actually scraping
-  // After comparing results with fixed cron for 1 week, switch to active mode
+  // V2.6.0: Distributed scheduler - ACTIVE MODE
+  // Spreads scrapes across 8AM-6PM to reduce detection risk
+  // Each supplier gets a consistent daily time based on ID hash + jitter
   const distributedScheduler = initScheduler({
     sequelize,
     logger,
-    shadowMode: true  // SHADOW MODE: Compare with fixed cron before enabling
+    shadowMode: false  // ACTIVE: Actually scraping now
   });
 
   if (distributedScheduler) {
     distributedScheduler.start();
-    logger.info('📅 Distributed scheduler started (SHADOW MODE)');
+    logger.info('📅 Distributed scheduler started (ACTIVE - scrapes spread 8AM-6PM EST)');
   }
 
   // V2.3.0: Schedule Coverage Intelligence daily analysis
