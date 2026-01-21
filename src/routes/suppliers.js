@@ -573,8 +573,12 @@ router.get('/', async (req, res) => {
     logger?.info(`[Suppliers] Returned ${responseData.length} suppliers for ${searchDesc} via ${primaryMatchType} match`);
 
     // V2.3.0: Track user location for Coverage Intelligence
+    // V2.7.0: Skip tracking for test traffic (simulator, excluded devices)
     // Non-blocking - fire and forget
-    if (searchType === 'zip' && resolvedZips.length > 0) {
+    const analytics = req.app.locals.activityAnalytics;
+    const isTestTraffic = analytics?.isTestTraffic?.(req) ?? false;
+
+    if (searchType === 'zip' && resolvedZips.length > 0 && !isTestTraffic) {
       const primaryZip = resolvedZips[0];
       trackLocation(primaryZip, {
         city: aggregatedUserInfo?.city,

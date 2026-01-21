@@ -17,10 +17,44 @@ class ActivityAnalyticsService {
     this.BUFFER_SIZE = 50;
     this.FLUSH_INTERVAL_MS = 30000; // 30 seconds
 
+    // V2.7.0: Excluded device IDs (Leo's test devices)
+    // Set via EXCLUDED_DEVICE_IDS env var (comma-separated)
+    this.excludedDeviceIds = (process.env.EXCLUDED_DEVICE_IDS || '')
+      .split(',')
+      .map(id => id.trim().toUpperCase())
+      .filter(id => id.length > 0);
+
     // Start periodic flush
     this.flushInterval = setInterval(() => this.flushRequestBuffer(), this.FLUSH_INTERVAL_MS);
 
     console.log('[ActivityAnalytics] Service initialized');
+    if (this.excludedDeviceIds.length > 0) {
+      console.log(`[ActivityAnalytics] Excluding ${this.excludedDeviceIds.length} device ID(s) from tracking`);
+    }
+  }
+
+  /**
+   * V2.7.0: Check if request is test traffic (should be excluded from analytics)
+   * Checks: X-Test-Mode header, X-Simulator header, X-Device-ID in excluded list
+   */
+  isTestTraffic(req) {
+    // Check X-Test-Mode header (for curl/API testing)
+    if (req.get('X-Test-Mode') === 'true') {
+      return true;
+    }
+
+    // Check X-Simulator header (iOS Simulator)
+    if (req.get('X-Simulator') === 'true') {
+      return true;
+    }
+
+    // Check X-Device-ID against excluded list
+    const deviceId = req.get('X-Device-ID');
+    if (deviceId && this.excludedDeviceIds.includes(deviceId.toUpperCase())) {
+      return true;
+    }
+
+    return false;
   }
 
   /**
@@ -70,8 +104,14 @@ class ActivityAnalyticsService {
 
   /**
    * Log an API request (buffered for performance)
+   * V2.7.0: Skip test traffic (simulator, excluded devices, X-Test-Mode header)
    */
   logRequest(req, res, responseTimeMs) {
+    // V2.7.0: Skip test traffic
+    if (this.isTestTraffic(req)) {
+      return;
+    }
+
     // Check both 'zip' and 'zipCode' query params (suppliers API uses 'zip')
     const zipCode = req.params?.zipCode || req.params?.zip ||
                     req.query?.zipCode || req.query?.zip ||
