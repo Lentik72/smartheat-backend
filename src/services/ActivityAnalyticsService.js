@@ -50,6 +50,13 @@ class ActivityAnalyticsService {
 
     // Check X-Device-ID against excluded list
     const deviceId = req.get('X-Device-ID');
+
+    // TEMPORARY: Log device IDs to capture Leo's iPhone ID
+    // Remove this after setting EXCLUDED_DEVICE_IDS
+    if (deviceId) {
+      console.log(`[ActivityAnalytics] Device ID seen: ${deviceId}`);
+    }
+
     if (deviceId && this.excludedDeviceIds.includes(deviceId.toUpperCase())) {
       return true;
     }
