@@ -210,7 +210,35 @@ router.get('/', async (req, res) => {
     });
   }
 
-  // Validate ZIP format if provided
+  // V2.9.0: Detect Canadian postal codes and return waitlist response
+  // Canadian format: A1A 1A1 or A1A1A1 (letter-digit-letter digit-letter-digit)
+  const canadianPostalRegex = /^[A-Za-z]\d[A-Za-z][\s-]?\d[A-Za-z]\d$/;
+  if (hasZip && canadianPostalRegex.test(zip.trim())) {
+    const normalizedPostal = zip.trim().toUpperCase().replace(/[\s-]/g, '');
+    const formattedPostal = `${normalizedPostal.slice(0, 3)} ${normalizedPostal.slice(3)}`;
+
+    logger?.info(`[Suppliers] Canadian postal code detected: ${formattedPostal} - returning waitlist response`);
+
+    return res.json({
+      data: [],
+      meta: {
+        regionStatus: 'waitlist',
+        region: 'CA',
+        postalCode: formattedPostal,
+        message: 'We are currently focused on the US Northeast. Sign up to be notified when we launch in Canada.',
+        waitlistUrl: '/api/waitlist',
+        searchType: 'postal_code',
+        count: 0,
+        version: directoryMeta?.version || '1.0.0',
+        supplierCount: 0,
+        signatureVersion: SIGNATURE_VERSION,
+        generatedAt: new Date().toISOString()
+      },
+      signature: 'waitlist'  // Special signature for waitlist responses
+    });
+  }
+
+  // Validate US ZIP format if provided
   if (hasZip && !/^\d{5}(-\d{4})?$/.test(zip.trim())) {
     return res.status(400).json({
       error: 'Invalid ZIP code format',

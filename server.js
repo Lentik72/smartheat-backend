@@ -31,7 +31,7 @@ const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsServic
 const CoverageReportMailer = require('./src/services/CoverageReportMailer');
 
 // Import route modules with error handling
-let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes;
+let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes;
 
 try {
   weatherRoutes = require('./src/routes/weather');
@@ -43,6 +43,7 @@ try {
   suppliersRoutes = require('./src/routes/suppliers');  // V1.3.0: Dynamic supplier directory
   intelligenceRoutes = require('./src/routes/intelligence');  // V2.2.0: Market intelligence
   activityAnalyticsRoutes = require('./src/routes/activity-analytics');  // V2.4.0: Activity analytics
+  waitlistRoutes = require('./src/routes/waitlist');  // V2.9.0: Canada waitlist
 } catch (error) {
   console.error('Error loading route modules:', error.message);
   // Create placeholder routers if routes fail to load
@@ -269,6 +270,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Device ID tracking migration:', err.message);
         });
 
+        // V2.9.0: Run migration for Canada waitlist
+        const { up: runWaitlistMigration } = require('./src/migrations/009-add-waitlist');
+        runWaitlistMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Waitlist migration:', err.message);
+        });
+
         logger.info('📊 Database ready for operations');
       })
       .catch(err => {
@@ -422,6 +429,7 @@ app.use('/api/admin/activity', activityAnalyticsRoutes); // V2.4.0: Activity Ana
 app.use('/api/activity', activityAnalyticsRoutes); // V2.4.0: Activity Analytics (app)
 app.use('/api/v1/suppliers', suppliersRoutes);  // V1.3.0: Dynamic supplier directory
 app.use('/api/v1/market', intelligenceRoutes);  // V2.2.0: Market intelligence
+app.use('/api/waitlist', waitlistRoutes);  // V2.9.0: Canada waitlist
 
 // Cache status endpoint
 app.get('/api/cache/status', (req, res) => {

@@ -584,6 +584,30 @@ class ActivityAnalyticsService {
       const oilStats = byFuelType.find(f => f.fuel_type === 'heating_oil') || { users: 0, zips: 0, requests: 0 };
       const propaneStats = byFuelType.find(f => f.fuel_type === 'propane') || { users: 0, zips: 0, requests: 0 };
 
+      // V2.9.0: Get Canada waitlist stats
+      let waitlistStats = { total: 0, today: 0, byProvince: [] };
+      try {
+        const [waitlistTotal] = await this.sequelize.query(`
+          SELECT COUNT(*) as total FROM waitlist WHERE country = 'CA'
+        `);
+        const [waitlistToday] = await this.sequelize.query(`
+          SELECT COUNT(*) as today FROM waitlist
+          WHERE country = 'CA' AND created_at >= NOW() - INTERVAL '24 hours'
+        `);
+        const [waitlistByProvince] = await this.sequelize.query(`
+          SELECT province, COUNT(*) as count FROM waitlist
+          WHERE country = 'CA' AND province IS NOT NULL
+          GROUP BY province ORDER BY count DESC
+        `);
+        waitlistStats = {
+          total: parseInt(waitlistTotal[0]?.total) || 0,
+          today: parseInt(waitlistToday[0]?.today) || 0,
+          byProvince: waitlistByProvince.map(p => ({ province: p.province, count: parseInt(p.count) }))
+        };
+      } catch (e) {
+        // Waitlist table might not exist yet - ignore
+      }
+
       const oilByState = byStateFuel.filter(s => s.fuel_type === 'heating_oil').map(s => ({
         state: s.state,
         users: parseInt(s.users),
@@ -643,7 +667,9 @@ class ActivityAnalyticsService {
           users: d.unique_users,
           requests: d.total_requests,
           usersByFuel: d.users_by_fuel || {}
-        }))
+        })),
+        // V2.9.0: Canada waitlist
+        waitlist: waitlistStats
       };
     } catch (error) {
       console.error('[ActivityAnalytics] Failed to generate daily report:', error.message);

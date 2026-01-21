@@ -902,6 +902,33 @@ class CoverageReportMailer {
     </table>
   ` : ''}
 
+  <!-- V2.9.0: Canada Waitlist -->
+  ${report.waitlist && report.waitlist.total > 0 ? `
+    <h3>🇨🇦 Canada Waitlist</h3>
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-number">${report.waitlist.total}</div>
+        <div class="stat-label">Total Signups</div>
+      </div>
+      <div class="stat-box ${report.waitlist.today > 0 ? 'stat-highlight' : ''}">
+        <div class="stat-number">${report.waitlist.today}</div>
+        <div class="stat-label">New Today</div>
+      </div>
+    </div>
+    ${report.waitlist.byProvince && report.waitlist.byProvince.length > 0 ? `
+      <h4>By Province</h4>
+      <table>
+        <tr><th>Province</th><th>Signups</th></tr>
+        ${report.waitlist.byProvince.map(p => `
+          <tr>
+            <td>${p.province}</td>
+            <td>${p.count}</td>
+          </tr>
+        `).join('')}
+      </table>
+    ` : ''}
+  ` : ''}
+
   <!-- Errors -->
   ${report.summary.errors > 0 ? `
     <h3>⚠️ Errors</h3>
