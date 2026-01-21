@@ -105,6 +105,7 @@ class ActivityAnalyticsService {
   /**
    * Log an API request (buffered for performance)
    * V2.7.0: Skip test traffic (simulator, excluded devices, X-Test-Mode header)
+   * V2.8.0: Capture device_id for more accurate unique user tracking
    */
   logRequest(req, res, responseTimeMs) {
     // V2.7.0: Skip test traffic
@@ -120,6 +121,9 @@ class ActivityAnalyticsService {
     // V2.5.0: Capture fuel type from request (default: heating_oil)
     const fuelType = req.query?.fuelType || req.body?.fuelType || null;
 
+    // V2.8.0: Capture device ID for unique user tracking (more accurate than IP)
+    const deviceId = req.get('X-Device-ID') || null;
+
     this.requestBuffer.push({
       endpoint: req.route?.path || req.path,
       method: req.method,
@@ -128,6 +132,7 @@ class ActivityAnalyticsService {
       zip_code: zipCode?.substring(0, 5) || null,
       state: this.getStateFromZip(zipCode),
       fuel_type: fuelType,
+      device_id: deviceId,
       ip_hash: this.hashIP(req.ip),
       user_agent_hash: this.hashUserAgent(req.get('User-Agent')),
       created_at: new Date()
@@ -141,6 +146,7 @@ class ActivityAnalyticsService {
 
   /**
    * Flush request buffer to database
+   * V2.8.0: Now includes device_id for unique user tracking
    */
   async flushRequestBuffer() {
     if (this.requestBuffer.length === 0) return;
@@ -149,7 +155,7 @@ class ActivityAnalyticsService {
     this.requestBuffer = [];
 
     try {
-      // Bulk insert (V2.5.0: now includes fuel_type)
+      // Bulk insert (V2.8.0: now includes device_id)
       const values = requests.map(r => `(
         '${r.endpoint.replace(/'/g, "''")}',
         '${r.method}',
@@ -158,13 +164,14 @@ class ActivityAnalyticsService {
         ${r.zip_code ? `'${r.zip_code}'` : 'NULL'},
         ${r.state ? `'${r.state}'` : 'NULL'},
         ${r.fuel_type ? `'${r.fuel_type}'` : 'NULL'},
+        ${r.device_id ? `'${r.device_id}'` : 'NULL'},
         ${r.ip_hash ? `'${r.ip_hash}'` : 'NULL'},
         ${r.user_agent_hash ? `'${r.user_agent_hash}'` : 'NULL'},
         '${r.created_at.toISOString()}'
       )`).join(',');
 
       await this.sequelize.query(`
-        INSERT INTO api_activity (endpoint, method, status_code, response_time_ms, zip_code, state, fuel_type, ip_hash, user_agent_hash, created_at)
+        INSERT INTO api_activity (endpoint, method, status_code, response_time_ms, zip_code, state, fuel_type, device_id, ip_hash, user_agent_hash, created_at)
         VALUES ${values}
       `);
     } catch (error) {
@@ -316,14 +323,17 @@ class ActivityAnalyticsService {
   /**
    * Aggregate DAU metrics from api_activity (run hourly or on-demand)
    * V2.5.0: Now includes fuel type segmentation (oil vs propane)
+   * V2.8.0: Uses COALESCE(device_id, ip_hash) for more accurate unique user counting
    */
   async aggregateDAU(date = null) {
     const targetDate = date || new Date().toISOString().split('T')[0];
 
     try {
+      // V2.8.0: Use device_id when available, fall back to ip_hash
       const [stats] = await this.sequelize.query(`
         SELECT
-          COUNT(DISTINCT ip_hash) as unique_users,
+          COUNT(DISTINCT COALESCE(device_id, ip_hash)) as unique_users,
+          COUNT(DISTINCT device_id) as unique_devices,
           COUNT(DISTINCT zip_code) as unique_zips,
           COUNT(*) as total_requests,
           ROUND(AVG(response_time_ms)) as avg_response_time_ms,
@@ -335,9 +345,9 @@ class ActivityAnalyticsService {
         WHERE DATE(created_at) = :targetDate
       `, { replacements: { targetDate } });
 
-      // Get users by state
+      // Get users by state (V2.8.0: hybrid device_id/ip_hash)
       const [byState] = await this.sequelize.query(`
-        SELECT state, COUNT(DISTINCT ip_hash) as users
+        SELECT state, COUNT(DISTINCT COALESCE(device_id, ip_hash)) as users
         FROM api_activity
         WHERE DATE(created_at) = :targetDate AND state IS NOT NULL
         GROUP BY state
@@ -349,11 +359,11 @@ class ActivityAnalyticsService {
         usersByState[row.state] = parseInt(row.users);
       });
 
-      // V2.5.0: Get users and requests by fuel type
+      // V2.5.0: Get users and requests by fuel type (V2.8.0: hybrid tracking)
       const [byFuel] = await this.sequelize.query(`
         SELECT
           COALESCE(fuel_type, 'heating_oil') as fuel_type,
-          COUNT(DISTINCT ip_hash) as users,
+          COUNT(DISTINCT COALESCE(device_id, ip_hash)) as users,
           COUNT(*) as requests
         FROM api_activity
         WHERE DATE(created_at) = :targetDate
@@ -367,12 +377,13 @@ class ActivityAnalyticsService {
         requestsByFuel[row.fuel_type] = parseInt(row.requests);
       });
 
-      // Update DAU record (V2.5.0: now includes fuel breakdown)
+      // Update DAU record (V2.8.0: now includes unique_devices)
       await this.sequelize.query(`
-        INSERT INTO daily_active_users (date, unique_users, unique_zips, total_requests, avg_response_time_ms, error_count, supplier_lookups, price_checks, directory_views, users_by_state, users_by_fuel, requests_by_fuel, updated_at)
-        VALUES (:date, :uniqueUsers, :uniqueZips, :totalRequests, :avgResponseTime, :errorCount, :supplierLookups, :priceChecks, :directoryViews, :usersByState::jsonb, :usersByFuel::jsonb, :requestsByFuel::jsonb, NOW())
+        INSERT INTO daily_active_users (date, unique_users, unique_devices, unique_zips, total_requests, avg_response_time_ms, error_count, supplier_lookups, price_checks, directory_views, users_by_state, users_by_fuel, requests_by_fuel, updated_at)
+        VALUES (:date, :uniqueUsers, :uniqueDevices, :uniqueZips, :totalRequests, :avgResponseTime, :errorCount, :supplierLookups, :priceChecks, :directoryViews, :usersByState::jsonb, :usersByFuel::jsonb, :requestsByFuel::jsonb, NOW())
         ON CONFLICT (date) DO UPDATE SET
           unique_users = EXCLUDED.unique_users,
+          unique_devices = EXCLUDED.unique_devices,
           unique_zips = EXCLUDED.unique_zips,
           total_requests = EXCLUDED.total_requests,
           avg_response_time_ms = EXCLUDED.avg_response_time_ms,
@@ -388,6 +399,7 @@ class ActivityAnalyticsService {
         replacements: {
           date: targetDate,
           uniqueUsers: parseInt(stats[0]?.unique_users) || 0,
+          uniqueDevices: parseInt(stats[0]?.unique_devices) || 0,
           uniqueZips: parseInt(stats[0]?.unique_zips) || 0,
           totalRequests: parseInt(stats[0]?.total_requests) || 0,
           avgResponseTime: parseInt(stats[0]?.avg_response_time_ms) || null,
@@ -401,7 +413,7 @@ class ActivityAnalyticsService {
         }
       });
 
-      console.log(`[ActivityAnalytics] DAU aggregated for ${targetDate}: ${stats[0]?.unique_users || 0} users (oil: ${usersByFuel.heating_oil || 0}, propane: ${usersByFuel.propane || 0})`);
+      console.log(`[ActivityAnalytics] DAU aggregated for ${targetDate}: ${stats[0]?.unique_users || 0} users, ${stats[0]?.unique_devices || 0} devices (oil: ${usersByFuel.heating_oil || 0}, propane: ${usersByFuel.propane || 0})`);
       return stats[0];
     } catch (error) {
       console.error('[ActivityAnalytics] Failed to aggregate DAU:', error.message);
@@ -425,11 +437,13 @@ class ActivityAnalyticsService {
 
   /**
    * Get real-time activity stats (last 24 hours)
+   * V2.8.0: Uses COALESCE(device_id, ip_hash) for more accurate unique user counting
    */
   async getRealTimeStats() {
     const [stats] = await this.sequelize.query(`
       SELECT
-        COUNT(DISTINCT ip_hash) as unique_users_24h,
+        COUNT(DISTINCT COALESCE(device_id, ip_hash)) as unique_users_24h,
+        COUNT(DISTINCT device_id) as unique_devices_24h,
         COUNT(DISTINCT zip_code) as unique_zips_24h,
         COUNT(*) as total_requests_24h,
         ROUND(AVG(response_time_ms)) as avg_response_time_ms,
@@ -449,11 +463,11 @@ class ActivityAnalyticsService {
       LIMIT 10
     `);
 
-    // Get activity by hour
+    // Get activity by hour (V2.8.0: hybrid tracking)
     const [hourly] = await this.sequelize.query(`
       SELECT
         DATE_TRUNC('hour', created_at) as hour,
-        COUNT(DISTINCT ip_hash) as users,
+        COUNT(DISTINCT COALESCE(device_id, ip_hash)) as users,
         COUNT(*) as requests
       FROM api_activity
       WHERE created_at >= NOW() - INTERVAL '24 hours'
@@ -471,6 +485,7 @@ class ActivityAnalyticsService {
   /**
    * Generate daily activity report for email
    * V2.5.0: Now includes fuel type segmentation (oil vs propane)
+   * V2.8.0: Uses COALESCE(device_id, ip_hash) for more accurate unique user counting
    */
   async generateDailyReport() {
     try {
@@ -493,9 +508,9 @@ class ActivityAnalyticsService {
       // Get real-time stats (last 24h)
       const realTime = await this.getRealTimeStats();
 
-      // Get geographic breakdown for last 24h
+      // Get geographic breakdown for last 24h (V2.8.0: hybrid tracking)
       const [byState] = await this.sequelize.query(`
-        SELECT state, COUNT(DISTINCT ip_hash) as users, COUNT(*) as requests
+        SELECT state, COUNT(DISTINCT COALESCE(device_id, ip_hash)) as users, COUNT(*) as requests
         FROM api_activity
         WHERE created_at >= NOW() - INTERVAL '24 hours'
           AND state IS NOT NULL
@@ -504,9 +519,9 @@ class ActivityAnalyticsService {
         LIMIT 10
       `);
 
-      // Get top ZIP codes
+      // Get top ZIP codes (V2.8.0: hybrid tracking)
       const [topZips] = await this.sequelize.query(`
-        SELECT zip_code, state, COUNT(DISTINCT ip_hash) as users, COUNT(*) as requests
+        SELECT zip_code, state, COUNT(DISTINCT COALESCE(device_id, ip_hash)) as users, COUNT(*) as requests
         FROM api_activity
         WHERE created_at >= NOW() - INTERVAL '24 hours'
           AND zip_code IS NOT NULL
@@ -537,11 +552,11 @@ class ActivityAnalyticsService {
         requestsChange: (today.total_requests || 0) - (weekAgo.total_requests || 0)
       };
 
-      // V2.5.0: Get fuel type breakdown for last 24h
+      // V2.5.0: Get fuel type breakdown for last 24h (V2.8.0: hybrid tracking)
       const [byFuelType] = await this.sequelize.query(`
         SELECT
           COALESCE(fuel_type, 'heating_oil') as fuel_type,
-          COUNT(DISTINCT ip_hash) as users,
+          COUNT(DISTINCT COALESCE(device_id, ip_hash)) as users,
           COUNT(DISTINCT zip_code) as zips,
           COUNT(*) as requests
         FROM api_activity
@@ -550,12 +565,12 @@ class ActivityAnalyticsService {
         ORDER BY users DESC
       `);
 
-      // V2.5.0: Get geographic breakdown BY fuel type
+      // V2.5.0: Get geographic breakdown BY fuel type (V2.8.0: hybrid tracking)
       const [byStateFuel] = await this.sequelize.query(`
         SELECT
           state,
           COALESCE(fuel_type, 'heating_oil') as fuel_type,
-          COUNT(DISTINCT ip_hash) as users,
+          COUNT(DISTINCT COALESCE(device_id, ip_hash)) as users,
           COUNT(*) as requests
         FROM api_activity
         WHERE created_at >= NOW() - INTERVAL '24 hours'

@@ -263,6 +263,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Activity analytics migration:', err.message);
         });
 
+        // V2.8.0: Run migration for device ID tracking (adds device_id column)
+        const { up: runDeviceIdMigration } = require('./src/migrations/008-add-device-id-tracking');
+        runDeviceIdMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Device ID tracking migration:', err.message);
+        });
+
         logger.info('📊 Database ready for operations');
       })
       .catch(err => {
