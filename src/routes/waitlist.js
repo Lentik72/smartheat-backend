@@ -58,7 +58,88 @@ function isCanadianPostalCode(code) {
 }
 
 /**
- * Send immediate email notification for waitlist signup
+ * Send confirmation email to the USER who signed up
+ */
+async function sendUserConfirmationEmail(signup, position) {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    console.log('[Waitlist] RESEND_API_KEY not configured - skipping user confirmation');
+    return false;
+  }
+
+  const provinceInfo = getProvinceFromPostalCode(signup.postal_code);
+  const provinceName = provinceInfo?.name || 'Canada';
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">🇨🇦</span>
+      </div>
+
+      <h1 style="color: #1a1a1a; text-align: center; margin-bottom: 8px;">You're on the List!</h1>
+
+      <p style="color: #F5A623; font-size: 24px; font-weight: bold; text-align: center; margin: 16px 0;">
+        Position #${position}
+      </p>
+
+      <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 24px 0;">
+        <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0;">
+          Thanks for joining the SmartHeat Canada waitlist! We're currently focused on the US Northeast,
+          but we're excited about expanding to ${provinceName}.
+        </p>
+      </div>
+
+      <p style="color: #666; font-size: 15px; line-height: 1.6;">
+        We'll email you at <strong>${signup.email}</strong> as soon as SmartHeat launches in your area.
+      </p>
+
+      <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #eee;">
+        <p style="color: #999; font-size: 13px; margin: 0;">
+          <strong>What is SmartHeat?</strong><br>
+          SmartHeat helps heating oil and propane users track their tank levels, predict when they'll need
+          a refill, and find the best local prices.
+        </p>
+      </div>
+
+      <p style="color: #999; font-size: 12px; text-align: center; margin-top: 32px;">
+        SmartHeat · Coming soon to Canada
+      </p>
+    </div>
+  `;
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM || 'SmartHeat <onboarding@resend.dev>',
+        to: [signup.email],
+        subject: `You're #${position} on the SmartHeat Canada Waitlist! 🇨🇦`,
+        html
+      })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log(`[Waitlist] User confirmation sent to ${signup.email}: ${result.id}`);
+      return true;
+    } else {
+      console.error('[Waitlist] Resend API error (user confirmation):', result);
+      return false;
+    }
+  } catch (error) {
+    console.error('[Waitlist] Failed to send user confirmation:', error.message);
+    return false;
+  }
+}
+
+/**
+ * Send immediate email notification to ADMIN for waitlist signup
  */
 async function sendWaitlistNotification(signup, totalCount) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -206,15 +287,20 @@ router.post('/', async (req, res) => {
 
       logger?.info(`[Waitlist] New signup: ${email} from ${formattedPostalCode} (${country}) - Total: ${totalCount}`);
 
-      // Send immediate email notification if under threshold
+      const signupData = {
+        email: email.toLowerCase().trim(),
+        postal_code: formattedPostalCode,
+        province,
+        country,
+        source: source || 'app_onboarding'
+      };
+
+      // Send confirmation email to the USER (always)
+      await sendUserConfirmationEmail(signupData, totalCount);
+
+      // Send notification to ADMIN (only for first 20 signups)
       if (totalCount <= IMMEDIATE_EMAIL_THRESHOLD) {
-        await sendWaitlistNotification({
-          email: email.toLowerCase().trim(),
-          postal_code: formattedPostalCode,
-          province,
-          country,
-          source: source || 'app_onboarding'
-        }, totalCount);
+        await sendWaitlistNotification(signupData, totalCount);
       }
 
       res.json({
