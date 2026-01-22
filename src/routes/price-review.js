@@ -1,27 +1,181 @@
 /**
  * Price Review Routes
- * Simple admin interface for manual price verification
+ * Admin interface for manual price verification
  *
  * Workflow:
- * 1. GET /api/price-review - Returns list of sites needing review
- * 2. POST /api/price-review/submit - Submit verified price(s)
+ * 1. Daily email generates magic link via POST /api/price-review/generate-link
+ * 2. Admin clicks link in email → opens portal with valid token
+ * 3. GET /api/price-review - Returns list of sites needing review
+ * 4. POST /api/price-review/submit - Submit verified price(s)
  *
- * Authentication: Simple token in header (ADMIN_REVIEW_TOKEN)
+ * Authentication: Magic link tokens (48-hour expiry) or admin master token
  */
 
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 
-// Simple token auth (set ADMIN_REVIEW_TOKEN in Railway env vars)
-const ADMIN_TOKEN = process.env.ADMIN_REVIEW_TOKEN || 'smartheat-price-review-2024';
+// Master admin token for internal/emergency access (set in Railway env vars)
+const ADMIN_MASTER_TOKEN = process.env.ADMIN_REVIEW_TOKEN || 'smartheat-price-review-2024';
 
-const requireToken = (req, res, next) => {
-  const token = req.headers['x-review-token'] || req.query.token;
-  if (token !== ADMIN_TOKEN) {
-    return res.status(401).json({ error: 'Invalid or missing review token' });
+// Secret for generating magic links (should be set in env vars)
+const MAGIC_LINK_SECRET = process.env.MAGIC_LINK_SECRET || 'smartheat-magic-link-secret-2024';
+
+/**
+ * Generate a secure random token
+ */
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex'); // 64 chars
+}
+
+/**
+ * Validate magic link token or master admin token
+ */
+const requireAuth = async (req, res, next) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger;
+
+  // Check for token in header or query param
+  const token = req.headers['x-review-token'] || req.query.token || req.query.mltoken;
+
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
   }
-  next();
+
+  // Check if it's the master admin token (for internal/emergency use)
+  if (token === ADMIN_MASTER_TOKEN) {
+    req.authType = 'master';
+    return next();
+  }
+
+  // Check if it's a valid magic link token
+  try {
+    const [rows] = await sequelize.query(`
+      SELECT id, expires_at, revoked_at, use_count
+      FROM magic_link_tokens
+      WHERE token = :token
+        AND purpose = 'price_review'
+    `, { replacements: { token } });
+
+    if (rows.length === 0) {
+      logger?.warn(`[PriceReview] Invalid token attempted`);
+      return res.status(401).json({ error: 'Invalid or expired link' });
+    }
+
+    const magicLink = rows[0];
+
+    // Check if revoked
+    if (magicLink.revoked_at) {
+      return res.status(401).json({ error: 'This link has been revoked' });
+    }
+
+    // Check if expired
+    if (new Date(magicLink.expires_at) < new Date()) {
+      return res.status(401).json({ error: 'This link has expired. Check your email for a newer one.' });
+    }
+
+    // Update usage stats
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'] || '';
+
+    await sequelize.query(`
+      UPDATE magic_link_tokens
+      SET
+        first_used_at = COALESCE(first_used_at, NOW()),
+        last_used_at = NOW(),
+        use_count = use_count + 1,
+        ip_address = :ip,
+        user_agent = :userAgent
+      WHERE id = :id
+    `, {
+      replacements: { id: magicLink.id, ip, userAgent }
+    });
+
+    req.authType = 'magic_link';
+    req.magicLinkId = magicLink.id;
+    next();
+
+  } catch (error) {
+    logger?.error('[PriceReview] Auth error:', error.message);
+    return res.status(500).json({ error: 'Authentication failed' });
+  }
 };
+
+/**
+ * POST /api/price-review/generate-link
+ * Generate a new magic link for email (internal use only - requires master token)
+ *
+ * Returns: { url, token, expiresAt }
+ */
+router.post('/generate-link', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger;
+
+  // Only allow with master token or internal secret
+  const authToken = req.headers['x-internal-token'] || req.headers['x-review-token'];
+  if (authToken !== ADMIN_MASTER_TOKEN && authToken !== MAGIC_LINK_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const token = generateToken();
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+    await sequelize.query(`
+      INSERT INTO magic_link_tokens (token, purpose, expires_at)
+      VALUES (:token, 'price_review', :expiresAt)
+    `, {
+      replacements: { token, expiresAt }
+    });
+
+    // Build the full URL
+    const baseUrl = process.env.BACKEND_URL || 'https://smartheat-backend-production.up.railway.app';
+    const url = `${baseUrl}/price-review.html?mltoken=${token}`;
+
+    logger?.info(`[PriceReview] Generated new magic link, expires: ${expiresAt.toISOString()}`);
+
+    res.json({
+      success: true,
+      url,
+      token,
+      expiresAt: expiresAt.toISOString()
+    });
+
+  } catch (error) {
+    logger?.error('[PriceReview] Generate link error:', error.message);
+    res.status(500).json({ error: 'Failed to generate link' });
+  }
+});
+
+/**
+ * POST /api/price-review/revoke-link
+ * Revoke a magic link (internal use only)
+ */
+router.post('/revoke-link', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+
+  const authToken = req.headers['x-internal-token'] || req.headers['x-review-token'];
+  if (authToken !== ADMIN_MASTER_TOKEN) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ error: 'Token required' });
+  }
+
+  try {
+    await sequelize.query(`
+      UPDATE magic_link_tokens
+      SET revoked_at = NOW()
+      WHERE token = :token
+    `, { replacements: { token } });
+
+    res.json({ success: true, message: 'Link revoked' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to revoke link' });
+  }
+});
 
 /**
  * GET /api/price-review
@@ -31,7 +185,7 @@ const requireToken = (req, res, next) => {
  * - Sites marked phone_only
  * - Sites with stale prices (> 7 days old)
  */
-router.get('/', requireToken, async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   const sequelize = req.app.locals.sequelize;
   const logger = req.app.locals.logger;
 
@@ -152,7 +306,7 @@ router.get('/', requireToken, async (req, res) => {
  *
  * Body: { prices: [{ supplierId, price, minGallons? }] }
  */
-router.post('/submit', requireToken, async (req, res) => {
+router.post('/submit', requireAuth, async (req, res) => {
   const sequelize = req.app.locals.sequelize;
   const logger = req.app.locals.logger;
 
@@ -241,7 +395,7 @@ router.post('/submit', requireToken, async (req, res) => {
  * GET /api/price-review/stats
  * Get overview of price data health
  */
-router.get('/stats', requireToken, async (req, res) => {
+router.get('/stats', requireAuth, async (req, res) => {
   const sequelize = req.app.locals.sequelize;
 
   try {

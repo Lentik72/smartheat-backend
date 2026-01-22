@@ -1,12 +1,27 @@
 /**
  * Price Review Portal - JavaScript
- * V2.10.1: Moved to external file for CSP compliance
+ * V2.10.2: Magic link authentication support
  */
 
-// Get token from URL or localStorage
+// Get token from URL (magic link or legacy token)
 const urlParams = new URLSearchParams(window.location.search);
-const TOKEN = urlParams.get('token') || localStorage.getItem('reviewToken') || '';
-if (TOKEN) localStorage.setItem('reviewToken', TOKEN);
+const MAGIC_TOKEN = urlParams.get('mltoken');  // New magic link format
+const LEGACY_TOKEN = urlParams.get('token');   // Legacy format
+const STORED_TOKEN = localStorage.getItem('reviewToken');
+
+// Prefer magic link token, then legacy, then stored
+const TOKEN = MAGIC_TOKEN || LEGACY_TOKEN || STORED_TOKEN || '';
+
+// Store token for session (but magic links shouldn't be reused after expiry)
+if (TOKEN && !MAGIC_TOKEN) {
+  localStorage.setItem('reviewToken', TOKEN);
+}
+
+// Clear URL params after reading (cleaner URL, prevents accidental sharing)
+if (MAGIC_TOKEN && window.history.replaceState) {
+  const cleanUrl = window.location.pathname;
+  window.history.replaceState({}, document.title, cleanUrl);
+}
 
 const API_BASE = window.location.origin;
 const headers = { 'X-Review-Token': TOKEN, 'Content-Type': 'application/json' };
@@ -55,9 +70,37 @@ function formatTimestamp(dateString) {
 
 // Load review items
 async function loadItems() {
+  // Check if we have a token
+  if (!TOKEN) {
+    document.getElementById('review-list').innerHTML = `
+      <div class="empty-state">
+        <h2>Authentication Required</h2>
+        <p>Please use the link from your email to access this page.</p>
+      </div>
+    `;
+    return;
+  }
+
   try {
     const res = await fetch(`${API_BASE}/api/price-review?token=${TOKEN}`);
     const data = await res.json();
+
+    // Handle auth errors specifically
+    if (res.status === 401) {
+      let message = data.error || 'Authentication failed';
+      if (message.includes('expired')) {
+        message = 'This link has expired. Please check your email for a newer link.';
+      }
+      document.getElementById('review-list').innerHTML = `
+        <div class="empty-state">
+          <h2>Access Denied</h2>
+          <p>${message}</p>
+        </div>
+      `;
+      // Clear stored token if it's invalid
+      localStorage.removeItem('reviewToken');
+      return;
+    }
 
     if (!data.success) {
       document.getElementById('review-list').innerHTML = `<div class="empty-state"><h2>Error</h2><p>${data.error}</p></div>`;
