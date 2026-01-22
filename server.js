@@ -31,7 +31,7 @@ const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsServic
 const CoverageReportMailer = require('./src/services/CoverageReportMailer');
 
 // Import route modules with error handling
-let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes;
+let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes;
 
 try {
   weatherRoutes = require('./src/routes/weather');
@@ -430,6 +430,10 @@ app.use('/api/activity', activityAnalyticsRoutes); // V2.4.0: Activity Analytics
 app.use('/api/v1/suppliers', suppliersRoutes);  // V1.3.0: Dynamic supplier directory
 app.use('/api/v1/market', intelligenceRoutes);  // V2.2.0: Market intelligence
 app.use('/api/waitlist', waitlistRoutes);  // V2.9.0: Canada waitlist
+app.use('/api/price-review', require('./src/routes/price-review'));  // V2.10.0: Admin price review portal
+
+// V2.10.0: Serve static files for admin tools
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Cache status endpoint
 app.get('/api/cache/status', (req, res) => {
