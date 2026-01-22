@@ -337,7 +337,7 @@ class ActivityAnalyticsService {
           COUNT(DISTINCT zip_code) as unique_zips,
           COUNT(*) as total_requests,
           ROUND(AVG(response_time_ms)) as avg_response_time_ms,
-          COUNT(*) FILTER (WHERE status_code >= 400) as error_count,
+          COUNT(*) FILTER (WHERE status_code >= 400 AND endpoint NOT IN ('/', '/stats')) as error_count,
           COUNT(*) FILTER (WHERE endpoint LIKE '%supplier%') as supplier_lookups,
           COUNT(*) FILTER (WHERE endpoint LIKE '%price%' OR endpoint LIKE '%market%') as price_checks,
           COUNT(*) FILTER (WHERE endpoint LIKE '%director%') as directory_views
@@ -447,7 +447,7 @@ class ActivityAnalyticsService {
         COUNT(DISTINCT zip_code) as unique_zips_24h,
         COUNT(*) as total_requests_24h,
         ROUND(AVG(response_time_ms)) as avg_response_time_ms,
-        COUNT(*) FILTER (WHERE status_code >= 400) as errors_24h,
+        COUNT(*) FILTER (WHERE status_code >= 400 AND endpoint NOT IN ('/', '/stats')) as errors_24h,
         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 hour') as requests_last_hour
       FROM api_activity
       WHERE created_at >= NOW() - INTERVAL '24 hours'
