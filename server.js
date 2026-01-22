@@ -101,6 +101,15 @@ const cache = new NodeCache({
   useClones: false
 });
 
+// Redirect non-www to www (preserves path for SEO)
+app.use((req, res, next) => {
+  const host = req.get('host');
+  if (host === 'gethomeheat.com') {
+    return res.redirect(301, `https://www.gethomeheat.com${req.originalUrl}`);
+  }
+  next();
+});
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
