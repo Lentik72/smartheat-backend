@@ -1034,6 +1034,13 @@ body {
     margin-top: 0.25rem;
 }
 
+.price-freshness {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+    font-style: italic;
+}
+
 /* Disclaimer */
 .price-disclaimer {
     font-size: 0.75rem;

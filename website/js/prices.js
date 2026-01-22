@@ -285,6 +285,8 @@
     const price = supplier.currentPrice;
     const phone = supplier.phone || '';
     const phoneHref = phone.replace(/\D/g, '');
+    const scrapedAt = price.scrapedAt ? new Date(price.scrapedAt) : null;
+    const freshness = formatCardFreshness(scrapedAt);
 
     return `
       <div class="supplier-card">
@@ -297,9 +299,27 @@
           <div class="price-amount">$${price.pricePerGallon.toFixed(2)}</div>
           <div class="price-unit">per gallon</div>
           ${price.minGallons ? `<div class="price-min">${price.minGallons}+ gal min</div>` : ''}
+          <div class="price-freshness">${freshness}</div>
         </div>
       </div>
     `;
+  }
+
+  // Format freshness for individual supplier cards (compact format)
+  function formatCardFreshness(date) {
+    if (!date || date.getTime() === 0) return 'Updated recently';
+
+    const now = new Date();
+    const diff = now - date;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (hours < 1) return 'Updated now';
+    if (hours < 24) return `${hours}h ago`;
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days}d ago`;
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
   // Handle share button - uses native share on mobile, clipboard on desktop
