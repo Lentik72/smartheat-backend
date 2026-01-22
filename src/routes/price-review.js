@@ -58,25 +58,32 @@ router.get('/', requireToken, async (req, res) => {
       ORDER BY s.id, sp.scraped_at DESC
     `);
 
-    // 2. Sites in cooldown or phone_only (from scrape_backoff table)
-    const [blockedSites] = await sequelize.query(`
-      SELECT
-        s.id,
-        s.name,
-        s.website,
-        s.city,
-        s.state,
-        sb.status,
-        sb.consecutive_failures,
-        sb.last_failure_at,
-        sb.cooldown_until,
-        'scrape_blocked' as review_reason
-      FROM suppliers s
-      JOIN scrape_backoff sb ON s.website LIKE '%' || sb.domain || '%'
-      WHERE s.active = true
-        AND s.website IS NOT NULL
-        AND (sb.status = 'cooldown' OR sb.status = 'phone_only')
-    `);
+    // 2. Sites in cooldown or phone_only (from scrape_backoff table if it exists)
+    let blockedSites = [];
+    try {
+      const [result] = await sequelize.query(`
+        SELECT
+          s.id,
+          s.name,
+          s.website,
+          s.city,
+          s.state,
+          sb.status,
+          sb.consecutive_failures,
+          sb.last_failure_at,
+          sb.cooldown_until,
+          'scrape_blocked' as review_reason
+        FROM suppliers s
+        JOIN scrape_backoff sb ON s.website LIKE '%' || sb.domain || '%'
+        WHERE s.active = true
+          AND s.website IS NOT NULL
+          AND (sb.status = 'cooldown' OR sb.status = 'phone_only')
+      `);
+      blockedSites = result;
+    } catch (err) {
+      // scrape_backoff table may not exist - skip this check
+      logger?.info('[PriceReview] scrape_backoff table not found, skipping blocked sites check');
+    }
 
     // 3. Sites with stale prices (> 7 days, no recent update)
     const [stalePrices] = await sequelize.query(`
@@ -251,14 +258,20 @@ router.get('/stats', requireToken, async (req, res) => {
       LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.is_valid = true
     `);
 
-    // Get backoff stats
-    const [backoffStats] = await sequelize.query(`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'active') as active_scraping,
-        COUNT(*) FILTER (WHERE status = 'cooldown') as in_cooldown,
-        COUNT(*) FILTER (WHERE status = 'phone_only') as phone_only
-      FROM scrape_backoff
-    `);
+    // Get backoff stats (if table exists)
+    let backoffStats = [{ active_scraping: 0, in_cooldown: 0, phone_only: 0 }];
+    try {
+      const [result] = await sequelize.query(`
+        SELECT
+          COUNT(*) FILTER (WHERE status = 'active') as active_scraping,
+          COUNT(*) FILTER (WHERE status = 'cooldown') as in_cooldown,
+          COUNT(*) FILTER (WHERE status = 'phone_only') as phone_only
+        FROM scrape_backoff
+      `);
+      backoffStats = result;
+    } catch (err) {
+      // scrape_backoff table may not exist
+    }
 
     res.json({
       success: true,
@@ -272,9 +285,9 @@ router.get('/stats', requireToken, async (req, res) => {
           manualPrices: parseInt(stats[0].manual_prices)
         },
         scraping: {
-          activeScraping: parseInt(backoffStats[0].active_scraping),
-          inCooldown: parseInt(backoffStats[0].in_cooldown),
-          phoneOnly: parseInt(backoffStats[0].phone_only)
+          activeScraping: parseInt(backoffStats[0]?.active_scraping || 0),
+          inCooldown: parseInt(backoffStats[0]?.in_cooldown || 0),
+          phoneOnly: parseInt(backoffStats[0]?.phone_only || 0)
         }
       },
       generatedAt: new Date().toISOString()
