@@ -341,16 +341,17 @@ class CoverageReportMailer {
 
   /**
    * V2.5.2: Send combined daily report (Coverage + Activity in one email)
+   * V2.10.2: Now includes price review magic link
    * Reduces inbox clutter by combining both reports
    */
-  async sendCombinedDailyReport(coverageReport, activityReport) {
+  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null) {
     const recipient = this.getRecipient();
     if (!recipient) {
       console.log('[CoverageReportMailer] No recipient configured');
       return false;
     }
 
-    const html = this.formatCombinedReport(coverageReport, activityReport);
+    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink);
     const subject = this.getCombinedSubject(coverageReport, activityReport);
 
     const success = await this.sendEmail(recipient, subject, html);
@@ -386,8 +387,9 @@ class CoverageReportMailer {
 
   /**
    * Format combined daily report HTML
+   * V2.10.2: Added priceReviewLink parameter for manual price verification
    */
-  formatCombinedReport(coverageReport, activityReport) {
+  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null) {
     const styles = `
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 650px; margin: 0 auto; }
       h2 { color: #1a1a1a; border-bottom: 2px solid #007AFF; padding-bottom: 8px; margin-top: 0; }
@@ -458,6 +460,16 @@ class CoverageReportMailer {
   </div>
 
   ${activity.trend ? `<p><strong>Week-over-Week:</strong> Users ${trendIcon(activity.trend.usersChange)} | Requests ${trendIcon(activity.trend.requestsChange)}</p>` : ''}
+
+  <!-- ===== PRICE REVIEW LINK (V2.10.2) ===== -->
+  ${priceReviewLink ? `
+    <div style="background: #e3f2fd; border: 2px solid #2196F3; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <h3 style="margin: 0 0 8px 0; color: #1565C0;">🔍 Manual Price Review</h3>
+      <p style="margin: 0 0 12px 0;">Sites needing price verification are ready for review.</p>
+      <a href="${priceReviewLink}" style="display: inline-block; background: #2196F3; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">Open Price Review Portal</a>
+      <p style="margin: 12px 0 0 0; font-size: 12px; color: #666;">Link expires in 48 hours.</p>
+    </div>
+  ` : ''}
 
   <!-- ===== COVERAGE RECOMMENDATIONS ===== -->
   ${report.recommendations.length > 0 ? `

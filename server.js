@@ -624,7 +624,26 @@ function scheduleCoverageIntelligence() {
         const hasActivity = activityReport && activityReport.summary.uniqueUsers > 0;
 
         if (hasActionable || hasActivity) {
-          await mailer.sendCombinedDailyReport(coverageReport, activityReport);
+          // V2.10.2: Generate magic link for price review portal
+          let priceReviewLink = null;
+          try {
+            const crypto = require('crypto');
+            const token = crypto.randomBytes(32).toString('hex');
+            const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+            await sequelize.query(`
+              INSERT INTO magic_link_tokens (token, purpose, expires_at)
+              VALUES (:token, 'price_review', :expiresAt)
+            `, { replacements: { token, expiresAt } });
+
+            const baseUrl = process.env.BACKEND_URL || 'https://smartheat-backend-production.up.railway.app';
+            priceReviewLink = `${baseUrl}/price-review.html?mltoken=${token}`;
+            logger.info('[DailyReports] Generated price review magic link');
+          } catch (err) {
+            logger.warn('[DailyReports] Failed to generate price review link:', err.message);
+          }
+
+          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink);
           logger.info('[DailyReports] Combined report sent');
         } else {
           logger.info('[DailyReports] No actionable items or activity - skipping email');
