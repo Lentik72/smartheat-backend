@@ -56,7 +56,7 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     .supplier-name {
       font-weight: 600;
@@ -76,14 +76,35 @@
     .reason-suspicious_price { background: #ffeaa7; color: #856404; }
     .reason-scrape_blocked { background: #fab1a0; color: #721c24; }
     .reason-stale_price { background: #dfe6e9; color: #636e72; }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
     .current-price {
-      font-size: 13px;
-      color: #86868b;
-      margin-bottom: 8px;
+      font-size: 14px;
+      color: #1d1d1f;
     }
     .current-price strong {
       color: #e74c3c;
+      font-size: 16px;
     }
+    .current-price.no-price {
+      color: #86868b;
+      font-style: italic;
+    }
+    .last-updated {
+      font-size: 12px;
+      color: #86868b;
+      background: #f5f5f7;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
     .input-row {
       display: flex;
       gap: 8px;
@@ -213,197 +234,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script>
-    // Get token from URL or localStorage
-    const urlParams = new URLSearchParams(window.location.search);
-    const TOKEN = urlParams.get('token') || localStorage.getItem('reviewToken') || '';
-    if (TOKEN) localStorage.setItem('reviewToken', TOKEN);
-
-    const API_BASE = window.location.origin;
-    const headers = { 'X-Review-Token': TOKEN, 'Content-Type': 'application/json' };
-
-    let reviewItems = [];
-
-    // Reason labels
-    const reasonLabels = {
-      suspicious_price: 'Suspicious Price',
-      scrape_blocked: 'Scrape Blocked',
-      stale_price: 'Stale Data'
-    };
-
-    // Load review items
-    async function loadItems() {
-      try {
-        const res = await fetch(`${API_BASE}/api/price-review?token=${TOKEN}`);
-        const data = await res.json();
-
-        if (!data.success) {
-          document.getElementById('review-list').innerHTML = `<div class="empty-state"><h2>Error</h2><p>${data.error}</p></div>`;
-          return;
-        }
-
-        reviewItems = data.items;
-        updateStats();
-        renderItems();
-
-      } catch (err) {
-        document.getElementById('review-list').innerHTML = `<div class="empty-state"><h2>Error</h2><p>${err.message}</p></div>`;
-      }
-    }
-
-    function updateStats() {
-      document.getElementById('stat-total').textContent = reviewItems.length;
-      document.getElementById('stat-suspicious').textContent = reviewItems.filter(i => i.reviewReason === 'suspicious_price').length;
-      document.getElementById('stat-blocked').textContent = reviewItems.filter(i => i.reviewReason === 'scrape_blocked').length;
-      document.getElementById('stat-stale').textContent = reviewItems.filter(i => i.reviewReason === 'stale_price').length;
-    }
-
-    function renderItems() {
-      const container = document.getElementById('review-list');
-
-      if (reviewItems.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <h2>All Clear!</h2>
-            <p>No sites need manual review right now.</p>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = reviewItems.map((item, idx) => `
-        <div class="review-item" id="item-${idx}">
-          <div class="review-header">
-            <div>
-              <div class="supplier-name">${item.name}</div>
-              <div class="supplier-location">${item.city}, ${item.state}</div>
-            </div>
-            <span class="reason-badge reason-${item.reviewReason}">${reasonLabels[item.reviewReason]}</span>
-          </div>
-          ${item.currentPrice ? `<div class="current-price">Current: <strong>$${item.currentPrice.toFixed(3)}</strong></div>` : ''}
-          <div class="input-row">
-            <a href="${item.website}" target="_blank" class="website-link">
-              <span>Visit Site</span>
-            </a>
-            <input type="text"
-                   class="price-input"
-                   id="price-${idx}"
-                   placeholder="X.XXX"
-                   data-supplier-id="${item.supplierId}"
-                   data-idx="${idx}">
-            <button class="submit-btn" onclick="submitSingle(${idx})">Submit</button>
-          </div>
-        </div>
-      `).join('');
-
-      document.getElementById('submit-all').style.display = 'block';
-    }
-
-    // Submit single price
-    async function submitSingle(idx) {
-      const input = document.getElementById(`price-${idx}`);
-      const price = parseFloat(input.value);
-      const supplierId = input.dataset.supplierId;
-
-      if (isNaN(price) || price < 1.5 || price > 6) {
-        showToast('Enter a valid price ($1.50 - $6.00)', 'error');
-        return;
-      }
-
-      const btn = input.nextElementSibling;
-      btn.disabled = true;
-      btn.textContent = '...';
-
-      try {
-        const res = await fetch(`${API_BASE}/api/price-review/submit`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ prices: [{ supplierId, price }] })
-        });
-        const data = await res.json();
-
-        if (data.success && data.results[0].success) {
-          btn.textContent = 'Done';
-          btn.classList.add('submitted');
-          input.disabled = true;
-          showToast(`Updated ${reviewItems[idx].name}: $${price.toFixed(3)}`, 'success');
-        } else {
-          btn.textContent = 'Submit';
-          btn.disabled = false;
-          showToast(data.results[0]?.error || 'Failed', 'error');
-        }
-      } catch (err) {
-        btn.textContent = 'Submit';
-        btn.disabled = false;
-        showToast(err.message, 'error');
-      }
-    }
-
-    // Submit all prices
-    async function submitAll() {
-      const prices = [];
-      document.querySelectorAll('.price-input').forEach(input => {
-        const price = parseFloat(input.value);
-        if (!isNaN(price) && price >= 1.5 && price <= 6 && !input.disabled) {
-          prices.push({ supplierId: input.dataset.supplierId, price });
-        }
-      });
-
-      if (prices.length === 0) {
-        showToast('No valid prices to submit', 'error');
-        return;
-      }
-
-      const btn = document.getElementById('submit-all');
-      btn.disabled = true;
-      btn.textContent = 'Submitting...';
-
-      try {
-        const res = await fetch(`${API_BASE}/api/price-review/submit`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ prices })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          showToast(`Updated ${data.submitted}/${data.total} prices`, 'success');
-          // Mark submitted inputs
-          data.results.forEach(r => {
-            if (r.success) {
-              const input = document.querySelector(`[data-supplier-id="${r.supplierId}"]`);
-              if (input) {
-                input.disabled = true;
-                const btn = input.nextElementSibling;
-                btn.textContent = 'Done';
-                btn.classList.add('submitted');
-              }
-            }
-          });
-        } else {
-          showToast('Some prices failed', 'error');
-        }
-
-        btn.disabled = false;
-        btn.textContent = 'Submit All Prices';
-      } catch (err) {
-        btn.disabled = false;
-        btn.textContent = 'Submit All Prices';
-        showToast(err.message, 'error');
-      }
-    }
-
-    document.getElementById('submit-all').addEventListener('click', submitAll);
-
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.className = `toast ${type} show`;
-      setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-
-    // Load on start
-    loadItems();
-  </script>
+  <!-- External JS for CSP compliance -->
+  <script src="/js/price-review.js"></script>
 </body>
 </html>
