@@ -149,8 +149,8 @@
   "stormvilleoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NY - Dutchess County - shows X.XXX without $ sign. May be CAPTCHA blocked intermittently.",
-    "priceRegex": "([0-9]+\\.[0-9]{3})\\s*(?:per gallon|/gallon)?"
+    "notes": "NY - Dutchess County - shows X.XXX per gallon (requires context to avoid CSS values).",
+    "priceRegex": "([0-9]+\\.[0-9]{3})\\s*per gallon"
   },
 
   "yorktownfuel.com": {

@@ -5,6 +5,7 @@
  * V1.6.0: Exported for use by cron scheduler in server.js
  * V2.1.0: Support for aggregator_signal source type (displayable=false)
  * V2.6.0: Backoff logic for blocked sites (cooldown + phone_only)
+ * V2.7.0: Price change protection - reject suspicious drops > 25%
  *
  * Runs daily at 10:00 AM EST (15:00 UTC) via node-cron in server.js
  *
@@ -132,8 +133,12 @@ async function runScraper(options = {}) {
       failed: [],
       skipped: [],
       cooldown: [],    // V2.6.0: Suppliers in cooldown
-      phoneOnly: []    // V2.6.0: Suppliers marked phone_only
+      phoneOnly: [],   // V2.6.0: Suppliers marked phone_only
+      rejected: []     // V2.7.0: Suspicious price drops rejected
     };
+
+    // V2.7.0: Price change protection threshold
+    const MAX_PRICE_DROP_PERCENT = 0.25; // Reject drops > 25%
 
     const DELAY_MS = 2000; // 2 seconds between requests
 
@@ -171,9 +176,42 @@ async function runScraper(options = {}) {
           await recordSuccess(sequelize, supplier.id);
         }
 
-        // Save to database (unless dry run)
-        // V2.1.0: Use result.sourceType to distinguish scraped vs aggregator_signal
+        // V2.7.0: Price change protection - check for suspicious drops
+        let priceRejected = false;
         if (!opts.dryRun) {
+          // Fetch previous valid price for this supplier
+          const [prevPrices] = await sequelize.query(`
+            SELECT price_per_gallon FROM supplier_prices
+            WHERE supplier_id = $1 AND is_valid = true
+            ORDER BY scraped_at DESC LIMIT 1
+          `, { bind: [result.supplierId] });
+
+          if (prevPrices.length > 0) {
+            const prevPrice = parseFloat(prevPrices[0].price_per_gallon);
+            const newPrice = result.pricePerGallon;
+            const dropPercent = (prevPrice - newPrice) / prevPrice;
+
+            if (dropPercent > MAX_PRICE_DROP_PERCENT) {
+              // Suspicious drop - reject this price
+              log.warn(`   ⚠️  REJECTED: $${newPrice.toFixed(3)} is ${(dropPercent * 100).toFixed(0)}% below previous $${prevPrice.toFixed(3)}`);
+              results.rejected.push({
+                supplierName: supplier.name,
+                supplierId: supplier.id,
+                newPrice,
+                previousPrice: prevPrice,
+                dropPercent: dropPercent * 100,
+                reason: `${(dropPercent * 100).toFixed(0)}% drop exceeds ${MAX_PRICE_DROP_PERCENT * 100}% threshold`
+              });
+              priceRejected = true;
+              // Move from success to rejected (don't count as success)
+              results.success.pop();
+            }
+          }
+        }
+
+        // Save to database (unless dry run or rejected)
+        // V2.1.0: Use result.sourceType to distinguish scraped vs aggregator_signal
+        if (!opts.dryRun && !priceRejected) {
           await sequelize.query(`
             INSERT INTO supplier_prices (
               id, supplier_id, price_per_gallon, min_gallons, fuel_type,
@@ -224,6 +262,7 @@ async function runScraper(options = {}) {
     log.info('═══════════════════════════════════════════════════════════');
     log.info(`  ✅ Success:    ${results.success.length}`);
     log.info(`  ❌ Failed:     ${results.failed.length}`);
+    log.info(`  🚫 Rejected:   ${results.rejected.length}`);  // V2.7.0
     log.info(`  🕐 Cooldown:   ${results.cooldown.length}`);
     log.info(`  ⛔ Phone-only: ${results.phoneOnly.length}`);
     log.info(`  ⏭️  No config:  ${suppliers.length - scrapableSuppliers.length}`);
@@ -246,6 +285,16 @@ async function runScraper(options = {}) {
       results.failed.forEach(r => {
         log.info(`  - ${r.supplierName}: ${r.error}`);
       });
+    }
+
+    // V2.7.0: Show rejected prices (suspicious drops)
+    if (results.rejected.length > 0) {
+      log.info('');
+      log.warn('🚫 Rejected prices (suspicious drops):');
+      results.rejected.forEach(r => {
+        log.warn(`  - ${r.supplierName}: $${r.newPrice.toFixed(3)} (${r.dropPercent.toFixed(0)}% drop from $${r.previousPrice.toFixed(3)})`);
+      });
+      log.info('   → Use verify-price.js to manually update if prices are correct');
     }
 
     // V2.6.0: Show backoff stats
@@ -321,10 +370,12 @@ async function runScraper(options = {}) {
     return {
       success: results.success.length,
       failed: results.failed.length,
+      rejected: results.rejected.length,     // V2.7.0
       skipped: suppliers.length - scrapableSuppliers.length,
       cooldown: results.cooldown.length,     // V2.6.0
       phoneOnly: results.phoneOnly.length,   // V2.6.0
       failures: failuresArray,
+      rejections: results.rejected,          // V2.7.0
       durationMs: runDuration
     };
 
@@ -344,7 +395,7 @@ if (require.main === module) {
   runScraper()
     .then(result => {
       if (result) {
-        console.log(`\nResults: ${result.success} success, ${result.failed} failed, ${result.skipped} skipped`);
+        console.log(`\nResults: ${result.success} success, ${result.failed} failed, ${result.rejected} rejected, ${result.skipped} skipped`);
       }
       process.exit(0);
     })
