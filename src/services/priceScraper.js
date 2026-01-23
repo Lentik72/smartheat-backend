@@ -30,6 +30,20 @@ const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 function extractPrice(html, config) {
   if (!html || !config) return null;
 
+  // V2.8.0: Handle "split" pattern where price is split across elements (e.g., "$ 3" + "199" = $3.199)
+  if (config.pattern === 'split' && config.priceRegex) {
+    const splitRegex = new RegExp(config.priceRegex, 'gi');
+    const match = splitRegex.exec(html);
+    if (match && match[1] && match[2]) {
+      // Combine: match[1] = whole dollars, match[2] = cents/thousandths
+      const price = parseFloat(match[1] + '.' + match[2]);
+      if (price >= 2.00 && price <= 5.00) {
+        return price;
+      }
+    }
+    return null;
+  }
+
   // Try regex patterns
   const priceRegex = config.priceRegex
     ? new RegExp(config.priceRegex, 'gi')

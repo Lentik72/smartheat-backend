@@ -1050,10 +1050,10 @@
   },
 
   "pipelineonline.com": {
-    "enabled": false,
-    "pattern": "direct",
-    "notes": "DISABLED: PA Lehigh Valley - Price $2.949 displayed as '$ 2 949' (split across Elementor spans). Would need custom parser.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "enabled": true,
+    "pattern": "split",
+    "notes": "PA Lehigh Valley - Price displayed as '$ 3' + '199' (split across Elementor spans). Uses split pattern to combine.",
+    "priceRegex": "Heating Oil[\\s\\S]*?\\$\\s*(\\d)\\s+(\\d{3})"
   },
 
   "heatingoillevittown.com": {
@@ -1326,10 +1326,10 @@
   },
 
   "brocoenergy.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "table",
-    "notes": "DISABLED: NH Southern + MA border. Generic regex captures propane price ($2.54) instead of oil ($3.49). Would need context-aware parsing.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "NH Southern + MA border - True COD. Tiered pricing 100-149/150+ gal. Regex targets OIL section to avoid propane prices.",
+    "priceRegex": "OIL[^$]*\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "wickedwarm.com": {
