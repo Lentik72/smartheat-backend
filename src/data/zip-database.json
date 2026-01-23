@@ -19734,6 +19734,41 @@
     "county": "Cecil",
     "state": "MD"
   },
+  "99701": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.8378,
+    "lng": -147.7164
+  },
+  "99705": {
+    "city": "North Pole",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.7511,
+    "lng": -147.3494
+  },
+  "99709": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.8568,
+    "lng": -147.8094
+  },
+  "99712": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.9027,
+    "lng": -147.5983
+  },
+  "99714": {
+    "city": "Salcha",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.4653,
+    "lng": -146.9053
+  },
   "01001": {
     "state": "MA",
     "county": "Hampden",
