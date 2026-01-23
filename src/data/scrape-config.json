@@ -1071,9 +1071,9 @@
   },
 
   "thriftyfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "PA - Thrifty Fuel. May be CAPTCHA blocked intermittently.",
+    "notes": "DISABLED: PA - Thrifty Fuel. Prices loaded via JavaScript API, not in HTML.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -1326,9 +1326,9 @@
   },
 
   "brocoenergy.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "table",
-    "notes": "NH Southern + MA border - True COD. Tiered pricing 100-149/150+ gal.",
+    "notes": "DISABLED: NH Southern + MA border. Generic regex captures propane price ($2.54) instead of oil ($3.49). Would need context-aware parsing.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
