@@ -159,10 +159,15 @@ function renderItems() {
                placeholder="X.XXX"
                data-supplier-id="${item.supplierId}"
                data-idx="${idx}">
-        <button class="submit-btn" onclick="submitSingle(${idx})">Submit</button>
+        <button class="submit-btn" data-idx="${idx}">Submit</button>
       </div>
     </div>
   `).join('');
+
+  // V2.10.4: Use event listeners instead of inline onclick (CSP compliance)
+  document.querySelectorAll('.submit-btn[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => submitSingle(parseInt(btn.dataset.idx)));
+  });
 
   document.getElementById('submit-all').style.display = 'block';
 }
