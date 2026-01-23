@@ -239,23 +239,33 @@ router.get('/', requireAuth, async (req, res) => {
     }
 
     // 3. Sites with stale prices (> 7 days, no recent update)
+    // V2.10.3: Fixed query to check LATEST price per supplier, not any old price
     const [stalePrices] = await sequelize.query(`
-      SELECT DISTINCT ON (s.id)
+      WITH latest_prices AS (
+        SELECT DISTINCT ON (supplier_id)
+          supplier_id,
+          price_per_gallon,
+          scraped_at
+        FROM supplier_prices
+        WHERE is_valid = true
+        ORDER BY supplier_id, scraped_at DESC
+      )
+      SELECT
         s.id,
         s.name,
         s.website,
         s.city,
         s.state,
-        sp.price_per_gallon as current_price,
-        sp.scraped_at,
+        lp.price_per_gallon as current_price,
+        lp.scraped_at,
         'stale_price' as review_reason
       FROM suppliers s
-      LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id
+      LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
       WHERE s.active = true
         AND s.website IS NOT NULL
         AND s.allow_price_display = true
-        AND (sp.scraped_at < NOW() - INTERVAL '7 days' OR sp.id IS NULL)
-      ORDER BY s.id, sp.scraped_at DESC NULLS LAST
+        AND (lp.scraped_at < NOW() - INTERVAL '7 days' OR lp.supplier_id IS NULL)
+      ORDER BY lp.scraped_at NULLS FIRST
       LIMIT 20
     `);
 
