@@ -134,13 +134,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID']
 }));
 
-// Rate limiting
+// Rate limiting - only for API routes, not static website
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: process.env.NODE_ENV === 'production' ? 100 : 1000, // limit each IP
   message: { error: 'Too many requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => !req.path.startsWith('/api'), // Skip rate limiting for non-API routes
 });
 app.use(limiter);
 
