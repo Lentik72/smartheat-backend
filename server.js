@@ -79,16 +79,6 @@ const PORT = process.env.PORT || 8080;
 // Trust Railway's proxy for accurate IP detection in rate limiting
 app.set('trust proxy', 1);
 
-// V2.11.0: Redirect www to non-www for canonical URLs (fixes GA tracking)
-app.use((req, res, next) => {
-  const host = req.get('host');
-  if (host && host.startsWith('www.')) {
-    const newHost = host.slice(4); // Remove 'www.'
-    return res.redirect(301, `https://${newHost}${req.originalUrl}`);
-  }
-  next();
-});
-
 // Configure Winston Logger (Railway-compatible)
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
