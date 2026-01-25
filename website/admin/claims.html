@@ -421,7 +421,7 @@
         <h2>🔐 Admin Access</h2>
         <input type="password" id="token-input" placeholder="Enter admin token" />
         <br>
-        <button onclick="authenticate()">Login</button>
+        <button id="auth-login-btn">Login</button>
         <p class="error" id="auth-error" style="display: none;"></p>
     </div>
 
@@ -429,19 +429,19 @@
     <div id="dashboard" class="container" style="display: none;">
         <header>
             <h1>📋 Supplier Claims</h1>
-            <button class="action-btn" style="background: #F5A623; color: white;" onclick="loadClaims()">
+            <button class="action-btn" id="refresh-btn" style="background: #F5A623; color: white;">
                 ↻ Refresh
             </button>
         </header>
 
-        <div class="status-tabs">
-            <button class="status-tab active" data-status="pending" onclick="filterByStatus('pending')">
+        <div class="status-tabs" id="status-tabs">
+            <button class="status-tab active" data-status="pending">
                 Pending <span class="count" id="count-pending">0</span>
             </button>
-            <button class="status-tab" data-status="verified" onclick="filterByStatus('verified')">
+            <button class="status-tab" data-status="verified">
                 Verified <span class="count" id="count-verified">0</span>
             </button>
-            <button class="status-tab" data-status="rejected" onclick="filterByStatus('rejected')">
+            <button class="status-tab" data-status="rejected">
                 Rejected <span class="count" id="count-rejected">0</span>
             </button>
         </div>
@@ -478,8 +478,8 @@
             <h3>Reject Claim</h3>
             <textarea id="reject-reason" placeholder="Reason for rejection (optional)"></textarea>
             <div class="modal-actions">
-                <button class="modal-btn cancel" onclick="closeRejectModal()">Cancel</button>
-                <button class="modal-btn confirm" onclick="confirmReject()">Reject</button>
+                <button class="modal-btn cancel" id="reject-cancel-btn">Cancel</button>
+                <button class="modal-btn confirm" id="reject-confirm-btn">Reject</button>
             </div>
         </div>
     </div>
@@ -602,13 +602,13 @@
                 let actionsHtml = '';
                 if (currentStatus === 'pending') {
                     actionsHtml = `
-                        <button class="action-btn verify" onclick="verifyClaim('${claim.id}')">✓ Verify</button>
-                        <button class="action-btn reject" onclick="openRejectModal('${claim.id}')">✗ Reject</button>
+                        <button class="action-btn verify" data-action="verify" data-claim-id="${claim.id}">✓ Verify</button>
+                        <button class="action-btn reject" data-action="reject" data-claim-id="${claim.id}">✗ Reject</button>
                     `;
                 } else if (currentStatus === 'verified') {
                     actionsHtml = `
-                        <button class="action-btn regenerate" onclick="regenerateLink('${claim.id}')">🔗 New Link</button>
-                        <button class="action-btn revoke" onclick="revokeLink('${claim.id}')">⚠ Revoke</button>
+                        <button class="action-btn regenerate" data-action="regenerate" data-claim-id="${claim.id}">🔗 New Link</button>
+                        <button class="action-btn revoke" data-action="revoke" data-claim-id="${claim.id}">⚠ Revoke</button>
                     `;
                 } else if (currentStatus === 'rejected') {
                     const reason = claim.rejectionReason || 'No reason provided';
@@ -803,6 +803,44 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeRejectModal();
+            }
+        });
+
+        // Event delegation for static buttons (CSP-compliant - no inline handlers)
+        document.getElementById('auth-login-btn').addEventListener('click', authenticate);
+        document.getElementById('refresh-btn').addEventListener('click', loadClaims);
+        document.getElementById('reject-cancel-btn').addEventListener('click', closeRejectModal);
+        document.getElementById('reject-confirm-btn').addEventListener('click', confirmReject);
+
+        // Event delegation for status tabs
+        document.getElementById('status-tabs').addEventListener('click', (e) => {
+            const tab = e.target.closest('.status-tab');
+            if (tab && tab.dataset.status) {
+                filterByStatus(tab.dataset.status);
+            }
+        });
+
+        // Event delegation for dynamically created action buttons
+        document.getElementById('claims-body').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+
+            const action = btn.dataset.action;
+            const claimId = btn.dataset.claimId;
+
+            switch (action) {
+                case 'verify':
+                    verifyClaim(claimId);
+                    break;
+                case 'reject':
+                    openRejectModal(claimId);
+                    break;
+                case 'regenerate':
+                    regenerateLink(claimId);
+                    break;
+                case 'revoke':
+                    revokeLink(claimId);
+                    break;
             }
         });
     </script>
