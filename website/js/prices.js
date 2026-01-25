@@ -296,7 +296,7 @@
     const isVerified = supplier.verified === true;
     const claimButtonHtml = isVerified
       ? `<div class="supplier-verified-badge">✓ Verified</div>`
-      : `<button class="claim-listing-btn" onclick="window.openClaimModal('${supplier.id}', '${escapeHtml(supplier.name).replace(/'/g, "\\'")}')">Claim listing</button>`;
+      : `<button class="claim-listing-btn" data-supplier-id="${supplier.id}" data-supplier-name="${escapeHtml(supplier.name)}">Claim listing</button>`;
 
     return `
       <div class="supplier-card">
@@ -821,6 +821,18 @@
         }
       });
     }
+
+    // Event delegation for claim buttons (CSP-compliant - no inline handlers)
+    document.addEventListener('click', (e) => {
+      const claimBtn = e.target.closest('.claim-listing-btn');
+      if (claimBtn) {
+        const supplierId = claimBtn.dataset.supplierId;
+        const supplierName = claimBtn.dataset.supplierName;
+        if (supplierId && supplierName) {
+          window.openClaimModal(supplierId, supplierName);
+        }
+      }
+    });
 
     // Close on ESC key
     document.addEventListener('keydown', (e) => {
