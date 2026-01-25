@@ -822,6 +822,14 @@
       });
     }
 
+    // Close button click
+    const closeBtn = document.getElementById('claim-modal-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        window.closeClaimModal();
+      });
+    }
+
     // Event delegation for claim buttons (CSP-compliant - no inline handlers)
     document.addEventListener('click', (e) => {
       const claimBtn = e.target.closest('.claim-listing-btn');
