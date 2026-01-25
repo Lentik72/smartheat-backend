@@ -331,6 +331,91 @@ router.post('/', async (req, res) => {
 });
 
 /**
+ * Send welcome email to Android waitlist signup
+ */
+async function sendAndroidWelcomeEmail(email, position) {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    console.log('[Waitlist] RESEND_API_KEY not configured - skipping Android welcome email');
+    return false;
+  }
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">🤖</span>
+      </div>
+
+      <h1 style="color: #1a1a1a; text-align: center; margin-bottom: 8px;">You're on the Android list!</h1>
+
+      <p style="color: #F5A623; font-size: 24px; font-weight: bold; text-align: center; margin: 16px 0;">
+        Position #${position}
+      </p>
+
+      <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 24px 0;">
+        <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0;">
+          We're finishing the Android build to make sure it's as fast and reliable as our iOS version.
+          You'll be one of the first to know when it's ready.
+        </p>
+      </div>
+
+      <p style="color: #666; font-size: 15px; line-height: 1.6;">
+        <strong>What you'll get:</strong><br>
+        • Live price tracking from local suppliers<br>
+        • Push notifications when prices drop<br>
+        • Smart predictions for when to order
+      </p>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="https://www.gethomeheat.com/prices.html" style="display: inline-block; background: #F5A623; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          Check Today's Prices →
+        </a>
+      </div>
+
+      <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #eee;">
+        <p style="color: #999; font-size: 13px; margin: 0;">
+          Built by heating experts who believe you shouldn't overpay for comfort.
+        </p>
+      </div>
+
+      <p style="color: #999; font-size: 12px; text-align: center; margin-top: 32px;">
+        HomeHeat · Android coming soon
+      </p>
+    </div>
+  `;
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM || 'HomeHeat <onboarding@resend.dev>',
+        to: [email],
+        subject: `🤖 You're #${position} on the HomeHeat Android waitlist!`,
+        html
+      })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log(`[Waitlist] Android welcome email sent to ${email}: ${result.id}`);
+      return true;
+    } else {
+      console.error('[Waitlist] Resend API error (Android welcome):', result);
+      return false;
+    }
+  } catch (error) {
+    console.error('[Waitlist] Failed to send Android welcome email:', error.message);
+    return false;
+  }
+}
+
+/**
  * POST /api/waitlist/android
  * Add user to Android waitlist (website signup)
  */
@@ -369,6 +454,9 @@ router.post('/android', async (req, res) => {
 
     logger?.info(`[Waitlist] Android signup: ${email} - Total: ${totalCount}`);
 
+    // Send welcome email to user
+    await sendAndroidWelcomeEmail(email.toLowerCase().trim(), totalCount);
+
     // Send admin notification for first 20
     if (totalCount <= IMMEDIATE_EMAIL_THRESHOLD) {
       const apiKey = process.env.RESEND_API_KEY;
@@ -383,7 +471,7 @@ router.post('/android', async (req, res) => {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              from: process.env.EMAIL_FROM || 'SmartHeat <onboarding@resend.dev>',
+              from: process.env.EMAIL_FROM || 'HomeHeat <onboarding@resend.dev>',
               to: [recipient],
               subject: `🤖 Android Waitlist Signup #${totalCount}`,
               html: `
