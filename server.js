@@ -441,6 +441,9 @@ app.use('/api/v1/suppliers', suppliersRoutes);  // V1.3.0: Dynamic supplier dire
 app.use('/api/v1/market', intelligenceRoutes);  // V2.2.0: Market intelligence
 app.use('/api/waitlist', waitlistRoutes);  // V2.9.0: Canada waitlist
 app.use('/api/price-review', require('./src/routes/price-review'));  // V2.10.0: Admin price review portal
+app.use('/api/supplier-claim', require('./src/routes/supplier-claim'));  // V2.11.0: Supplier claim system
+app.use('/api/admin/supplier-claims', require('./src/routes/admin-supplier-claims'));  // V2.11.0: Admin claim review
+app.use('/api/supplier-update', require('./src/routes/supplier-update'));  // V2.11.0: Supplier magic link price update
 
 // V2.10.0: Serve static files for admin tools
 app.use(express.static(path.join(__dirname, 'public')));

@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Claims - Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .status-tab {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .status-tab:hover {
+            border-color: #F5A623;
+        }
+
+        .status-tab.active {
+            background: #F5A623;
+            color: white;
+            border-color: #F5A623;
+        }
+
+        .status-tab .count {
+            background: rgba(0,0,0,0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 6px;
+        }
+
+        .status-tab.active .count {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .claims-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: #fafafa;
+        }
+
+        .supplier-cell {
+            font-weight: 500;
+        }
+
+        .supplier-cell .location {
+            font-size: 13px;
+            color: #666;
+            font-weight: normal;
+        }
+
+        .phone-cell {
+            font-family: monospace;
+            font-size: 15px;
+        }
+
+        .phone-cell a {
+            color: #F5A623;
+            text-decoration: none;
+        }
+
+        .phone-cell a:hover {
+            text-decoration: underline;
+        }
+
+        .claimant-cell .name {
+            font-weight: 500;
+        }
+
+        .claimant-cell .email {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .claimant-cell .role {
+            font-size: 12px;
+            color: #999;
+            text-transform: capitalize;
+        }
+
+        .date-cell {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn.verify {
+            background: #28a745;
+            color: white;
+        }
+
+        .action-btn.verify:hover {
+            background: #218838;
+        }
+
+        .action-btn.reject {
+            background: #dc3545;
+            color: white;
+        }
+
+        .action-btn.reject:hover {
+            background: #c82333;
+        }
+
+        .action-btn.revoke {
+            background: #6c757d;
+            color: white;
+        }
+
+        .action-btn.revoke:hover {
+            background: #5a6268;
+        }
+
+        .action-btn.regenerate {
+            background: #007bff;
+            color: white;
+        }
+
+        .action-btn.regenerate:hover {
+            background: #0056b3;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #eee;
+            border-top-color: #F5A623;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 16px;
+        }
+
+        .modal-content textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            margin-bottom: 16px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .modal-btn.cancel {
+            background: #eee;
+        }
+
+        .modal-btn.confirm {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* Result badges */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge.verified {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #333;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            background: #28a745;
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Auth screen */
+        .auth-screen {
+            text-align: center;
+            padding: 100px 20px;
+        }
+
+        .auth-screen h2 {
+            margin-bottom: 24px;
+        }
+
+        .auth-screen input {
+            padding: 12px 16px;
+            width: 300px;
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+
+        .auth-screen button {
+            padding: 12px 24px;
+            background: #F5A623;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .auth-screen .error {
+            color: #dc3545;
+            margin-top: 16px;
+        }
+
+        /* Magic link display */
+        .magic-link-display {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 768px) {
+            th, td {
+                padding: 12px 8px;
+            }
+
+            .actions-cell {
+                flex-direction: column;
+            }
+
+            .status-tabs {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="auth-screen">
+        <h2>🔐 Admin Access</h2>
+        <input type="password" id="token-input" placeholder="Enter admin token" />
+        <br>
+        <button onclick="authenticate()">Login</button>
+        <p class="error" id="auth-error" style="display: none;"></p>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="container" style="display: none;">
+        <header>
+            <h1>📋 Supplier Claims</h1>
+            <button class="action-btn" style="background: #F5A623; color: white;" onclick="loadClaims()">
+                ↻ Refresh
+            </button>
+        </header>
+
+        <div class="status-tabs">
+            <button class="status-tab active" data-status="pending" onclick="filterByStatus('pending')">
+                Pending <span class="count" id="count-pending">0</span>
+            </button>
+            <button class="status-tab" data-status="verified" onclick="filterByStatus('verified')">
+                Verified <span class="count" id="count-verified">0</span>
+            </button>
+            <button class="status-tab" data-status="rejected" onclick="filterByStatus('rejected')">
+                Rejected <span class="count" id="count-rejected">0</span>
+            </button>
+        </div>
+
+        <div class="claims-table">
+            <div id="loading" class="loading">
+                <div class="loading-spinner"></div>
+                <p>Loading claims...</p>
+            </div>
+
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <div class="icon">📭</div>
+                <p>No claims in this category</p>
+            </div>
+
+            <table id="claims-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Supplier</th>
+                        <th>Phone to Call</th>
+                        <th>Claimant</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="claims-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div id="reject-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3>Reject Claim</h3>
+            <textarea id="reject-reason" placeholder="Reason for rejection (optional)"></textarea>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeRejectModal()">Cancel</button>
+                <button class="modal-btn confirm" onclick="confirmReject()">Reject</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let adminToken = null;
+        let currentStatus = 'pending';
+        let claimsData = [];
+        let pendingRejectId = null;
+
+        // Check for token on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check URL for token
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlToken = urlParams.get('token');
+
+            if (urlToken) {
+                // Store and strip from URL
+                localStorage.setItem('admin_claims_token', urlToken);
+                window.history.replaceState({}, document.title, '/admin/claims.html');
+                adminToken = urlToken;
+                showDashboard();
+            } else {
+                // Check localStorage
+                const storedToken = localStorage.getItem('admin_claims_token');
+                if (storedToken) {
+                    adminToken = storedToken;
+                    showDashboard();
+                }
+            }
+        });
+
+        function authenticate() {
+            const input = document.getElementById('token-input');
+            const token = input.value.trim();
+
+            if (!token) {
+                showAuthError('Please enter a token');
+                return;
+            }
+
+            adminToken = token;
+            localStorage.setItem('admin_claims_token', token);
+            showDashboard();
+        }
+
+        function showAuthError(message) {
+            const error = document.getElementById('auth-error');
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+
+        function showDashboard() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            loadClaims();
+        }
+
+        async function loadClaims() {
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('claims-table');
+            const empty = document.getElementById('empty-state');
+
+            loading.style.display = 'block';
+            table.style.display = 'none';
+            empty.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/admin/supplier-claims?status=${currentStatus}`, {
+                    headers: { 'X-Admin-Token': adminToken }
+                });
+
+                if (response.status === 401) {
+                    showToast('Invalid admin token', 'error');
+                    localStorage.removeItem('admin_claims_token');
+                    document.getElementById('auth-screen').style.display = 'block';
+                    document.getElementById('dashboard').style.display = 'none';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load claims');
+                }
+
+                claimsData = data.claims;
+
+                // Update counts
+                const counts = data.counts || {};
+                document.getElementById('count-pending').textContent = counts.pending || 0;
+                document.getElementById('count-verified').textContent = counts.verified || 0;
+                document.getElementById('count-rejected').textContent = counts.rejected || 0;
+
+                loading.style.display = 'none';
+
+                if (claimsData.length === 0) {
+                    empty.style.display = 'block';
+                } else {
+                    renderClaims();
+                    table.style.display = 'table';
+                }
+
+            } catch (error) {
+                console.error('Load error:', error);
+                loading.style.display = 'none';
+                showToast('Failed to load claims', 'error');
+            }
+        }
+
+        function renderClaims() {
+            const tbody = document.getElementById('claims-body');
+            tbody.innerHTML = claimsData.map(claim => {
+                const date = new Date(claim.submittedAt).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric',
+                    hour: 'numeric', minute: '2-digit'
+                });
+
+                let actionsHtml = '';
+                if (currentStatus === 'pending') {
+                    actionsHtml = `
+                        <button class="action-btn verify" onclick="verifyClaim('${claim.id}')">✓ Verify</button>
+                        <button class="action-btn reject" onclick="openRejectModal('${claim.id}')">✗ Reject</button>
+                    `;
+                } else if (currentStatus === 'verified') {
+                    actionsHtml = `
+                        <button class="action-btn regenerate" onclick="regenerateLink('${claim.id}')">🔗 New Link</button>
+                        <button class="action-btn revoke" onclick="revokeLink('${claim.id}')">⚠ Revoke</button>
+                    `;
+                } else if (currentStatus === 'rejected') {
+                    const reason = claim.rejectionReason || 'No reason provided';
+                    actionsHtml = `<span style="color: #666; font-size: 13px;">${reason}</span>`;
+                }
+
+                return `
+                    <tr>
+                        <td class="supplier-cell">
+                            <div>${claim.supplier.name}</div>
+                            <div class="location">${claim.supplier.city}, ${claim.supplier.state}</div>
+                        </td>
+                        <td class="phone-cell">
+                            <a href="tel:${claim.supplier.phone}">${claim.supplier.phone}</a>
+                        </td>
+                        <td class="claimant-cell">
+                            <div class="name">${claim.claimant.name}</div>
+                            <div class="email">${claim.claimant.email}</div>
+                            <div class="role">${claim.claimant.role || 'Not specified'}</div>
+                        </td>
+                        <td class="date-cell">${date}</td>
+                        <td class="actions-cell">${actionsHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterByStatus(status) {
+            currentStatus = status;
+
+            // Update tab styling
+            document.querySelectorAll('.status-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.status === status);
+            });
+
+            loadClaims();
+        }
+
+        async function verifyClaim(claimId) {
+            if (!confirm('Verify this claim? This will generate a magic link and email it to the supplier.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/supplier-claims/${claimId}/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Admin-Token': adminToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to verify');
+                }
+
+                showToast(`Verified! ${data.magicLinkSent ? 'Email sent.' : 'Email failed - copy link manually.'}`, 'success');
+
+                // Show magic link for manual copy if needed
+                if (data.magicLinkUrl) {
+                    console.log('Magic link:', data.magicLinkUrl);
+                }
+
+                loadClaims();
+
+            } catch (error) {
+                console.error('Verify error:', error);
+                showToast(error.message || 'Failed to verify claim', 'error');
+            }
+        }
+
+        function openRejectModal(claimId) {
+            pendingRejectId = claimId;
+            document.getElementById('reject-reason').value = '';
+            document.getElementById('reject-modal').style.display = 'flex';
+        }
+
+        function closeRejectModal() {
+            pendingRejectId = null;
+            document.getElementById('reject-modal').style.display = 'none';
+        }
+
+        async function confirmReject() {
+            if (!pendingRejectId) return;
+
+            const reason = document.getElementById('reject-reason').value.trim();
+
+            try {
+                const response = await fetch(`/api/admin/supplier-claims/${pendingRejectId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Admin-Token': adminToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to reject');
+                }
+
+                closeRejectModal();
+                showToast('Claim rejected', 'success');
+                loadClaims();
+
+            } catch (error) {
+                console.error('Reject error:', error);
+                showToast(error.message || 'Failed to reject claim', 'error');
+            }
+        }
+
+        async function revokeLink(claimId) {
+            if (!confirm('Revoke the magic link? The supplier will no longer be able to update prices.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/supplier-claims/${claimId}/revoke`, {
+                    method: 'POST',
+                    headers: { 'X-Admin-Token': adminToken }
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to revoke');
+                }
+
+                showToast(`Revoked ${data.revokedCount} link(s)`, 'success');
+                loadClaims();
+
+            } catch (error) {
+                console.error('Revoke error:', error);
+                showToast(error.message || 'Failed to revoke link', 'error');
+            }
+        }
+
+        async function regenerateLink(claimId) {
+            if (!confirm('Generate a new magic link? This will invalidate the old link.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/supplier-claims/${claimId}/regenerate`, {
+                    method: 'POST',
+                    headers: { 'X-Admin-Token': adminToken }
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to regenerate');
+                }
+
+                showToast(`New link generated. ${data.magicLinkSent ? 'Email sent.' : 'Email failed.'}`, 'success');
+
+                if (data.magicLinkUrl) {
+                    console.log('New magic link:', data.magicLinkUrl);
+                }
+
+            } catch (error) {
+                console.error('Regenerate error:', error);
+                showToast(error.message || 'Failed to regenerate link', 'error');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            // Remove existing toast
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // Close modal on backdrop click
+        document.getElementById('reject-modal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeRejectModal();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeRejectModal();
+            }
+        });
+    </script>
+</body>
+</html>

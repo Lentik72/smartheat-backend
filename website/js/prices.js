@@ -292,6 +292,12 @@
     // Format website display (remove protocol, trailing slash)
     const websiteDisplay = website.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
+    // Check if supplier is already claimed/verified
+    const isVerified = supplier.verified === true;
+    const claimButtonHtml = isVerified
+      ? `<div class="supplier-verified-badge">✓ Verified</div>`
+      : `<button class="claim-listing-btn" onclick="window.openClaimModal('${supplier.id}', '${escapeHtml(supplier.name).replace(/'/g, "\\'")}')">Claim listing</button>`;
+
     return `
       <div class="supplier-card">
         <div class="supplier-info">
@@ -299,6 +305,7 @@
           <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
           ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone">${escapeHtml(phone)}</a>` : ''}
           ${website ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener" class="supplier-website" onclick="gtag('event', 'click_supplier_website', {supplier: '${escapeHtml(supplier.name)}'});">${escapeHtml(websiteDisplay)}</a>` : ''}
+          ${claimButtonHtml}
         </div>
         <div class="supplier-price">
           <div class="price-amount">$${price.pricePerGallon.toFixed(2)}</div>
@@ -671,6 +678,159 @@
     schemaEl.textContent = JSON.stringify(schema);
   }
 
+  // ========================================
+  // SUPPLIER CLAIM SYSTEM
+  // ========================================
+
+  // Open claim modal
+  window.openClaimModal = function(supplierId, supplierName) {
+    const modal = document.getElementById('claim-modal');
+    const nameEl = document.getElementById('claim-supplier-name');
+    const idEl = document.getElementById('claim-supplier-id');
+
+    if (modal && nameEl && idEl) {
+      nameEl.textContent = supplierName;
+      idEl.value = supplierId;
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+
+      // Focus on first input
+      setTimeout(() => {
+        const nameInput = document.getElementById('claim-name');
+        if (nameInput) nameInput.focus();
+      }, 100);
+
+      logAnalytics('claim_modal_opened', { supplierId, supplierName });
+    }
+  };
+
+  // Close claim modal
+  window.closeClaimModal = function() {
+    const modal = document.getElementById('claim-modal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  };
+
+  // Submit claim form
+  async function submitClaim(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const errorEl = document.getElementById('claim-error');
+    const successEl = document.getElementById('claim-success');
+
+    // Clear previous messages
+    if (errorEl) errorEl.style.display = 'none';
+    if (successEl) successEl.style.display = 'none';
+
+    // Get form data
+    const supplierId = document.getElementById('claim-supplier-id').value;
+    const supplierName = document.getElementById('claim-supplier-name').textContent;
+    const claimantName = document.getElementById('claim-name').value.trim();
+    const claimantEmail = document.getElementById('claim-email').value.trim();
+    const claimantPhone = document.getElementById('claim-phone').value.trim();
+    const claimantRole = document.getElementById('claim-role').value;
+    const honeypot = document.getElementById('claim-website-url').value; // Honeypot
+
+    // Validate
+    if (!claimantName || !claimantEmail) {
+      if (errorEl) {
+        errorEl.textContent = 'Please fill in your name and email.';
+        errorEl.style.display = 'block';
+      }
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(claimantEmail)) {
+      if (errorEl) {
+        errorEl.textContent = 'Please enter a valid email address.';
+        errorEl.style.display = 'block';
+      }
+      return;
+    }
+
+    // Disable button
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    try {
+      const response = await fetch(`${API_BASE}/api/supplier-claim`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId,
+          claimantName,
+          claimantEmail,
+          claimantPhone,
+          claimantRole,
+          website_url: honeypot // Honeypot field
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Show success
+        if (successEl) {
+          successEl.textContent = result.message || "Claim submitted! We'll verify by calling the business within 24-48 hours.";
+          successEl.style.display = 'block';
+        }
+        form.reset();
+
+        logAnalytics('claim_submitted', { supplierId, supplierName });
+
+        // Auto-close after 3 seconds
+        setTimeout(() => {
+          window.closeClaimModal();
+        }, 3000);
+      } else {
+        if (errorEl) {
+          errorEl.textContent = result.error || 'Failed to submit claim. Please try again.';
+          errorEl.style.display = 'block';
+        }
+      }
+    } catch (error) {
+      console.error('Claim submission error:', error);
+      if (errorEl) {
+        errorEl.textContent = 'Network error. Please try again.';
+        errorEl.style.display = 'block';
+      }
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Claim';
+    }
+  }
+
+  // Initialize claim form
+  function initClaimForm() {
+    const form = document.getElementById('claim-form');
+    if (form) {
+      form.addEventListener('submit', submitClaim);
+    }
+
+    // Close modal on backdrop click
+    const modal = document.getElementById('claim-modal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          window.closeClaimModal();
+        }
+      });
+    }
+
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        window.closeClaimModal();
+      }
+    });
+  }
+
   // Start
   init();
+  initClaimForm();
 })();
