@@ -314,7 +314,8 @@ router.get('/', async (req, res) => {
         'id', 'name', 'phone', 'email', 'website',
         'addressLine1', 'city', 'state',
         'postalCodesServed', 'serviceCities', 'serviceCounties',
-        'serviceAreaRadius', 'lat', 'lng', 'verified'
+        'serviceAreaRadius', 'lat', 'lng', 'verified',
+        'claimed_at', 'claimed_by_email'  // V2.5.0: Track claimed/verified suppliers
       ]
     });
 
@@ -360,7 +361,9 @@ router.get('/', async (req, res) => {
             sourceType: price.sourceType,
             scrapedAt: price.scrapedAt,
             expiresAt: price.expiresAt
-          } : null
+          } : null,
+          // V2.5.0: Claimed supplier info
+          claimedAt: s.claimed_at || null
         };
       });
 
@@ -550,7 +553,9 @@ router.get('/', async (req, res) => {
         } : null,
         // V2.4.0: Sorting metadata for iOS display
         priceStatus,  // 'fresh' | 'recent' | 'stale' | 'none'
-        sortGroup     // 'priced' | 'unpriced'
+        sortGroup,    // 'priced' | 'unpriced'
+        // V2.5.0: Claimed supplier info (for verified badge)
+        claimedAt: s.claimed_at || null
       };
     });
 

@@ -292,9 +292,9 @@
     // Format website display (remove protocol, trailing slash)
     const websiteDisplay = website.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-    // Check if supplier is already claimed/verified
-    const isVerified = supplier.verified === true;
-    const claimButtonHtml = isVerified
+    // Check if supplier is already claimed/verified (claimedAt = timestamp when verified)
+    const isClaimed = !!supplier.claimedAt;
+    const claimButtonHtml = isClaimed
       ? `<div class="supplier-verified-badge">✓ Verified</div>`
       : `<button class="claim-listing-btn" data-supplier-id="${supplier.id}" data-supplier-name="${escapeHtml(supplier.name)}">Claim listing</button>`;
 
