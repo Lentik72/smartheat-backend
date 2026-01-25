@@ -1974,3 +1974,81 @@ body {
         background: linear-gradient(135deg, #5d3d17 0%, #4a3012 100%);
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANDROID WAITLIST
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.android-waitlist {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--background-secondary);
+    border-radius: 12px;
+    text-align: center;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.android-waitlist-text {
+    color: var(--text-gray);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.android-waitlist-form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.android-waitlist-form input[type="email"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+}
+
+.android-waitlist-form input[type="email"]:focus {
+    border-color: var(--primary-orange);
+}
+
+.android-waitlist-form button {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary-orange);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.android-waitlist-form button:hover {
+    background: var(--primary-orange-hover);
+}
+
+.android-waitlist-success {
+    color: var(--accent-green);
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 480px) {
+    .android-waitlist-form {
+        flex-direction: column;
+    }
+    
+    .android-waitlist-form input[type="email"] {
+        width: 100%;
+    }
+    
+    .android-waitlist-form button {
+        width: 100%;
+    }
+}

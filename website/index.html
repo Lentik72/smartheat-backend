@@ -66,7 +66,7 @@
             <span class="trust-badge">Oil & Propane</span>
         </div>
 
-        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card">
+        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card" onclick="gtag('event', 'click_download', {location: 'hero'});">
             <img src="images/app-icon.png" alt="HomeHeat App Icon">
             <div class="app-download-info">
                 <div class="app-name">HomeHeat</div>
@@ -75,7 +75,17 @@
             </div>
         </a>
         <p class="hero-micro-copy">Free. No hardware. No ads.</p>
-        <a href="prices.html" class="hero-secondary-link">Or check today's local prices →</a>
+        <a href="prices.html" class="hero-secondary-link" onclick="gtag('event', 'click_prices', {location: 'hero'});">Or check today's local prices →</a>
+
+        <!-- Android Waitlist -->
+        <div class="android-waitlist">
+            <p class="android-waitlist-text">Android coming soon.</p>
+            <form id="android-waitlist-form" class="android-waitlist-form">
+                <input type="email" id="android-email" placeholder="Enter your email" required>
+                <button type="submit">Notify Me</button>
+            </form>
+            <p id="android-waitlist-success" class="android-waitlist-success" style="display: none;">You're on the list!</p>
+        </div>
     </section>
 
     <section class="screenshots">
@@ -294,7 +304,7 @@
         <p class="cta-moat">Built specifically for homes that heat with oil or propane.</p>
         <h2>Ready to Stop Guessing?</h2>
         <p class="cta-inevitability">If you heat with oil or propane, the app handles the part you can't see.</p>
-        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card">
+        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card" onclick="gtag('event', 'click_download', {location: 'bottom_cta'});">
             <img src="images/app-icon.png" alt="HomeHeat App Icon">
             <div class="app-download-info">
                 <div class="app-name">HomeHeat</div>
@@ -317,5 +327,32 @@
     </footer>
 
     <script src="js/nav.js"></script>
+    <script>
+    // Android waitlist form
+    document.getElementById('android-waitlist-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('android-email').value;
+        const form = document.getElementById('android-waitlist-form');
+        const success = document.getElementById('android-waitlist-success');
+
+        try {
+            const res = await fetch('/api/waitlist/android', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            if (res.ok) {
+                form.style.display = 'none';
+                success.style.display = 'block';
+                gtag('event', 'android_waitlist_signup');
+            } else {
+                alert('Something went wrong. Please try again.');
+            }
+        } catch (err) {
+            alert('Something went wrong. Please try again.');
+        }
+    });
+    </script>
 </body>
 </html>

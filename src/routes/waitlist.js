@@ -331,6 +331,89 @@ router.post('/', async (req, res) => {
 });
 
 /**
+ * POST /api/waitlist/android
+ * Add user to Android waitlist (website signup)
+ */
+router.post('/android', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger;
+
+  try {
+    const { email } = req.body;
+
+    // Validate email
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
+    }
+
+    // Insert into waitlist with country='ANDROID'
+    await sequelize.query(`
+      INSERT INTO waitlist (email, country, source)
+      VALUES (:email, 'ANDROID', 'website')
+      ON CONFLICT (email, country)
+      DO UPDATE SET created_at = NOW()
+    `, {
+      replacements: { email: email.toLowerCase().trim() }
+    });
+
+    // Get total Android waitlist count
+    const [countResult] = await sequelize.query(
+      "SELECT COUNT(*) as total FROM waitlist WHERE country = 'ANDROID'"
+    );
+    const totalCount = parseInt(countResult[0]?.total || 0);
+
+    logger?.info(`[Waitlist] Android signup: ${email} - Total: ${totalCount}`);
+
+    // Send admin notification for first 20
+    if (totalCount <= IMMEDIATE_EMAIL_THRESHOLD) {
+      const apiKey = process.env.RESEND_API_KEY;
+      const recipient = process.env.ADMIN_EMAIL || 'ltsoir@gmail.com';
+
+      if (apiKey) {
+        try {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              from: process.env.EMAIL_FROM || 'SmartHeat <onboarding@resend.dev>',
+              to: [recipient],
+              subject: `🤖 Android Waitlist Signup #${totalCount}`,
+              html: `
+                <div style="font-family: sans-serif; max-width: 400px;">
+                  <h2>New Android Waitlist Signup</h2>
+                  <p><strong>Email:</strong> ${email}</p>
+                  <p><strong>Total Android waitlist:</strong> ${totalCount}</p>
+                </div>
+              `
+            })
+          });
+        } catch (e) {
+          logger?.warn('[Waitlist] Failed to send Android notification:', e.message);
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "You're on the list!",
+      position: totalCount
+    });
+
+  } catch (error) {
+    logger?.error('[Waitlist] Android signup error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to join waitlist' });
+  }
+});
+
+/**
  * GET /api/waitlist/stats
  * Get waitlist statistics (admin only - no auth for now)
  */
