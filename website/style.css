@@ -1011,6 +1011,20 @@ body {
     text-decoration: underline;
 }
 
+.supplier-website {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-top: 0.25rem;
+    word-break: break-all;
+}
+
+.supplier-website:hover {
+    color: var(--primary-orange);
+    text-decoration: underline;
+}
+
 .supplier-price {
     text-align: right;
 }

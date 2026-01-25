@@ -285,8 +285,12 @@
     const price = supplier.currentPrice;
     const phone = supplier.phone || '';
     const phoneHref = phone.replace(/\D/g, '');
+    const website = supplier.website || '';
     const scrapedAt = price.scrapedAt ? new Date(price.scrapedAt) : null;
     const freshness = formatCardFreshness(scrapedAt);
+
+    // Format website display (remove protocol, trailing slash)
+    const websiteDisplay = website.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
     return `
       <div class="supplier-card">
@@ -294,6 +298,7 @@
           <div class="supplier-name">${escapeHtml(supplier.name)}</div>
           <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
           ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone">${escapeHtml(phone)}</a>` : ''}
+          ${website ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener" class="supplier-website" onclick="gtag('event', 'click_supplier_website', {supplier: '${escapeHtml(supplier.name)}'});">${escapeHtml(websiteDisplay)}</a>` : ''}
         </div>
         <div class="supplier-price">
           <div class="price-amount">$${price.pricePerGallon.toFixed(2)}</div>
