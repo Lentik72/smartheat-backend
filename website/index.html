@@ -66,7 +66,7 @@
             <span class="trust-badge">Oil & Propane</span>
         </div>
 
-        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card" onclick="gtag('event', 'click_download', {location: 'hero'});">
+        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card" data-track="click_download" data-location="hero">
             <img src="images/app-icon.png" alt="HomeHeat App Icon">
             <div class="app-download-info">
                 <div class="app-name">HomeHeat</div>
@@ -75,7 +75,7 @@
             </div>
         </a>
         <p class="hero-micro-copy">Free. No hardware. No ads.</p>
-        <a href="prices.html" class="hero-secondary-link" onclick="gtag('event', 'click_prices', {location: 'hero'});">Or check today's local prices →</a>
+        <a href="prices.html" class="hero-secondary-link" data-track="click_prices" data-location="hero">Or check today's local prices →</a>
 
         <!-- Android Waitlist -->
         <div class="android-waitlist">
@@ -304,7 +304,7 @@
         <p class="cta-moat">Built specifically for homes that heat with oil or propane.</p>
         <h2>Ready to Stop Guessing?</h2>
         <p class="cta-inevitability">If you heat with oil or propane, the app handles the part you can't see.</p>
-        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card" onclick="gtag('event', 'click_download', {location: 'bottom_cta'});">
+        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card" data-track="click_download" data-location="bottom_cta">
             <img src="images/app-icon.png" alt="HomeHeat App Icon">
             <div class="app-download-info">
                 <div class="app-name">HomeHeat</div>
@@ -328,6 +328,15 @@
 
     <script src="js/nav.js"></script>
     <script>
+    // Analytics tracking (CSP-compliant - no inline handlers)
+    document.querySelectorAll('[data-track]').forEach(el => {
+        el.addEventListener('click', () => {
+            if (typeof gtag === 'function') {
+                gtag('event', el.dataset.track, { location: el.dataset.location });
+            }
+        });
+    });
+
     // Android waitlist form
     document.getElementById('android-waitlist-form').addEventListener('submit', async (e) => {
         e.preventDefault();

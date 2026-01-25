@@ -494,7 +494,7 @@
             <p style="font-size: 14px; color: #888;">
                 Homeowners searching in your area will see this price.
             </p>
-            <button class="update-another-btn" onclick="showUpdateForm()">
+            <button class="update-another-btn" id="update-again-btn">
                 Update Again
             </button>
         </div>
@@ -707,6 +707,9 @@
             // Re-validate and refresh data
             validateToken();
         }
+
+        // Event listener for Update Again button (CSP-compliant)
+        document.getElementById('update-again-btn').addEventListener('click', showUpdateForm);
     </script>
 </body>
 </html>
