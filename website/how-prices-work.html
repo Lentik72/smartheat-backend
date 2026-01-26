@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HCNTVGNVJ9');
+</script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Prices Work - HomeHeat</title>
+    <meta name="description" content="Learn how HomeHeat collects, displays, and sorts heating oil prices. Transparent methodology with no hidden algorithms or pay-to-play rankings.">
+
+    <meta property="og:title" content="How Prices Work - HomeHeat">
+    <meta property="og:description" content="Transparent pricing methodology. No hidden algorithms or pay-to-play rankings.">
+    <meta property="og:url" content="https://www.gethomeheat.com/how-prices-work.html">
+    <meta property="og:type" content="website">
+
+    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
+    <style>
+        .prices-hero {
+            background: linear-gradient(135deg, var(--background-secondary) 0%, var(--background-light) 100%);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .prices-hero h1 {
+            font-size: 2.5rem;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .prices-hero p {
+            font-size: 1.2rem;
+            color: var(--text-gray);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .content-section {
+            padding: 3rem 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .content-section h2 {
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .content-section p {
+            color: var(--text-gray);
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+
+        .content-section ul {
+            color: var(--text-gray);
+            margin: 1rem 0 1.5rem 1.5rem;
+            line-height: 1.8;
+        }
+
+        .content-section li {
+            margin-bottom: 0.5rem;
+        }
+
+        .highlight-box {
+            background: var(--background-secondary);
+            border-left: 4px solid var(--primary-orange);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .highlight-box h3 {
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight-box p {
+            color: var(--text-secondary);
+            margin-bottom: 0;
+        }
+
+        .methodology-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .method-card {
+            background: var(--background-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .method-card .icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .method-card h3 {
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .method-card p {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+
+        .source-tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+
+        .source-verified {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .source-scraped {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .source-supplier {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 3rem 0;
+        }
+
+        .principles-section {
+            background: var(--background-card);
+            padding: 3rem 2rem;
+        }
+
+        .principles-section h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--text-dark);
+        }
+
+        .principles-grid {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .principle-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .principle-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .principle-card h3 {
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .principle-card p {
+            color: var(--text-gray);
+            font-size: 0.95rem;
+        }
+
+        .cta-section {
+            padding: 4rem 2rem;
+            text-align: center;
+            background: var(--background-secondary);
+        }
+
+        .cta-section h2 {
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            color: var(--text-gray);
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: var(--primary-orange);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s;
+            margin: 0.5rem;
+        }
+
+        .cta-btn:hover {
+            background: var(--primary-orange-hover);
+        }
+
+        .cta-btn-secondary {
+            background: transparent;
+            border: 2px solid var(--primary-orange);
+            color: var(--primary-orange);
+        }
+
+        .cta-btn-secondary:hover {
+            background: var(--primary-orange);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .prices-hero h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <img src="images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
+                HomeHeat
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="prices.html">Prices</a></li>
+                <li><a href="for-suppliers.html">For Suppliers</a></li>
+                <li><a href="learn/">Learn</a></li>
+                <li><a href="support.html">Support</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="prices-hero">
+        <h1>How Prices Work on HomeHeat</h1>
+        <p>Transparent methodology. No hidden algorithms. No pay-to-play rankings.</p>
+    </section>
+
+    <section class="content-section">
+        <h2>Where Prices Come From</h2>
+        <p>We collect heating oil prices from multiple sources to give you the most complete picture possible:</p>
+
+        <div class="methodology-grid">
+            <div class="method-card">
+                <div class="icon">✅</div>
+                <h3>Supplier-Submitted</h3>
+                <p>Verified suppliers update their own prices directly using a secure link. Most accurate and up-to-date.</p>
+                <span class="source-tag source-supplier">Direct from supplier</span>
+            </div>
+            <div class="method-card">
+                <div class="icon">🌐</div>
+                <h3>Published Prices</h3>
+                <p>We collect prices that suppliers publish on their own websites. Updated regularly.</p>
+                <span class="source-tag source-scraped">From supplier website</span>
+            </div>
+            <div class="method-card">
+                <div class="icon">📞</div>
+                <h3>Manual Research</h3>
+                <p>For suppliers without online prices, we may call to verify pricing and add them to the directory.</p>
+                <span class="source-tag source-verified">Verified by HomeHeat</span>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <h3>Important: Prices Are Estimates</h3>
+            <p>Published prices are starting points. Final price may vary based on delivery quantity, payment method, location, and current market conditions. Always confirm pricing when you call.</p>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>How Suppliers Are Sorted</h2>
+        <p>When you search for prices in your area, we don't simply show the cheapest option first. Here's why:</p>
+
+        <ul>
+            <li><strong>Geography matters most.</strong> Suppliers closer to you are more likely to deliver quickly and efficiently.</li>
+            <li><strong>Service area accuracy.</strong> We prioritize suppliers who explicitly serve your ZIP code over those with general regional coverage.</li>
+            <li><strong>Data freshness.</strong> Recent price updates indicate active, engaged suppliers.</li>
+            <li><strong>Availability signals.</strong> During heating season, suppliers with capacity may be shown higher.</li>
+        </ul>
+
+        <div class="highlight-box">
+            <h3>We Don't Optimize for Cheapest</h3>
+            <p>Price is important, but it's not the only factor. A slightly higher price from a reliable local supplier who can deliver this week is often better than the lowest price from a supplier who's booked solid. We show you options and let you decide.</p>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>What We Don't Do</h2>
+        <ul>
+            <li><strong>No paid placement.</strong> Suppliers can't pay to appear higher in search results.</li>
+            <li><strong>No hidden algorithms.</strong> We don't secretly demote suppliers based on proprietary scores.</li>
+            <li><strong>No exclusivity requirements.</strong> Suppliers can list on HomeHeat alongside any other platform.</li>
+            <li><strong>No response time penalties.</strong> We don't punish suppliers for being busy or slow to respond.</li>
+            <li><strong>No lead interception.</strong> When you call a supplier, you're calling them directly. We don't record calls or insert ourselves into the relationship.</li>
+        </ul>
+    </section>
+
+    <section class="principles-section">
+        <h2>Our Guiding Principles</h2>
+        <div class="principles-grid">
+            <div class="principle-card">
+                <div class="icon">🎯</div>
+                <h3>Homeowner-First</h3>
+                <p>Everything we build is designed to help homeowners find reliable fuel delivery. That's our primary purpose.</p>
+            </div>
+            <div class="principle-card">
+                <div class="icon">🤝</div>
+                <h3>Fair to Suppliers</h3>
+                <p>We respect that suppliers run real businesses. No gotchas, no hidden rules, no punitive policies.</p>
+            </div>
+            <div class="principle-card">
+                <div class="icon">📊</div>
+                <h3>Transparent Methods</h3>
+                <p>If you wonder why something is sorted a certain way, we'll explain it. No black boxes.</p>
+            </div>
+            <div class="principle-card">
+                <div class="icon">🔄</div>
+                <h3>Continuous Improvement</h3>
+                <p>We listen to feedback from both homeowners and suppliers to make HomeHeat better over time.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>Price Accuracy & Freshness</h2>
+        <p>We indicate when prices were last updated so you can judge their reliability:</p>
+        <ul>
+            <li><strong>Today/Yesterday:</strong> Very fresh. Likely accurate.</li>
+            <li><strong>This week:</strong> Recent. Should be close.</li>
+            <li><strong>Older:</strong> May have changed. Confirm when calling.</li>
+        </ul>
+        <p>Prices in the heating oil market can change daily based on wholesale costs, so we encourage you to verify the current price when you contact a supplier.</p>
+    </section>
+
+    <section class="cta-section">
+        <h2>Questions?</h2>
+        <p>We're happy to explain any aspect of how HomeHeat works.</p>
+        <a href="prices.html" class="cta-btn">Check Local Prices</a>
+        <a href="for-suppliers.html" class="cta-btn cta-btn-secondary">Supplier Information</a>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="for-suppliers.html">For Suppliers</a>
+            <a href="how-prices-work.html">How Prices Work</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="support.html">Support</a>
+        </div>
+        <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
+        <p>&copy; 2025 HomeHeat. All rights reserved.</p>
+    </footer>
+
+    <script src="js/nav.js"></script>
+</body>
+</html>
