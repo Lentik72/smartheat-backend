@@ -1055,6 +1055,14 @@ body {
     font-style: italic;
 }
 
+/* V2.5.0: Stale price warning (14+ days old) */
+.price-freshness.stale-warning {
+    color: #B45309;
+    font-weight: 500;
+    font-style: normal;
+    cursor: help;
+}
+
 /* Disclaimer */
 .price-disclaimer {
     font-size: 0.75rem;

@@ -311,27 +311,34 @@
           <div class="price-amount">$${price.pricePerGallon.toFixed(2)}</div>
           <div class="price-unit">per gallon</div>
           ${price.minGallons ? `<div class="price-min">${price.minGallons}+ gal min</div>` : ''}
-          <div class="price-freshness">${freshness}</div>
+          <div class="price-freshness ${freshness.isStale ? 'stale-warning' : ''}" ${freshness.tooltip ? `title="${freshness.tooltip}"` : ''}>${freshness.text}</div>
         </div>
       </div>
     `;
   }
 
   // Format freshness for individual supplier cards (compact format)
+  // Returns { text, isStale } for conditional styling
   function formatCardFreshness(date) {
-    if (!date || date.getTime() === 0) return 'Updated recently';
+    if (!date || date.getTime() === 0) return { text: 'Updated recently', isStale: false };
 
     const now = new Date();
     const diff = now - date;
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (hours < 1) return 'Updated now';
-    if (hours < 24) return `${hours}h ago`;
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return `${days}d ago`;
+    if (hours < 1) return { text: 'Updated now', isStale: false };
+    if (hours < 24) return { text: `${hours}h ago`, isStale: false };
+    if (days === 1) return { text: 'Yesterday', isStale: false };
+    if (days < 7) return { text: `${days}d ago`, isStale: false };
+    if (days < 14) return { text: `${days}d ago`, isStale: false };
 
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    // 14+ days old - show warning
+    return {
+      text: `Call to confirm`,
+      isStale: true,
+      tooltip: `Last updated ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    };
   }
 
   // Handle share button - uses native share on mobile, clipboard on desktop

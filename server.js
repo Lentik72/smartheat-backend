@@ -627,6 +627,20 @@ function scheduleCoverageIntelligence() {
         logger.error('[ActivityAnalytics] Daily report failed:', error.message);
       }
 
+      // 2.5. V2.5.0: Check for stale supplier prices and send reminders
+      try {
+        const { getSupplierStalenessService } = require('./src/services/SupplierPriceStalenessService');
+        const stalenessService = getSupplierStalenessService(sequelize);
+        if (stalenessService) {
+          const stalenessResult = await stalenessService.runDailyCheck();
+          if (stalenessResult.remindersSent > 0) {
+            logger.info(`[SupplierStaleness] Sent ${stalenessResult.remindersSent} reminder emails`);
+          }
+        }
+      } catch (error) {
+        logger.error('[SupplierStaleness] Daily check failed:', error.message);
+      }
+
       // 3. V2.5.2: Send combined report (single email)
       try {
         const hasActionable = coverageReport && (

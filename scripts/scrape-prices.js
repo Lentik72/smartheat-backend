@@ -92,14 +92,26 @@ async function runScraper(options = {}) {
 
     // Get suppliers with websites that allow price display
     // V2.6.0: Include backoff fields for cooldown/phone_only logic
+    // V2.8.0: Also include claimed suppliers with stale prices (7+ days) for backup scraping
     let query = `
-      SELECT id, name, website, city, state,
-             scrape_status, scrape_cooldown_until, consecutive_scrape_failures
-      FROM suppliers
-      WHERE active = true
-      AND allow_price_display = true
-      AND website IS NOT NULL
-      AND website != ''
+      SELECT s.id, s.name, s.website, s.city, s.state,
+             s.scrape_status, s.scrape_cooldown_until, s.consecutive_scrape_failures,
+             s.claimed_at, s.allow_price_display,
+             (SELECT MAX(scraped_at) FROM supplier_prices WHERE supplier_id = s.id AND is_valid = true) as last_price_date
+      FROM suppliers s
+      WHERE s.active = true
+      AND s.website IS NOT NULL
+      AND s.website != ''
+      AND (
+        -- Normal case: allow_price_display suppliers
+        s.allow_price_display = true
+        OR
+        -- Backup case: claimed suppliers with stale prices (7+ days old or no price)
+        (s.claimed_at IS NOT NULL AND (
+          NOT EXISTS (SELECT 1 FROM supplier_prices WHERE supplier_id = s.id AND is_valid = true)
+          OR (SELECT MAX(scraped_at) FROM supplier_prices WHERE supplier_id = s.id AND is_valid = true) < NOW() - INTERVAL '7 days'
+        ))
+      )
     `;
     const binds = [];
 
@@ -159,7 +171,10 @@ async function runScraper(options = {}) {
         continue;
       }
 
-      log.info(`[${i + 1}/${scrapableSuppliers.length}] Scraping ${supplier.name}...`);
+      // V2.8.0: Check if this is a backup scrape for a claimed supplier
+      const isBackupScrape = supplier.claimed_at && !supplier.allow_price_display;
+      const backupLabel = isBackupScrape ? ' [BACKUP]' : '';
+      log.info(`[${i + 1}/${scrapableSuppliers.length}] Scraping ${supplier.name}...${backupLabel}`);
 
       const result = await scrapeSupplierPrice(supplier, config);
 
@@ -168,7 +183,7 @@ async function runScraper(options = {}) {
         // V2.2.0: Log retry info
         const aggLabel = result.isAggregator ? ' [AGGREGATOR]' : '';
         const retryLabel = result.retriedAttempts ? ` [RETRIED ${result.retriedAttempts}x]` : '';
-        log.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal (${result.duration}ms)${aggLabel}${retryLabel}`);
+        log.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal (${result.duration}ms)${aggLabel}${retryLabel}${backupLabel}`);
         results.success.push(result);
 
         // V2.6.0: Record success - reset failure counters
