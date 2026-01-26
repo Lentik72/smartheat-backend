@@ -2048,6 +2048,15 @@ body {
     display: inline-block;
 }
 
+/* Mobile override for claim button - must come AFTER desktop styles */
+@media (max-width: 768px) {
+    .supplier-claim-action {
+        position: static;
+        width: 100%;
+        margin-top: 0.75rem;
+    }
+}
+
 /* Modal Overlay */
 .modal-overlay {
     position: fixed;
