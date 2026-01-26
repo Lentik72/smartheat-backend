@@ -1,5 +1,5 @@
 {
-  "_comment": "V2.6.0: Scrape configuration for supplier websites. Pattern: 'direct' = single price, 'table' = tiered pricing. pricePath = custom URL path for price page. priceUrl = full URL override (for third-party ordering systems).",
+  "_comment": "V1.6.0: Scrape configuration for supplier websites. Pattern: 'direct' = single price, 'table' = tiered pricing. pricePath = custom URL path for price page.",
 
   "_ignore_list": {
     "_comment": "Suppliers we will NOT add - do not contact or re-evaluate",
@@ -441,14 +441,6 @@
     "enabled": false,
     "pattern": "direct",
     "notes": "DISABLED: Price behind zip code form",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
-  },
-
-  "rastalloil.com": {
-    "enabled": true,
-    "pattern": "table",
-    "priceUrl": "https://oilheatingonline.com/online/heatingoil/index.php?clientid=2028",
-    "notes": "NJ North Brunswick - Price on third-party ordering portal. 150-499 gal tier.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
