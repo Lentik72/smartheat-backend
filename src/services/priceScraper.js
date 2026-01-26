@@ -119,6 +119,11 @@ async function scrapeSupplierPriceOnce(supplier, config) {
       url = urlObj.toString();
     }
 
+    // V2.6.0: Support full custom URL (for third-party ordering systems)
+    if (config.priceUrl) {
+      url = config.priceUrl;
+    }
+
     // Fetch with timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
