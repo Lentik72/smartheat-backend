@@ -981,6 +981,8 @@ body {
     border-radius: 12px;
     padding: 1rem;
     margin-bottom: 0.75rem;
+    position: relative;
+    padding-bottom: 2.5rem; /* Space for claim button at bottom */
 }
 
 .supplier-info {
@@ -1407,6 +1409,7 @@ body {
         flex-direction: column;
         text-align: center;
         gap: 0.75rem;
+        padding-bottom: 1rem; /* Reset padding on mobile */
     }
 
     .supplier-price {
@@ -1415,6 +1418,13 @@ body {
 
     .price-amount {
         font-size: 1.75rem;
+    }
+
+    /* Mobile: claim button in normal flow at bottom */
+    .supplier-claim-action {
+        position: static;
+        width: 100%;
+        margin-top: 0.5rem;
     }
 }
 
@@ -2002,8 +2012,15 @@ body {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Claim Button on Supplier Cards */
+/* Supplier Claim Action Container */
+.supplier-claim-action {
+    /* Desktop: position at bottom left of card */
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+}
+
 .claim-listing-btn {
-    margin-top: 0.5rem;
     padding: 0.375rem 0.75rem;
     background: transparent;
     border: 1px solid var(--primary-orange);
@@ -2022,7 +2039,6 @@ body {
 
 /* Verified Badge */
 .supplier-verified-badge {
-    margin-top: 0.5rem;
     padding: 0.25rem 0.5rem;
     background: rgba(76, 175, 80, 0.1);
     border-radius: 4px;

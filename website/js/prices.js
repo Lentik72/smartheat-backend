@@ -305,7 +305,6 @@
           <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
           ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone">${escapeHtml(phone)}</a>` : ''}
           ${website ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener" class="supplier-website" onclick="gtag('event', 'click_supplier_website', {supplier: '${escapeHtml(supplier.name)}'});">${escapeHtml(websiteDisplay)}</a>` : ''}
-          ${claimButtonHtml}
         </div>
         <div class="supplier-price">
           <div class="price-amount">$${price.pricePerGallon.toFixed(2)}</div>
@@ -313,6 +312,7 @@
           ${price.minGallons ? `<div class="price-min">${price.minGallons}+ gal min</div>` : ''}
           <div class="price-freshness ${freshness.isStale ? 'stale-warning' : ''}" ${freshness.tooltip ? `title="${freshness.tooltip}"` : ''}>${freshness.text}</div>
         </div>
+        <div class="supplier-claim-action">${claimButtonHtml}</div>
       </div>
     `;
   }
