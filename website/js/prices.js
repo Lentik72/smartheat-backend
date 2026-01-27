@@ -303,8 +303,8 @@
         <div class="supplier-info">
           <div class="supplier-name">${escapeHtml(supplier.name)}</div>
           <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
-          ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone">${escapeHtml(phone)}</a>` : ''}
-          ${website ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener" class="supplier-website" onclick="gtag('event', 'click_supplier_website', {supplier: '${escapeHtml(supplier.name)}'});">${escapeHtml(websiteDisplay)}</a>` : ''}
+          ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone" onclick="trackSupplierInteraction('call', '${supplier.id}', '${escapeHtml(supplier.name)}')">${escapeHtml(phone)}</a>` : ''}
+          ${website ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener" class="supplier-website" onclick="trackSupplierInteraction('website', '${supplier.id}', '${escapeHtml(supplier.name)}')">${escapeHtml(websiteDisplay)}</a>` : ''}
         </div>
         <div class="supplier-price">
           <div class="price-amount">$${price.pricePerGallon.toFixed(2)}</div>
@@ -474,6 +474,46 @@
     console.log('[Analytics]', event, data);
     // Could send to backend in future
   }
+
+  // V2.12.0: Track supplier interactions (call/website clicks)
+  // Dual tracking: Google Analytics + our backend for "Sniper" outreach
+  function trackSupplierInteraction(action, supplierId, supplierName) {
+    // 1. Send to Google Analytics
+    if (typeof gtag === 'function') {
+      gtag('event', action === 'call' ? 'click_supplier_call' : 'click_supplier_website', {
+        'event_category': 'supplier_lead',
+        'supplier_id': supplierId,
+        'supplier_name': supplierName,
+        'search_zip': currentZip
+      });
+    }
+
+    // 2. Send to our backend (using sendBeacon for reliability on page close)
+    const payload = JSON.stringify({
+      supplierId: supplierId,
+      action: action,
+      zipCode: currentZip
+    });
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(
+        `${API_BASE}/api/track-click`,
+        new Blob([payload], { type: 'application/json' })
+      );
+    } else {
+      // Fallback for older browsers
+      fetch(`${API_BASE}/api/track-click`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      }).catch(err => console.log('[Tracking] Fallback failed:', err));
+    }
+
+    logAnalytics('supplier_interaction', { action, supplierId, supplierName, zip: currentZip });
+  }
+
+  // Expose for inline onclick handlers in supplier cards
+  window.trackSupplierInteraction = trackSupplierInteraction;
 
   // Track page view and return visits
   function trackPageView() {

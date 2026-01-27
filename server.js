@@ -44,6 +44,7 @@ try {
   intelligenceRoutes = require('./src/routes/intelligence');  // V2.2.0: Market intelligence
   activityAnalyticsRoutes = require('./src/routes/activity-analytics');  // V2.4.0: Activity analytics
   waitlistRoutes = require('./src/routes/waitlist');  // V2.9.0: Canada waitlist
+  trackingRoutes = require('./src/routes/tracking');  // V2.12.0: Click tracking for sniper outreach
 } catch (error) {
   console.error('Error loading route modules:', error.message);
   // Create placeholder routers if routes fail to load
@@ -444,6 +445,7 @@ app.use('/api/price-review', require('./src/routes/price-review'));  // V2.10.0:
 app.use('/api/supplier-claim', require('./src/routes/supplier-claim'));  // V2.11.0: Supplier claim system
 app.use('/api/admin/supplier-claims', require('./src/routes/admin-supplier-claims'));  // V2.11.0: Admin claim review
 app.use('/api/supplier-update', require('./src/routes/supplier-update'));  // V2.11.0: Supplier magic link price update
+app.use('/api', require('./src/routes/tracking'));  // V2.12.0: Click tracking for sniper outreach
 
 // V2.10.0: Serve static files for admin tools
 app.use(express.static(path.join(__dirname, 'public')));
