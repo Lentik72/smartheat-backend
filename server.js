@@ -672,7 +672,41 @@ function scheduleCoverageIntelligence() {
             logger.warn('[DailyReports] Failed to generate price review link:', err.message);
           }
 
-          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink);
+          // V2.12.0: Gather click tracking stats for "Sniper" outreach
+          let clickStats = null;
+          try {
+            const [stats] = await sequelize.query(`
+              SELECT
+                COUNT(*) as total_clicks,
+                COUNT(DISTINCT supplier_id) as unique_suppliers,
+                COUNT(*) FILTER (WHERE action_type = 'call') as call_clicks,
+                COUNT(*) FILTER (WHERE action_type = 'website') as website_clicks,
+                COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') as last_24h,
+                COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_7d,
+                COUNT(*) FILTER (WHERE processed_for_email = TRUE) as emails_sent,
+                COUNT(*) FILTER (WHERE processed_for_email = FALSE) as pending_outreach
+              FROM supplier_clicks
+            `);
+            clickStats = stats[0];
+
+            // Get top clicked suppliers in last 7 days
+            const [topSuppliers] = await sequelize.query(`
+              SELECT s.name, s.city, s.state, COUNT(*) as clicks
+              FROM supplier_clicks sc
+              JOIN suppliers s ON sc.supplier_id = s.id
+              WHERE sc.created_at > NOW() - INTERVAL '7 days'
+              GROUP BY s.id, s.name, s.city, s.state
+              ORDER BY clicks DESC
+              LIMIT 5
+            `);
+            clickStats.topSuppliers = topSuppliers;
+
+            logger.info(`[DailyReports] Click stats: ${clickStats.last_24h} clicks (24h), ${clickStats.pending_outreach} pending outreach`);
+          } catch (err) {
+            logger.warn('[DailyReports] Failed to gather click stats:', err.message);
+          }
+
+          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats);
           logger.info('[DailyReports] Combined report sent');
         } else {
           logger.info('[DailyReports] No actionable items or activity - skipping email');

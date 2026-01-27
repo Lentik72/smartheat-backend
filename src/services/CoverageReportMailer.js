@@ -342,16 +342,17 @@ class CoverageReportMailer {
   /**
    * V2.5.2: Send combined daily report (Coverage + Activity in one email)
    * V2.10.2: Now includes price review magic link
+   * V2.12.0: Now includes click tracking stats for "Sniper" outreach
    * Reduces inbox clutter by combining both reports
    */
-  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null) {
+  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null) {
     const recipient = this.getRecipient();
     if (!recipient) {
       console.log('[CoverageReportMailer] No recipient configured');
       return false;
     }
 
-    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink);
+    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink, clickStats);
     const subject = this.getCombinedSubject(coverageReport, activityReport);
 
     const success = await this.sendEmail(recipient, subject, html);
@@ -388,8 +389,9 @@ class CoverageReportMailer {
   /**
    * Format combined daily report HTML
    * V2.10.2: Added priceReviewLink parameter for manual price verification
+   * V2.12.0: Added clickStats parameter for "Sniper" outreach tracking
    */
-  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null) {
+  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null) {
     const styles = `
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 650px; margin: 0 auto; }
       h2 { color: #1a1a1a; border-bottom: 2px solid #007AFF; padding-bottom: 8px; margin-top: 0; }
@@ -468,6 +470,38 @@ class CoverageReportMailer {
       <p style="margin: 0 0 12px 0;">Sites needing price verification are ready for review.</p>
       <a href="${priceReviewLink}" style="display: inline-block; background: #2196F3; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">Open Price Review Portal</a>
       <p style="margin: 12px 0 0 0; font-size: 12px; color: #666;">Link expires in 48 hours.</p>
+    </div>
+  ` : ''}
+
+  <!-- ===== CLICK TRACKING / SNIPER OUTREACH (V2.12.0) ===== -->
+  ${clickStats && (parseInt(clickStats.last_24h) > 0 || parseInt(clickStats.pending_outreach) > 0) ? `
+    <div style="background: #fff3e0; border: 2px solid #ff9800; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <h3 style="margin: 0 0 12px 0; color: #e65100;">🎯 Supplier Click Tracking</h3>
+      <div class="stat-grid">
+        <div class="stat-box" style="background: #fff8e1;">
+          <div class="stat-value" style="color: #ff9800;">${clickStats.last_24h || 0}</div>
+          <div class="stat-label">Clicks (24h)</div>
+        </div>
+        <div class="stat-box" style="background: #fff8e1;">
+          <div class="stat-value" style="color: #ff9800;">${clickStats.last_7d || 0}</div>
+          <div class="stat-label">Clicks (7d)</div>
+        </div>
+        <div class="stat-box" style="background: #fff8e1;">
+          <div class="stat-value" style="color: #ff9800;">${clickStats.call_clicks || 0}</div>
+          <div class="stat-label">Call Clicks</div>
+        </div>
+        <div class="stat-box" style="background: #fff8e1;">
+          <div class="stat-value" style="color: #ff9800;">${clickStats.website_clicks || 0}</div>
+          <div class="stat-label">Website Clicks</div>
+        </div>
+      </div>
+      <p style="margin: 12px 0 0 0;"><strong>${clickStats.unique_suppliers || 0}</strong> unique suppliers clicked | <strong>${clickStats.pending_outreach || 0}</strong> pending outreach | <strong>${clickStats.emails_sent || 0}</strong> emails sent</p>
+      ${clickStats.topSuppliers && clickStats.topSuppliers.length > 0 ? `
+        <p style="margin: 12px 0 4px 0; font-weight: 600;">Top Clicked Suppliers (7d):</p>
+        <ul style="margin: 4px 0;">
+          ${clickStats.topSuppliers.map(s => `<li>${s.name} (${s.city}, ${s.state}) - ${s.clicks} clicks</li>`).join('')}
+        </ul>
+      ` : ''}
     </div>
   ` : ''}
 
