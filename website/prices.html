@@ -69,8 +69,8 @@
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="prices.html" class="active">Prices</a></li>
+                <li><a href="for-suppliers.html">For Suppliers</a></li>
                 <li><a href="learn/">Learn</a></li>
-                <li><a href="privacy.html">Privacy</a></li>
                 <li><a href="support.html">Support</a></li>
             </ul>
         </div>
@@ -112,7 +112,7 @@
     <!-- Default Leaderboard - National Dashboard (visible before ZIP lookup) -->
     <section id="default-leaderboard" class="default-leaderboard">
       <h2>Today's Heating Oil Prices Across the Northeast</h2>
-      <p class="leaderboard-date">Updated January 19, 2026</p>
+      <p class="leaderboard-date" id="leaderboard-date">Updated recently</p>
 
       <div class="leaderboard-grid">
         <!-- State Averages -->
@@ -308,15 +308,15 @@
             <div class="price-range">
                 <div class="price-low">
                     <span class="price-label">Lowest</span>
-                    <span id="lowest-price" class="price-value">$0.00</span>
+                    <span id="lowest-price" class="price-value">—</span>
                 </div>
                 <div class="price-high">
                     <span class="price-label">Highest</span>
-                    <span id="highest-price" class="price-value">$0.00</span>
+                    <span id="highest-price" class="price-value">—</span>
                 </div>
             </div>
 
-            <div id="savings-potential" class="savings-callout">
+            <div id="savings-potential" class="savings-callout" style="display: none;">
                 Save up to <strong>$0</strong> on 200 gallons
             </div>
 

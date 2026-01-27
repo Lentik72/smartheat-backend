@@ -133,10 +133,30 @@
       if (pulseStates && data.stateCount) {
         pulseStates.textContent = data.stateCount;
       }
+
+      // Update leaderboard date
+      const leaderboardDate = document.getElementById('leaderboard-date');
+      if (leaderboardDate && data.lastUpdated) {
+        leaderboardDate.textContent = formatLeaderboardDate(data.lastUpdated);
+      }
     } catch (err) {
       // Silently fail - fallback to static values in HTML
       console.log('[MarketPulse] Failed to fetch live data');
     }
+  }
+
+  // Format leaderboard date (e.g., "Updated today", "Updated yesterday")
+  function formatLeaderboardDate(isoDate) {
+    const date = new Date(isoDate);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Updated today';
+    if (diffDays === 1) return 'Updated yesterday';
+    if (diffDays < 7) return `Updated ${diffDays} days ago`;
+
+    return `Updated ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
   }
 
   // Initialize
