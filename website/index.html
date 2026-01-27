@@ -81,7 +81,8 @@
         <div class="android-waitlist">
             <p class="android-waitlist-text">Android coming soon.</p>
             <form id="android-waitlist-form" class="android-waitlist-form">
-                <input type="email" id="android-email" placeholder="Enter your email" required>
+                <input type="email" id="android-email" placeholder="Email" required>
+                <input type="text" id="android-zip" placeholder="ZIP" maxlength="5" pattern="[0-9]{5}" style="width: 80px;">
                 <button type="submit">Notify Me</button>
             </form>
             <p id="android-waitlist-success" class="android-waitlist-success" style="display: none;">You're on the list!</p>
@@ -342,6 +343,7 @@
     document.getElementById('android-waitlist-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('android-email').value;
+        const zip_code = document.getElementById('android-zip').value;
         const form = document.getElementById('android-waitlist-form');
         const success = document.getElementById('android-waitlist-success');
 
@@ -349,13 +351,13 @@
             const res = await fetch('/api/waitlist/android', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+                body: JSON.stringify({ email, zip_code })
             });
 
             if (res.ok) {
                 form.style.display = 'none';
                 success.style.display = 'block';
-                gtag('event', 'android_waitlist_signup');
+                gtag('event', 'android_waitlist_signup', { zip: zip_code || 'none' });
             } else {
                 alert('Something went wrong. Please try again.');
             }

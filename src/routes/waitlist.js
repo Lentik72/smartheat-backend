@@ -333,13 +333,15 @@ router.post('/', async (req, res) => {
 /**
  * Send welcome email to Android waitlist signup
  */
-async function sendAndroidWelcomeEmail(email, position) {
+async function sendAndroidWelcomeEmail(email, position, zipCode) {
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
     console.log('[Waitlist] RESEND_API_KEY not configured - skipping Android welcome email');
     return false;
   }
+
+  const zipLine = zipCode ? `We'll prioritize your area (${zipCode}) when launching.` : '';
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
@@ -357,6 +359,7 @@ async function sendAndroidWelcomeEmail(email, position) {
         <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0;">
           We're finishing the Android build to make sure it's as fast and reliable as our iOS version.
           You'll be one of the first to know when it's ready.
+          ${zipLine ? `<br><br>${zipLine}` : ''}
         </p>
       </div>
 
@@ -424,7 +427,7 @@ router.post('/android', async (req, res) => {
   const logger = req.app.locals.logger;
 
   try {
-    const { email } = req.body;
+    const { email, zip_code } = req.body;
 
     // Validate email
     if (!email) {
@@ -436,14 +439,20 @@ router.post('/android', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid email format' });
     }
 
+    // Validate ZIP if provided (optional but encouraged)
+    const cleanZip = zip_code ? zip_code.trim().substring(0, 10) : null;
+
     // Insert into waitlist with country='ANDROID'
     await sequelize.query(`
-      INSERT INTO waitlist (email, country, source)
-      VALUES (:email, 'ANDROID', 'website')
+      INSERT INTO waitlist (email, postal_code, country, source)
+      VALUES (:email, :postal_code, 'ANDROID', 'website')
       ON CONFLICT (email, country)
-      DO UPDATE SET created_at = NOW()
+      DO UPDATE SET postal_code = COALESCE(EXCLUDED.postal_code, waitlist.postal_code), created_at = NOW()
     `, {
-      replacements: { email: email.toLowerCase().trim() }
+      replacements: {
+        email: email.toLowerCase().trim(),
+        postal_code: cleanZip
+      }
     });
 
     // Get total Android waitlist count
@@ -452,10 +461,10 @@ router.post('/android', async (req, res) => {
     );
     const totalCount = parseInt(countResult[0]?.total || 0);
 
-    logger?.info(`[Waitlist] Android signup: ${email} - Total: ${totalCount}`);
+    logger?.info(`[Waitlist] Android signup: ${email} (ZIP: ${cleanZip || 'none'}) - Total: ${totalCount}`);
 
     // Send welcome email to user
-    await sendAndroidWelcomeEmail(email.toLowerCase().trim(), totalCount);
+    await sendAndroidWelcomeEmail(email.toLowerCase().trim(), totalCount, cleanZip);
 
     // Send admin notification for first 20
     if (totalCount <= IMMEDIATE_EMAIL_THRESHOLD) {
@@ -473,11 +482,12 @@ router.post('/android', async (req, res) => {
             body: JSON.stringify({
               from: process.env.EMAIL_FROM || 'HomeHeat <onboarding@resend.dev>',
               to: [recipient],
-              subject: `🤖 Android Waitlist Signup #${totalCount}`,
+              subject: `🤖 Android Waitlist Signup #${totalCount}${cleanZip ? ` (${cleanZip})` : ''}`,
               html: `
                 <div style="font-family: sans-serif; max-width: 400px;">
                   <h2>New Android Waitlist Signup</h2>
                   <p><strong>Email:</strong> ${email}</p>
+                  <p><strong>ZIP Code:</strong> ${cleanZip || 'Not provided'}</p>
                   <p><strong>Total Android waitlist:</strong> ${totalCount}</p>
                 </div>
               `
