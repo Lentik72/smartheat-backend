@@ -505,6 +505,28 @@ class CoverageReportMailer {
     </div>
   ` : ''}
 
+  <!-- ===== HIT LIST - CALL THESE TODAY (V2.12.1) ===== -->
+  ${clickStats && clickStats.hitList && clickStats.hitList.length > 0 ? `
+    <div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <h3 style="margin: 0 0 16px 0; color: #2e7d32;">📞 Hit List - Call These Today (${clickStats.hitList.length})</h3>
+      ${clickStats.hitList.map((s, i) => `
+        <div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 12px; border-left: 4px solid #4caf50;">
+          <div style="font-weight: 700; font-size: 16px; color: #1b5e20;">${i + 1}. ${s.name}</div>
+          <div style="margin: 8px 0;">
+            <span style="font-size: 18px;">📞</span> <a href="tel:${(s.phone || '').replace(/\\D/g, '')}" style="font-weight: 600; color: #333; font-size: 15px;">${s.phone || 'No phone'}</a>
+            ${s.email ? `<span style="margin-left: 12px;">✉️ <a href="mailto:${s.email}" style="color: #666;">${s.email}</a></span>` : ''}
+          </div>
+          <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+            📍 ${s.city}, ${s.state} &nbsp;|&nbsp; 🔥 ${s.click_count} click${parseInt(s.click_count) !== 1 ? 's' : ''} from ZIP${s.zips && s.zips.includes(',') ? 's' : ''}: <strong>${s.zips || 'unknown'}</strong>
+          </div>
+          <div style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 13px; color: #333; font-style: italic;">
+            🗣️ "Hi, this is Leo from HomeHeat. We saw ${s.click_count} homeowner${parseInt(s.click_count) !== 1 ? 's' : ''} in ${s.zips || 'your area'} click to call you yesterday. Just wanted to make sure your price of <strong>$${s.current_price ? parseFloat(s.current_price).toFixed(2) : 'N/A'}</strong> is current so we don't send you bad leads."
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  ` : ''}
+
   <!-- ===== COVERAGE RECOMMENDATIONS ===== -->
   ${report.recommendations.length > 0 ? `
     <h3>🎯 Action Items</h3>

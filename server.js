@@ -701,6 +701,32 @@ function scheduleCoverageIntelligence() {
             `);
             clickStats.topSuppliers = topSuppliers;
 
+            // V2.12.1: Hit List - suppliers with clicks in last 24h (for manual outreach)
+            const [hitList] = await sequelize.query(`
+              SELECT
+                s.name,
+                s.phone,
+                s.email,
+                s.city,
+                s.state,
+                COUNT(sc.id) as click_count,
+                STRING_AGG(DISTINCT sc.zip_code, ', ') as zips,
+                (
+                  SELECT sp.price_per_gallon
+                  FROM supplier_prices sp
+                  WHERE sp.supplier_id = s.id
+                  ORDER BY sp.scraped_at DESC
+                  LIMIT 1
+                ) as current_price
+              FROM supplier_clicks sc
+              JOIN suppliers s ON sc.supplier_id = s.id
+              WHERE sc.created_at > NOW() - INTERVAL '24 hours'
+              GROUP BY s.id, s.name, s.phone, s.email, s.city, s.state
+              ORDER BY click_count DESC
+              LIMIT 10
+            `);
+            clickStats.hitList = hitList;
+
             logger.info(`[DailyReports] Click stats: ${clickStats.last_24h} clicks (24h), ${clickStats.pending_outreach} pending outreach`);
           } catch (err) {
             logger.warn('[DailyReports] Failed to gather click stats:', err.message);
