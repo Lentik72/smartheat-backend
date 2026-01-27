@@ -676,6 +676,41 @@ body {
     font-size: 0.875rem;
 }
 
+.footer-locations {
+    margin: 1.5rem 0;
+    padding: 1rem 0;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.footer-locations h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 0.75rem;
+    opacity: 0.9;
+}
+
+.footer-locations-links {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+}
+
+.footer-locations-links a {
+    font-size: 0.8rem;
+    color: var(--text-dark);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.footer-locations-links a:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
 /* ================================
    PRICE LOOKUP PAGE STYLES
    ================================ */
@@ -1377,6 +1412,14 @@ body {
 
     .footer-links {
         gap: 1rem;
+    }
+
+    .footer-locations-links {
+        gap: 0.4rem 0.8rem;
+    }
+
+    .footer-locations-links a {
+        font-size: 0.75rem;
     }
 
     .hero h1 {
