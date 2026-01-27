@@ -505,6 +505,21 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // logger.info('⏰ Price scraper scheduled: daily at 10:00 AM EST');
   logger.info('⏰ Fixed 10 AM scrape DISABLED - using distributed scheduler instead');
 
+  // V2.7.0: Second daily scrape at 4 PM EST to catch afternoon price updates
+  // Catches suppliers who update prices after their morning distributed scrape
+  cron.schedule('0 21 * * *', async () => {
+    logger.info('⏰ Starting afternoon price scrape (4:00 PM EST)...');
+    try {
+      const result = await runScraper({ sequelize, logger });
+      logger.info(`✅ Afternoon scrape complete: ${result.success} success, ${result.failed} failed`);
+    } catch (error) {
+      logger.error('❌ Afternoon scrape failed:', error.message);
+    }
+  }, {
+    timezone: 'UTC' // 21:00 UTC = 4:00 PM EST
+  });
+  logger.info('⏰ Afternoon scrape scheduled: daily at 4:00 PM EST');
+
   // V2.6.0: Schedule SEO page generation at 7:00 PM EST (after scraping window closes)
   // Generates static HTML pages directly on Railway for Google indexability
   cron.schedule('0 19 * * *', async () => {
