@@ -8,6 +8,7 @@
 // V2.0.0: Fixed HMAC signature - currentPrice excluded from signing to avoid float precision issues
 // V2.0.1: Added name search parameter for supplier name lookup
 // V2.0.2: Removed notes field from API response (internal only)
+// V2.13.0: Removed email field from API response (internal only - for supplier outreach)
 // V2.4.0: Price-first sorting - priced suppliers first (sorted by price), then unpriced (sorted by match quality)
 const express = require('express');
 const router = express.Router();
@@ -346,7 +347,7 @@ router.get('/', async (req, res) => {
           id: s.id,
           name: s.name,
           phone: s.phone,
-          email: s.email,
+          // V2.13.0: email removed from public API (internal use only - supplier outreach)
           website: s.website,
           addressLine1: s.addressLine1,
           city: s.city,
@@ -534,7 +535,7 @@ router.get('/', async (req, res) => {
         id: s.id,
         name: s.name,
         phone: s.phone,
-        email: s.email,
+        // V2.13.0: email removed from public API (internal use only - supplier outreach)
         website: s.website,
         addressLine1: s.addressLine1,
         city: s.city,
