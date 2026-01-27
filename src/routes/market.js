@@ -118,6 +118,61 @@ const fetchOilPriceData = async (logger) => {
   };
 };
 
+// GET /api/market/pulse - Market Pulse (live supplier stats for website)
+router.get('/pulse', async (req, res) => {
+  try {
+    const cache = req.app.locals.cache;
+    const logger = req.app.locals.logger;
+    const sequelize = req.app.locals.sequelize;
+    const cacheKey = 'market_pulse';
+
+    // Check cache (1 hour TTL)
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      logger.info('📦 Cache hit: market pulse');
+      return res.json(cached);
+    }
+
+    // Query live stats from database
+    const [stats] = await sequelize.query(`
+      SELECT
+        (SELECT COUNT(*) FROM suppliers WHERE active = true) as supplier_count,
+        (SELECT COUNT(DISTINCT state) FROM suppliers WHERE active = true) as state_count,
+        MIN(sp.price_per_gallon) as price_min,
+        MAX(sp.price_per_gallon) as price_max,
+        AVG(sp.price_per_gallon) as price_avg
+      FROM supplier_prices sp
+      JOIN suppliers s ON sp.supplier_id = s.id
+      WHERE s.active = true
+        AND sp.scraped_at > NOW() - INTERVAL '14 days'
+    `);
+
+    const row = stats[0] || {};
+
+    const pulseData = {
+      supplierCount: parseInt(row.supplier_count) || 0,
+      stateCount: parseInt(row.state_count) || 0,
+      priceMin: row.price_min ? parseFloat(row.price_min).toFixed(2) : null,
+      priceMax: row.price_max ? parseFloat(row.price_max).toFixed(2) : null,
+      priceAvg: row.price_avg ? parseFloat(row.price_avg).toFixed(2) : null,
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Cache for 1 hour
+    cache.set(cacheKey, pulseData, 3600);
+
+    logger.info(`📊 Market Pulse: ${pulseData.supplierCount} suppliers, ${pulseData.stateCount} states`);
+    res.json(pulseData);
+
+  } catch (error) {
+    req.app.locals.logger.error('Market pulse error:', error);
+    res.status(500).json({
+      error: 'Failed to fetch market pulse',
+      message: error.message
+    });
+  }
+});
+
 // GET /api/market/oil-prices - Enhanced oil price data
 router.get('/oil-prices', async (req, res) => {
   try {
