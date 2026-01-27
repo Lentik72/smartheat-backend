@@ -18,14 +18,14 @@
     <!-- OpenGraph meta tags for social sharing -->
     <meta property="og:title" content="HomeHeat - Heating Oil & Propane Tracker for iPhone">
     <meta property="og:description" content="Track heating oil and propane usage, predict run-out dates, and find local suppliers. Free app for iPhone - no sensors required.">
-    <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
-    <meta property="og:url" content="https://www.gethomeheat.com">
+    <meta property="og:image" content="https://gethomeheat.com/images/screenshot-1-home.png">
+    <meta property="og:url" content="https://gethomeheat.com">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
 
     <!-- Additional SEO -->
     <meta name="keywords" content="heating oil tracker, propane tracker, oil tank monitor, propane tank app, heating oil app, oil usage tracker, tank level app, heating oil prediction, propane usage">
-    <link rel="canonical" href="https://www.gethomeheat.com">
+    <link rel="canonical" href="https://gethomeheat.com">
 
     <link rel="stylesheet" href="style.css?v=7">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -47,8 +47,8 @@
             <ul class="nav-links">
                 <li><a href="index.html" class="active">Home</a></li>
                 <li><a href="prices.html">Prices</a></li>
-                <li><a href="for-suppliers.html">For Suppliers</a></li>
                 <li><a href="learn/">Learn</a></li>
+                <li><a href="privacy.html">Privacy</a></li>
                 <li><a href="support.html">Support</a></li>
             </ul>
         </div>
@@ -66,7 +66,7 @@
             <span class="trust-badge">Oil & Propane</span>
         </div>
 
-        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card" data-track="click_download" data-location="hero">
+        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card">
             <img src="images/app-icon.png" alt="HomeHeat App Icon">
             <div class="app-download-info">
                 <div class="app-name">HomeHeat</div>
@@ -75,18 +75,7 @@
             </div>
         </a>
         <p class="hero-micro-copy">Free. No hardware. No ads.</p>
-        <a href="prices.html" class="hero-secondary-link" data-track="click_prices" data-location="hero">Or check today's local prices →</a>
-
-        <!-- Android Waitlist -->
-        <div class="android-waitlist">
-            <p class="android-waitlist-text">Android coming soon.</p>
-            <form id="android-waitlist-form" class="android-waitlist-form">
-                <input type="email" id="android-email" placeholder="Email" required>
-                <input type="text" id="android-zip" placeholder="ZIP" maxlength="5" pattern="[0-9]{5}" style="width: 80px;">
-                <button type="submit">Notify Me</button>
-            </form>
-            <p id="android-waitlist-success" class="android-waitlist-success" style="display: none;">You're on the list!</p>
-        </div>
+        <a href="prices.html" class="hero-secondary-link">Or check today's local prices →</a>
     </section>
 
     <section class="screenshots">
@@ -305,7 +294,7 @@
         <p class="cta-moat">Built specifically for homes that heat with oil or propane.</p>
         <h2>Ready to Stop Guessing?</h2>
         <p class="cta-inevitability">If you heat with oil or propane, the app handles the part you can't see.</p>
-        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card" data-track="click_download" data-location="bottom_cta">
+        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card">
             <img src="images/app-icon.png" alt="HomeHeat App Icon">
             <div class="app-download-info">
                 <div class="app-name">HomeHeat</div>
@@ -317,71 +306,17 @@
 
     <footer class="footer">
         <div class="footer-links">
-            <a href="for-suppliers.html">For Suppliers</a>
-            <a href="how-prices-work.html">How Prices Work</a>
             <a href="learn/">Learn</a>
             <a href="privacy.html">Privacy Policy</a>
             <a href="terms.html">Terms of Service</a>
             <a href="support.html">Support</a>
+            <a href="mailto:support@gethomeheat.com">Contact</a>
         </div>
-        <div class="footer-locations">
-            <h4>Popular Locations</h4>
-            <div class="footer-locations-links">
-                <a href="prices/new-york.html">New York</a>
-                <a href="prices/connecticut.html">Connecticut</a>
-                <a href="prices/massachusetts.html">Massachusetts</a>
-                <a href="prices/new-jersey.html">New Jersey</a>
-                <a href="prices/pennsylvania.html">Pennsylvania</a>
-                <a href="prices/new-hampshire.html">New Hampshire</a>
-                <a href="prices/rhode-island.html">Rhode Island</a>
-                <a href="prices/maine.html">Maine</a>
-                <a href="prices/new-york/westchester-county.html">Westchester County</a>
-                <a href="prices/new-york/suffolk-county.html">Suffolk County</a>
-                <a href="prices/connecticut/fairfield-county.html">Fairfield County</a>
-                <a href="prices/massachusetts/middlesex-county.html">Middlesex County</a>
-            </div>
-        </div>
+        <p class="footer-supplier-cta">Are you a heating oil supplier? <a href="for-suppliers.html">Claim your listing</a></p>
         <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
         <p>&copy; 2025 HomeHeat. All rights reserved.</p>
     </footer>
 
     <script src="js/nav.js"></script>
-    <script>
-    // Analytics tracking (CSP-compliant - no inline handlers)
-    document.querySelectorAll('[data-track]').forEach(el => {
-        el.addEventListener('click', () => {
-            if (typeof gtag === 'function') {
-                gtag('event', el.dataset.track, { location: el.dataset.location });
-            }
-        });
-    });
-
-    // Android waitlist form
-    document.getElementById('android-waitlist-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('android-email').value;
-        const zip_code = document.getElementById('android-zip').value;
-        const form = document.getElementById('android-waitlist-form');
-        const success = document.getElementById('android-waitlist-success');
-
-        try {
-            const res = await fetch('/api/waitlist/android', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, zip_code })
-            });
-
-            if (res.ok) {
-                form.style.display = 'none';
-                success.style.display = 'block';
-                gtag('event', 'android_waitlist_signup', { zip: zip_code || 'none' });
-            } else {
-                alert('Something went wrong. Please try again.');
-            }
-        } catch (err) {
-            alert('Something went wrong. Please try again.');
-        }
-    });
-    </script>
 </body>
 </html>

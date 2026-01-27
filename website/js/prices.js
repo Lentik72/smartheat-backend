@@ -111,14 +111,39 @@
   const priceMovement = document.getElementById('price-movement');
   const pricesTrust = document.getElementById('prices-trust');
   const defaultLeaderboard = document.getElementById('default-leaderboard');
+  const pulseSuppliers = document.getElementById('pulse-suppliers');
+  const pulseStates = document.getElementById('pulse-states');
 
   // State
   let currentZip = '';
   let currentSuppliers = [];
   let pageLoadTime = Date.now();
 
+  // Fetch Market Pulse data (live supplier stats)
+  async function fetchMarketPulse() {
+    try {
+      const res = await fetch(`${API_BASE}/api/market/pulse`);
+      if (!res.ok) return;
+
+      const data = await res.json();
+
+      if (pulseSuppliers && data.supplierCount) {
+        pulseSuppliers.textContent = data.supplierCount + '+';
+      }
+      if (pulseStates && data.stateCount) {
+        pulseStates.textContent = data.stateCount;
+      }
+    } catch (err) {
+      // Silently fail - fallback to static values in HTML
+      console.log('[MarketPulse] Failed to fetch live data');
+    }
+  }
+
   // Initialize
   function init() {
+    // Fetch live Market Pulse data
+    fetchMarketPulse();
+
     // Track page view and return visits
     trackPageView();
 
@@ -285,60 +310,41 @@
     const price = supplier.currentPrice;
     const phone = supplier.phone || '';
     const phoneHref = phone.replace(/\D/g, '');
-    const website = supplier.website || '';
     const scrapedAt = price.scrapedAt ? new Date(price.scrapedAt) : null;
     const freshness = formatCardFreshness(scrapedAt);
-
-    // Format website display (remove protocol, trailing slash)
-    const websiteDisplay = website.replace(/^https?:\/\//, '').replace(/\/$/, '');
-
-    // Check if supplier is already claimed/verified (claimedAt = timestamp when verified)
-    const isClaimed = !!supplier.claimedAt;
-    const claimButtonHtml = isClaimed
-      ? `<div class="supplier-verified-badge">✓ Verified</div>`
-      : `<button class="claim-listing-btn" data-supplier-id="${supplier.id}" data-supplier-name="${escapeHtml(supplier.name)}">Claim listing</button>`;
 
     return `
       <div class="supplier-card">
         <div class="supplier-info">
           <div class="supplier-name">${escapeHtml(supplier.name)}</div>
           <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
-          ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone" onclick="trackSupplierInteraction('call', '${supplier.id}', '${escapeHtml(supplier.name)}')">${escapeHtml(phone)}</a>` : ''}
-          ${website ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener" class="supplier-website" onclick="trackSupplierInteraction('website', '${supplier.id}', '${escapeHtml(supplier.name)}')">${escapeHtml(websiteDisplay)}</a>` : ''}
+          ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone">${escapeHtml(phone)}</a>` : ''}
         </div>
         <div class="supplier-price">
           <div class="price-amount">$${price.pricePerGallon.toFixed(2)}</div>
           <div class="price-unit">per gallon</div>
           ${price.minGallons ? `<div class="price-min">${price.minGallons}+ gal min</div>` : ''}
-          <div class="price-freshness ${freshness.isStale ? 'stale-warning' : ''}" ${freshness.tooltip ? `title="${freshness.tooltip}"` : ''}>${freshness.text}</div>
+          <div class="price-freshness">${freshness}</div>
         </div>
-        <div class="supplier-claim-action">${claimButtonHtml}</div>
       </div>
     `;
   }
 
   // Format freshness for individual supplier cards (compact format)
-  // Returns { text, isStale } for conditional styling
   function formatCardFreshness(date) {
-    if (!date || date.getTime() === 0) return { text: 'Updated recently', isStale: false };
+    if (!date || date.getTime() === 0) return 'Updated recently';
 
     const now = new Date();
     const diff = now - date;
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (hours < 1) return { text: 'Updated now', isStale: false };
-    if (hours < 24) return { text: `${hours}h ago`, isStale: false };
-    if (days === 1) return { text: 'Yesterday', isStale: false };
-    if (days < 7) return { text: `${days}d ago`, isStale: false };
-    if (days < 14) return { text: `${days}d ago`, isStale: false };
+    if (hours < 1) return 'Updated now';
+    if (hours < 24) return `${hours}h ago`;
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days}d ago`;
 
-    // 14+ days old - show warning
-    return {
-      text: `Call to confirm`,
-      isStale: true,
-      tooltip: `Last updated ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-    };
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
   // Handle share button - uses native share on mobile, clipboard on desktop
@@ -474,46 +480,6 @@
     console.log('[Analytics]', event, data);
     // Could send to backend in future
   }
-
-  // V2.12.0: Track supplier interactions (call/website clicks)
-  // Dual tracking: Google Analytics + our backend for "Sniper" outreach
-  function trackSupplierInteraction(action, supplierId, supplierName) {
-    // 1. Send to Google Analytics
-    if (typeof gtag === 'function') {
-      gtag('event', action === 'call' ? 'click_supplier_call' : 'click_supplier_website', {
-        'event_category': 'supplier_lead',
-        'supplier_id': supplierId,
-        'supplier_name': supplierName,
-        'search_zip': currentZip
-      });
-    }
-
-    // 2. Send to our backend (using sendBeacon for reliability on page close)
-    const payload = JSON.stringify({
-      supplierId: supplierId,
-      action: action,
-      zipCode: currentZip
-    });
-
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(
-        `${API_BASE}/api/track-click`,
-        new Blob([payload], { type: 'application/json' })
-      );
-    } else {
-      // Fallback for older browsers
-      fetch(`${API_BASE}/api/track-click`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload
-      }).catch(err => console.log('[Tracking] Fallback failed:', err));
-    }
-
-    logAnalytics('supplier_interaction', { action, supplierId, supplierName, zip: currentZip });
-  }
-
-  // Expose for inline onclick handlers in supplier cards
-  window.trackSupplierInteraction = trackSupplierInteraction;
 
   // Track page view and return visits
   function trackPageView() {
@@ -725,179 +691,6 @@
     schemaEl.textContent = JSON.stringify(schema);
   }
 
-  // ========================================
-  // SUPPLIER CLAIM SYSTEM
-  // ========================================
-
-  // Open claim modal
-  window.openClaimModal = function(supplierId, supplierName) {
-    const modal = document.getElementById('claim-modal');
-    const nameEl = document.getElementById('claim-supplier-name');
-    const idEl = document.getElementById('claim-supplier-id');
-
-    if (modal && nameEl && idEl) {
-      nameEl.textContent = supplierName;
-      idEl.value = supplierId;
-      modal.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-
-      // Focus on first input
-      setTimeout(() => {
-        const nameInput = document.getElementById('claim-name');
-        if (nameInput) nameInput.focus();
-      }, 100);
-
-      logAnalytics('claim_modal_opened', { supplierId, supplierName });
-    }
-  };
-
-  // Close claim modal
-  window.closeClaimModal = function() {
-    const modal = document.getElementById('claim-modal');
-    if (modal) {
-      modal.style.display = 'none';
-      document.body.style.overflow = '';
-    }
-  };
-
-  // Submit claim form
-  async function submitClaim(e) {
-    e.preventDefault();
-
-    const form = e.target;
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const errorEl = document.getElementById('claim-error');
-    const successEl = document.getElementById('claim-success');
-
-    // Clear previous messages
-    if (errorEl) errorEl.style.display = 'none';
-    if (successEl) successEl.style.display = 'none';
-
-    // Get form data
-    const supplierId = document.getElementById('claim-supplier-id').value;
-    const supplierName = document.getElementById('claim-supplier-name').textContent;
-    const claimantName = document.getElementById('claim-name').value.trim();
-    const claimantEmail = document.getElementById('claim-email').value.trim();
-    const claimantPhone = document.getElementById('claim-phone').value.trim();
-    const claimantRole = document.getElementById('claim-role').value;
-    const honeypot = document.getElementById('claim-website-url').value; // Honeypot
-
-    // Validate
-    if (!claimantName || !claimantEmail) {
-      if (errorEl) {
-        errorEl.textContent = 'Please fill in your name and email.';
-        errorEl.style.display = 'block';
-      }
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(claimantEmail)) {
-      if (errorEl) {
-        errorEl.textContent = 'Please enter a valid email address.';
-        errorEl.style.display = 'block';
-      }
-      return;
-    }
-
-    // Disable button
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
-
-    try {
-      const response = await fetch(`${API_BASE}/api/supplier-claim`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId,
-          claimantName,
-          claimantEmail,
-          claimantPhone,
-          claimantRole,
-          website_url: honeypot // Honeypot field
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Show success
-        if (successEl) {
-          successEl.textContent = result.message || "Claim submitted! We'll verify by calling the business within 24-48 hours.";
-          successEl.style.display = 'block';
-        }
-        form.reset();
-
-        logAnalytics('claim_submitted', { supplierId, supplierName });
-
-        // Auto-close after 3 seconds
-        setTimeout(() => {
-          window.closeClaimModal();
-        }, 3000);
-      } else {
-        if (errorEl) {
-          errorEl.textContent = result.error || 'Failed to submit claim. Please try again.';
-          errorEl.style.display = 'block';
-        }
-      }
-    } catch (error) {
-      console.error('Claim submission error:', error);
-      if (errorEl) {
-        errorEl.textContent = 'Network error. Please try again.';
-        errorEl.style.display = 'block';
-      }
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit Claim';
-    }
-  }
-
-  // Initialize claim form
-  function initClaimForm() {
-    const form = document.getElementById('claim-form');
-    if (form) {
-      form.addEventListener('submit', submitClaim);
-    }
-
-    // Close modal on backdrop click
-    const modal = document.getElementById('claim-modal');
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          window.closeClaimModal();
-        }
-      });
-    }
-
-    // Close button click
-    const closeBtn = document.getElementById('claim-modal-close');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        window.closeClaimModal();
-      });
-    }
-
-    // Event delegation for claim buttons (CSP-compliant - no inline handlers)
-    document.addEventListener('click', (e) => {
-      const claimBtn = e.target.closest('.claim-listing-btn');
-      if (claimBtn) {
-        const supplierId = claimBtn.dataset.supplierId;
-        const supplierName = claimBtn.dataset.supplierName;
-        if (supplierId && supplierName) {
-          window.openClaimModal(supplierId, supplierName);
-        }
-      }
-    });
-
-    // Close on ESC key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        window.closeClaimModal();
-      }
-    });
-  }
-
   // Start
   init();
-  initClaimForm();
 })();

@@ -18,16 +18,16 @@
     <!-- OpenGraph meta tags for social sharing -->
     <meta property="og:title" content="Heating Oil Prices Near You | HomeHeat">
     <meta property="og:description" content="Check current heating oil prices by ZIP code. Compare local suppliers and save money on your next delivery.">
-    <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-3-prices.png">
-    <meta property="og:url" content="https://www.gethomeheat.com/prices.html">
+    <meta property="og:image" content="https://gethomeheat.com/images/screenshot-3-prices.png">
+    <meta property="og:url" content="https://gethomeheat.com/prices.html">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
 
     <!-- Additional SEO -->
     <meta name="keywords" content="heating oil prices, heating oil cost, oil prices by zip code, cheap heating oil, heating oil comparison">
-    <link rel="canonical" href="https://www.gethomeheat.com/prices.html">
+    <link rel="canonical" href="https://gethomeheat.com/prices.html">
 
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=8">
 
     <!-- Schema markup for SEO - dynamically updated by JS -->
     <script id="schema-markup" type="application/ld+json">
@@ -39,7 +39,7 @@
         "publisher": {
             "@type": "Organization",
             "name": "HomeHeat",
-            "url": "https://www.gethomeheat.com"
+            "url": "https://gethomeheat.com"
         },
         "mainEntity": {
             "@type": "ItemList",
@@ -69,8 +69,8 @@
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="prices.html" class="active">Prices</a></li>
-                <li><a href="for-suppliers.html">For Suppliers</a></li>
                 <li><a href="learn/">Learn</a></li>
+                <li><a href="privacy.html">Privacy</a></li>
                 <li><a href="support.html">Support</a></li>
             </ul>
         </div>
@@ -81,6 +81,15 @@
         <p class="prices-hook">Most homeowners don't know how much oil they have left.</p>
         <h1>Check today's prices.<br>Plan ahead in the app.</h1>
         <p class="prices-subtitle">Prices tell you what oil costs today — the app tells you when you'll need it.</p>
+
+        <!-- Market Pulse - Live stats from API -->
+        <div id="market-pulse" class="market-pulse">
+            <span class="pulse-dot"></span>
+            <span class="pulse-text">Live market snapshot</span>
+            <span class="pulse-separator">·</span>
+            <span id="pulse-suppliers">280+</span> active suppliers across <span id="pulse-states">7</span> states
+        </div>
+        <p class="market-trust">Prices come directly from supplier websites or verified updates.</p>
 
         <form id="zip-form" class="zip-form">
             <input
@@ -97,7 +106,7 @@
         </form>
 
         <p class="prices-app-hint">The app predicts when you'll need oil — before it's urgent. <a href="https://apps.apple.com/us/app/homeheat/id6747320571">Get HomeHeat free →</a></p>
-        <p id="prices-trust" class="prices-trust">Tracking prices from 140+ verified heating oil suppliers across the Northeast.</p>
+        <p id="prices-trust" class="prices-trust">Tracking prices from 280+ active heating oil suppliers in our network.</p>
     </section>
 
     <!-- Default Leaderboard - National Dashboard (visible before ZIP lookup) -->
@@ -210,7 +219,7 @@
           "@type": "ListItem",
           "position": 1,
           "item": {
-            "@type": "Service",
+            "@type": "Product",
             "name": "Heating Oil Delivery in Hampstead, NH",
             "offers": {
               "@type": "Offer",
@@ -223,7 +232,7 @@
           "@type": "ListItem",
           "position": 2,
           "item": {
-            "@type": "Service",
+            "@type": "Product",
             "name": "Heating Oil Delivery in Amityville, NY",
             "offers": {
               "@type": "Offer",
@@ -236,7 +245,7 @@
           "@type": "ListItem",
           "position": 3,
           "item": {
-            "@type": "Service",
+            "@type": "Product",
             "name": "Heating Oil Delivery in Meriden, CT",
             "offers": {
               "@type": "Offer",
@@ -249,7 +258,7 @@
           "@type": "ListItem",
           "position": 4,
           "item": {
-            "@type": "Service",
+            "@type": "Product",
             "name": "Heating Oil Delivery in Ronkonkoma, NY",
             "offers": {
               "@type": "Offer",
@@ -262,7 +271,7 @@
           "@type": "ListItem",
           "position": 5,
           "item": {
-            "@type": "Service",
+            "@type": "Product",
             "name": "Heating Oil Delivery in Inwood, NY",
             "offers": {
               "@type": "Offer",
@@ -425,92 +434,26 @@
     <section class="related-guides">
         <h3>Heating Oil Guides</h3>
         <ul>
-            <li><a href="learn/heating-oil-usage">How to Estimate Heating Oil Usage</a></li>
-            <li><a href="learn/heating-oil-winter">How Long Does Heating Oil Last in Winter?</a></li>
-            <li><a href="learn/measure-heating-oil">How to Measure Oil Without a Gauge</a></li>
+            <li><a href="learn/heating-oil-usage.html">How to Estimate Heating Oil Usage</a></li>
+            <li><a href="learn/heating-oil-winter.html">How Long Does Heating Oil Last in Winter?</a></li>
+            <li><a href="learn/measure-heating-oil.html">How to Measure Oil Without a Gauge</a></li>
         </ul>
     </section>
 
-    <!-- Claim Listing Modal -->
-    <div id="claim-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <button class="modal-close" id="claim-modal-close" aria-label="Close">&times;</button>
-
-            <h2>Claim Your Listing</h2>
-            <p class="modal-subtitle">Claiming <strong id="claim-supplier-name"></strong></p>
-
-            <form id="claim-form">
-                <input type="hidden" id="claim-supplier-id" />
-
-                <!-- Honeypot field (hidden from real users, caught by bots) -->
-                <input type="text" id="claim-website-url" name="website_url" style="display: none;" tabindex="-1" autocomplete="off" />
-
-                <div class="form-group">
-                    <label for="claim-name">Your Name *</label>
-                    <input type="text" id="claim-name" placeholder="John Smith" required />
-                </div>
-
-                <div class="form-group">
-                    <label for="claim-email">Email *</label>
-                    <input type="email" id="claim-email" placeholder="john@yourcompany.com" required />
-                </div>
-
-                <div class="form-group">
-                    <label for="claim-phone">Phone (optional)</label>
-                    <input type="tel" id="claim-phone" placeholder="(555) 123-4567" />
-                </div>
-
-                <div class="form-group">
-                    <label for="claim-role">Your Role</label>
-                    <select id="claim-role">
-                        <option value="owner">Owner</option>
-                        <option value="manager">Manager</option>
-                        <option value="employee">Employee</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-
-                <div id="claim-error" class="form-error" style="display: none;"></div>
-                <div id="claim-success" class="form-success" style="display: none;"></div>
-
-                <button type="submit" class="submit-btn">Submit Claim</button>
-            </form>
-
-            <p class="modal-note">We'll verify by calling the business phone on file within 24-48 hours. Once verified, you'll receive a secure link to update your prices anytime.</p>
-        </div>
-    </div>
-
     <footer class="footer">
         <div class="footer-links">
-            <a href="for-suppliers.html">For Suppliers</a>
-            <a href="how-prices-work.html">How Prices Work</a>
             <a href="learn/">Learn</a>
             <a href="privacy.html">Privacy Policy</a>
             <a href="terms.html">Terms of Service</a>
             <a href="support.html">Support</a>
+            <a href="mailto:support@gethomeheat.com">Contact</a>
         </div>
-        <div class="footer-locations">
-            <h4>Popular Locations</h4>
-            <div class="footer-locations-links">
-                <a href="prices/new-york.html">New York</a>
-                <a href="prices/connecticut.html">Connecticut</a>
-                <a href="prices/massachusetts.html">Massachusetts</a>
-                <a href="prices/new-jersey.html">New Jersey</a>
-                <a href="prices/pennsylvania.html">Pennsylvania</a>
-                <a href="prices/new-hampshire.html">New Hampshire</a>
-                <a href="prices/rhode-island.html">Rhode Island</a>
-                <a href="prices/maine.html">Maine</a>
-                <a href="prices/new-york/westchester-county.html">Westchester County</a>
-                <a href="prices/new-york/suffolk-county.html">Suffolk County</a>
-                <a href="prices/connecticut/fairfield-county.html">Fairfield County</a>
-                <a href="prices/massachusetts/middlesex-county.html">Middlesex County</a>
-            </div>
-        </div>
+        <p class="footer-supplier-cta">Are you a heating oil supplier? <a href="for-suppliers.html">Claim your listing</a></p>
         <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
         <p>&copy; 2025 HomeHeat. All rights reserved.</p>
     </footer>
 
     <script src="js/nav.js"></script>
-    <script src="js/prices.js?v=6"></script>
+    <script src="js/prices.js?v=2"></script>
 </body>
 </html>
