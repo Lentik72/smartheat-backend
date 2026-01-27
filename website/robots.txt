@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://gethomeheat.com/sitemap.xml
+Sitemap: https://www.gethomeheat.com/sitemap.xml
