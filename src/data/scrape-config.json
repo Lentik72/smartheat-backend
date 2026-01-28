@@ -1103,6 +1103,48 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "absoluteoilcompany.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Peabody/North Shore - COD delivery. 29 towns.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "cesarsoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Stoughton/South Shore",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "sdoilcoinc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Woburn - 14 towns Greater Woburn area",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "fossilfuelent.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Weymouth/South Shore - 22 towns",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "kelleysoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA South Weymouth/South Shore - COD will-call",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "johnsoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Lynn/North Shore - COD will-call",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_PA": "=== PENNSYLVANIA ===",
 
   "libertybelldiscountoil.com": {
