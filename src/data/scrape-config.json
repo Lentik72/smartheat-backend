@@ -1113,8 +1113,8 @@
   "cesarsoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "MA Stoughton/South Shore",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "MA Stoughton/South Shore - price has space after $",
+    "priceRegex": "\\$\\s*([0-9]+\\.[0-9]{2,3})"
   },
 
   "sdoilcoinc.com": {
@@ -1126,23 +1126,23 @@
 
   "fossilfuelent.com": {
     "enabled": true,
-    "pattern": "direct",
-    "notes": "MA Weymouth/South Shore - 22 towns",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "pattern": "table",
+    "notes": "MA Weymouth/South Shore - 22 towns - no $ sign",
+    "priceRegex": "([0-9]+\\.[0-9]{2,3})/gallon"
   },
 
   "kelleysoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "MA South Weymouth/South Shore - COD will-call",
+    "notes": "DISABLED: MA South Weymouth - price loaded via JavaScript. Keep in directory.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "johnsoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "MA Lynn/North Shore - COD will-call",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "DISABLED: MA Lynn/North Shore - price loaded via JavaScript. Keep in directory.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})/Gallon"
   },
 
   "_section_PA": "=== PENNSYLVANIA ===",
