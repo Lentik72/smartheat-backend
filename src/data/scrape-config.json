@@ -600,6 +600,27 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "itenergyllc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Torrington/Litchfield/Bristol - IT Energy. COD. 100 gal min. Price shown as $X.XX on homepage.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "myomnienergy.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Waterbury/Litchfield - Omni Energy. COD. Shows $X.XX Per Gallon on homepage.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})\\s*Per Gallon"
+  },
+
+  "dimeoilco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Waterbury - Dime Oil. COD. Shows $X.XXX price on homepage. 150 gal min.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "brazosoilct.com": {
     "enabled": false,
     "pattern": "direct",
@@ -791,6 +812,41 @@
     "enabled": true,
     "pattern": "direct",
     "notes": "CT Hartford County - Plantsville. True COD. Cash/debit 150g+ price.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "snsoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Hartford - S&S Oil Company. COD. 150 gal min.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "a1-oil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Hartford - A1 Oil Company. COD.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "curleysfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT East Hartford - Curleys Fuel. COD.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "brothersoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Hartford - Brothers Oil Company. COD.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "e-zoil.net": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT Hartford - E-Z Oil Company. COD.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
