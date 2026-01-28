@@ -24,12 +24,22 @@ class ActivityAnalyticsService {
       .map(id => id.trim().toUpperCase())
       .filter(id => id.length > 0);
 
+    // V2.13.0: Excluded IP hashes (admin/dev IPs) - excluded from error reports
+    // Set via EXCLUDED_IP_HASHES env var (comma-separated)
+    this.excludedIPHashes = (process.env.EXCLUDED_IP_HASHES || 'f4f5191c2c85141e')
+      .split(',')
+      .map(hash => hash.trim().toLowerCase())
+      .filter(hash => hash.length > 0);
+
     // Start periodic flush
     this.flushInterval = setInterval(() => this.flushRequestBuffer(), this.FLUSH_INTERVAL_MS);
 
     console.log('[ActivityAnalytics] Service initialized');
     if (this.excludedDeviceIds.length > 0) {
       console.log(`[ActivityAnalytics] Excluding ${this.excludedDeviceIds.length} device ID(s) from tracking`);
+    }
+    if (this.excludedIPHashes.length > 0) {
+      console.log(`[ActivityAnalytics] Excluding ${this.excludedIPHashes.length} IP hash(es) from error reports`);
     }
   }
 
@@ -328,6 +338,11 @@ class ActivityAnalyticsService {
   async aggregateDAU(date = null) {
     const targetDate = date || new Date().toISOString().split('T')[0];
 
+    // V2.13.0: Build IP exclusion clause for error counting (excludes admin/dev traffic)
+    const ipExclusionClause = this.excludedIPHashes.length > 0
+      ? `AND ip_hash NOT IN (${this.excludedIPHashes.map(h => `'${h}'`).join(', ')})`
+      : '';
+
     try {
       // V2.8.0: Use device_id when available, fall back to ip_hash
       const [stats] = await this.sequelize.query(`
@@ -337,7 +352,7 @@ class ActivityAnalyticsService {
           COUNT(DISTINCT zip_code) as unique_zips,
           COUNT(*) as total_requests,
           ROUND(AVG(response_time_ms)) as avg_response_time_ms,
-          COUNT(*) FILTER (WHERE status_code >= 400 AND endpoint NOT IN ('/', '/stats')) as error_count,
+          COUNT(*) FILTER (WHERE status_code >= 400 AND endpoint NOT IN ('/', '/stats') ${ipExclusionClause}) as error_count,
           COUNT(*) FILTER (WHERE endpoint LIKE '%supplier%') as supplier_lookups,
           COUNT(*) FILTER (WHERE endpoint LIKE '%price%' OR endpoint LIKE '%market%') as price_checks,
           COUNT(*) FILTER (WHERE endpoint LIKE '%director%') as directory_views
@@ -440,6 +455,11 @@ class ActivityAnalyticsService {
    * V2.8.0: Uses COALESCE(device_id, ip_hash) for more accurate unique user counting
    */
   async getRealTimeStats() {
+    // V2.13.0: Build IP exclusion clause for error counting (excludes admin/dev traffic)
+    const ipExclusionClause = this.excludedIPHashes.length > 0
+      ? `AND ip_hash NOT IN (${this.excludedIPHashes.map(h => `'${h}'`).join(', ')})`
+      : '';
+
     const [stats] = await this.sequelize.query(`
       SELECT
         COUNT(DISTINCT COALESCE(device_id, ip_hash)) as unique_users_24h,
@@ -447,7 +467,7 @@ class ActivityAnalyticsService {
         COUNT(DISTINCT zip_code) as unique_zips_24h,
         COUNT(*) as total_requests_24h,
         ROUND(AVG(response_time_ms)) as avg_response_time_ms,
-        COUNT(*) FILTER (WHERE status_code >= 400 AND endpoint NOT IN ('/', '/stats')) as errors_24h,
+        COUNT(*) FILTER (WHERE status_code >= 400 AND endpoint NOT IN ('/', '/stats') ${ipExclusionClause}) as errors_24h,
         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 hour') as requests_last_hour
       FROM api_activity
       WHERE created_at >= NOW() - INTERVAL '24 hours'
