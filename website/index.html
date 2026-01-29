@@ -82,13 +82,15 @@
 
         <!-- Android Waitlist (hidden on iOS, shown on Android) -->
         <div class="android-waitlist android-only">
-            <p class="android-waitlist-text">Android coming soon.</p>
+            <p class="android-waitlist-title">Android app?</p>
+            <p class="android-waitlist-text">We're considering it. Join the list so we know it's worth building.</p>
             <form id="android-waitlist-form" class="android-waitlist-form">
                 <input type="email" id="android-email" placeholder="Email" required>
-                <input type="text" id="android-zip" placeholder="ZIP" maxlength="5" pattern="[0-9]{5}">
+                <input type="text" id="android-zip" placeholder="ZIP (optional)" maxlength="5" pattern="[0-9]{5}">
                 <button type="submit">Notify Me</button>
             </form>
-            <p id="android-waitlist-success" class="android-waitlist-success" style="display: none;">You're on the list!</p>
+            <p id="android-waitlist-success" class="android-waitlist-success" style="display: none;">You're on the list — thanks for helping shape HomeHeat.</p>
+            <p class="android-waitlist-subtext">No spam. This directly influences what we build next.</p>
         </div>
     </section>
 

@@ -2446,10 +2446,24 @@ body {
     margin-right: auto;
 }
 
+.android-waitlist-title {
+    color: var(--text-dark);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
 .android-waitlist-text {
     color: var(--text-gray);
     font-size: 0.95rem;
     margin-bottom: 1rem;
+}
+
+.android-waitlist-subtext {
+    color: var(--text-gray);
+    font-size: 0.8rem;
+    margin-top: 0.75rem;
+    opacity: 0.8;
 }
 
 .android-waitlist-form {
