@@ -661,13 +661,17 @@ function generatePageHTML(data) {
   ).join(' › ');
 
   // Generate supplier table
-  const supplierRows = suppliers.map(s => `
+  const supplierRows = suppliers.map(s => {
+    const hasValidWebsite = s.website && s.website.startsWith('https://');
+    return `
         <tr>
           <td class="supplier-name">${escapeHtml(s.name)}</td>
           <td class="supplier-city">${escapeHtml(s.city || '')}</td>
           <td class="supplier-price">${s.hasPrice ? `$${s.price.toFixed(2)}` : '<span class="call-for-price">Call</span>'}</td>
           <td class="supplier-phone">${s.phone ? `<a href="tel:${s.phone}" class="phone-link">${escapeHtml(s.phone)}</a>` : '—'}</td>
-        </tr>`).join('\n');
+          <td class="supplier-website">${hasValidWebsite ? `<a href="${escapeHtml(s.website)}" target="_blank" rel="noopener noreferrer" class="website-link">Website</a>` : ''}</td>
+        </tr>`;
+  }).join('\n');
 
   // Market stats section (if available)
   const statsHtml = stats ? `
@@ -811,6 +815,7 @@ function generatePageHTML(data) {
             <th>Location</th>
             <th>Price/Gal</th>
             <th>Phone</th>
+            <th>Website</th>
           </tr>
         </thead>
         <tbody>
@@ -853,7 +858,7 @@ ${supplierRows}
       <a href="${assetPath}support.html">Support</a>
     </div>
     <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
-    <p>&copy; 2025 HomeHeat. All rights reserved.</p>
+    <p>&copy; 2026 HomeHeat. All rights reserved.</p>
   </footer>
 
   <script src="${assetPath}js/nav.js"></script>

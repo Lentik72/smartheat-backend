@@ -1839,6 +1839,28 @@ body {
     text-decoration: underline;
 }
 
+.supplier-website {
+    text-align: center;
+}
+
+.website-link {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.website-link:hover {
+    background: var(--background-secondary);
+    border-color: var(--text-gray);
+    color: var(--text-dark);
+}
+
 /* Disclaimer */
 .disclaimer {
     font-size: var(--font-sm);
