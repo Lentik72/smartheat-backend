@@ -118,6 +118,7 @@
   let currentZip = '';
   let currentSuppliers = [];
   let pageLoadTime = Date.now();
+  let lastClickTime = 0; // For debouncing click tracking
 
   // Fetch Market Pulse data (live supplier stats)
   async function fetchMarketPulse() {
@@ -332,13 +333,17 @@
     const phoneHref = phone.replace(/\D/g, '');
     const scrapedAt = price.scrapedAt ? new Date(price.scrapedAt) : null;
     const freshness = formatCardFreshness(scrapedAt);
+    const hasValidWebsite = supplier.website && supplier.website.startsWith('https://');
 
     return `
       <div class="supplier-card">
         <div class="supplier-info">
           <div class="supplier-name">${escapeHtml(supplier.name)}</div>
           <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
-          ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone">${escapeHtml(phone)}</a>` : ''}
+          <div class="supplier-actions">
+            ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone" onclick="trackCallClick('${supplier.id}', '${escapeHtml(supplier.name).replace(/'/g, "\\'")}')">Call ${escapeHtml(phone)}</a>` : ''}
+            ${hasValidWebsite ? `<a href="${escapeHtml(supplier.website)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="supplier-website-btn" onclick="trackWebsiteClick('${supplier.id}', '${escapeHtml(supplier.name).replace(/'/g, "\\'")}')">Visit Website</a>` : ''}
+          </div>
         </div>
         <div class="supplier-price">
           <div class="price-amount">$${price.pricePerGallon.toFixed(2)}</div>
@@ -711,6 +716,134 @@
     schemaEl.textContent = JSON.stringify(schema);
   }
 
+  // ========================================
+  // CLICK TRACKING (Dual logging: backend + Firebase)
+  // ========================================
+
+  // Track website button clicks
+  window.trackWebsiteClick = function(supplierId, supplierName) {
+    // Debounce: ignore clicks within 500ms
+    const now = Date.now();
+    if (now - lastClickTime < 500) return;
+    lastClickTime = now;
+
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
+    // 1. Log to backend (source of truth)
+    fetch('/api/track-click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        supplierId: supplierId,
+        supplierName: supplierName,
+        action: 'website',
+        zipCode: currentZip || null,
+        pageSource: 'prices',
+        deviceType: isMobile ? 'mobile' : 'desktop',
+        platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+      })
+    }).catch(function(err) { console.error('[Tracking] Website click failed:', err); });
+
+    // 2. Log to Firebase Analytics (via gtag)
+    if (typeof gtag === 'function') {
+      gtag('event', 'supplier_outbound_click', {
+        supplier_id: supplierId,
+        supplier_name: supplierName,
+        zip_code: currentZip || ''
+      });
+    }
+  };
+
+  // Track call button clicks
+  window.trackCallClick = function(supplierId, supplierName) {
+    // Debounce: ignore clicks within 500ms
+    const now = Date.now();
+    if (now - lastClickTime < 500) return;
+    lastClickTime = now;
+
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
+    // 1. Log to backend (source of truth)
+    fetch('/api/track-click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        supplierId: supplierId,
+        supplierName: supplierName,
+        action: 'call',
+        zipCode: currentZip || null,
+        pageSource: 'prices',
+        deviceType: isMobile ? 'mobile' : 'desktop',
+        platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+      })
+    }).catch(function(err) { console.error('[Tracking] Call click failed:', err); });
+
+    // 2. Log to Firebase Analytics (via gtag)
+    if (typeof gtag === 'function') {
+      gtag('event', 'supplier_call_click', {
+        supplier_id: supplierId,
+        supplier_name: supplierName,
+        zip_code: currentZip || ''
+      });
+    }
+  };
+
+  // ========================================
+  // DESKTOP QR WIDGET
+  // ========================================
+
+  function showQRWidget() {
+    // Only show on desktop
+    if (/Mobi|Android/i.test(navigator.userAgent)) return;
+
+    // Check if already dismissed this session
+    if (sessionStorage.getItem('qr-dismissed')) return;
+
+    // Create QR widget
+    const widget = document.createElement('div');
+    widget.id = 'qr-widget';
+    widget.className = 'qr-widget ios-only';
+    widget.innerHTML = `
+      <button class="qr-dismiss" aria-label="Dismiss">&times;</button>
+      <div class="qr-content">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://apps.apple.com/us/app/homeheat/id6747320571" alt="Download HomeHeat" width="100" height="100">
+        <div class="qr-text">
+          <strong>Get the App</strong>
+          <span>Scan to download HomeHeat</span>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(widget);
+
+    // Dismiss handler
+    widget.querySelector('.qr-dismiss').addEventListener('click', function() {
+      sessionStorage.setItem('qr-dismissed', 'true');
+      widget.style.opacity = '0';
+      setTimeout(function() { widget.remove(); }, 300);
+    });
+  }
+
+  // ========================================
+  // ANDROID DETECTION
+  // ========================================
+
+  function hideIOSElementsOnAndroid() {
+    if (/Android/i.test(navigator.userAgent)) {
+      document.querySelectorAll('.ios-only').forEach(function(el) {
+        el.style.display = 'none';
+      });
+    }
+  }
+
   // Start
   init();
+
+  // Show QR widget after page load (delayed for better UX)
+  setTimeout(showQRWidget, 3000);
+
+  // Hide iOS elements on Android
+  hideIOSElementsOnAndroid();
 })();

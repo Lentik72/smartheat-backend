@@ -12,7 +12,7 @@ const router = express.Router();
  */
 router.post('/track-click', async (req, res) => {
   const sequelize = req.app.locals.sequelize;
-  const { supplierId, action, zipCode } = req.body;
+  const { supplierId, action, zipCode, supplierName, pageSource, deviceType, platform } = req.body;
   const userAgent = req.headers['user-agent'] || '';
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
 
@@ -24,6 +24,12 @@ router.post('/track-click', async (req, res) => {
   // Validate action type
   if (!['call', 'website'].includes(action)) {
     return res.status(400).json({ error: 'Invalid action type' });
+  }
+
+  // Validate pageSource if provided
+  const validPageSources = ['prices', 'state', 'county', 'city'];
+  if (pageSource && !validPageSources.includes(pageSource)) {
+    return res.status(400).json({ error: 'Invalid page source' });
   }
 
   try {
@@ -38,16 +44,17 @@ router.post('/track-click', async (req, res) => {
     }
 
     const supplier = suppliers[0];
+    const resolvedSupplierName = supplierName || supplier.name;
 
-    // Insert click record
+    // Insert click record with extended fields
     await sequelize.query(
       `INSERT INTO supplier_clicks
-       (supplier_id, action_type, zip_code, user_agent, ip_address)
-       VALUES ($1, $2, $3, $4, $5)`,
-      { bind: [supplierId, action, zipCode || null, userAgent, ip] }
+       (supplier_id, action_type, zip_code, user_agent, ip_address, supplier_name, page_source, device_type, platform)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      { bind: [supplierId, action, zipCode || null, userAgent, ip, resolvedSupplierName, pageSource || null, deviceType || null, platform || null] }
     );
 
-    console.log(`[Tracking] ${action} click for ${supplier.name} from ZIP ${zipCode || 'unknown'}`);
+    console.log(`[Tracking] ${action} click for ${resolvedSupplierName} from ZIP ${zipCode || 'unknown'} (${deviceType || 'unknown'}/${platform || 'unknown'})`);
 
     res.json({ success: true });
 
