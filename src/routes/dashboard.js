@@ -442,7 +442,7 @@ router.get('/geographic', async (req, res) => {
       logger.warn('[Dashboard] Could not load zip-database.json');
     }
 
-    const [clicks] = await sequelize.query(`
+    const clicks = await sequelize.query(`
       SELECT
         zip_code,
         COUNT(*) as count
@@ -580,24 +580,13 @@ router.get('/scraper-health', async (req, res) => {
   }
 
   try {
-    // Helper for safe queries (scrape_runs table may not exist)
-    const safeQuery = async (name, query) => {
-      try {
-        return await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
-      } catch (e) {
-        logger.warn(`[Dashboard] Scraper health query "${name}" failed: ${e.message}`);
-        return [];
-      }
-    };
-
     const [lastRun, scraperStats, staleSuppliers, recentFailures] = await Promise.all([
-      // Last scrape run (table may not exist)
-      safeQuery('lastRun', `
-        SELECT run_at, suppliers_scraped, successful, failed
-        FROM scrape_runs
-        ORDER BY run_at DESC
-        LIMIT 1
-      `),
+      // Last scrape time derived from supplier_prices
+      sequelize.query(`
+        SELECT MAX(scraped_at) as last_scrape
+        FROM supplier_prices
+        WHERE is_valid = true
+      `, { type: sequelize.QueryTypes.SELECT }),
 
       // Overall scraper stats (using supplier_prices for price data)
       sequelize.query(`
@@ -637,22 +626,22 @@ router.get('/scraper-health', async (req, res) => {
         LIMIT 20
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // Recent failures from scrape_runs (table may not exist)
-      safeQuery('recentFailures', `
-        SELECT run_at, failed, error_details
-        FROM scrape_runs
-        WHERE failed > 0
-        ORDER BY run_at DESC
-        LIMIT 5
-      `)
+      // Scrape count today
+      sequelize.query(`
+        SELECT COUNT(DISTINCT supplier_id) as scraped_today
+        FROM supplier_prices
+        WHERE scraped_at > CURRENT_DATE
+          AND is_valid = true
+      `, { type: sequelize.QueryTypes.SELECT })
     ]);
 
-    const run = lastRun[0] || {};
+    const lastScrapeData = lastRun[0] || {};
     const stats = scraperStats[0] || {};
+    const todayStats = recentFailures[0] || {};
 
     res.json({
-      lastRun: run.run_at || null,
-      suppliersScraped: parseInt(run.successful) || 0,
+      lastRun: lastScrapeData.last_scrape || null,
+      suppliersScrapedToday: parseInt(todayStats.scraped_today) || 0,
       totalSuppliers: parseInt(stats.total) || 0,
       withPrices: parseInt(stats.with_prices) || 0,
       stale: staleSuppliers.map(s => ({
@@ -661,11 +650,6 @@ router.get('/scraper-health', async (req, res) => {
         lastPrice: s.lastPrice ? parseFloat(s.lastPrice) : null,
         lastUpdated: s.lastUpdated,
         website: s.website
-      })),
-      recentFailures: recentFailures.map(f => ({
-        runAt: f.run_at,
-        failed: parseInt(f.failed),
-        errors: f.error_details
       }))
     });
   } catch (error) {

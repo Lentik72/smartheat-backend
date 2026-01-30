@@ -470,7 +470,7 @@ async function loadScrapers() {
 
     document.getElementById('last-scrape').textContent = timeAgo(data.lastRun);
     document.getElementById('suppliers-scraped').textContent =
-      `${data.suppliersScraped}/${data.totalEnabled}`;
+      `${data.withPrices}/${data.totalSuppliers} (${data.suppliersScrapedToday} today)`;
 
     // Stale suppliers table
     const tbody = document.getElementById('stale-body');
