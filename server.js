@@ -30,6 +30,9 @@ const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsServic
 // V2.5.0: Import Coverage Report Mailer for manual report sending
 const CoverageReportMailer = require('./src/services/CoverageReportMailer');
 
+// V2.15.0: Import ScrapeConfigSync for syncing config to database
+const ScrapeConfigSync = require('./src/services/ScrapeConfigSync');
+
 // Import route modules with error handling
 let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes, dashboardRoutes;
 
@@ -293,6 +296,18 @@ if (API_KEYS.DATABASE_URL) {
         const { up: runPwaEventsMigration } = require('./src/migrations/014-add-pwa-events');
         runPwaEventsMigration(sequelize).catch(err => {
           logger.warn('⚠️  PWA events migration:', err.message);
+        });
+
+        // V2.15.0: Sync scrape-config.json to suppliers table
+        const scrapeConfigSync = new ScrapeConfigSync(sequelize);
+        scrapeConfigSync.sync().then(result => {
+          if (result.success) {
+            logger.info(`✅ ScrapeConfigSync: ${result.stats.created} created, ${result.stats.updated} updated`);
+          } else {
+            logger.warn('⚠️  ScrapeConfigSync:', result.reason);
+          }
+        }).catch(err => {
+          logger.warn('⚠️  ScrapeConfigSync error:', err.message);
         });
 
         logger.info('📊 Database ready for operations');
