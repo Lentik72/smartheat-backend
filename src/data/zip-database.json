@@ -17469,6 +17469,251 @@
     "county": "Kent",
     "state": "DE"
   },
+  "20101": {
+    "city": "Dulles",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20102": {
+    "city": "Dulles",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20103": {
+    "city": "Dulles",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20104": {
+    "city": "Dulles",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20105": {
+    "city": "Aldie",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20106": {
+    "city": "Amissville",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20108": {
+    "city": "Manassas",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20109": {
+    "city": "Manassas",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20110": {
+    "city": "Manassas",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20111": {
+    "city": "Manassas",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20112": {
+    "city": "Manassas",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20115": {
+    "city": "Marshall",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20116": {
+    "city": "Marshall",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20117": {
+    "city": "Middleburg",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20118": {
+    "city": "Middleburg",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20119": {
+    "city": "Catlett",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20120": {
+    "city": "Centreville",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "20121": {
+    "city": "Centreville",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "20124": {
+    "city": "Clifton",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "20129": {
+    "city": "Paeonian Springs",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20132": {
+    "city": "Purcellville",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20134": {
+    "city": "Bluemont",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20135": {
+    "city": "Bluemont",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20136": {
+    "city": "Bristow",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20137": {
+    "city": "Broad Run",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20138": {
+    "city": "Calverton",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20139": {
+    "city": "Casanova",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20140": {
+    "city": "Rectortown",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20141": {
+    "city": "Round Hill",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20143": {
+    "city": "Catharpin",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20144": {
+    "city": "Delaplane",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20147": {
+    "city": "Ashburn",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20148": {
+    "city": "Ashburn",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20152": {
+    "city": "Chantilly",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20155": {
+    "city": "Gainesville",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20156": {
+    "city": "Gainesville",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20158": {
+    "city": "Hamilton",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20164": {
+    "city": "Sterling",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20165": {
+    "city": "Sterling",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20166": {
+    "city": "Sterling",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20169": {
+    "city": "Haymarket",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20175": {
+    "city": "Leesburg",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20176": {
+    "city": "Leesburg",
+    "county": "Loudoun",
+    "state": "VA"
+  },
+  "20181": {
+    "city": "Nokesville",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "20184": {
+    "city": "Upperville",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20185": {
+    "city": "Upperville",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20186": {
+    "city": "Warrenton",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20187": {
+    "city": "Warrenton",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "20188": {
+    "city": "Warrenton",
+    "county": "Fauquier",
+    "state": "VA"
+  },
   "20601": {
     "city": "Waldorf",
     "county": "Charles",
@@ -19733,6 +19978,1901 @@
     "city": "Georgetown",
     "county": "Cecil",
     "state": "MD"
+  },
+  "22003": {
+    "city": "Annandale",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22015": {
+    "city": "Burke",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22025": {
+    "city": "Dumfries",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "22026": {
+    "city": "Dumfries",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "22030": {
+    "city": "Fairfax",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22031": {
+    "city": "Fairfax",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22032": {
+    "city": "Fairfax",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22033": {
+    "city": "Fairfax",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22034": {
+    "city": "Fairfax",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22035": {
+    "city": "Fairfax",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22039": {
+    "city": "Fairfax Station",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22041": {
+    "city": "Falls Church",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22042": {
+    "city": "Falls Church",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22043": {
+    "city": "Falls Church",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22044": {
+    "city": "Falls Church",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22046": {
+    "city": "Falls Church",
+    "county": "Falls Church",
+    "state": "VA"
+  },
+  "22060": {
+    "city": "Fort Belvoir",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22066": {
+    "city": "Great Falls",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22079": {
+    "city": "Lorton",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22101": {
+    "city": "McLean",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22102": {
+    "city": "McLean",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22124": {
+    "city": "Oakton",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22150": {
+    "city": "Springfield",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22151": {
+    "city": "Springfield",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22152": {
+    "city": "Springfield",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22153": {
+    "city": "Springfield",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22180": {
+    "city": "Vienna",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22181": {
+    "city": "Vienna",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22182": {
+    "city": "Vienna",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22191": {
+    "city": "Woodbridge",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "22192": {
+    "city": "Woodbridge",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "22193": {
+    "city": "Woodbridge",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "22194": {
+    "city": "Woodbridge",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "22195": {
+    "city": "Woodbridge",
+    "county": "Prince William",
+    "state": "VA"
+  },
+  "22201": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22202": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22203": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22204": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22205": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22206": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22207": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22209": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22210": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22211": {
+    "city": "Fort Myer",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22213": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22214": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22215": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22216": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22217": {
+    "city": "Arlington",
+    "county": "Arlington",
+    "state": "VA"
+  },
+  "22301": {
+    "city": "Alexandria",
+    "county": "Alexandria",
+    "state": "VA"
+  },
+  "22302": {
+    "city": "Alexandria",
+    "county": "Alexandria",
+    "state": "VA"
+  },
+  "22303": {
+    "city": "Alexandria",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22304": {
+    "city": "Alexandria",
+    "county": "Alexandria",
+    "state": "VA"
+  },
+  "22305": {
+    "city": "Alexandria",
+    "county": "Alexandria",
+    "state": "VA"
+  },
+  "22306": {
+    "city": "Alexandria",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22307": {
+    "city": "Alexandria",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22308": {
+    "city": "Alexandria",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22309": {
+    "city": "Alexandria",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22310": {
+    "city": "Alexandria",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22311": {
+    "city": "Alexandria",
+    "county": "Alexandria",
+    "state": "VA"
+  },
+  "22312": {
+    "city": "Alexandria",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22314": {
+    "city": "Alexandria",
+    "county": "Alexandria",
+    "state": "VA"
+  },
+  "22315": {
+    "city": "Alexandria",
+    "county": "Fairfax",
+    "state": "VA"
+  },
+  "22401": {
+    "city": "Fredericksburg",
+    "county": "Fredericksburg",
+    "state": "VA"
+  },
+  "22402": {
+    "city": "Fredericksburg",
+    "county": "Fredericksburg",
+    "state": "VA"
+  },
+  "22403": {
+    "city": "Fredericksburg",
+    "county": "Fredericksburg",
+    "state": "VA"
+  },
+  "22404": {
+    "city": "Fredericksburg",
+    "county": "Fredericksburg",
+    "state": "VA"
+  },
+  "22405": {
+    "city": "Fredericksburg",
+    "county": "Stafford",
+    "state": "VA"
+  },
+  "22406": {
+    "city": "Fredericksburg",
+    "county": "Stafford",
+    "state": "VA"
+  },
+  "22407": {
+    "city": "Fredericksburg",
+    "county": "Spotsylvania",
+    "state": "VA"
+  },
+  "22408": {
+    "city": "Fredericksburg",
+    "county": "Spotsylvania",
+    "state": "VA"
+  },
+  "22427": {
+    "city": "Bowling Green",
+    "county": "Caroline",
+    "state": "VA"
+  },
+  "22432": {
+    "city": "Burgess",
+    "county": "Northumberland",
+    "state": "VA"
+  },
+  "22435": {
+    "city": "Callao",
+    "county": "Northumberland",
+    "state": "VA"
+  },
+  "22436": {
+    "city": "Caret",
+    "county": "Essex",
+    "state": "VA"
+  },
+  "22437": {
+    "city": "Center Cross",
+    "county": "Essex",
+    "state": "VA"
+  },
+  "22438": {
+    "city": "Champlain",
+    "county": "Essex",
+    "state": "VA"
+  },
+  "22443": {
+    "city": "Colonial Beach",
+    "county": "Westmoreland",
+    "state": "VA"
+  },
+  "22448": {
+    "city": "Dahlgren",
+    "county": "King George",
+    "state": "VA"
+  },
+  "22454": {
+    "city": "Dunnsville",
+    "county": "Essex",
+    "state": "VA"
+  },
+  "22460": {
+    "city": "Farnham",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "22473": {
+    "city": "Heathsville",
+    "county": "Northumberland",
+    "state": "VA"
+  },
+  "22476": {
+    "city": "Hustle",
+    "county": "Essex",
+    "state": "VA"
+  },
+  "22480": {
+    "city": "Irvington",
+    "county": "Lancaster",
+    "state": "VA"
+  },
+  "22482": {
+    "city": "Kilmarnock",
+    "county": "Lancaster",
+    "state": "VA"
+  },
+  "22485": {
+    "city": "King George",
+    "county": "King George",
+    "state": "VA"
+  },
+  "22488": {
+    "city": "Kinsale",
+    "county": "Westmoreland",
+    "state": "VA"
+  },
+  "22503": {
+    "city": "Lancaster",
+    "county": "Lancaster",
+    "state": "VA"
+  },
+  "22504": {
+    "city": "Laneview",
+    "county": "Essex",
+    "state": "VA"
+  },
+  "22509": {
+    "city": "Loretto",
+    "county": "Essex",
+    "state": "VA"
+  },
+  "22511": {
+    "city": "Lottsburg",
+    "county": "Northumberland",
+    "state": "VA"
+  },
+  "22514": {
+    "city": "Milford",
+    "county": "Caroline",
+    "state": "VA"
+  },
+  "22520": {
+    "city": "Montross",
+    "county": "Westmoreland",
+    "state": "VA"
+  },
+  "22534": {
+    "city": "Partlow",
+    "county": "Spotsylvania",
+    "state": "VA"
+  },
+  "22535": {
+    "city": "Port Royal",
+    "county": "Caroline",
+    "state": "VA"
+  },
+  "22538": {
+    "city": "Rappahannock Academy",
+    "county": "Caroline",
+    "state": "VA"
+  },
+  "22539": {
+    "city": "Reedville",
+    "county": "Northumberland",
+    "state": "VA"
+  },
+  "22546": {
+    "city": "Ruther Glen",
+    "county": "Caroline",
+    "state": "VA"
+  },
+  "22551": {
+    "city": "Spotsylvania",
+    "county": "Spotsylvania",
+    "state": "VA"
+  },
+  "22553": {
+    "city": "Spotsylvania",
+    "county": "Spotsylvania",
+    "state": "VA"
+  },
+  "22554": {
+    "city": "Stafford",
+    "county": "Stafford",
+    "state": "VA"
+  },
+  "22555": {
+    "city": "Stafford",
+    "county": "Stafford",
+    "state": "VA"
+  },
+  "22556": {
+    "city": "Stafford",
+    "county": "Stafford",
+    "state": "VA"
+  },
+  "22560": {
+    "city": "Tappahannock",
+    "county": "Essex",
+    "state": "VA"
+  },
+  "22572": {
+    "city": "Warsaw",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "22576": {
+    "city": "Weems",
+    "county": "Lancaster",
+    "state": "VA"
+  },
+  "22578": {
+    "city": "White Stone",
+    "county": "Lancaster",
+    "state": "VA"
+  },
+  "22580": {
+    "city": "Woodford",
+    "county": "Caroline",
+    "state": "VA"
+  },
+  "22601": {
+    "city": "Winchester",
+    "county": "Winchester",
+    "state": "VA"
+  },
+  "22602": {
+    "city": "Winchester",
+    "county": "Frederick",
+    "state": "VA"
+  },
+  "22603": {
+    "city": "Winchester",
+    "county": "Frederick",
+    "state": "VA"
+  },
+  "22610": {
+    "city": "Bentonville",
+    "county": "Warren",
+    "state": "VA"
+  },
+  "22611": {
+    "city": "Berryville",
+    "county": "Clarke",
+    "state": "VA"
+  },
+  "22620": {
+    "city": "Boyce",
+    "county": "Clarke",
+    "state": "VA"
+  },
+  "22624": {
+    "city": "Clear Brook",
+    "county": "Frederick",
+    "state": "VA"
+  },
+  "22625": {
+    "city": "Cross Junction",
+    "county": "Frederick",
+    "state": "VA"
+  },
+  "22630": {
+    "city": "Front Royal",
+    "county": "Warren",
+    "state": "VA"
+  },
+  "22637": {
+    "city": "Gore",
+    "county": "Frederick",
+    "state": "VA"
+  },
+  "22639": {
+    "city": "Hume",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "22642": {
+    "city": "Linden",
+    "county": "Warren",
+    "state": "VA"
+  },
+  "22643": {
+    "city": "Markham",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "22644": {
+    "city": "Maurertown",
+    "county": "Shenandoah",
+    "state": "VA"
+  },
+  "22645": {
+    "city": "Middletown",
+    "county": "Frederick",
+    "state": "VA"
+  },
+  "22650": {
+    "city": "Rileyville",
+    "county": "Page",
+    "state": "VA"
+  },
+  "22652": {
+    "city": "Fort Valley",
+    "county": "Shenandoah",
+    "state": "VA"
+  },
+  "22654": {
+    "city": "Star Tannery",
+    "county": "Frederick",
+    "state": "VA"
+  },
+  "22655": {
+    "city": "Stephens City",
+    "county": "Frederick",
+    "state": "VA"
+  },
+  "22656": {
+    "city": "Stephenson",
+    "county": "Frederick",
+    "state": "VA"
+  },
+  "22657": {
+    "city": "Strasburg",
+    "county": "Shenandoah",
+    "state": "VA"
+  },
+  "22660": {
+    "city": "Toms Brook",
+    "county": "Shenandoah",
+    "state": "VA"
+  },
+  "22663": {
+    "city": "White Post",
+    "county": "Clarke",
+    "state": "VA"
+  },
+  "22664": {
+    "city": "Woodstock",
+    "county": "Shenandoah",
+    "state": "VA"
+  },
+  "22712": {
+    "city": "Bealeton",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "22720": {
+    "city": "Goldvein",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "22728": {
+    "city": "Midland",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "22734": {
+    "city": "Remington",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "22742": {
+    "city": "Sumerduck",
+    "county": "Fauquier",
+    "state": "VA"
+  },
+  "22801": {
+    "city": "Harrisonburg",
+    "county": "Harrisonburg",
+    "state": "VA"
+  },
+  "22802": {
+    "city": "Harrisonburg",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22807": {
+    "city": "Harrisonburg",
+    "county": "Harrisonburg",
+    "state": "VA"
+  },
+  "22815": {
+    "city": "Broadway",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22821": {
+    "city": "Dayton",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22824": {
+    "city": "Edinburg",
+    "county": "Shenandoah",
+    "state": "VA"
+  },
+  "22827": {
+    "city": "Elkton",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22830": {
+    "city": "Fulks Run",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22831": {
+    "city": "Hinton",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22834": {
+    "city": "Linville",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22835": {
+    "city": "Luray",
+    "county": "Page",
+    "state": "VA"
+  },
+  "22840": {
+    "city": "McGaheysville",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22841": {
+    "city": "Mount Crawford",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22842": {
+    "city": "Mount Jackson",
+    "county": "Shenandoah",
+    "state": "VA"
+  },
+  "22843": {
+    "city": "Mount Solon",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "22844": {
+    "city": "New Market",
+    "county": "Shenandoah",
+    "state": "VA"
+  },
+  "22845": {
+    "city": "Orkney Springs",
+    "county": "Shenandoah",
+    "state": "VA"
+  },
+  "22846": {
+    "city": "Penn Laird",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22847": {
+    "city": "Quicksburg",
+    "county": "Shenandoah",
+    "state": "VA"
+  },
+  "22849": {
+    "city": "Shenandoah",
+    "county": "Page",
+    "state": "VA"
+  },
+  "22850": {
+    "city": "Singers Glen",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22851": {
+    "city": "Stanley",
+    "county": "Page",
+    "state": "VA"
+  },
+  "22853": {
+    "city": "Timberville",
+    "county": "Rockingham",
+    "state": "VA"
+  },
+  "22901": {
+    "city": "Charlottesville",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22902": {
+    "city": "Charlottesville",
+    "county": "Charlottesville",
+    "state": "VA"
+  },
+  "22903": {
+    "city": "Charlottesville",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22911": {
+    "city": "Charlottesville",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22922": {
+    "city": "Afton",
+    "county": "Nelson",
+    "state": "VA"
+  },
+  "22931": {
+    "city": "Covesville",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22932": {
+    "city": "Crozet",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22936": {
+    "city": "Free Union",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22937": {
+    "city": "Greenwood",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22938": {
+    "city": "Greenwood",
+    "county": "Nelson",
+    "state": "VA"
+  },
+  "22940": {
+    "city": "Ivy",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22942": {
+    "city": "Keswick",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22943": {
+    "city": "Keene",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22959": {
+    "city": "North Garden",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "22968": {
+    "city": "Ruckersville",
+    "county": "Greene",
+    "state": "VA"
+  },
+  "22969": {
+    "city": "Schuyler",
+    "county": "Nelson",
+    "state": "VA"
+  },
+  "22971": {
+    "city": "Shipman",
+    "county": "Nelson",
+    "state": "VA"
+  },
+  "22973": {
+    "city": "Stanardsville",
+    "county": "Greene",
+    "state": "VA"
+  },
+  "23005": {
+    "city": "Ashland",
+    "county": "Hanover",
+    "state": "VA"
+  },
+  "23015": {
+    "city": "Beaverdam",
+    "county": "Hanover",
+    "state": "VA"
+  },
+  "23043": {
+    "city": "Deltaville",
+    "county": "Middlesex",
+    "state": "VA"
+  },
+  "23047": {
+    "city": "Doswell",
+    "county": "Hanover",
+    "state": "VA"
+  },
+  "23059": {
+    "city": "Glen Allen",
+    "county": "Henrico",
+    "state": "VA"
+  },
+  "23060": {
+    "city": "Glen Allen",
+    "county": "Henrico",
+    "state": "VA"
+  },
+  "23061": {
+    "city": "Gloucester",
+    "county": "Gloucester",
+    "state": "VA"
+  },
+  "23062": {
+    "city": "Gloucester Point",
+    "county": "Gloucester",
+    "state": "VA"
+  },
+  "23063": {
+    "city": "Goochland",
+    "county": "Goochland",
+    "state": "VA"
+  },
+  "23069": {
+    "city": "Hanover",
+    "county": "Hanover",
+    "state": "VA"
+  },
+  "23071": {
+    "city": "Hartfield",
+    "county": "Middlesex",
+    "state": "VA"
+  },
+  "23072": {
+    "city": "Hayes",
+    "county": "Gloucester",
+    "state": "VA"
+  },
+  "23076": {
+    "city": "Hudgins",
+    "county": "Mathews",
+    "state": "VA"
+  },
+  "23109": {
+    "city": "Mathews",
+    "county": "Mathews",
+    "state": "VA"
+  },
+  "23111": {
+    "city": "Mechanicsville",
+    "county": "Hanover",
+    "state": "VA"
+  },
+  "23112": {
+    "city": "Midlothian",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23113": {
+    "city": "Midlothian",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23114": {
+    "city": "Midlothian",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23116": {
+    "city": "Mechanicsville",
+    "county": "Hanover",
+    "state": "VA"
+  },
+  "23120": {
+    "city": "Moseley",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23128": {
+    "city": "North",
+    "county": "Mathews",
+    "state": "VA"
+  },
+  "23149": {
+    "city": "Saluda",
+    "county": "Middlesex",
+    "state": "VA"
+  },
+  "23169": {
+    "city": "Topping",
+    "county": "Middlesex",
+    "state": "VA"
+  },
+  "23173": {
+    "city": "Richmond",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "23176": {
+    "city": "Wake",
+    "county": "Middlesex",
+    "state": "VA"
+  },
+  "23181": {
+    "city": "West Point",
+    "county": "King William",
+    "state": "VA"
+  },
+  "23185": {
+    "city": "Williamsburg",
+    "county": "Williamsburg",
+    "state": "VA"
+  },
+  "23186": {
+    "city": "Williamsburg",
+    "county": "Williamsburg",
+    "state": "VA"
+  },
+  "23187": {
+    "city": "Williamsburg",
+    "county": "James City",
+    "state": "VA"
+  },
+  "23188": {
+    "city": "Williamsburg",
+    "county": "James City",
+    "state": "VA"
+  },
+  "23219": {
+    "city": "Richmond",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "23220": {
+    "city": "Richmond",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "23221": {
+    "city": "Richmond",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "23222": {
+    "city": "Richmond",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "23223": {
+    "city": "Richmond",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "23224": {
+    "city": "Richmond",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "23225": {
+    "city": "Richmond",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "23226": {
+    "city": "Richmond",
+    "county": "Richmond",
+    "state": "VA"
+  },
+  "23227": {
+    "city": "Richmond",
+    "county": "Henrico",
+    "state": "VA"
+  },
+  "23228": {
+    "city": "Richmond",
+    "county": "Henrico",
+    "state": "VA"
+  },
+  "23229": {
+    "city": "Richmond",
+    "county": "Henrico",
+    "state": "VA"
+  },
+  "23230": {
+    "city": "Richmond",
+    "county": "Henrico",
+    "state": "VA"
+  },
+  "23231": {
+    "city": "Richmond",
+    "county": "Henrico",
+    "state": "VA"
+  },
+  "23233": {
+    "city": "Richmond",
+    "county": "Henrico",
+    "state": "VA"
+  },
+  "23234": {
+    "city": "Richmond",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23235": {
+    "city": "Richmond",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23236": {
+    "city": "Richmond",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23237": {
+    "city": "Richmond",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23238": {
+    "city": "Richmond",
+    "county": "Henrico",
+    "state": "VA"
+  },
+  "23294": {
+    "city": "Richmond",
+    "county": "Henrico",
+    "state": "VA"
+  },
+  "23314": {
+    "city": "Carrollton",
+    "county": "Isle of Wight",
+    "state": "VA"
+  },
+  "23315": {
+    "city": "Carrsville",
+    "county": "Isle of Wight",
+    "state": "VA"
+  },
+  "23320": {
+    "city": "Chesapeake",
+    "county": "Chesapeake",
+    "state": "VA"
+  },
+  "23321": {
+    "city": "Chesapeake",
+    "county": "Chesapeake",
+    "state": "VA"
+  },
+  "23322": {
+    "city": "Chesapeake",
+    "county": "Chesapeake",
+    "state": "VA"
+  },
+  "23323": {
+    "city": "Chesapeake",
+    "county": "Chesapeake",
+    "state": "VA"
+  },
+  "23324": {
+    "city": "Chesapeake",
+    "county": "Chesapeake",
+    "state": "VA"
+  },
+  "23325": {
+    "city": "Chesapeake",
+    "county": "Chesapeake",
+    "state": "VA"
+  },
+  "23326": {
+    "city": "Chesapeake",
+    "county": "Chesapeake",
+    "state": "VA"
+  },
+  "23327": {
+    "city": "Chesapeake",
+    "county": "Chesapeake",
+    "state": "VA"
+  },
+  "23328": {
+    "city": "Chesapeake",
+    "county": "Chesapeake",
+    "state": "VA"
+  },
+  "23430": {
+    "city": "Smithfield",
+    "county": "Isle of Wight",
+    "state": "VA"
+  },
+  "23431": {
+    "city": "Smithfield",
+    "county": "Isle of Wight",
+    "state": "VA"
+  },
+  "23432": {
+    "city": "Suffolk",
+    "county": "Suffolk",
+    "state": "VA"
+  },
+  "23433": {
+    "city": "Suffolk",
+    "county": "Suffolk",
+    "state": "VA"
+  },
+  "23434": {
+    "city": "Suffolk",
+    "county": "Suffolk",
+    "state": "VA"
+  },
+  "23435": {
+    "city": "Suffolk",
+    "county": "Suffolk",
+    "state": "VA"
+  },
+  "23436": {
+    "city": "Suffolk",
+    "county": "Suffolk",
+    "state": "VA"
+  },
+  "23437": {
+    "city": "Suffolk",
+    "county": "Suffolk",
+    "state": "VA"
+  },
+  "23438": {
+    "city": "Suffolk",
+    "county": "Suffolk",
+    "state": "VA"
+  },
+  "23439": {
+    "city": "Suffolk",
+    "county": "Suffolk",
+    "state": "VA"
+  },
+  "23451": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23452": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23453": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23454": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23455": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23456": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23457": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23458": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23459": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23460": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23461": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23462": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23464": {
+    "city": "Virginia Beach",
+    "county": "Virginia Beach",
+    "state": "VA"
+  },
+  "23487": {
+    "city": "Windsor",
+    "county": "Isle of Wight",
+    "state": "VA"
+  },
+  "23501": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23502": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23503": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23504": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23505": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23506": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23507": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23508": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23509": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23510": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23511": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23513": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23517": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23518": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23523": {
+    "city": "Norfolk",
+    "county": "Norfolk",
+    "state": "VA"
+  },
+  "23601": {
+    "city": "Newport News",
+    "county": "Newport News",
+    "state": "VA"
+  },
+  "23602": {
+    "city": "Newport News",
+    "county": "Newport News",
+    "state": "VA"
+  },
+  "23603": {
+    "city": "Newport News",
+    "county": "Newport News",
+    "state": "VA"
+  },
+  "23604": {
+    "city": "Fort Eustis",
+    "county": "Newport News",
+    "state": "VA"
+  },
+  "23605": {
+    "city": "Newport News",
+    "county": "Newport News",
+    "state": "VA"
+  },
+  "23606": {
+    "city": "Newport News",
+    "county": "Newport News",
+    "state": "VA"
+  },
+  "23607": {
+    "city": "Newport News",
+    "county": "Newport News",
+    "state": "VA"
+  },
+  "23608": {
+    "city": "Newport News",
+    "county": "Newport News",
+    "state": "VA"
+  },
+  "23651": {
+    "city": "Fort Monroe",
+    "county": "Hampton",
+    "state": "VA"
+  },
+  "23661": {
+    "city": "Hampton",
+    "county": "Hampton",
+    "state": "VA"
+  },
+  "23662": {
+    "city": "Poquoson",
+    "county": "Poquoson",
+    "state": "VA"
+  },
+  "23663": {
+    "city": "Hampton",
+    "county": "Hampton",
+    "state": "VA"
+  },
+  "23664": {
+    "city": "Hampton",
+    "county": "Hampton",
+    "state": "VA"
+  },
+  "23665": {
+    "city": "Langley AFB",
+    "county": "Hampton",
+    "state": "VA"
+  },
+  "23666": {
+    "city": "Hampton",
+    "county": "Hampton",
+    "state": "VA"
+  },
+  "23667": {
+    "city": "Hampton",
+    "county": "Hampton",
+    "state": "VA"
+  },
+  "23668": {
+    "city": "Hampton",
+    "county": "Hampton",
+    "state": "VA"
+  },
+  "23669": {
+    "city": "Hampton",
+    "county": "Hampton",
+    "state": "VA"
+  },
+  "23690": {
+    "city": "Yorktown",
+    "county": "York",
+    "state": "VA"
+  },
+  "23691": {
+    "city": "Yorktown",
+    "county": "York",
+    "state": "VA"
+  },
+  "23692": {
+    "city": "Yorktown",
+    "county": "York",
+    "state": "VA"
+  },
+  "23693": {
+    "city": "Yorktown",
+    "county": "York",
+    "state": "VA"
+  },
+  "23696": {
+    "city": "Seaford",
+    "county": "York",
+    "state": "VA"
+  },
+  "23701": {
+    "city": "Portsmouth",
+    "county": "Portsmouth",
+    "state": "VA"
+  },
+  "23702": {
+    "city": "Portsmouth",
+    "county": "Portsmouth",
+    "state": "VA"
+  },
+  "23703": {
+    "city": "Portsmouth",
+    "county": "Portsmouth",
+    "state": "VA"
+  },
+  "23704": {
+    "city": "Portsmouth",
+    "county": "Portsmouth",
+    "state": "VA"
+  },
+  "23707": {
+    "city": "Portsmouth",
+    "county": "Portsmouth",
+    "state": "VA"
+  },
+  "23708": {
+    "city": "Portsmouth",
+    "county": "Portsmouth",
+    "state": "VA"
+  },
+  "23709": {
+    "city": "Portsmouth",
+    "county": "Portsmouth",
+    "state": "VA"
+  },
+  "23832": {
+    "city": "Chesterfield",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23834": {
+    "city": "Colonial Heights",
+    "county": "Colonial Heights",
+    "state": "VA"
+  },
+  "23836": {
+    "city": "Chester",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23838": {
+    "city": "Chesterfield",
+    "county": "Chesterfield",
+    "state": "VA"
+  },
+  "23917": {
+    "city": "Boydton",
+    "county": "Mecklenburg",
+    "state": "VA"
+  },
+  "23919": {
+    "city": "Bracey",
+    "county": "Mecklenburg",
+    "state": "VA"
+  },
+  "23920": {
+    "city": "Brodnax",
+    "county": "Brunswick",
+    "state": "VA"
+  },
+  "23922": {
+    "city": "Buckingham",
+    "county": "Buckingham",
+    "state": "VA"
+  },
+  "23924": {
+    "city": "Chase City",
+    "county": "Mecklenburg",
+    "state": "VA"
+  },
+  "23927": {
+    "city": "Clarksville",
+    "county": "Mecklenburg",
+    "state": "VA"
+  },
+  "23930": {
+    "city": "Crewe",
+    "county": "Nottoway",
+    "state": "VA"
+  },
+  "23938": {
+    "city": "Dundas",
+    "county": "Brunswick",
+    "state": "VA"
+  },
+  "23950": {
+    "city": "La Crosse",
+    "county": "Mecklenburg",
+    "state": "VA"
+  },
+  "23954": {
+    "city": "Lunenburg",
+    "county": "Lunenburg",
+    "state": "VA"
+  },
+  "23958": {
+    "city": "Meherrin",
+    "county": "Lunenburg",
+    "state": "VA"
+  },
+  "23960": {
+    "city": "Pamplin",
+    "county": "Appomattox",
+    "state": "VA"
+  },
+  "23962": {
+    "city": "Phenix",
+    "county": "Charlotte",
+    "state": "VA"
+  },
+  "23963": {
+    "city": "Red House",
+    "county": "Charlotte",
+    "state": "VA"
+  },
+  "23966": {
+    "city": "Rice",
+    "county": "Prince Edward",
+    "state": "VA"
+  },
+  "23970": {
+    "city": "South Hill",
+    "county": "Mecklenburg",
+    "state": "VA"
+  },
+  "24401": {
+    "city": "Staunton",
+    "county": "Staunton",
+    "state": "VA"
+  },
+  "24421": {
+    "city": "Augusta Springs",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24430": {
+    "city": "Churchville",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24431": {
+    "city": "Craigsville",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24437": {
+    "city": "Fishersville",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24440": {
+    "city": "Greenville",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24459": {
+    "city": "Middlebrook",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24467": {
+    "city": "Mount Sidney",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24469": {
+    "city": "New Hope",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24477": {
+    "city": "Stuarts Draft",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24479": {
+    "city": "Swoope",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24482": {
+    "city": "Verona",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24483": {
+    "city": "Vesuvius",
+    "county": "Rockbridge",
+    "state": "VA"
+  },
+  "24484": {
+    "city": "Warm Springs",
+    "county": "Bath",
+    "state": "VA"
+  },
+  "24485": {
+    "city": "West Augusta",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24486": {
+    "city": "Weyers Cave",
+    "county": "Augusta",
+    "state": "VA"
+  },
+  "24501": {
+    "city": "Lynchburg",
+    "county": "Lynchburg",
+    "state": "VA"
+  },
+  "24502": {
+    "city": "Lynchburg",
+    "county": "Lynchburg",
+    "state": "VA"
+  },
+  "24503": {
+    "city": "Lynchburg",
+    "county": "Lynchburg",
+    "state": "VA"
+  },
+  "24504": {
+    "city": "Lynchburg",
+    "county": "Lynchburg",
+    "state": "VA"
+  },
+  "24505": {
+    "city": "Lynchburg",
+    "county": "Lynchburg",
+    "state": "VA"
+  },
+  "24506": {
+    "city": "Lynchburg",
+    "county": "Campbell",
+    "state": "VA"
+  },
+  "24515": {
+    "city": "Lynchburg",
+    "county": "Lynchburg",
+    "state": "VA"
+  },
+  "24531": {
+    "city": "Blairs",
+    "county": "Pittsylvania",
+    "state": "VA"
+  },
+  "24540": {
+    "city": "Danville",
+    "county": "Danville",
+    "state": "VA"
+  },
+  "24541": {
+    "city": "Danville",
+    "county": "Danville",
+    "state": "VA"
+  },
+  "24549": {
+    "city": "Dry Fork",
+    "county": "Pittsylvania",
+    "state": "VA"
+  },
+  "24550": {
+    "city": "Evington",
+    "county": "Campbell",
+    "state": "VA"
+  },
+  "24551": {
+    "city": "Forest",
+    "county": "Bedford",
+    "state": "VA"
+  },
+  "24554": {
+    "city": "Gladys",
+    "county": "Campbell",
+    "state": "VA"
+  },
+  "24558": {
+    "city": "Halifax",
+    "county": "Halifax",
+    "state": "VA"
+  },
+  "24562": {
+    "city": "Howardsville",
+    "county": "Buckingham",
+    "state": "VA"
+  },
+  "24565": {
+    "city": "Java",
+    "county": "Pittsylvania",
+    "state": "VA"
+  },
+  "24569": {
+    "city": "Long Island",
+    "county": "Campbell",
+    "state": "VA"
+  },
+  "24570": {
+    "city": "Lynch Station",
+    "county": "Campbell",
+    "state": "VA"
+  },
+  "24571": {
+    "city": "Lynchburg",
+    "county": "Campbell",
+    "state": "VA"
+  },
+  "24572": {
+    "city": "Madison Heights",
+    "county": "Amherst",
+    "state": "VA"
+  },
+  "24574": {
+    "city": "Monroe",
+    "county": "Amherst",
+    "state": "VA"
+  },
+  "24577": {
+    "city": "Nathalie",
+    "county": "Halifax",
+    "state": "VA"
+  },
+  "24578": {
+    "city": "Natural Bridge",
+    "county": "Rockbridge",
+    "state": "VA"
+  },
+  "24579": {
+    "city": "Natural Bridge Station",
+    "county": "Rockbridge",
+    "state": "VA"
+  },
+  "24580": {
+    "city": "Nelson",
+    "county": "Mecklenburg",
+    "state": "VA"
+  },
+  "24586": {
+    "city": "Ringgold",
+    "county": "Pittsylvania",
+    "state": "VA"
+  },
+  "24588": {
+    "city": "Rustburg",
+    "county": "Campbell",
+    "state": "VA"
+  },
+  "24590": {
+    "city": "Scottsville",
+    "county": "Albemarle",
+    "state": "VA"
+  },
+  "24592": {
+    "city": "South Boston",
+    "county": "Halifax",
+    "state": "VA"
+  },
+  "24593": {
+    "city": "Spout Spring",
+    "county": "Appomattox",
+    "state": "VA"
+  },
+  "24594": {
+    "city": "Sutherlin",
+    "county": "Pittsylvania",
+    "state": "VA"
+  },
+  "24597": {
+    "city": "Vernon Hill",
+    "county": "Halifax",
+    "state": "VA"
+  },
+  "24598": {
+    "city": "Virgilina",
+    "county": "Halifax",
+    "state": "VA"
+  },
+  "24599": {
+    "city": "Wingina",
+    "county": "Nelson",
+    "state": "VA"
   },
   "99701": {
     "city": "Fairbanks",
