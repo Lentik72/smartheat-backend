@@ -1198,6 +1198,313 @@ router.post('/suppliers/:id/scrape-config', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/searches - Top searched ZIPs and search activity
+router.get('/searches', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const days = parseDays(req, 30);
+
+    // Load ZIP database for city/county info
+    const zipDbPath = path.join(__dirname, '../data/zip-database.json');
+    let zipCoords = {};
+    try {
+      zipCoords = JSON.parse(fs.readFileSync(zipDbPath, 'utf8'));
+    } catch (e) {
+      logger.warn('[Dashboard] Could not load zip-database.json');
+    }
+
+    const [topZips, dailySearches, hourlySearches] = await Promise.all([
+      // Top searched ZIPs
+      sequelize.query(`
+        SELECT zip_code, COUNT(*) as search_count
+        FROM user_locations
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+          AND zip_code IS NOT NULL
+        GROUP BY zip_code
+        ORDER BY search_count DESC
+        LIMIT 50
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Daily search volume
+      sequelize.query(`
+        SELECT DATE(created_at) as date, COUNT(*) as searches
+        FROM user_locations
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Hourly distribution (for peak hours)
+      sequelize.query(`
+        SELECT EXTRACT(HOUR FROM created_at) as hour, COUNT(*) as searches
+        FROM user_locations
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY EXTRACT(HOUR FROM created_at)
+        ORDER BY hour
+      `, { type: sequelize.QueryTypes.SELECT })
+    ]);
+
+    // Enrich top ZIPs with city/state
+    const enrichedZips = topZips.map(z => ({
+      zip: z.zip_code,
+      searches: parseInt(z.search_count),
+      city: zipCoords[z.zip_code]?.city || '--',
+      county: zipCoords[z.zip_code]?.county || '--',
+      state: zipCoords[z.zip_code]?.state || '--'
+    }));
+
+    // Calculate totals
+    const totalSearches = dailySearches.reduce((sum, d) => sum + parseInt(d.searches), 0);
+    const uniqueZips = topZips.length;
+
+    res.json({
+      period: `${days}d`,
+      summary: {
+        totalSearches,
+        uniqueZips,
+        avgPerDay: Math.round(totalSearches / days)
+      },
+      topZips: enrichedZips,
+      daily: dailySearches.map(d => ({
+        date: d.date,
+        searches: parseInt(d.searches)
+      })),
+      hourly: hourlySearches.map(h => ({
+        hour: parseInt(h.hour),
+        searches: parseInt(h.searches)
+      }))
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Searches error:', error.message);
+    res.status(500).json({ error: 'Failed to load search data', details: error.message });
+  }
+});
+
+// GET /api/dashboard/conversion - Conversion funnel (searches → clicks)
+router.get('/conversion', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const days = parseDays(req, 30);
+
+    const [searches, clicks, dailyFunnel] = await Promise.all([
+      // Total searches
+      sequelize.query(`
+        SELECT COUNT(*) as total
+        FROM user_locations
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Total clicks
+      sequelize.query(`
+        SELECT
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE action_type = 'call') as calls,
+          COUNT(*) FILTER (WHERE action_type = 'website') as websites
+        FROM supplier_clicks
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Daily funnel
+      sequelize.query(`
+        SELECT
+          d.date,
+          COALESCE(s.searches, 0) as searches,
+          COALESCE(c.clicks, 0) as clicks
+        FROM (
+          SELECT generate_series(
+            (NOW() - INTERVAL '${days} days')::date,
+            NOW()::date,
+            '1 day'::interval
+          )::date as date
+        ) d
+        LEFT JOIN (
+          SELECT DATE(created_at) as date, COUNT(*) as searches
+          FROM user_locations
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          GROUP BY DATE(created_at)
+        ) s ON d.date = s.date
+        LEFT JOIN (
+          SELECT DATE(created_at) as date, COUNT(*) as clicks
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          GROUP BY DATE(created_at)
+        ) c ON d.date = c.date
+        ORDER BY d.date
+      `, { type: sequelize.QueryTypes.SELECT })
+    ]);
+
+    const totalSearches = parseInt(searches[0]?.total) || 0;
+    const totalClicks = parseInt(clicks[0]?.total) || 0;
+    const conversionRate = totalSearches > 0 ? ((totalClicks / totalSearches) * 100).toFixed(2) : 0;
+
+    res.json({
+      period: `${days}d`,
+      funnel: {
+        searches: totalSearches,
+        clicks: totalClicks,
+        calls: parseInt(clicks[0]?.calls) || 0,
+        websites: parseInt(clicks[0]?.websites) || 0,
+        conversionRate: parseFloat(conversionRate)
+      },
+      daily: dailyFunnel.map(d => ({
+        date: d.date,
+        searches: parseInt(d.searches),
+        clicks: parseInt(d.clicks),
+        rate: parseInt(d.searches) > 0 ? ((parseInt(d.clicks) / parseInt(d.searches)) * 100).toFixed(1) : 0
+      }))
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Conversion error:', error.message);
+    res.status(500).json({ error: 'Failed to load conversion data', details: error.message });
+  }
+});
+
+// GET /api/dashboard/ios-app - iOS app engagement data
+router.get('/ios-app', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const days = parseDays(req, 30);
+
+    const [engagement, bySupplier, daily] = await Promise.all([
+      // Total engagement stats
+      sequelize.query(`
+        SELECT
+          COUNT(*) as total,
+          COUNT(DISTINCT user_id) as unique_users,
+          COUNT(*) FILTER (WHERE engagement_type = 'call') as calls,
+          COUNT(*) FILTER (WHERE engagement_type = 'view') as views,
+          COUNT(*) FILTER (WHERE engagement_type = 'save') as saves
+        FROM supplier_engagements
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Top suppliers by app engagement
+      sequelize.query(`
+        SELECT
+          COALESCE(s.name, se.supplier_name, 'Unknown') as name,
+          COUNT(*) as engagements,
+          COUNT(*) FILTER (WHERE se.engagement_type = 'call') as calls,
+          COUNT(*) FILTER (WHERE se.engagement_type = 'view') as views
+        FROM supplier_engagements se
+        LEFT JOIN suppliers s ON se.supplier_id = s.id
+        WHERE se.created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY COALESCE(s.name, se.supplier_name, 'Unknown')
+        ORDER BY engagements DESC
+        LIMIT 20
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Daily app engagement
+      sequelize.query(`
+        SELECT DATE(created_at) as date, COUNT(*) as engagements
+        FROM supplier_engagements
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `, { type: sequelize.QueryTypes.SELECT })
+    ]);
+
+    const stats = engagement[0] || {};
+
+    res.json({
+      period: `${days}d`,
+      summary: {
+        totalEngagements: parseInt(stats.total) || 0,
+        uniqueUsers: parseInt(stats.unique_users) || 0,
+        calls: parseInt(stats.calls) || 0,
+        views: parseInt(stats.views) || 0,
+        saves: parseInt(stats.saves) || 0
+      },
+      bySupplier: bySupplier.map(s => ({
+        name: s.name,
+        engagements: parseInt(s.engagements),
+        calls: parseInt(s.calls),
+        views: parseInt(s.views)
+      })),
+      daily: daily.map(d => ({
+        date: d.date,
+        engagements: parseInt(d.engagements)
+      }))
+    });
+  } catch (error) {
+    logger.error('[Dashboard] iOS app error:', error.message);
+    res.status(500).json({ error: 'Failed to load iOS app data', details: error.message });
+  }
+});
+
+// GET /api/dashboard/price-alerts - Significant price changes
+router.get('/price-alerts', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    // Find suppliers with significant price changes in last 7 days
+    const alerts = await sequelize.query(`
+      WITH recent_prices AS (
+        SELECT
+          supplier_id,
+          price_per_gallon,
+          scraped_at,
+          LAG(price_per_gallon) OVER (PARTITION BY supplier_id ORDER BY scraped_at) as prev_price
+        FROM supplier_prices
+        WHERE scraped_at > NOW() - INTERVAL '7 days'
+          AND is_valid = true
+      )
+      SELECT
+        s.name,
+        s.id as supplier_id,
+        rp.price_per_gallon as current_price,
+        rp.prev_price,
+        rp.price_per_gallon - rp.prev_price as change,
+        rp.scraped_at
+      FROM recent_prices rp
+      JOIN suppliers s ON rp.supplier_id = s.id
+      WHERE rp.prev_price IS NOT NULL
+        AND ABS(rp.price_per_gallon - rp.prev_price) >= 0.10
+      ORDER BY ABS(rp.price_per_gallon - rp.prev_price) DESC
+      LIMIT 20
+    `, { type: sequelize.QueryTypes.SELECT });
+
+    res.json({
+      alerts: alerts.map(a => ({
+        supplierName: a.name,
+        supplierId: a.supplier_id,
+        currentPrice: parseFloat(a.current_price),
+        previousPrice: parseFloat(a.prev_price),
+        change: parseFloat(a.change),
+        changePercent: ((parseFloat(a.change) / parseFloat(a.prev_price)) * 100).toFixed(1),
+        direction: parseFloat(a.change) > 0 ? 'up' : 'down',
+        detectedAt: a.scraped_at
+      })),
+      threshold: 0.10
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Price alerts error:', error.message);
+    res.status(500).json({ error: 'Failed to load price alerts', details: error.message });
+  }
+});
+
 // GET /api/dashboard/coverage-details - Get detailed ZIP lists for coverage gaps
 router.get('/coverage-details', async (req, res) => {
   const logger = req.app.locals.logger;

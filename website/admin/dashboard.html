@@ -73,7 +73,9 @@
     <!-- Tabs -->
     <nav class="tabs">
       <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="searches">Searches</button>
       <button class="tab" data-tab="clicks">Clicks</button>
+      <button class="tab" data-tab="ios-app">iOS App</button>
       <button class="tab" data-tab="prices">Prices</button>
       <button class="tab" data-tab="map">Map</button>
       <button class="tab" data-tab="scrapers">Scrapers</button>
@@ -127,6 +129,37 @@
             </div>
           </div>
 
+          <!-- Conversion Funnel -->
+          <div class="funnel-section">
+            <h3>Conversion Funnel</h3>
+            <div class="funnel-visual">
+              <div class="funnel-step">
+                <div class="funnel-bar searches-bar" id="funnel-searches-bar"></div>
+                <div class="funnel-label">
+                  <span class="funnel-count" id="funnel-searches">--</span>
+                  <span class="funnel-name">Searches</span>
+                </div>
+              </div>
+              <div class="funnel-arrow">→</div>
+              <div class="funnel-step">
+                <div class="funnel-bar clicks-bar" id="funnel-clicks-bar"></div>
+                <div class="funnel-label">
+                  <span class="funnel-count" id="funnel-clicks">--</span>
+                  <span class="funnel-name">Clicks</span>
+                </div>
+              </div>
+              <div class="funnel-rate">
+                <span id="funnel-rate">--%</span> conversion
+              </div>
+            </div>
+          </div>
+
+          <!-- Price Alerts -->
+          <div class="panel full-width" id="price-alerts-panel" style="display: none;">
+            <h3>⚠️ Price Alerts</h3>
+            <div id="price-alerts-content"></div>
+          </div>
+
           <!-- Supplier Signals Table -->
           <div class="panel full-width">
             <h3>Supplier Signals</h3>
@@ -142,6 +175,83 @@
                 </tr>
               </thead>
               <tbody id="supplier-signals-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Searches Tab -->
+      <section id="tab-searches" class="tab-panel">
+        <div class="panel-grid">
+          <div class="panel">
+            <h3>Total Searches</h3>
+            <div id="searches-total" class="stat-large">--</div>
+            <div class="hint" id="searches-avg">-- avg/day</div>
+          </div>
+          <div class="panel">
+            <h3>Unique ZIPs</h3>
+            <div id="searches-zips" class="stat-large">--</div>
+          </div>
+          <div class="panel full-width">
+            <h3>Daily Search Volume</h3>
+            <canvas id="searches-chart"></canvas>
+          </div>
+          <div class="panel">
+            <h3>Peak Hours</h3>
+            <canvas id="peak-hours-chart"></canvas>
+          </div>
+          <div class="panel">
+            <h3>Top Searched ZIPs</h3>
+            <table id="top-zips-table">
+              <thead>
+                <tr>
+                  <th>ZIP</th>
+                  <th>City</th>
+                  <th>State</th>
+                  <th>Searches</th>
+                </tr>
+              </thead>
+              <tbody id="top-zips-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- iOS App Tab -->
+      <section id="tab-ios-app" class="tab-panel">
+        <div class="panel-grid">
+          <div class="panel">
+            <h3>Total Engagements</h3>
+            <div id="ios-total" class="stat-large">--</div>
+          </div>
+          <div class="panel">
+            <h3>Unique Users</h3>
+            <div id="ios-users" class="stat-large">--</div>
+          </div>
+          <div class="panel">
+            <h3>Calls from App</h3>
+            <div id="ios-calls" class="stat-large">--</div>
+          </div>
+          <div class="panel">
+            <h3>Supplier Views</h3>
+            <div id="ios-views" class="stat-large">--</div>
+          </div>
+          <div class="panel full-width">
+            <h3>Daily App Engagement</h3>
+            <canvas id="ios-chart"></canvas>
+          </div>
+          <div class="panel full-width">
+            <h3>Top Suppliers in App</h3>
+            <table id="ios-suppliers-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Views</th>
+                  <th>Calls</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="ios-suppliers-body"></tbody>
             </table>
           </div>
         </div>

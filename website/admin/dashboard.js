@@ -117,7 +117,9 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById(`tab-${target}`).classList.add('active');
 
     // Load tab-specific data
+    if (target === 'searches') loadSearches();
     if (target === 'clicks') loadClicks();
+    if (target === 'ios-app') loadIOSApp();
     if (target === 'prices') loadPrices();
     if (target === 'map') loadMap();
     if (target === 'scrapers') loadScrapers();
@@ -725,6 +727,195 @@ document.getElementById('supplier-form').addEventListener('submit', async (e) =>
   }
 });
 
+// Charts for new tabs
+let searchesChart = null;
+let peakHoursChart = null;
+let iosChart = null;
+
+// Load conversion funnel
+async function loadConversion() {
+  try {
+    const data = await api(`/conversion?days=${currentDays}`);
+
+    document.getElementById('funnel-searches').textContent = data.funnel.searches.toLocaleString();
+    document.getElementById('funnel-clicks').textContent = data.funnel.clicks.toLocaleString();
+    document.getElementById('funnel-rate').textContent = data.funnel.conversionRate + '%';
+
+    // Adjust bar widths proportionally
+    const maxWidth = 200;
+    const clicksWidth = data.funnel.searches > 0
+      ? Math.max(30, (data.funnel.clicks / data.funnel.searches) * maxWidth)
+      : 30;
+    document.getElementById('funnel-clicks-bar').style.width = clicksWidth + 'px';
+
+  } catch (error) {
+    console.error('Failed to load conversion:', error);
+  }
+}
+
+// Load price alerts
+async function loadPriceAlerts() {
+  try {
+    const data = await api('/price-alerts');
+    const panel = document.getElementById('price-alerts-panel');
+    const content = document.getElementById('price-alerts-content');
+
+    if (data.alerts && data.alerts.length > 0) {
+      panel.style.display = 'block';
+      content.innerHTML = data.alerts.map(a => `
+        <div class="price-alert-item ${a.direction}">
+          <div>
+            <span class="price-alert-supplier">${a.supplierName}</span>
+            <span style="color: var(--gray-500); margin-left: 0.5rem;">
+              $${a.previousPrice.toFixed(2)} → $${a.currentPrice.toFixed(2)}
+            </span>
+          </div>
+          <span class="price-alert-change ${a.direction}">
+            ${a.direction === 'up' ? '↑' : '↓'} ${a.changePercent}%
+          </span>
+        </div>
+      `).join('');
+    } else {
+      panel.style.display = 'none';
+    }
+  } catch (error) {
+    console.error('Failed to load price alerts:', error);
+  }
+}
+
+// Load searches tab
+async function loadSearches() {
+  try {
+    const data = await api(`/searches?days=${currentDays}`);
+
+    // Summary stats
+    document.getElementById('searches-total').textContent = data.summary.totalSearches.toLocaleString();
+    document.getElementById('searches-avg').textContent = `${data.summary.avgPerDay} avg/day`;
+    document.getElementById('searches-zips').textContent = data.summary.uniqueZips;
+
+    // Daily chart
+    const ctx = document.getElementById('searches-chart').getContext('2d');
+    if (searchesChart) searchesChart.destroy();
+
+    searchesChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.daily.map(d => d.date),
+        datasets: [{
+          label: 'Searches',
+          data: data.daily.map(d => d.searches),
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+    // Peak hours chart
+    const peakCtx = document.getElementById('peak-hours-chart').getContext('2d');
+    if (peakHoursChart) peakHoursChart.destroy();
+
+    peakHoursChart = new Chart(peakCtx, {
+      type: 'bar',
+      data: {
+        labels: data.hourly.map(h => `${h.hour}:00`),
+        datasets: [{
+          label: 'Searches',
+          data: data.hourly.map(h => h.searches),
+          backgroundColor: '#2563eb'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+    // Top ZIPs table
+    const tbody = document.getElementById('top-zips-body');
+    tbody.innerHTML = '';
+    data.topZips.slice(0, 15).forEach(z => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${z.zip}</td>
+        <td>${z.city}</td>
+        <td>${z.state}</td>
+        <td>${z.searches}</td>
+      `;
+      tbody.appendChild(row);
+    });
+
+  } catch (error) {
+    console.error('Failed to load searches:', error);
+  }
+}
+
+// Load iOS App tab
+async function loadIOSApp() {
+  try {
+    const data = await api(`/ios-app?days=${currentDays}`);
+
+    // Summary stats
+    document.getElementById('ios-total').textContent = data.summary.totalEngagements.toLocaleString();
+    document.getElementById('ios-users').textContent = data.summary.uniqueUsers.toLocaleString();
+    document.getElementById('ios-calls').textContent = data.summary.calls.toLocaleString();
+    document.getElementById('ios-views').textContent = data.summary.views.toLocaleString();
+
+    // Daily chart
+    const ctx = document.getElementById('ios-chart').getContext('2d');
+    if (iosChart) iosChart.destroy();
+
+    iosChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.daily.map(d => d.date),
+        datasets: [{
+          label: 'Engagements',
+          data: data.daily.map(d => d.engagements),
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+    // Top suppliers table
+    const tbody = document.getElementById('ios-suppliers-body');
+    tbody.innerHTML = '';
+
+    if (data.bySupplier.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">No app engagement data yet</td></tr>';
+    } else {
+      data.bySupplier.forEach(s => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${s.name}</td>
+          <td>${s.views}</td>
+          <td>${s.calls}</td>
+          <td>${s.engagements}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+  } catch (error) {
+    console.error('Failed to load iOS app data:', error);
+  }
+}
+
 // Show coverage gap ZIP details
 async function showCoverageDetails(type) {
   const modal = document.getElementById('zip-details-modal');
@@ -807,8 +998,12 @@ function switchTab(tabName) {
 
 // Load dashboard
 async function loadDashboard() {
-  await loadOverview();
-  await loadSupplierSignals();
+  await Promise.all([
+    loadOverview(),
+    loadSupplierSignals(),
+    loadConversion(),
+    loadPriceAlerts()
+  ]);
 }
 
 // Initialize
