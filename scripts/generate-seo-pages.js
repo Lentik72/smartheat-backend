@@ -411,7 +411,7 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
     title: `Heating Oil Prices in ${stateInfo.name}`,
     h1: `Heating Oil Prices in ${stateInfo.name}`,
     description: `Compare ${suppliers.length} heating oil suppliers in ${stateInfo.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Updated daily.`,
-    canonicalUrl: `https://gethomeheat.com/prices/${stateInfo.abbrev}/`,
+    canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
       { name: 'Prices', url: '/prices.html' },
@@ -480,7 +480,7 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
     title: `Heating Oil Prices in ${countyName} County, ${stateInfo.name}`,
     h1: `${countyName} County Heating Oil Prices`,
     description: `Compare ${suppliers.length} heating oil suppliers in ${countyName} County, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Updated daily.`,
-    canonicalUrl: `https://gethomeheat.com/prices/${stateInfo.abbrev}/${countySlug}.html`,
+    canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/${countySlug}.html`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
       { name: 'Prices', url: '/prices.html' },
@@ -565,7 +565,7 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
     title: `Heating Oil Prices in ${cityName}, ${stateCode}`,
     h1: `${cityName} Heating Oil Prices`,
     description: `Compare ${suppliers.length} heating oil suppliers in ${cityName}, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Updated daily.`,
-    canonicalUrl: `https://gethomeheat.com/prices/${stateInfo.abbrev}/${citySlug}.html`,
+    canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/${citySlug}.html`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
       { name: 'Prices', url: '/prices.html' },
@@ -620,7 +620,7 @@ function generatePageHTML(data) {
       "@type": "ListItem",
       "position": i + 1,
       "name": b.name,
-      ...(b.url && { "item": `https://gethomeheat.com${b.url}` })
+      ...(b.url && { "item": `https://www.gethomeheat.com${b.url}` })
     }))
   };
 
@@ -990,7 +990,7 @@ function generateSitemap(pages) {
 
   const stateUrls = pages.states.map(s => `
   <url>
-    <loc>https://gethomeheat.com/prices/${s.abbrev}/</loc>
+    <loc>https://www.gethomeheat.com/prices/${s.abbrev}/</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -998,7 +998,7 @@ function generateSitemap(pages) {
 
   const countyUrls = pages.counties.map(c => `
   <url>
-    <loc>https://gethomeheat.com/prices/${c.state}/${c.slug}.html</loc>
+    <loc>https://www.gethomeheat.com/prices/${c.state}/${c.slug}.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
@@ -1006,7 +1006,7 @@ function generateSitemap(pages) {
 
   const cityUrls = pages.cities.map(c => `
   <url>
-    <loc>https://gethomeheat.com/prices/${c.state}/${c.slug}.html</loc>
+    <loc>https://www.gethomeheat.com/prices/${c.state}/${c.slug}.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -1015,13 +1015,13 @@ function generateSitemap(pages) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://gethomeheat.com/</loc>
+    <loc>https://www.gethomeheat.com/</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://gethomeheat.com/prices.html</loc>
+    <loc>https://www.gethomeheat.com/prices.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
@@ -1030,55 +1030,55 @@ ${stateUrls}
 ${countyUrls}
 ${cityUrls}
   <url>
-    <loc>https://gethomeheat.com/for-suppliers.html</loc>
+    <loc>https://www.gethomeheat.com/for-suppliers.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://gethomeheat.com/how-prices-work.html</loc>
+    <loc>https://www.gethomeheat.com/how-prices-work.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://gethomeheat.com/learn/</loc>
+    <loc>https://www.gethomeheat.com/learn/</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://gethomeheat.com/learn/heating-oil-usage.html</loc>
+    <loc>https://www.gethomeheat.com/learn/heating-oil-usage.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://gethomeheat.com/learn/heating-oil-winter.html</loc>
+    <loc>https://www.gethomeheat.com/learn/heating-oil-winter.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://gethomeheat.com/learn/measure-heating-oil.html</loc>
+    <loc>https://www.gethomeheat.com/learn/measure-heating-oil.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://gethomeheat.com/privacy.html</loc>
+    <loc>https://www.gethomeheat.com/privacy.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://gethomeheat.com/terms.html</loc>
+    <loc>https://www.gethomeheat.com/terms.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://gethomeheat.com/support.html</loc>
+    <loc>https://www.gethomeheat.com/support.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
@@ -1112,7 +1112,7 @@ async function createLegacyRedirects(pricesDir, states) {
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="refresh" content="0; url=/prices/${state.abbrev}/">
-  <link rel="canonical" href="https://gethomeheat.com/prices/${state.abbrev}/">
+  <link rel="canonical" href="https://www.gethomeheat.com/prices/${state.abbrev}/">
   <title>Redirecting...</title>
 </head>
 <body>

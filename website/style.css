@@ -782,6 +782,38 @@ body {
     opacity: 1;
 }
 
+.footer-locations {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.footer-locations-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.8;
+}
+
+.footer-locations-links {
+    display: flex;
+    justify-content: center;
+    gap: 1rem 1.5rem;
+    flex-wrap: wrap;
+}
+
+.footer-locations-links a {
+    color: var(--text-dark);
+    text-decoration: none;
+    font-size: 0.875rem;
+    opacity: 0.7;
+}
+
+.footer-locations-links a:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
 .footer p {
     color: var(--text-dark);
     opacity: 0.6;
