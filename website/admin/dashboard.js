@@ -601,8 +601,14 @@ document.getElementById('filter-apply').addEventListener('click', () => {
 
 // Edit supplier
 async function editSupplier(id) {
+  console.log('[Dashboard] editSupplier called with id:', id);
+  if (!id || id === 'undefined' || id === 'null') {
+    alert('Invalid supplier ID');
+    return;
+  }
   try {
     const data = await api(`/suppliers/${id}`);
+    console.log('[Dashboard] Supplier data received:', data);
     const s = data.supplier;
 
     document.getElementById('edit-supplier-id').value = s.id;
