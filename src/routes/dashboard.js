@@ -108,16 +108,27 @@ router.get('/overview', async (req, res) => {
       coverageStats,
       dataFreshness
     ] = await Promise.all([
-      // Click stats
+      // Click stats (combine website clicks + iOS app engagements)
       safeQuery('clickStats', `
+        WITH all_clicks AS (
+          -- Website clicks
+          SELECT supplier_id, action_type, created_at, 'website' as source
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          UNION ALL
+          -- iOS app engagements (calls count as clicks)
+          SELECT supplier_id, engagement_type as action_type, created_at, 'ios_app' as source
+          FROM supplier_engagements
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND engagement_type IN ('call', 'view', 'save')
+        )
         SELECT
           COUNT(*) as total_clicks,
           COUNT(*) FILTER (WHERE action_type = 'call') as call_clicks,
-          COUNT(*) FILTER (WHERE action_type = 'website') as website_clicks,
+          COUNT(*) FILTER (WHERE action_type IN ('website', 'view')) as website_clicks,
           COUNT(DISTINCT supplier_id) as unique_suppliers,
           MAX(created_at) as last_click
-        FROM supplier_clicks
-        WHERE created_at > NOW() - INTERVAL '${days} days'
+        FROM all_clicks
       `),
 
       // Scraper stats (prices are in supplier_prices table)
@@ -171,15 +182,21 @@ router.get('/overview', async (req, res) => {
       `)
     ]);
 
-    // Get top supplier (use supplier_name if supplier_id not available)
+    // Get top supplier (combine website clicks + iOS app engagements)
     const topSupplierResult = await safeQuery('topSupplier', `
+      WITH all_clicks AS (
+        SELECT supplier_id, supplier_name, created_at FROM supplier_clicks
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+        UNION ALL
+        SELECT supplier_id, supplier_name, created_at FROM supplier_engagements
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+      )
       SELECT
-        COALESCE(s.name, sc.supplier_name, 'Unknown') as name,
+        COALESCE(s.name, ac.supplier_name, 'Unknown') as name,
         COUNT(*) as clicks
-      FROM supplier_clicks sc
-      LEFT JOIN suppliers s ON sc.supplier_id = s.id
-      WHERE sc.created_at > NOW() - INTERVAL '${days} days'
-      GROUP BY COALESCE(s.name, sc.supplier_name, 'Unknown')
+      FROM all_clicks ac
+      LEFT JOIN suppliers s ON ac.supplier_id = s.id
+      GROUP BY COALESCE(s.name, ac.supplier_name, 'Unknown')
       ORDER BY clicks DESC
       LIMIT 1
     `);
@@ -282,35 +299,47 @@ router.get('/clicks', async (req, res) => {
   try {
     const days = parseDays(req, 30);
 
-    // Parallel queries
+    // Parallel queries (combine website clicks + iOS app engagements)
     const [daily, bySupplier, bySupplierWithPrice, byPage, byDevice] = await Promise.all([
-      // Daily trend
+      // Daily trend (website + iOS)
       sequelize.query(`
+        WITH all_clicks AS (
+          SELECT created_at, action_type FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          UNION ALL
+          SELECT created_at, engagement_type as action_type FROM supplier_engagements
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        )
         SELECT
           DATE(created_at) as date,
           COUNT(*) FILTER (WHERE action_type = 'call') as calls,
-          COUNT(*) FILTER (WHERE action_type = 'website') as websites
-        FROM supplier_clicks
-        WHERE created_at > NOW() - INTERVAL '${days} days'
+          COUNT(*) FILTER (WHERE action_type IN ('website', 'view')) as websites
+        FROM all_clicks
         GROUP BY DATE(created_at)
         ORDER BY date
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // By supplier
+      // By supplier (website + iOS)
       sequelize.query(`
+        WITH all_clicks AS (
+          SELECT supplier_id, supplier_name, action_type FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          UNION ALL
+          SELECT supplier_id, supplier_name, engagement_type as action_type FROM supplier_engagements
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        )
         SELECT
-          COALESCE(sc.supplier_name, s.name) as name,
+          COALESCE(ac.supplier_name, s.name, 'Unknown') as name,
           COUNT(*) FILTER (WHERE action_type = 'call') as calls,
-          COUNT(*) FILTER (WHERE action_type = 'website') as websites
-        FROM supplier_clicks sc
-        LEFT JOIN suppliers s ON sc.supplier_id = s.id
-        WHERE sc.created_at > NOW() - INTERVAL '${days} days'
-        GROUP BY COALESCE(sc.supplier_name, s.name)
+          COUNT(*) FILTER (WHERE action_type IN ('website', 'view')) as websites
+        FROM all_clicks ac
+        LEFT JOIN suppliers s ON ac.supplier_id = s.id
+        GROUP BY COALESCE(ac.supplier_name, s.name, 'Unknown')
         ORDER BY (COUNT(*)) DESC
         LIMIT 20
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // By supplier with price (for signals) - handle clicks with only supplier_name
+      // By supplier with price (for signals) - website + iOS app engagements
       sequelize.query(`
         WITH latest_prices AS (
           SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
@@ -322,16 +351,22 @@ router.get('/clicks', async (req, res) => {
           SELECT COALESCE(AVG(price_per_gallon), 0) as avg_price
           FROM latest_prices
         ),
+        all_clicks AS (
+          SELECT supplier_id, supplier_name FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          UNION ALL
+          SELECT supplier_id, supplier_name FROM supplier_engagements
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        ),
         click_agg AS (
           SELECT
-            COALESCE(sc.supplier_name, s.name, 'Unknown') as name,
+            COALESCE(ac.supplier_name, s.name, 'Unknown') as name,
             s.id as supplier_id,
             COUNT(*) as clicks
-          FROM supplier_clicks sc
-          LEFT JOIN suppliers s ON sc.supplier_id = s.id
-             OR (sc.supplier_id IS NULL AND sc.supplier_name = s.name)
-          WHERE sc.created_at > NOW() - INTERVAL '${days} days'
-          GROUP BY COALESCE(sc.supplier_name, s.name, 'Unknown'), s.id
+          FROM all_clicks ac
+          LEFT JOIN suppliers s ON ac.supplier_id = s.id
+             OR (ac.supplier_id IS NULL AND ac.supplier_name = s.name)
+          GROUP BY COALESCE(ac.supplier_name, s.name, 'Unknown'), s.id
         )
         SELECT
           ca.name,
