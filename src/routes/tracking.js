@@ -1,10 +1,45 @@
 /**
  * Tracking Routes - Capture user interactions for "Sniper" outreach
  * V2.12.0: Click tracking for supplier lead notifications
+ * V2.13.0: PWA install tracking
  */
 
 const express = require('express');
 const router = express.Router();
+
+/**
+ * POST /api/track-pwa
+ * Records PWA install prompts, installations, and standalone launches
+ */
+router.post('/track-pwa', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const { event, platform } = req.body;
+  const userAgent = req.headers['user-agent'] || '';
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
+
+  // Validate event type
+  const validEvents = ['install_prompt', 'installed', 'standalone_launch'];
+  if (!event || !validEvents.includes(event)) {
+    return res.status(400).json({ error: 'Invalid event type' });
+  }
+
+  try {
+    // Insert PWA event (using a simple log approach - can create dedicated table later)
+    await sequelize.query(
+      `INSERT INTO pwa_events (event_type, platform, user_agent, ip_address, created_at)
+       VALUES ($1, $2, $3, $4, NOW())`,
+      { bind: [event, platform || 'unknown', userAgent, ip] }
+    );
+
+    console.log(`[PWA] ${event} on ${platform || 'unknown'}`);
+    res.json({ success: true });
+
+  } catch (err) {
+    // Table might not exist yet - log but don't fail
+    console.log(`[PWA] ${event} on ${platform || 'unknown'} (not persisted: ${err.message})`);
+    res.json({ success: true });
+  }
+});
 
 /**
  * POST /api/track-click
