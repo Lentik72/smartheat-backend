@@ -507,9 +507,13 @@ async function loadScrapers() {
           <td>${formatPrice(s.lastPrice)}</td>
           <td>${timeAgo(s.lastUpdated)}</td>
           <td><a href="${s.website}" target="_blank">${s.website || '--'}</a></td>
-          <td><button class="btn" onclick="editSupplier('${s.id}')">Edit</button></td>
+          <td><button class="btn edit-supplier-btn" data-id="${s.id}">Edit</button></td>
         `;
         tbody.appendChild(row);
+      });
+      // Attach event listeners
+      tbody.querySelectorAll('.edit-supplier-btn').forEach(btn => {
+        btn.addEventListener('click', () => editSupplier(btn.dataset.id));
       });
     }
 
@@ -564,9 +568,14 @@ async function loadSuppliers() {
         <td>${timeAgo(s.priceUpdatedAt)}</td>
         <td>${s.recentClicks}</td>
         <td>${status.join(' ')}</td>
-        <td><button onclick="editSupplier('${s.id}')">Edit</button></td>
+        <td><button class="edit-supplier-btn" data-id="${s.id}">Edit</button></td>
       `;
       tbody.appendChild(row);
+    });
+
+    // Attach event listeners for edit buttons
+    tbody.querySelectorAll('.edit-supplier-btn').forEach(btn => {
+      btn.addEventListener('click', () => editSupplier(btn.dataset.id));
     });
 
     // Pagination
