@@ -324,6 +324,11 @@
     showPriceMovement(zip, lowestPrice);
     updateAuthorityLine(suppliers.length);
     updateSchemaMarkup(zip, suppliers);
+
+    // Show PWA install banner after user has seen value (Android only)
+    if (typeof window.showPwaInstallBanner === 'function') {
+      setTimeout(() => window.showPwaInstallBanner(), 1500);
+    }
   }
 
   // Create supplier card HTML
