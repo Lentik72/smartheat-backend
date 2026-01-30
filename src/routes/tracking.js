@@ -51,9 +51,9 @@ router.post('/track-click', async (req, res) => {
   const userAgent = req.headers['user-agent'] || '';
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
 
-  // Validate required fields
-  if (!supplierId || !action) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  // Validate required fields (supplierName is enough if supplierId not available)
+  if (!action || (!supplierId && !supplierName)) {
+    return res.status(400).json({ error: 'Missing required fields (need action and either supplierId or supplierName)' });
   }
 
   // Validate action type
@@ -68,25 +68,32 @@ router.post('/track-click', async (req, res) => {
   }
 
   try {
-    // Verify supplier exists
-    const [suppliers] = await sequelize.query(
-      'SELECT id, name FROM suppliers WHERE id = $1 AND active = true',
-      { bind: [supplierId] }
-    );
+    // Try to verify supplier exists (but don't fail if not found)
+    let resolvedSupplierId = null;
+    let resolvedSupplierName = supplierName || 'Unknown';
 
-    if (!suppliers || suppliers.length === 0) {
-      return res.status(404).json({ error: 'Supplier not found' });
+    if (supplierId) {
+      try {
+        const [suppliers] = await sequelize.query(
+          'SELECT id, name FROM suppliers WHERE id = $1 AND active = true',
+          { bind: [supplierId] }
+        );
+        if (suppliers && suppliers.length > 0) {
+          resolvedSupplierId = suppliers[0].id;
+          resolvedSupplierName = supplierName || suppliers[0].name;
+        }
+      } catch (lookupErr) {
+        // Invalid UUID format or DB error - continue without supplier_id
+        console.log(`[Tracking] Supplier lookup failed for ${supplierId}: ${lookupErr.message}`);
+      }
     }
 
-    const supplier = suppliers[0];
-    const resolvedSupplierName = supplierName || supplier.name;
-
-    // Insert click record with extended fields
+    // Insert click record (supplier_id can be NULL if not found)
     await sequelize.query(
       `INSERT INTO supplier_clicks
        (supplier_id, action_type, zip_code, user_agent, ip_address, supplier_name, page_source, device_type, platform)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      { bind: [supplierId, action, zipCode || null, userAgent, ip, resolvedSupplierName, pageSource || null, deviceType || null, platform || null] }
+      { bind: [resolvedSupplierId, action, zipCode || null, userAgent, ip, resolvedSupplierName, pageSource || null, deviceType || null, platform || null] }
     );
 
     console.log(`[Tracking] ${action} click for ${resolvedSupplierName} from ZIP ${zipCode || 'unknown'} (${deviceType || 'unknown'}/${platform || 'unknown'})`);
