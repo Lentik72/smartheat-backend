@@ -839,13 +839,24 @@ router.get('/suppliers', async (req, res) => {
   try {
     const { state, hasPrice, scrapeStatus, search, limit = 50, offset = 0 } = req.query;
 
-    // Build where clause (using actual column names: active, allow_price_display)
+    // Build where clause with parameterized queries to prevent SQL injection
     let whereClause = 'WHERE 1=1';
-    if (state) whereClause += ` AND s.state = '${state}'`;
+    const params = [];
+    let paramIndex = 1;
+
+    if (state) {
+      whereClause += ` AND s.state = $${paramIndex++}`;
+      params.push(state);
+    }
     if (hasPrice === 'true') whereClause += ' AND lp.price_per_gallon IS NOT NULL';
     if (hasPrice === 'false') whereClause += ' AND lp.price_per_gallon IS NULL';
-    // Note: scraping_enabled may not exist, so these filters are skipped
-    if (search) whereClause += ` AND (s.name ILIKE '%${search}%' OR s.website ILIKE '%${search}%')`;
+    if (scrapeStatus === 'stale') whereClause += " AND lp.scraped_at < NOW() - INTERVAL '48 hours'";
+    if (scrapeStatus === 'fresh') whereClause += " AND lp.scraped_at >= NOW() - INTERVAL '48 hours'";
+    if (search) {
+      whereClause += ` AND (s.name ILIKE $${paramIndex} OR s.website ILIKE $${paramIndex})`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
 
     const [suppliers, countResult] = await Promise.all([
       sequelize.query(`
@@ -866,17 +877,18 @@ router.get('/suppliers', async (req, res) => {
           lp.scraped_at as "priceUpdatedAt",
           s.active as "isActive",
           s.allow_price_display as "allowPriceDisplay",
+          CASE WHEN lp.scraped_at >= NOW() - INTERVAL '48 hours' THEN true ELSE false END as "scrapingEnabled",
           (SELECT COUNT(*) FROM supplier_clicks sc WHERE sc.supplier_id = s.id AND sc.created_at > NOW() - INTERVAL '7 days') as "recentClicks"
         FROM suppliers s
         LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
         ${whereClause}
         ORDER BY s.name
         LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
-      `, { type: sequelize.QueryTypes.SELECT }),
+      `, { bind: params, type: sequelize.QueryTypes.SELECT }),
 
       sequelize.query(`
         WITH latest_prices AS (
-          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon
+          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
           FROM supplier_prices
           WHERE is_valid = true
           ORDER BY supplier_id, scraped_at DESC
@@ -885,7 +897,7 @@ router.get('/suppliers', async (req, res) => {
         FROM suppliers s
         LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
         ${whereClause}
-      `, { type: sequelize.QueryTypes.SELECT })
+      `, { bind: params, type: sequelize.QueryTypes.SELECT })
     ]);
 
     res.json({
