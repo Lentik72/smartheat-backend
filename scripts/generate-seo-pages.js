@@ -637,19 +637,20 @@ function generatePageHTML(data) {
       "@type": "ListItem",
       "position": i + 1,
       "item": {
-        "@type": "Product",
-        "name": `Heating Oil from ${s.name}`,
+        "@type": "Service",
+        "name": `Heating Oil Delivery from ${s.name}`,
+        "serviceType": "Heating Oil Delivery",
+        "provider": {
+          "@type": "LocalBusiness",
+          "name": s.name,
+          ...(s.phone && { "telephone": s.phone })
+        },
         "offers": {
           "@type": "Offer",
           "price": s.price.toFixed(2),
           "priceCurrency": "USD",
           "priceValidUntil": new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          "availability": "https://schema.org/InStock",
-          "seller": {
-            "@type": "LocalBusiness",
-            "name": s.name,
-            ...(s.phone && { "telephone": s.phone })
-          }
+          "availability": "https://schema.org/InStock"
         }
       }
     }))
@@ -970,8 +971,9 @@ ${JSON.stringify({
     "@type": "ListItem",
     "position": i + 1,
     "item": {
-      "@type": "Product",
+      "@type": "Service",
       "name": `Heating Oil Delivery in ${d.city}, ${d.state}`,
+      "serviceType": "Heating Oil Delivery",
       "offers": {
         "@type": "Offer",
         "price": d.price,
