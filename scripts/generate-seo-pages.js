@@ -317,7 +317,7 @@ function getSuppliersForZips(suppliers, zips, priceMap) {
         price: priceInfo?.price || null,
         minGallons: priceInfo?.min_gallons || null,
         priceSource: priceInfo?.source_type || null,
-        hasPrice: !!priceInfo && supplier.allow_price_display
+        hasPrice: !!priceInfo
       });
     }
   }
