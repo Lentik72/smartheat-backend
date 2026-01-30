@@ -89,6 +89,16 @@ router.get('/overview', async (req, res) => {
     const days = parseDays(req);
     const now = new Date();
 
+    // Helper for safe queries
+    const safeQuery = async (name, query) => {
+      try {
+        return await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
+      } catch (e) {
+        logger.error(`[Dashboard] Query "${name}" failed: ${e.message}`);
+        return [{}];
+      }
+    };
+
     // Parallel queries for performance
     const [
       clickStats,
@@ -99,7 +109,7 @@ router.get('/overview', async (req, res) => {
       dataFreshness
     ] = await Promise.all([
       // Click stats
-      sequelize.query(`
+      safeQuery('clickStats', `
         SELECT
           COUNT(*) as total_clicks,
           COUNT(*) FILTER (WHERE action_type = 'call') as call_clicks,
@@ -108,56 +118,56 @@ router.get('/overview', async (req, res) => {
           MAX(created_at) as last_click
         FROM supplier_clicks
         WHERE created_at > NOW() - INTERVAL '${days} days'
-      `, { type: sequelize.QueryTypes.SELECT }),
+      `),
 
       // Scraper stats
-      sequelize.query(`
+      safeQuery('scraperStats', `
         SELECT
           COUNT(*) FILTER (WHERE current_price IS NOT NULL AND price_updated_at > NOW() - INTERVAL '48 hours') as with_fresh_prices,
           COUNT(*) as total,
           COUNT(*) FILTER (WHERE current_price IS NOT NULL AND price_updated_at < NOW() - INTERVAL '48 hours') as stale_count
         FROM suppliers
         WHERE is_active = true
-      `, { type: sequelize.QueryTypes.SELECT }),
+      `),
 
       // Waitlist stats
-      sequelize.query(`
+      safeQuery('waitlistStats', `
         SELECT
           COUNT(*) as total,
           COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_7_days
         FROM waitlist
-      `, { type: sequelize.QueryTypes.SELECT }),
+      `),
 
       // PWA stats
-      sequelize.query(`
+      safeQuery('pwaStats', `
         SELECT
           COUNT(*) FILTER (WHERE event_type = 'prompt_shown') as prompts_shown,
           COUNT(*) FILTER (WHERE event_type = 'installed') as installs
         FROM pwa_events
         WHERE created_at > NOW() - INTERVAL '${days} days'
-      `, { type: sequelize.QueryTypes.SELECT }),
+      `),
 
       // Coverage gaps - ZIPs searched but no clicks
-      sequelize.query(`
+      safeQuery('coverageStats', `
         SELECT COUNT(DISTINCT ul.zip_code) as searched_no_clicks
         FROM user_locations ul
         LEFT JOIN supplier_clicks sc ON ul.zip_code = sc.zip_code
           AND sc.created_at > NOW() - INTERVAL '${days} days'
         WHERE ul.created_at > NOW() - INTERVAL '${days} days'
           AND sc.id IS NULL
-      `, { type: sequelize.QueryTypes.SELECT }),
+      `),
 
       // Data freshness
-      sequelize.query(`
+      safeQuery('dataFreshness', `
         SELECT
           (SELECT MAX(created_at) FROM supplier_clicks) as last_click,
           (SELECT MAX(price_updated_at) FROM suppliers WHERE current_price IS NOT NULL) as last_price,
           (SELECT MAX(run_at) FROM scrape_runs) as last_scrape
-      `, { type: sequelize.QueryTypes.SELECT })
+      `)
     ]);
 
     // Get top supplier
-    const [topSupplier] = await sequelize.query(`
+    const topSupplierResult = await safeQuery('topSupplier', `
       SELECT s.name, COUNT(*) as clicks
       FROM supplier_clicks sc
       JOIN suppliers s ON sc.supplier_id = s.id
@@ -165,7 +175,8 @@ router.get('/overview', async (req, res) => {
       GROUP BY s.id, s.name
       ORDER BY clicks DESC
       LIMIT 1
-    `, { type: sequelize.QueryTypes.SELECT });
+    `);
+    const topSupplier = topSupplierResult[0] || null;
 
     const click = clickStats[0] || {};
     const scraper = scraperStats[0] || {};
@@ -245,8 +256,10 @@ router.get('/overview', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('[Dashboard] Overview error:', error.message, error.stack);
-    res.status(500).json({ error: 'Failed to load overview', details: error.message, stack: error.stack?.split('\n').slice(0, 3) });
+    const errMsg = error.message || String(error);
+    const errStack = error.stack || '';
+    logger.error(`[Dashboard] Overview error: ${errMsg} | Stack: ${errStack.split('\n')[1] || ''}`);
+    res.status(500).json({ error: 'Failed to load overview', details: errMsg });
   }
 });
 
