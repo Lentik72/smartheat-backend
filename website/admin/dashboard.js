@@ -169,14 +169,26 @@ async function loadOverview() {
         `${data.website.topSupplier.name} (${data.website.topSupplier.clicks} clicks)`;
     }
 
-    // Coverage gaps
-    document.getElementById('coverage-gaps').textContent = `${data.coverage.zipsSearchedNoClicks} ZIPs`;
+    // Coverage gaps breakdown
+    const trueCoverageGaps = data.coverage.trueCoverageGaps || 0;
+    const engagementGaps = data.coverage.engagementGaps || 0;
 
-    // Alert banner
-    if (data.coverage.zipsSearchedNoClicks > 10) {
+    document.getElementById('true-coverage-gaps').textContent = `${trueCoverageGaps} ZIPs`;
+    document.getElementById('engagement-gaps').textContent = `${engagementGaps} ZIPs`;
+
+    // Alert banner - prioritize true coverage gaps
+    if (trueCoverageGaps > 5) {
       document.getElementById('alert-banner').classList.remove('hidden');
       document.getElementById('alert-text').textContent =
-        `${data.coverage.zipsSearchedNoClicks} ZIPs searched with no supplier clicks (coverage gap)`;
+        `${trueCoverageGaps} ZIPs have demand but NO suppliers - add coverage!`;
+      document.getElementById('alert-action').textContent = 'View Map';
+      document.getElementById('alert-action').onclick = () => switchTab('map');
+    } else if (engagementGaps > 20) {
+      document.getElementById('alert-banner').classList.remove('hidden');
+      document.getElementById('alert-text').textContent =
+        `${engagementGaps} ZIPs have suppliers but no clicks - check pricing/visibility`;
+      document.getElementById('alert-action').textContent = 'View Clicks';
+      document.getElementById('alert-action').onclick = () => switchTab('clicks');
     }
 
   } catch (error) {

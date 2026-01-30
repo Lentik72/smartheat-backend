@@ -164,14 +164,32 @@ router.get('/overview', async (req, res) => {
         WHERE created_at > NOW() - INTERVAL '${days} days'
       `),
 
-      // Coverage gaps - ZIPs searched but no clicks
+      // Coverage gaps breakdown - true gaps vs engagement gaps
       safeQuery('coverageStats', `
-        SELECT COUNT(DISTINCT ul.zip_code) as searched_no_clicks
-        FROM user_locations ul
-        LEFT JOIN supplier_clicks sc ON ul.zip_code = sc.zip_code
-          AND sc.created_at > NOW() - INTERVAL '${days} days'
-        WHERE ul.created_at > NOW() - INTERVAL '${days} days'
-          AND sc.id IS NULL
+        WITH searched_zips AS (
+          SELECT DISTINCT zip_code
+          FROM user_locations
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        ),
+        covered_zips AS (
+          SELECT DISTINCT jsonb_array_elements_text(postal_codes_served) as zip_code
+          FROM suppliers
+          WHERE active = true
+            AND postal_codes_served IS NOT NULL
+            AND jsonb_array_length(postal_codes_served) > 0
+        ),
+        clicked_zips AS (
+          SELECT DISTINCT zip_code
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        )
+        SELECT
+          COUNT(*) FILTER (WHERE cov.zip_code IS NULL) as true_coverage_gaps,
+          COUNT(*) FILTER (WHERE cov.zip_code IS NOT NULL AND clk.zip_code IS NULL) as engagement_gaps,
+          COUNT(*) as total_searched
+        FROM searched_zips sz
+        LEFT JOIN covered_zips cov ON sz.zip_code = cov.zip_code
+        LEFT JOIN clicked_zips clk ON sz.zip_code = clk.zip_code
       `),
 
       // Data freshness (prices in supplier_prices table, scrape_runs may not exist)
@@ -217,12 +235,14 @@ router.get('/overview', async (req, res) => {
     if (summaryMode) {
       const totalClicks = parseInt(click.total_clicks) || 0;
       const staleCount = parseInt(scraper.stale_count) || 0;
-      const coverageGaps = parseInt(coverage.searched_no_clicks) || 0;
+      const trueCoverageGaps = parseInt(coverage.true_coverage_gaps) || 0;
+      const engagementGaps = parseInt(coverage.engagement_gaps) || 0;
 
       // Build one-liner alerts
       const alerts = [];
       if (staleCount > 3) alerts.push(`${staleCount} stale scrapers`);
-      if (coverageGaps > 10) alerts.push(`${coverageGaps} coverage gaps`);
+      if (trueCoverageGaps > 5) alerts.push(`${trueCoverageGaps} coverage gaps`);
+      if (engagementGaps > 20) alerts.push(`${engagementGaps} low engagement ZIPs`);
 
       return res.json({
         period: `${days}d`,
@@ -235,7 +255,8 @@ router.get('/overview', async (req, res) => {
           waitlistWeek: parseInt(waitlist.last_7_days) || 0,
           pwaInstalls: parseInt(pwa.installs) || 0,
           pwaRate: `${conversionRate}%`,
-          coverageGaps: coverageGaps
+          trueCoverageGaps: trueCoverageGaps,
+          engagementGaps: engagementGaps
         },
         alerts: alerts.length > 0 ? alerts : null,
         oneLiner: `${totalClicks} clicks | ${staleCount} stale | ${parseInt(waitlist.last_7_days) || 0} waitlist | ${parseInt(pwa.installs) || 0} PWA`,
@@ -271,7 +292,9 @@ router.get('/overview', async (req, res) => {
         lastUpdated: freshness.last_click || null
       },
       coverage: {
-        zipsSearchedNoClicks: parseInt(coverage.searched_no_clicks) || 0
+        trueCoverageGaps: parseInt(coverage.true_coverage_gaps) || 0,
+        engagementGaps: parseInt(coverage.engagement_gaps) || 0,
+        totalSearched: parseInt(coverage.total_searched) || 0
       },
       dataFreshness: {
         supplier_clicks: freshness.last_click || null,
