@@ -120,14 +120,20 @@ router.get('/overview', async (req, res) => {
         WHERE created_at > NOW() - INTERVAL '${days} days'
       `),
 
-      // Scraper stats
+      // Scraper stats (prices are in supplier_prices table)
       safeQuery('scraperStats', `
         SELECT
-          COUNT(*) FILTER (WHERE current_price IS NOT NULL AND price_updated_at > NOW() - INTERVAL '48 hours') as with_fresh_prices,
-          COUNT(*) as total,
-          COUNT(*) FILTER (WHERE current_price IS NOT NULL AND price_updated_at < NOW() - INTERVAL '48 hours') as stale_count
-        FROM suppliers
-        WHERE is_active = true
+          COUNT(DISTINCT CASE WHEN sp.scraped_at > NOW() - INTERVAL '48 hours' THEN s.id END) as with_fresh_prices,
+          COUNT(DISTINCT s.id) as total,
+          COUNT(DISTINCT CASE WHEN sp.id IS NOT NULL AND sp.scraped_at < NOW() - INTERVAL '48 hours' THEN s.id END) as stale_count
+        FROM suppliers s
+        LEFT JOIN (
+          SELECT DISTINCT ON (supplier_id) supplier_id, id, scraped_at
+          FROM supplier_prices
+          WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        ) sp ON s.id = sp.supplier_id
+        WHERE s.active = true
       `),
 
       // Waitlist stats
@@ -157,12 +163,11 @@ router.get('/overview', async (req, res) => {
           AND sc.id IS NULL
       `),
 
-      // Data freshness
+      // Data freshness (prices in supplier_prices table, scrape_runs may not exist)
       safeQuery('dataFreshness', `
         SELECT
           (SELECT MAX(created_at) FROM supplier_clicks) as last_click,
-          (SELECT MAX(price_updated_at) FROM suppliers WHERE current_price IS NOT NULL) as last_price,
-          (SELECT MAX(run_at) FROM scrape_runs) as last_scrape
+          (SELECT MAX(scraped_at) FROM supplier_prices WHERE is_valid = true) as last_price
       `)
     ]);
 
@@ -303,24 +308,30 @@ router.get('/clicks', async (req, res) => {
         LIMIT 20
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // By supplier with price (for signals)
+      // By supplier with price (for signals) - prices from supplier_prices table
       sequelize.query(`
-        WITH market_avg AS (
-          SELECT AVG(current_price) as avg_price
-          FROM suppliers
-          WHERE current_price IS NOT NULL AND is_active = true
+        WITH latest_prices AS (
+          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
+          FROM supplier_prices
+          WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        ),
+        market_avg AS (
+          SELECT AVG(price_per_gallon) as avg_price
+          FROM latest_prices
         ),
         supplier_clicks_agg AS (
           SELECT
             sc.supplier_id,
             COALESCE(sc.supplier_name, s.name) as name,
             COUNT(*) as clicks,
-            s.current_price,
-            s.price_updated_at
+            lp.price_per_gallon as current_price,
+            lp.scraped_at as price_updated_at
           FROM supplier_clicks sc
           LEFT JOIN suppliers s ON sc.supplier_id = s.id
+          LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
           WHERE sc.created_at > NOW() - INTERVAL '${days} days'
-          GROUP BY sc.supplier_id, COALESCE(sc.supplier_name, s.name), s.current_price, s.price_updated_at
+          GROUP BY sc.supplier_id, COALESCE(sc.supplier_name, s.name), lp.price_per_gallon, lp.scraped_at
         )
         SELECT
           sca.name,
@@ -489,29 +500,42 @@ router.get('/prices', async (req, res) => {
         ORDER BY date
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // Current prices by supplier
+      // Current prices by supplier (from supplier_prices table)
       sequelize.query(`
         SELECT
           s.name,
-          s.current_price as "currentPrice",
-          s.price_updated_at as "lastUpdated",
+          lp.price_per_gallon as "currentPrice",
+          lp.scraped_at as "lastUpdated",
           s.state
         FROM suppliers s
-        WHERE s.current_price IS NOT NULL AND s.is_active = true
-        ORDER BY s.current_price ASC
+        INNER JOIN (
+          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
+          FROM supplier_prices
+          WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        ) lp ON s.id = lp.supplier_id
+        WHERE s.active = true
+        ORDER BY lp.price_per_gallon ASC
         LIMIT 50
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // Price spread by county (for opportunity chart)
+      // Price spread by state (for opportunity chart)
       sequelize.query(`
+        WITH latest_prices AS (
+          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon
+          FROM supplier_prices
+          WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        )
         SELECT
           s.state,
           COUNT(*) as supplier_count,
-          ROUND(MIN(s.current_price)::numeric, 2) as min_price,
-          ROUND(MAX(s.current_price)::numeric, 2) as max_price,
-          ROUND((MAX(s.current_price) - MIN(s.current_price))::numeric, 2) as spread
+          ROUND(MIN(lp.price_per_gallon)::numeric, 2) as min_price,
+          ROUND(MAX(lp.price_per_gallon)::numeric, 2) as max_price,
+          ROUND((MAX(lp.price_per_gallon) - MIN(lp.price_per_gallon))::numeric, 2) as spread
         FROM suppliers s
-        WHERE s.current_price IS NOT NULL AND s.is_active = true
+        INNER JOIN latest_prices lp ON s.id = lp.supplier_id
+        WHERE s.active = true
         GROUP BY s.state
         HAVING COUNT(*) >= 3
         ORDER BY spread DESC
@@ -556,50 +580,71 @@ router.get('/scraper-health', async (req, res) => {
   }
 
   try {
+    // Helper for safe queries (scrape_runs table may not exist)
+    const safeQuery = async (name, query) => {
+      try {
+        return await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
+      } catch (e) {
+        logger.warn(`[Dashboard] Scraper health query "${name}" failed: ${e.message}`);
+        return [];
+      }
+    };
+
     const [lastRun, scraperStats, staleSuppliers, recentFailures] = await Promise.all([
-      // Last scrape run
-      sequelize.query(`
+      // Last scrape run (table may not exist)
+      safeQuery('lastRun', `
         SELECT run_at, suppliers_scraped, successful, failed
         FROM scrape_runs
         ORDER BY run_at DESC
         LIMIT 1
-      `, { type: sequelize.QueryTypes.SELECT }),
+      `),
 
-      // Overall scraper stats
+      // Overall scraper stats (using supplier_prices for price data)
       sequelize.query(`
+        WITH latest_prices AS (
+          SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
+          FROM supplier_prices
+          WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        )
         SELECT
-          COUNT(*) FILTER (WHERE current_price IS NOT NULL) as with_prices,
-          COUNT(*) as total,
-          COUNT(*) FILTER (WHERE scraping_enabled = true) as scraping_enabled
-        FROM suppliers
-        WHERE is_active = true
+          COUNT(DISTINCT lp.supplier_id) as with_prices,
+          COUNT(*) as total
+        FROM suppliers s
+        LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
+        WHERE s.active = true
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // Stale suppliers (no price update in 48h but scraping enabled)
+      // Stale suppliers (price older than 48h)
       sequelize.query(`
+        WITH latest_prices AS (
+          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
+          FROM supplier_prices
+          WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        )
         SELECT
           s.id,
           s.name,
-          s.current_price as "lastPrice",
-          s.price_updated_at as "lastUpdated",
+          lp.price_per_gallon as "lastPrice",
+          lp.scraped_at as "lastUpdated",
           s.website
         FROM suppliers s
-        WHERE s.is_active = true
-          AND s.scraping_enabled = true
-          AND s.current_price IS NOT NULL
-          AND s.price_updated_at < NOW() - INTERVAL '48 hours'
-        ORDER BY s.price_updated_at ASC
+        INNER JOIN latest_prices lp ON s.id = lp.supplier_id
+        WHERE s.active = true
+          AND lp.scraped_at < NOW() - INTERVAL '48 hours'
+        ORDER BY lp.scraped_at ASC
         LIMIT 20
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // Recent failures from scrape_runs
-      sequelize.query(`
+      // Recent failures from scrape_runs (table may not exist)
+      safeQuery('recentFailures', `
         SELECT run_at, failed, error_details
         FROM scrape_runs
         WHERE failed > 0
         ORDER BY run_at DESC
         LIMIT 5
-      `, { type: sequelize.QueryTypes.SELECT })
+      `)
     ]);
 
     const run = lastRun[0] || {};
@@ -608,7 +653,7 @@ router.get('/scraper-health', async (req, res) => {
     res.json({
       lastRun: run.run_at || null,
       suppliersScraped: parseInt(run.successful) || 0,
-      totalEnabled: parseInt(stats.scraping_enabled) || 0,
+      totalSuppliers: parseInt(stats.total) || 0,
       withPrices: parseInt(stats.with_prices) || 0,
       stale: staleSuppliers.map(s => ({
         id: s.id,
@@ -774,17 +819,22 @@ router.get('/suppliers', async (req, res) => {
   try {
     const { state, hasPrice, scrapeStatus, search, limit = 50, offset = 0 } = req.query;
 
+    // Build where clause (using actual column names: active, allow_price_display)
     let whereClause = 'WHERE 1=1';
     if (state) whereClause += ` AND s.state = '${state}'`;
-    if (hasPrice === 'true') whereClause += ' AND s.current_price IS NOT NULL';
-    if (hasPrice === 'false') whereClause += ' AND s.current_price IS NULL';
-    if (scrapeStatus === 'enabled') whereClause += ' AND s.scraping_enabled = true';
-    if (scrapeStatus === 'disabled') whereClause += ' AND s.scraping_enabled = false';
-    if (scrapeStatus === 'stale') whereClause += " AND s.scraping_enabled = true AND s.price_updated_at < NOW() - INTERVAL '48 hours'";
+    if (hasPrice === 'true') whereClause += ' AND lp.price_per_gallon IS NOT NULL';
+    if (hasPrice === 'false') whereClause += ' AND lp.price_per_gallon IS NULL';
+    // Note: scraping_enabled may not exist, so these filters are skipped
     if (search) whereClause += ` AND (s.name ILIKE '%${search}%' OR s.website ILIKE '%${search}%')`;
 
     const [suppliers, countResult] = await Promise.all([
       sequelize.query(`
+        WITH latest_prices AS (
+          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
+          FROM supplier_prices
+          WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        )
         SELECT
           s.id,
           s.name,
@@ -792,20 +842,29 @@ router.get('/suppliers', async (req, res) => {
           s.website,
           s.state,
           s.city,
-          s.current_price as "currentPrice",
-          s.price_updated_at as "priceUpdatedAt",
-          s.is_active as "isActive",
+          lp.price_per_gallon as "currentPrice",
+          lp.scraped_at as "priceUpdatedAt",
+          s.active as "isActive",
           s.allow_price_display as "allowPriceDisplay",
-          s.scraping_enabled as "scrapingEnabled",
           (SELECT COUNT(*) FROM supplier_clicks sc WHERE sc.supplier_id = s.id AND sc.created_at > NOW() - INTERVAL '7 days') as "recentClicks"
         FROM suppliers s
+        LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
         ${whereClause}
         ORDER BY s.name
         LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `, { type: sequelize.QueryTypes.SELECT }),
 
       sequelize.query(`
-        SELECT COUNT(*) as count FROM suppliers s ${whereClause}
+        WITH latest_prices AS (
+          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon
+          FROM supplier_prices
+          WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        )
+        SELECT COUNT(*) as count
+        FROM suppliers s
+        LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
+        ${whereClause}
       `, { type: sequelize.QueryTypes.SELECT })
     ]);
 
@@ -917,10 +976,10 @@ router.put('/suppliers/:id', async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    // Whitelist allowed fields
+    // Whitelist allowed fields (using actual column names)
     const allowedFields = [
       'name', 'phone', 'website', 'state', 'city',
-      'is_active', 'allow_price_display', 'scraping_enabled'
+      'active', 'allow_price_display'
     ];
 
     const setClause = [];
@@ -1024,9 +1083,9 @@ router.delete('/suppliers/:id', async (req, res) => {
       return res.status(404).json({ error: 'Supplier not found' });
     }
 
-    // Soft delete by setting is_active = false
+    // Soft delete by setting active = false
     await sequelize.query(`
-      UPDATE suppliers SET is_active = false, updated_at = NOW() WHERE id = :id
+      UPDATE suppliers SET active = false, updated_at = NOW() WHERE id = :id
     `, { replacements: { id } });
 
     logger.info(`[Dashboard] Deactivated supplier: ${supplier.name} (${id})`);
