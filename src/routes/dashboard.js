@@ -245,8 +245,8 @@ router.get('/overview', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('[Dashboard] Overview error:', error.message);
-    res.status(500).json({ error: 'Failed to load overview', details: error.message });
+    logger.error('[Dashboard] Overview error:', error.message, error.stack);
+    res.status(500).json({ error: 'Failed to load overview', details: error.message, stack: error.stack?.split('\n').slice(0, 3) });
   }
 });
 
