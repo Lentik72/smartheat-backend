@@ -930,8 +930,17 @@ router.get('/suppliers/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Get supplier with latest price
     const [supplier] = await sequelize.query(`
-      SELECT * FROM suppliers WHERE id = :id
+      SELECT s.*, lp.price_per_gallon, lp.scraped_at as price_updated_at
+      FROM suppliers s
+      LEFT JOIN (
+        SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
+        FROM supplier_prices
+        WHERE is_valid = true
+        ORDER BY supplier_id, scraped_at DESC
+      ) lp ON s.id = lp.supplier_id
+      WHERE s.id = :id
     `, { replacements: { id }, type: sequelize.QueryTypes.SELECT });
 
     if (!supplier) {
@@ -948,7 +957,7 @@ router.get('/suppliers/:id', async (req, res) => {
     `, { replacements: { id }, type: sequelize.QueryTypes.SELECT });
 
     // Get click stats
-    const [clickStats] = await sequelize.query(`
+    const clickStats = await sequelize.query(`
       SELECT
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_7_days,
@@ -972,20 +981,24 @@ router.get('/suppliers/:id', async (req, res) => {
       // Config not available
     }
 
+    // Format response with expected field names for frontend
     res.json({
       supplier: {
         ...supplier,
-        current_price: supplier.current_price ? parseFloat(supplier.current_price) : null
+        is_active: supplier.active,
+        current_price: supplier.price_per_gallon ? parseFloat(supplier.price_per_gallon) : null,
+        scraping_enabled: supplier.price_updated_at &&
+          (new Date() - new Date(supplier.price_updated_at)) < 48 * 60 * 60 * 1000
       },
       priceHistory: priceHistory.map(p => ({
         price: parseFloat(p.price_per_gallon),
         date: p.scraped_at
       })),
       clickStats: {
-        total: parseInt(clickStats?.total) || 0,
-        last7Days: parseInt(clickStats?.last_7_days) || 0,
-        calls: parseInt(clickStats?.calls) || 0,
-        websites: parseInt(clickStats?.websites) || 0
+        total: parseInt(clickStats[0]?.total) || 0,
+        last7Days: parseInt(clickStats[0]?.last_7_days) || 0,
+        calls: parseInt(clickStats[0]?.calls) || 0,
+        websites: parseInt(clickStats[0]?.websites) || 0
       },
       scrapeConfig
     });
