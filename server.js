@@ -58,6 +58,7 @@ try {
   suppliersRoutes = express.Router();
   intelligenceRoutes = express.Router();
   activityAnalyticsRoutes = express.Router();
+  dashboardRoutes = express.Router();
 
   // Add basic error responses
   weatherRoutes.get('*', (req, res) => res.status(503).json({ error: 'Weather service temporarily unavailable' }));
