@@ -31,7 +31,7 @@ const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsServic
 const CoverageReportMailer = require('./src/services/CoverageReportMailer');
 
 // Import route modules with error handling
-let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes;
+let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes, dashboardRoutes;
 
 try {
   weatherRoutes = require('./src/routes/weather');
@@ -45,6 +45,7 @@ try {
   activityAnalyticsRoutes = require('./src/routes/activity-analytics');  // V2.4.0: Activity analytics
   waitlistRoutes = require('./src/routes/waitlist');  // V2.9.0: Canada waitlist
   trackingRoutes = require('./src/routes/tracking');  // V2.12.0: Click tracking for sniper outreach
+  dashboardRoutes = require('./src/routes/dashboard');  // V2.14.0: Analytics dashboard
 } catch (error) {
   console.error('Error loading route modules:', error.message);
   // Create placeholder routers if routes fail to load
@@ -116,8 +117,8 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://cdn.jsdelivr.net", "https://unpkg.com"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "https://smartheat-backend-production.up.railway.app", "https://www.google-analytics.com", "https://analytics.google.com"],
     },
@@ -452,6 +453,7 @@ app.use('/api/supplier-claim', require('./src/routes/supplier-claim'));  // V2.1
 app.use('/api/admin/supplier-claims', require('./src/routes/admin-supplier-claims'));  // V2.11.0: Admin claim review
 app.use('/api/supplier-update', require('./src/routes/supplier-update'));  // V2.11.0: Supplier magic link price update
 app.use('/api', require('./src/routes/tracking'));  // V2.12.0: Click tracking for sniper outreach
+app.use('/api/dashboard', dashboardRoutes);  // V2.14.0: Analytics dashboard
 
 // V2.10.0: Serve static files for admin tools
 app.use(express.static(path.join(__dirname, 'public')));

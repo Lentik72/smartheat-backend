@@ -722,6 +722,9 @@ class CoverageReportMailer {
   ` : ''}
 
   <div class="footer">
+    <p>
+      <a href="https://www.gethomeheat.com/admin/dashboard.html" style="display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-bottom: 12px;">Open Full Dashboard</a>
+    </p>
     <p>This report is auto-generated daily at 6 AM EST by SmartHeat.</p>
   </div>
 </body>

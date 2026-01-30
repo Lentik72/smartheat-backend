@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartHeat Analytics Dashboard</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="dashboard.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Leaflet for maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <!-- Login Modal -->
+  <div id="login-modal" class="modal">
+    <div class="modal-content">
+      <h2>Dashboard Login</h2>
+      <form id="login-form">
+        <input type="password" id="password" placeholder="Password" required autofocus>
+        <button type="submit">Login</button>
+        <p id="login-error" class="error"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Dashboard -->
+  <div id="dashboard" class="hidden">
+    <header>
+      <h1>SmartHeat Analytics</h1>
+      <div class="period-selector">
+        <button class="period-btn" data-days="7">7d</button>
+        <button class="period-btn active" data-days="30">30d</button>
+        <button class="period-btn" data-days="90">90d</button>
+      </div>
+    </header>
+
+    <!-- Summary Cards -->
+    <div class="cards">
+      <div class="card" id="card-clicks">
+        <div class="card-label">Website Clicks</div>
+        <div class="card-value" id="total-clicks">--</div>
+        <div class="card-sub" id="clicks-breakdown">-- calls / -- websites</div>
+        <div class="card-freshness" id="clicks-freshness">--</div>
+      </div>
+      <div class="card" id="card-scraper">
+        <div class="card-label">Scraper Health</div>
+        <div class="card-value" id="scraper-status">--</div>
+        <div class="card-sub" id="scraper-stale">-- stale</div>
+        <div class="card-freshness" id="scraper-freshness">--</div>
+      </div>
+      <div class="card" id="card-waitlist">
+        <div class="card-label">Waitlist Total</div>
+        <div class="card-value" id="waitlist-total">--</div>
+        <div class="card-sub" id="waitlist-recent">+-- this week</div>
+        <div class="card-freshness" id="waitlist-freshness">--</div>
+      </div>
+      <div class="card" id="card-pwa">
+        <div class="card-label">PWA Installs</div>
+        <div class="card-value" id="pwa-installs">--</div>
+        <div class="card-sub" id="pwa-rate">--% conversion</div>
+        <div class="card-freshness" id="pwa-freshness">--</div>
+      </div>
+    </div>
+
+    <!-- Alert Banner -->
+    <div id="alert-banner" class="alert hidden">
+      <span id="alert-text"></span>
+      <a href="#" id="alert-action">View</a>
+    </div>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="clicks">Clicks</button>
+      <button class="tab" data-tab="prices">Prices</button>
+      <button class="tab" data-tab="map">Map</button>
+      <button class="tab" data-tab="scrapers">Scrapers</button>
+      <button class="tab" data-tab="suppliers">Suppliers</button>
+      <button class="tab" data-tab="external">External</button>
+    </nav>
+
+    <!-- Tab Content -->
+    <main class="tab-content">
+      <!-- Overview Tab -->
+      <section id="tab-overview" class="tab-panel active">
+        <div class="panel-grid">
+          <div class="panel">
+            <h3>Top Supplier</h3>
+            <div id="top-supplier" class="stat-large">--</div>
+          </div>
+          <div class="panel">
+            <h3>Coverage Gaps</h3>
+            <div id="coverage-gaps" class="stat-large">-- ZIPs</div>
+            <p class="hint">ZIPs searched with no clicks</p>
+          </div>
+          <div class="panel full-width">
+            <h3>Supplier Signals</h3>
+            <table id="supplier-signals-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Clicks</th>
+                  <th>Price</th>
+                  <th>vs Market</th>
+                  <th>Est. Revenue</th>
+                  <th>Signal</th>
+                </tr>
+              </thead>
+              <tbody id="supplier-signals-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Clicks Tab -->
+      <section id="tab-clicks" class="tab-panel">
+        <div class="panel-grid">
+          <div class="panel full-width">
+            <h3>Daily Clicks</h3>
+            <canvas id="clicks-chart"></canvas>
+          </div>
+          <div class="panel">
+            <h3>By Page Source</h3>
+            <canvas id="page-source-chart"></canvas>
+          </div>
+          <div class="panel">
+            <h3>By Device</h3>
+            <canvas id="device-chart"></canvas>
+          </div>
+          <div class="panel full-width">
+            <h3>Top Suppliers by Clicks</h3>
+            <table id="clicks-by-supplier-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Calls</th>
+                  <th>Websites</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="clicks-by-supplier-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Prices Tab -->
+      <section id="tab-prices" class="tab-panel">
+        <div class="panel-grid">
+          <div class="panel full-width">
+            <h3>Price Trends</h3>
+            <canvas id="price-chart"></canvas>
+          </div>
+          <div class="panel full-width">
+            <h3>Price Spread by State (Marketing Opportunity)</h3>
+            <canvas id="spread-chart"></canvas>
+            <p class="hint">Higher spread = easier marketing ("Save up to $X/gal!")</p>
+          </div>
+          <div class="panel full-width">
+            <h3>Current Prices by Supplier</h3>
+            <table id="prices-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>State</th>
+                  <th>Price</th>
+                  <th>Last Updated</th>
+                </tr>
+              </thead>
+              <tbody id="prices-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Map Tab -->
+      <section id="tab-map" class="tab-panel">
+        <div class="panel full-width">
+          <h3>Click Heatmap by ZIP</h3>
+          <div id="map-container"></div>
+        </div>
+      </section>
+
+      <!-- Scrapers Tab -->
+      <section id="tab-scrapers" class="tab-panel">
+        <div class="panel-grid">
+          <div class="panel">
+            <h3>Last Scrape Run</h3>
+            <div id="last-scrape" class="stat-large">--</div>
+          </div>
+          <div class="panel">
+            <h3>Suppliers Scraped</h3>
+            <div id="suppliers-scraped" class="stat-large">--</div>
+          </div>
+          <div class="panel full-width">
+            <h3>Stale Suppliers (No update in 48h)</h3>
+            <table id="stale-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Last Price</th>
+                  <th>Last Updated</th>
+                  <th>Website</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="stale-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Suppliers Tab -->
+      <section id="tab-suppliers" class="tab-panel">
+        <div class="panel full-width">
+          <div class="filters">
+            <select id="filter-state">
+              <option value="">All States</option>
+            </select>
+            <select id="filter-price">
+              <option value="">All Price Status</option>
+              <option value="true">Has Price</option>
+              <option value="false">No Price</option>
+            </select>
+            <select id="filter-scrape">
+              <option value="">All Scrape Status</option>
+              <option value="enabled">Enabled</option>
+              <option value="disabled">Disabled</option>
+              <option value="stale">Stale</option>
+            </select>
+            <input type="text" id="filter-search" placeholder="Search...">
+            <button id="filter-apply">Apply</button>
+          </div>
+          <table id="suppliers-table">
+            <thead>
+              <tr>
+                <th>Supplier</th>
+                <th>State</th>
+                <th>Price</th>
+                <th>Updated</th>
+                <th>Clicks (7d)</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="suppliers-body"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="prev-page" disabled>Previous</button>
+            <span id="page-info">Page 1</span>
+            <button id="next-page">Next</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- External Tab -->
+      <section id="tab-external" class="tab-panel">
+        <div class="panel-grid">
+          <div class="panel">
+            <h3>Firebase Analytics (iOS App)</h3>
+            <p>View detailed iOS app analytics including supplier_selected, delivery_logged, and other custom events.</p>
+            <a href="https://console.firebase.google.com/project/smartheat-e0729/analytics" target="_blank" class="btn">Open Firebase Console</a>
+          </div>
+          <div class="panel">
+            <h3>Google Analytics 4 (Website)</h3>
+            <p>View website traffic, user behavior, and conversion data.</p>
+            <a href="https://analytics.google.com/" target="_blank" class="btn">Open Google Analytics</a>
+          </div>
+          <div class="panel">
+            <h3>Google Search Console</h3>
+            <p>Monitor search performance, indexing status, and SEO issues.</p>
+            <a href="https://search.google.com/search-console" target="_blank" class="btn">Open Search Console</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Supplier Edit Modal -->
+    <div id="supplier-modal" class="modal hidden">
+      <div class="modal-content wide">
+        <h2>Edit Supplier: <span id="edit-supplier-name"></span></h2>
+        <form id="supplier-form">
+          <input type="hidden" id="edit-supplier-id">
+
+          <fieldset>
+            <legend>Basic Info</legend>
+            <div class="form-row">
+              <label>Name</label>
+              <input type="text" id="edit-name" required>
+            </div>
+            <div class="form-row">
+              <label>Phone</label>
+              <input type="tel" id="edit-phone">
+            </div>
+            <div class="form-row">
+              <label>Website</label>
+              <input type="url" id="edit-website">
+            </div>
+            <div class="form-row">
+              <label>State</label>
+              <input type="text" id="edit-state" maxlength="2">
+            </div>
+            <div class="form-row">
+              <label>City</label>
+              <input type="text" id="edit-city">
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Display Settings</legend>
+            <div class="form-row checkbox">
+              <label><input type="checkbox" id="edit-active"> Show in directory</label>
+            </div>
+            <div class="form-row checkbox">
+              <label><input type="checkbox" id="edit-price-display"> Allow price display</label>
+            </div>
+            <div class="form-row checkbox">
+              <label><input type="checkbox" id="edit-scraping"> Scraping enabled</label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Price Info</legend>
+            <div class="form-row">
+              <label>Current Price</label>
+              <input type="text" id="edit-price" readonly>
+            </div>
+            <div class="form-row">
+              <label>Last Updated</label>
+              <input type="text" id="edit-price-date" readonly>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Click Stats (7 days)</legend>
+            <div id="edit-click-stats"></div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="button" id="cancel-edit">Cancel</button>
+            <button type="submit" class="primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
