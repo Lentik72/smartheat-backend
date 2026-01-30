@@ -458,6 +458,27 @@ async function loadMap() {
       }
     }
 
+    // Populate clicks table (shows all clicks including those without coords)
+    const tbody = document.getElementById('geo-clicks-body');
+    tbody.innerHTML = '';
+    const allClicks = data.allClicks || data.clicks || [];
+
+    if (allClicks.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">No geographic click data yet</td></tr>';
+    } else {
+      allClicks.forEach(c => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${c.zip || '--'}</td>
+          <td>${c.city || '--'}</td>
+          <td>${c.county || '--'}</td>
+          <td>${c.state || '--'}</td>
+          <td>${c.count}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
   } catch (error) {
     console.error('Failed to load map:', error);
   }

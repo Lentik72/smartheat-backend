@@ -490,7 +490,7 @@ router.get('/geographic', async (req, res) => {
       LIMIT 100
     `, { type: sequelize.QueryTypes.SELECT });
 
-    // Enrich with coordinates
+    // Enrich with location info (note: lat/lng may not be available)
     const enrichedClicks = clicks.map(c => {
       const zipData = zipCoords[c.zip_code];
       return {
@@ -499,11 +499,18 @@ router.get('/geographic', async (req, res) => {
         lat: zipData?.lat || null,
         lng: zipData?.lng || null,
         city: zipData?.city || null,
+        county: zipData?.county || null,
         state: zipData?.state || null
       };
-    }).filter(c => c.lat && c.lng);
+    });
 
-    res.json({ clicks: enrichedClicks });
+    // Separate clicks with coords (for map) and all clicks (for table)
+    const clicksWithCoords = enrichedClicks.filter(c => c.lat && c.lng);
+
+    res.json({
+      clicks: clicksWithCoords,  // For map markers
+      allClicks: enrichedClicks  // For table view (includes all)
+    });
   } catch (error) {
     logger.error('[Dashboard] Geographic error:', error.message);
     res.status(500).json({ error: 'Failed to load geographic data', details: error.message });
