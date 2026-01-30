@@ -43,6 +43,7 @@ const STATES = {
   'NH': { name: 'New Hampshire', abbrev: 'nh' },
   'ME': { name: 'Maine', abbrev: 'me' },
   'VA': { name: 'Virginia', abbrev: 'va' },
+  'MD': { name: 'Maryland', abbrev: 'md' },
   'AK': { name: 'Alaska', abbrev: 'ak' }
 };
 

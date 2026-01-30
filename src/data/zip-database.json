@@ -18000,7 +18000,7 @@
     "state": "MD"
   },
   "20701": {
-    "city": "Annapolis juncti",
+    "city": "Annapolis Junction",
     "county": "Howard",
     "state": "MD"
   },
@@ -18020,7 +18020,7 @@
     "state": "MD"
   },
   "20708": {
-    "city": "Montpelier",
+    "city": "Laurel",
     "county": "Prince Georges",
     "state": "MD"
   },
@@ -18035,13 +18035,13 @@
     "state": "MD"
   },
   "20712": {
-    "city": "Mount rainier",
+    "city": "Mount Rainier",
     "county": "Prince Georges",
     "state": "MD"
   },
   "20714": {
-    "city": "North beach",
-    "county": "Calvert",
+    "city": "North Beach",
+    "county": "Anne Arundel",
     "state": "MD"
   },
   "20715": {
@@ -18050,7 +18050,7 @@
     "state": "MD"
   },
   "20716": {
-    "city": "Mitchellville",
+    "city": "Bowie",
     "county": "Prince Georges",
     "state": "MD"
   },
@@ -18060,7 +18060,7 @@
     "state": "MD"
   },
   "20721": {
-    "city": "Mitchellville",
+    "city": "Bowie",
     "county": "Prince Georges",
     "state": "MD"
   },
@@ -18105,22 +18105,27 @@
     "state": "MD"
   },
   "20740": {
-    "city": "College park",
+    "city": "College Park",
+    "county": "Prince Georges",
+    "state": "MD"
+  },
+  "20742": {
+    "city": "College Park",
     "county": "Prince Georges",
     "state": "MD"
   },
   "20743": {
-    "city": "Capital heights",
+    "city": "Capitol Heights",
     "county": "Prince Georges",
     "state": "MD"
   },
   "20744": {
-    "city": "Fort washington",
+    "city": "Fort Washington",
     "county": "Prince Georges",
     "state": "MD"
   },
   "20745": {
-    "city": "Oxon hill",
+    "city": "Oxon Hill",
     "county": "Prince Georges",
     "state": "MD"
   },
@@ -18130,12 +18135,12 @@
     "state": "MD"
   },
   "20747": {
-    "city": "District heights",
+    "city": "District Heights",
     "county": "Prince Georges",
     "state": "MD"
   },
   "20748": {
-    "city": "Temple hills",
+    "city": "Temple Hills",
     "county": "Prince Georges",
     "state": "MD"
   },
@@ -18150,7 +18155,7 @@
     "state": "MD"
   },
   "20755": {
-    "city": "Fort george g me",
+    "city": "Fort Meade",
     "county": "Anne Arundel",
     "state": "MD"
   },
@@ -18165,7 +18170,7 @@
     "state": "MD"
   },
   "20762": {
-    "city": "20762",
+    "city": "Andrews AFB",
     "county": "Prince Georges",
     "state": "MD"
   },
@@ -18175,7 +18180,7 @@
     "state": "MD"
   },
   "20764": {
-    "city": "Shady side",
+    "city": "Shady Side",
     "county": "Anne Arundel",
     "state": "MD"
   },
@@ -18185,7 +18190,7 @@
     "state": "MD"
   },
   "20769": {
-    "city": "Glenn dale",
+    "city": "Glenn Dale",
     "county": "Prince Georges",
     "state": "MD"
   },
@@ -18194,13 +18199,18 @@
     "county": "Prince Georges",
     "state": "MD"
   },
+  "20771": {
+    "city": "Greenbelt",
+    "county": "Prince Georges",
+    "state": "MD"
+  },
   "20772": {
-    "city": "Upper marlboro",
+    "city": "Upper Marlboro",
     "county": "Prince Georges",
     "state": "MD"
   },
   "20774": {
-    "city": "Upper marlboro",
+    "city": "Upper Marlboro",
     "county": "Prince Georges",
     "state": "MD"
   },
@@ -18215,12 +18225,12 @@
     "state": "MD"
   },
   "20778": {
-    "city": "West river",
+    "city": "West River",
     "county": "Anne Arundel",
     "state": "MD"
   },
   "20779": {
-    "city": "Tracys landing",
+    "city": "Tracys Landing",
     "county": "Anne Arundel",
     "state": "MD"
   },
@@ -18230,32 +18240,32 @@
     "state": "MD"
   },
   "20782": {
-    "city": "West hyattsville",
+    "city": "Hyattsville",
     "county": "Prince Georges",
     "state": "MD"
   },
   "20783": {
-    "city": "Adelphi",
+    "city": "Hyattsville",
     "county": "Prince Georges",
     "state": "MD"
   },
   "20784": {
-    "city": "Landover hills",
+    "city": "Hyattsville",
     "county": "Prince Georges",
     "state": "MD"
   },
   "20785": {
-    "city": "Landover",
+    "city": "Hyattsville",
     "county": "Prince Georges",
     "state": "MD"
   },
   "20794": {
     "city": "Jessup",
-    "county": "Anne Arundel",
+    "county": "Howard",
     "state": "MD"
   },
   "20812": {
-    "city": "Glen echo",
+    "city": "Glen Echo",
     "county": "Montgomery",
     "state": "MD"
   },
@@ -18265,7 +18275,7 @@
     "state": "MD"
   },
   "20815": {
-    "city": "Chevy chase",
+    "city": "Chevy Chase",
     "county": "Montgomery",
     "state": "MD"
   },
@@ -18275,12 +18285,12 @@
     "state": "MD"
   },
   "20817": {
-    "city": "West bethesda",
+    "city": "Bethesda",
     "county": "Montgomery",
     "state": "MD"
   },
   "20818": {
-    "city": "Cabin john",
+    "city": "Cabin John",
     "county": "Montgomery",
     "state": "MD"
   },
@@ -18350,7 +18360,7 @@
     "state": "MD"
   },
   "20860": {
-    "city": "Sandy spring",
+    "city": "Sandy Spring",
     "county": "Montgomery",
     "state": "MD"
   },
@@ -18385,7 +18395,7 @@
     "state": "MD"
   },
   "20874": {
-    "city": "Darnestown",
+    "city": "Germantown",
     "county": "Montgomery",
     "state": "MD"
   },
@@ -18400,27 +18410,42 @@
     "state": "MD"
   },
   "20878": {
-    "city": "Darnestown",
+    "city": "Gaithersburg",
     "county": "Montgomery",
     "state": "MD"
   },
   "20879": {
-    "city": "Laytonsville",
+    "city": "Gaithersburg",
     "county": "Montgomery",
     "state": "MD"
   },
   "20880": {
-    "city": "Washington grove",
+    "city": "Washington Grove",
     "county": "Montgomery",
     "state": "MD"
   },
   "20882": {
-    "city": "Laytonsville",
+    "city": "Gaithersburg",
     "county": "Montgomery",
     "state": "MD"
   },
   "20886": {
-    "city": "Gaithersburg",
+    "city": "Montgomery Village",
+    "county": "Montgomery",
+    "state": "MD"
+  },
+  "20889": {
+    "city": "Bethesda",
+    "county": "Montgomery",
+    "state": "MD"
+  },
+  "20892": {
+    "city": "Bethesda",
+    "county": "Montgomery",
+    "state": "MD"
+  },
+  "20894": {
+    "city": "Bethesda",
     "county": "Montgomery",
     "state": "MD"
   },
@@ -18430,47 +18455,52 @@
     "state": "MD"
   },
   "20896": {
-    "city": "Garrett park",
+    "city": "Garrett Park",
+    "county": "Montgomery",
+    "state": "MD"
+  },
+  "20899": {
+    "city": "Gaithersburg",
     "county": "Montgomery",
     "state": "MD"
   },
   "20901": {
-    "city": "Silver spring",
+    "city": "Silver Spring",
     "county": "Montgomery",
     "state": "MD"
   },
   "20902": {
-    "city": "Wheaton",
+    "city": "Silver Spring",
     "county": "Montgomery",
     "state": "MD"
   },
   "20903": {
-    "city": "Silver spring",
+    "city": "Silver Spring",
     "county": "Montgomery",
     "state": "MD"
   },
   "20904": {
-    "city": "Colesville",
+    "city": "Silver Spring",
     "county": "Montgomery",
     "state": "MD"
   },
   "20905": {
-    "city": "Colesville",
+    "city": "Silver Spring",
     "county": "Montgomery",
     "state": "MD"
   },
   "20906": {
-    "city": "Aspen hill",
+    "city": "Silver Spring",
     "county": "Montgomery",
     "state": "MD"
   },
   "20910": {
-    "city": "Silver spring",
+    "city": "Silver Spring",
     "county": "Montgomery",
     "state": "MD"
   },
   "20912": {
-    "city": "Takoma park",
+    "city": "Takoma Park",
     "county": "Montgomery",
     "state": "MD"
   },
@@ -18480,7 +18510,7 @@
     "state": "MD"
   },
   "21005": {
-    "city": "Aberdeen proving",
+    "city": "Aberdeen Proving Ground",
     "county": "Harford",
     "state": "MD"
   },
@@ -18505,18 +18535,23 @@
     "state": "MD"
   },
   "21014": {
-    "city": "Bel air",
+    "city": "Bel Air",
     "county": "Harford",
     "state": "MD"
   },
   "21015": {
-    "city": "Bel air",
+    "city": "Bel Air",
     "county": "Harford",
     "state": "MD"
   },
   "21017": {
     "city": "Belcamp",
     "county": "Harford",
+    "state": "MD"
+  },
+  "21023": {
+    "city": "Butler",
+    "county": "Baltimore",
     "state": "MD"
   },
   "21028": {
@@ -18530,12 +18565,12 @@
     "state": "MD"
   },
   "21030": {
-    "city": "Cockeysville hun",
+    "city": "Cockeysville",
     "county": "Baltimore",
     "state": "MD"
   },
   "21031": {
-    "city": "Cockeysville hun",
+    "city": "Hunt Valley",
     "county": "Baltimore",
     "state": "MD"
   },
@@ -18560,7 +18595,7 @@
     "state": "MD"
   },
   "21037": {
-    "city": "Edgewater beach",
+    "city": "Edgewater",
     "county": "Anne Arundel",
     "state": "MD"
   },
@@ -18570,12 +18605,12 @@
     "state": "MD"
   },
   "21042": {
-    "city": "Ellicott city",
+    "city": "Ellicott City",
     "county": "Howard",
     "state": "MD"
   },
   "21043": {
-    "city": "Daniels",
+    "city": "Ellicott City",
     "county": "Howard",
     "state": "MD"
   },
@@ -18600,12 +18635,12 @@
     "state": "MD"
   },
   "21048": {
-    "city": "Patapsco",
+    "city": "Finksburg",
     "county": "Carroll",
     "state": "MD"
   },
   "21050": {
-    "city": "Forest hill",
+    "city": "Forest Hill",
     "county": "Harford",
     "state": "MD"
   },
@@ -18615,7 +18650,7 @@
     "state": "MD"
   },
   "21052": {
-    "city": "Fort howard",
+    "city": "Fort Howard",
     "county": "Baltimore",
     "state": "MD"
   },
@@ -18630,22 +18665,22 @@
     "state": "MD"
   },
   "21056": {
-    "city": "Gibson island",
+    "city": "Gibson Island",
     "county": "Anne Arundel",
     "state": "MD"
   },
   "21057": {
-    "city": "Glen arm",
+    "city": "Glen Arm",
     "county": "Baltimore",
     "state": "MD"
   },
   "21060": {
-    "city": "Glen burnie",
+    "city": "Glen Burnie",
     "county": "Anne Arundel",
     "state": "MD"
   },
   "21061": {
-    "city": "Glen burnie",
+    "city": "Glen Burnie",
     "county": "Anne Arundel",
     "state": "MD"
   },
@@ -18655,12 +18690,12 @@
     "state": "MD"
   },
   "21074": {
-    "city": "Greenmount",
+    "city": "Hampstead",
     "county": "Carroll",
     "state": "MD"
   },
   "21075": {
-    "city": "21075",
+    "city": "Elkridge",
     "county": "Howard",
     "state": "MD"
   },
@@ -18675,7 +18710,7 @@
     "state": "MD"
   },
   "21078": {
-    "city": "Havre de grace",
+    "city": "Havre De Grace",
     "county": "Harford",
     "state": "MD"
   },
@@ -18700,12 +18735,12 @@
     "state": "MD"
   },
   "21090": {
-    "city": "Linthicum height",
+    "city": "Linthicum Heights",
     "county": "Anne Arundel",
     "state": "MD"
   },
   "21093": {
-    "city": "Lutherville",
+    "city": "Lutherville Timonium",
     "county": "Baltimore",
     "state": "MD"
   },
@@ -18716,11 +18751,11 @@
   },
   "21104": {
     "city": "Marriottsville",
-    "county": "Carroll",
+    "county": "Howard",
     "state": "MD"
   },
   "21105": {
-    "city": "Maryland line",
+    "city": "Maryland Line",
     "county": "Baltimore",
     "state": "MD"
   },
@@ -18730,7 +18765,7 @@
     "state": "MD"
   },
   "21111": {
-    "city": "Hereford",
+    "city": "Monkton",
     "county": "Baltimore",
     "state": "MD"
   },
@@ -18745,22 +18780,22 @@
     "state": "MD"
   },
   "21117": {
-    "city": "Owings mills",
+    "city": "Owings Mills",
     "county": "Baltimore",
     "state": "MD"
   },
   "21120": {
-    "city": "Bentley springs",
+    "city": "Parkton",
     "county": "Baltimore",
     "state": "MD"
   },
   "21122": {
-    "city": "Riviera beach",
+    "city": "Pasadena",
     "county": "Anne Arundel",
     "state": "MD"
   },
   "21128": {
-    "city": "Perry hall",
+    "city": "Perry Hall",
     "county": "Baltimore",
     "state": "MD"
   },
@@ -18770,7 +18805,7 @@
     "state": "MD"
   },
   "21131": {
-    "city": "Jacksonville",
+    "city": "Phoenix",
     "county": "Baltimore",
     "state": "MD"
   },
@@ -18800,37 +18835,42 @@
     "state": "MD"
   },
   "21146": {
-    "city": "Severna park",
+    "city": "Severna Park",
     "county": "Anne Arundel",
     "state": "MD"
   },
   "21152": {
-    "city": "Glencoe",
+    "city": "Sparks Glencoe",
+    "county": "Baltimore",
+    "state": "MD"
+  },
+  "21153": {
+    "city": "Stevenson",
     "county": "Baltimore",
     "state": "MD"
   },
   "21154": {
-    "city": "Rocks",
+    "city": "Street",
     "county": "Harford",
     "state": "MD"
   },
   "21155": {
-    "city": "Fowbelsburg",
+    "city": "Upperco",
     "county": "Baltimore",
     "state": "MD"
   },
   "21156": {
-    "city": "Upper falls",
+    "city": "Upper Falls",
     "county": "Baltimore",
     "state": "MD"
   },
   "21157": {
-    "city": "Carrollton",
+    "city": "Westminster",
     "county": "Carroll",
     "state": "MD"
   },
   "21158": {
-    "city": "Uniontown",
+    "city": "Westminster",
     "county": "Carroll",
     "state": "MD"
   },
@@ -18840,47 +18880,47 @@
     "state": "MD"
   },
   "21161": {
-    "city": "White hall",
+    "city": "White Hall",
     "county": "Harford",
     "state": "MD"
   },
   "21162": {
-    "city": "White marsh",
+    "city": "White Marsh",
     "county": "Baltimore",
     "state": "MD"
   },
   "21163": {
-    "city": "Granite",
+    "city": "Woodstock",
     "county": "Baltimore",
     "state": "MD"
   },
   "21201": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21202": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21204": {
-    "city": "Eudowood",
+    "city": "Towson",
     "county": "Baltimore",
     "state": "MD"
   },
   "21205": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21206": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21207": {
-    "city": "Gwynn oak",
+    "city": "Gwynn Oak",
     "county": "Baltimore",
     "state": "MD"
   },
@@ -18896,56 +18936,56 @@
   },
   "21210": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21211": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21212": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21213": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21214": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21215": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21216": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21217": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21218": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21219": {
-    "city": "Dundalk sparrows",
+    "city": "Sparrows Point",
     "county": "Baltimore",
     "state": "MD"
   },
   "21220": {
-    "city": "Middle river",
+    "city": "Middle River",
     "county": "Baltimore",
     "state": "MD"
   },
@@ -18955,28 +18995,28 @@
     "state": "MD"
   },
   "21222": {
-    "city": "Dundalk sparrows",
+    "city": "Dundalk",
     "county": "Baltimore",
     "state": "MD"
   },
   "21223": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21224": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21225": {
-    "city": "Brooklyn curtis",
-    "county": "Baltimore city",
+    "city": "Brooklyn",
+    "county": "Anne Arundel",
     "state": "MD"
   },
   "21226": {
-    "city": "Brooklyn curtis",
-    "county": "Anne Arundel",
+    "city": "Curtis Bay",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21227": {
@@ -18991,17 +19031,22 @@
   },
   "21229": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21230": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21231": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
+    "state": "MD"
+  },
+  "21233": {
+    "city": "Baltimore",
+    "county": "Baltimore City",
     "state": "MD"
   },
   "21234": {
@@ -19021,26 +19066,56 @@
   },
   "21239": {
     "city": "Baltimore",
-    "county": "Baltimore city",
+    "county": "Baltimore City",
+    "state": "MD"
+  },
+  "21240": {
+    "city": "Baltimore",
+    "county": "Anne Arundel",
     "state": "MD"
   },
   "21244": {
-    "city": "Gwynn oak",
+    "city": "Windsor Mill",
     "county": "Baltimore",
     "state": "MD"
   },
-  "21286": {
+  "21250": {
     "city": "Baltimore",
     "county": "Baltimore",
     "state": "MD"
   },
+  "21251": {
+    "city": "Baltimore",
+    "county": "Baltimore City",
+    "state": "MD"
+  },
+  "21252": {
+    "city": "Towson",
+    "county": "Baltimore",
+    "state": "MD"
+  },
+  "21285": {
+    "city": "Towson",
+    "county": "Baltimore",
+    "state": "MD"
+  },
+  "21286": {
+    "city": "Towson",
+    "county": "Baltimore",
+    "state": "MD"
+  },
+  "21287": {
+    "city": "Baltimore",
+    "county": "Baltimore City",
+    "state": "MD"
+  },
   "21401": {
-    "city": "Cape saint clair",
+    "city": "Annapolis",
     "county": "Anne Arundel",
     "state": "MD"
   },
   "21402": {
-    "city": "Naval academy",
+    "city": "Annapolis",
     "county": "Anne Arundel",
     "state": "MD"
   },
@@ -19050,7 +19125,12 @@
     "state": "MD"
   },
   "21405": {
-    "city": "Sherwood forest",
+    "city": "Annapolis",
+    "county": "Anne Arundel",
+    "state": "MD"
+  },
+  "21409": {
+    "city": "Annapolis",
     "county": "Anne Arundel",
     "state": "MD"
   },
@@ -19465,27 +19545,32 @@
     "state": "MD"
   },
   "21701": {
-    "city": "Lewistown",
+    "city": "Frederick",
     "county": "Frederick",
     "state": "MD"
   },
   "21702": {
-    "city": "Fort detrick",
+    "city": "Frederick",
     "county": "Frederick",
     "state": "MD"
   },
   "21703": {
-    "city": "21703",
+    "city": "Frederick",
     "county": "Frederick",
     "state": "MD"
   },
   "21704": {
-    "city": "21704",
+    "city": "Frederick",
+    "county": "Frederick",
+    "state": "MD"
+  },
+  "21705": {
+    "city": "Frederick",
     "county": "Frederick",
     "state": "MD"
   },
   "21710": {
-    "city": "Doubs",
+    "city": "Adamstown",
     "county": "Frederick",
     "state": "MD"
   },
@@ -19497,6 +19582,11 @@
   "21713": {
     "city": "Fahrney keedy me",
     "county": "Washington",
+    "state": "MD"
+  },
+  "21714": {
+    "city": "Braddock Heights",
+    "county": "Frederick",
     "state": "MD"
   },
   "21716": {
@@ -19586,7 +19676,7 @@
   },
   "21757": {
     "city": "Keymar",
-    "county": "Frederick",
+    "county": "Carroll",
     "state": "MD"
   },
   "21758": {
@@ -19620,7 +19710,7 @@
     "state": "MD"
   },
   "21771": {
-    "city": "Mount airy",
+    "city": "Mount Airy",
     "county": "Frederick",
     "state": "MD"
   },
@@ -19630,22 +19720,22 @@
     "state": "MD"
   },
   "21774": {
-    "city": "New market",
+    "city": "New Market",
     "county": "Frederick",
     "state": "MD"
   },
   "21776": {
-    "city": "New windsor",
+    "city": "New Windsor",
     "county": "Carroll",
     "state": "MD"
   },
   "21777": {
-    "city": "Point of rocks",
+    "city": "Point of Rocks",
     "county": "Frederick",
     "state": "MD"
   },
   "21778": {
-    "city": "Rocky ridge",
+    "city": "Rocky Ridge",
     "county": "Frederick",
     "state": "MD"
   },
@@ -19670,7 +19760,7 @@
     "state": "MD"
   },
   "21784": {
-    "city": "Carrolltowne",
+    "city": "Sykesville",
     "county": "Carroll",
     "state": "MD"
   },
@@ -19680,7 +19770,7 @@
     "state": "MD"
   },
   "21788": {
-    "city": "Graceham",
+    "city": "Thurmont",
     "county": "Frederick",
     "state": "MD"
   },
@@ -19690,8 +19780,8 @@
     "state": "MD"
   },
   "21791": {
-    "city": "Unionville",
-    "county": "Carroll",
+    "city": "Union Bridge",
+    "county": "Frederick",
     "state": "MD"
   },
   "21793": {
@@ -19700,7 +19790,7 @@
     "state": "MD"
   },
   "21794": {
-    "city": "West friendship",
+    "city": "West Friendship",
     "county": "Howard",
     "state": "MD"
   },
@@ -23779,6 +23869,41 @@
     "county": "Norfolk",
     "state": "MA"
   },
+  "02101": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02102": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02103": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02104": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02105": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02106": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02107": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
   "02108": {
     "city": "Boston",
     "county": "Suffolk",
@@ -23799,6 +23924,11 @@
     "county": "Suffolk",
     "state": "MA"
   },
+  "02112": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
   "02113": {
     "city": "Boston",
     "county": "Suffolk",
@@ -23815,6 +23945,11 @@
     "state": "MA"
   },
   "02116": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02117": {
     "city": "Boston",
     "county": "Suffolk",
     "state": "MA"
@@ -23841,6 +23976,11 @@
   },
   "02122": {
     "city": "Dorchester",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02123": {
+    "city": "Boston",
     "county": "Suffolk",
     "state": "MA"
   },
@@ -23889,6 +24029,11 @@
     "county": "Suffolk",
     "state": "MA"
   },
+  "02133": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA"
+  },
   "02134": {
     "city": "Allston",
     "county": "Suffolk",
@@ -23901,6 +24046,11 @@
   },
   "02136": {
     "city": "Hyde park",
+    "county": "Suffolk",
+    "state": "MA"
+  },
+  "02137": {
+    "city": "Readville",
     "county": "Suffolk",
     "state": "MA"
   },
@@ -35478,65 +35628,5 @@
     "city": "219hh",
     "county": "Cecil",
     "state": "MD"
-  },
-  "02101": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02102": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02103": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02104": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02105": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02106": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02107": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02112": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02117": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02123": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02133": {
-    "city": "Boston",
-    "county": "Suffolk",
-    "state": "MA"
-  },
-  "02137": {
-    "city": "Readville",
-    "county": "Suffolk",
-    "state": "MA"
   }
 }
