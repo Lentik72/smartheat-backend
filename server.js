@@ -287,6 +287,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Waitlist migration:', err.message);
         });
 
+        // V2.13.0: Run migration for PWA events table
+        const { up: runPwaEventsMigration } = require('./src/migrations/014-add-pwa-events');
+        runPwaEventsMigration(sequelize).catch(err => {
+          logger.warn('⚠️  PWA events migration:', err.message);
+        });
+
         logger.info('📊 Database ready for operations');
       })
       .catch(err => {
