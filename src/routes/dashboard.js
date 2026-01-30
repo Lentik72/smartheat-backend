@@ -171,13 +171,15 @@ router.get('/overview', async (req, res) => {
       `)
     ]);
 
-    // Get top supplier
+    // Get top supplier (use supplier_name if supplier_id not available)
     const topSupplierResult = await safeQuery('topSupplier', `
-      SELECT s.name, COUNT(*) as clicks
+      SELECT
+        COALESCE(s.name, sc.supplier_name, 'Unknown') as name,
+        COUNT(*) as clicks
       FROM supplier_clicks sc
-      JOIN suppliers s ON sc.supplier_id = s.id
+      LEFT JOIN suppliers s ON sc.supplier_id = s.id
       WHERE sc.created_at > NOW() - INTERVAL '${days} days'
-      GROUP BY s.id, s.name
+      GROUP BY COALESCE(s.name, sc.supplier_name, 'Unknown')
       ORDER BY clicks DESC
       LIMIT 1
     `);
@@ -308,7 +310,7 @@ router.get('/clicks', async (req, res) => {
         LIMIT 20
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // By supplier with price (for signals) - prices from supplier_prices table
+      // By supplier with price (for signals) - handle clicks with only supplier_name
       sequelize.query(`
         WITH latest_prices AS (
           SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
@@ -317,41 +319,40 @@ router.get('/clicks', async (req, res) => {
           ORDER BY supplier_id, scraped_at DESC
         ),
         market_avg AS (
-          SELECT AVG(price_per_gallon) as avg_price
+          SELECT COALESCE(AVG(price_per_gallon), 0) as avg_price
           FROM latest_prices
         ),
-        supplier_clicks_agg AS (
+        click_agg AS (
           SELECT
-            sc.supplier_id,
-            COALESCE(sc.supplier_name, s.name) as name,
-            COUNT(*) as clicks,
-            lp.price_per_gallon as current_price,
-            lp.scraped_at as price_updated_at
+            COALESCE(sc.supplier_name, s.name, 'Unknown') as name,
+            s.id as supplier_id,
+            COUNT(*) as clicks
           FROM supplier_clicks sc
           LEFT JOIN suppliers s ON sc.supplier_id = s.id
-          LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
+             OR (sc.supplier_id IS NULL AND sc.supplier_name = s.name)
           WHERE sc.created_at > NOW() - INTERVAL '${days} days'
-          GROUP BY sc.supplier_id, COALESCE(sc.supplier_name, s.name), lp.price_per_gallon, lp.scraped_at
+          GROUP BY COALESCE(sc.supplier_name, s.name, 'Unknown'), s.id
         )
         SELECT
-          sca.name,
-          sca.clicks,
-          sca.current_price as "currentPrice",
+          ca.name,
+          ca.clicks,
+          lp.price_per_gallon as "currentPrice",
           ROUND(ma.avg_price::numeric, 2) as "marketAvg",
           CASE
-            WHEN sca.current_price IS NOT NULL THEN ROUND((sca.current_price - ma.avg_price)::numeric, 2)
+            WHEN lp.price_per_gallon IS NOT NULL THEN ROUND((lp.price_per_gallon - ma.avg_price)::numeric, 2)
             ELSE NULL
           END as "priceDelta",
           CASE
-            WHEN sca.current_price IS NULL THEN 'data_gap'
-            WHEN sca.clicks >= 20 AND sca.current_price > ma.avg_price THEN 'brand_strength'
-            WHEN sca.clicks < 10 AND sca.current_price < ma.avg_price THEN 'visibility_issue'
+            WHEN lp.price_per_gallon IS NULL THEN 'data_gap'
+            WHEN ca.clicks >= 20 AND lp.price_per_gallon > ma.avg_price THEN 'brand_strength'
+            WHEN ca.clicks < 10 AND lp.price_per_gallon < ma.avg_price THEN 'visibility_issue'
             ELSE 'normal'
           END as signal,
-          ROUND(sca.clicks * 500 * 0.03) as "estRevenueLost"
-        FROM supplier_clicks_agg sca
+          ROUND(ca.clicks * 500 * 0.03) as "estRevenueLost"
+        FROM click_agg ca
         CROSS JOIN market_avg ma
-        ORDER BY sca.clicks DESC
+        LEFT JOIN latest_prices lp ON ca.supplier_id = lp.supplier_id
+        ORDER BY ca.clicks DESC
         LIMIT 30
       `, { type: sequelize.QueryTypes.SELECT }),
 
