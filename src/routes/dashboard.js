@@ -478,11 +478,11 @@ router.get('/geographic', async (req, res) => {
       logger.warn('[Dashboard] Could not load zip-database.json');
     }
 
-    // Get all ZIPs that suppliers serve
+    // Get all ZIPs that suppliers serve (postal_codes_served is JSONB array)
     const supplierCoverage = await sequelize.query(`
-      SELECT DISTINCT unnest(postal_codes_served) as zip_code
+      SELECT DISTINCT jsonb_array_elements_text(postal_codes_served) as zip_code
       FROM suppliers
-      WHERE active = true
+      WHERE active = true AND postal_codes_served IS NOT NULL AND jsonb_array_length(postal_codes_served) > 0
     `, { type: sequelize.QueryTypes.SELECT });
     const coveredZips = new Set(supplierCoverage.map(r => r.zip_code));
 
