@@ -173,11 +173,15 @@ async function loadOverview() {
     const coverage = data.coverage || {};
     const trueCoverageGaps = coverage.trueCoverageGaps || 0;
     const engagementGaps = coverage.engagementGaps || 0;
+    const totalSearched = coverage.totalSearched || 0;
 
     document.getElementById('true-coverage-gaps').textContent = `${trueCoverageGaps} ZIPs`;
     document.getElementById('engagement-gaps').textContent = `${engagementGaps} ZIPs`;
+    document.getElementById('total-searched').textContent = `${totalSearched} ZIPs`;
 
-    console.log('[Dashboard] Coverage stats:', { trueCoverageGaps, engagementGaps, raw: data.coverage });
+    // Click handlers to show ZIP details
+    document.getElementById('panel-no-suppliers').onclick = () => showCoverageDetails('no-suppliers');
+    document.getElementById('panel-low-engagement').onclick = () => showCoverageDetails('low-engagement');
 
     // Alert banner - prioritize true coverage gaps
     if (trueCoverageGaps > 5) {
@@ -720,6 +724,86 @@ document.getElementById('supplier-form').addEventListener('submit', async (e) =>
     alert('Failed to update supplier');
   }
 });
+
+// Show coverage gap ZIP details
+async function showCoverageDetails(type) {
+  const modal = document.getElementById('zip-details-modal');
+  const title = document.getElementById('zip-details-title');
+  const content = document.getElementById('zip-details-content');
+
+  // Set title based on type
+  if (type === 'no-suppliers') {
+    title.textContent = 'ZIPs With No Supplier Coverage';
+  } else if (type === 'low-engagement') {
+    title.textContent = 'ZIPs With Low Engagement (No Clicks)';
+  }
+
+  content.innerHTML = '<p>Loading...</p>';
+  modal.classList.remove('hidden');
+
+  try {
+    const data = await api(`/coverage-details?type=${type}&days=${currentDays}`);
+
+    if (data.zips.length === 0) {
+      content.innerHTML = '<p>No ZIPs found for this category.</p>';
+      return;
+    }
+
+    // Build table
+    let html = `
+      <p style="margin-bottom: 1rem; color: var(--gray-500);">
+        ${data.count} ZIPs found in the last ${data.period}
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>ZIP</th>
+            <th>City</th>
+            <th>County</th>
+            <th>State</th>
+            <th>Searches</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    data.zips.forEach(z => {
+      html += `
+        <tr>
+          <td>${z.zip}</td>
+          <td>${z.city}</td>
+          <td>${z.county}</td>
+          <td>${z.state}</td>
+          <td>${z.searches}</td>
+        </tr>
+      `;
+    });
+
+    html += '</tbody></table>';
+    content.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to load coverage details:', error);
+    content.innerHTML = `<p class="error">Failed to load data: ${error.message}</p>`;
+  }
+}
+
+// Close ZIP details modal
+document.getElementById('close-zip-details').addEventListener('click', () => {
+  document.getElementById('zip-details-modal').classList.add('hidden');
+});
+
+// Close modal when clicking outside
+document.getElementById('zip-details-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'zip-details-modal') {
+    document.getElementById('zip-details-modal').classList.add('hidden');
+  }
+});
+
+// Helper to switch tabs programmatically
+function switchTab(tabName) {
+  const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+  if (tab) tab.click();
+}
 
 // Load dashboard
 async function loadDashboard() {

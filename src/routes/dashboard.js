@@ -1198,6 +1198,99 @@ router.post('/suppliers/:id/scrape-config', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/coverage-details - Get detailed ZIP lists for coverage gaps
+router.get('/coverage-details', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const days = parseDays(req, 30);
+    const type = req.query.type; // 'no-suppliers' or 'low-engagement'
+
+    // Load ZIP database for city/county info
+    const zipDbPath = path.join(__dirname, '../data/zip-database.json');
+    let zipCoords = {};
+    try {
+      zipCoords = JSON.parse(fs.readFileSync(zipDbPath, 'utf8'));
+    } catch (e) {
+      logger.warn('[Dashboard] Could not load zip-database.json');
+    }
+
+    let zips = [];
+
+    if (type === 'no-suppliers') {
+      // ZIPs searched but no supplier covers them
+      const result = await sequelize.query(`
+        SELECT DISTINCT ul.zip_code, COUNT(*) as search_count
+        FROM user_locations ul
+        WHERE ul.created_at > NOW() - INTERVAL '${days} days'
+          AND NOT EXISTS (
+            SELECT 1 FROM suppliers s
+            WHERE s.active = true
+              AND s.postal_codes_served IS NOT NULL
+              AND s.postal_codes_served @> to_jsonb(ul.zip_code::text)
+          )
+        GROUP BY ul.zip_code
+        ORDER BY search_count DESC
+        LIMIT 100
+      `, { type: sequelize.QueryTypes.SELECT });
+
+      zips = result.map(r => ({
+        zip: r.zip_code,
+        searches: parseInt(r.search_count),
+        city: zipCoords[r.zip_code]?.city || '--',
+        county: zipCoords[r.zip_code]?.county || '--',
+        state: zipCoords[r.zip_code]?.state || '--'
+      }));
+    } else if (type === 'low-engagement') {
+      // ZIPs with suppliers but no clicks
+      const result = await sequelize.query(`
+        SELECT DISTINCT ul.zip_code, COUNT(*) as search_count
+        FROM user_locations ul
+        WHERE ul.created_at > NOW() - INTERVAL '${days} days'
+          AND EXISTS (
+            SELECT 1 FROM suppliers s
+            WHERE s.active = true
+              AND s.postal_codes_served IS NOT NULL
+              AND s.postal_codes_served @> to_jsonb(ul.zip_code::text)
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM supplier_clicks sc
+            WHERE sc.zip_code = ul.zip_code
+              AND sc.created_at > NOW() - INTERVAL '${days} days'
+          )
+        GROUP BY ul.zip_code
+        ORDER BY search_count DESC
+        LIMIT 100
+      `, { type: sequelize.QueryTypes.SELECT });
+
+      zips = result.map(r => ({
+        zip: r.zip_code,
+        searches: parseInt(r.search_count),
+        city: zipCoords[r.zip_code]?.city || '--',
+        county: zipCoords[r.zip_code]?.county || '--',
+        state: zipCoords[r.zip_code]?.state || '--'
+      }));
+    } else {
+      return res.status(400).json({ error: 'Invalid type. Use "no-suppliers" or "low-engagement"' });
+    }
+
+    res.json({
+      type,
+      period: `${days}d`,
+      count: zips.length,
+      zips
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Coverage details error:', error.message);
+    res.status(500).json({ error: 'Failed to load coverage details', details: error.message });
+  }
+});
+
 // DELETE /api/dashboard/suppliers/:id - Remove supplier
 router.delete('/suppliers/:id', async (req, res) => {
   const logger = req.app.locals.logger;

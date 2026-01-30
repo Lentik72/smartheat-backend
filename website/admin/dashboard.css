@@ -56,9 +56,17 @@ body {
 }
 
 .modal-content.wide {
-  max-width: 600px;
+  max-width: 700px;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+#zip-details-content table {
+  margin-top: 0.5rem;
+}
+
+#zip-details-content tbody tr:nth-child(even) {
+  background: var(--gray-50);
 }
 
 .modal-content h2 {
@@ -247,6 +255,16 @@ header h1 {
   background: var(--gray-50);
   padding: 1.25rem;
   border-radius: 8px;
+}
+
+.panel.clickable {
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.panel.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .panel.full-width {
@@ -498,9 +516,143 @@ legend {
   color: var(--danger);
 }
 
+/* Overview Grid Layout */
+.overview-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.overview-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.metric-card {
+  background: var(--gray-50);
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.metric-icon {
+  font-size: 2rem;
+  width: 48px;
+  text-align: center;
+}
+
+.metric-content {
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  margin-bottom: 0.25rem;
+}
+
+.metric-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.metric-hint {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
+}
+
+/* Coverage Gap Cards */
+.coverage-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.coverage-card {
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.coverage-card.clickable {
+  cursor: pointer;
+}
+
+.coverage-card.clickable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.coverage-card.danger {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+}
+
+.coverage-card.warning {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+}
+
+.coverage-icon {
+  font-size: 1.5rem;
+}
+
+.coverage-content {
+  flex: 1;
+}
+
+.coverage-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 0.25rem;
+}
+
+.coverage-value {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.coverage-card.danger .coverage-value {
+  color: var(--danger);
+}
+
+.coverage-card.warning .coverage-value {
+  color: #b45309;
+}
+
+.coverage-hint {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-top: 0.5rem;
+}
+
+.coverage-action {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--primary);
+  align-self: flex-end;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .coverage-cards {
     grid-template-columns: 1fr;
   }
 
@@ -511,5 +663,17 @@ legend {
 
   .tabs {
     flex-wrap: nowrap;
+  }
+
+  .metric-card {
+    padding: 1rem;
+  }
+
+  .coverage-card {
+    padding: 1rem;
+  }
+
+  .coverage-value {
+    font-size: 1.5rem;
   }
 }

@@ -85,21 +85,49 @@
     <main class="tab-content">
       <!-- Overview Tab -->
       <section id="tab-overview" class="tab-panel active">
-        <div class="panel-grid">
-          <div class="panel">
-            <h3>Top Supplier</h3>
-            <div id="top-supplier" class="stat-large">--</div>
+        <div class="overview-grid">
+          <!-- Top Row: Key Metrics -->
+          <div class="overview-metrics">
+            <div class="metric-card">
+              <div class="metric-icon">🏆</div>
+              <div class="metric-content">
+                <div class="metric-label">Top Supplier</div>
+                <div class="metric-value" id="top-supplier">--</div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon">📍</div>
+              <div class="metric-content">
+                <div class="metric-label">Total Searched</div>
+                <div class="metric-value" id="total-searched">-- ZIPs</div>
+                <div class="metric-hint">Unique ZIPs in period</div>
+              </div>
+            </div>
           </div>
-          <div class="panel">
-            <h3>No Suppliers</h3>
-            <div id="true-coverage-gaps" class="stat-large status-error">-- ZIPs</div>
-            <p class="hint">ZIPs searched, no supplier coverage</p>
+
+          <!-- Coverage Gap Cards -->
+          <div class="coverage-cards">
+            <div class="coverage-card danger clickable" id="panel-no-suppliers" title="Click to view ZIPs">
+              <div class="coverage-icon">⚠️</div>
+              <div class="coverage-content">
+                <div class="coverage-label">No Suppliers</div>
+                <div class="coverage-value" id="true-coverage-gaps">-- ZIPs</div>
+                <div class="coverage-hint">Users searching areas with zero coverage</div>
+              </div>
+              <div class="coverage-action">View List →</div>
+            </div>
+            <div class="coverage-card warning clickable" id="panel-low-engagement" title="Click to view ZIPs">
+              <div class="coverage-icon">📉</div>
+              <div class="coverage-content">
+                <div class="coverage-label">Low Engagement</div>
+                <div class="coverage-value" id="engagement-gaps">-- ZIPs</div>
+                <div class="coverage-hint">Has suppliers but no clicks yet</div>
+              </div>
+              <div class="coverage-action">View List →</div>
+            </div>
           </div>
-          <div class="panel">
-            <h3>Low Engagement</h3>
-            <div id="engagement-gaps" class="stat-large status-warning">-- ZIPs</div>
-            <p class="hint">Suppliers exist, no clicks</p>
-          </div>
+
+          <!-- Supplier Signals Table -->
           <div class="panel full-width">
             <h3>Supplier Signals</h3>
             <table id="supplier-signals-table">
@@ -364,6 +392,19 @@
             <button type="submit" class="primary">Save Changes</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- ZIP Details Modal -->
+    <div id="zip-details-modal" class="modal hidden">
+      <div class="modal-content wide">
+        <h2 id="zip-details-title">ZIP Details</h2>
+        <div id="zip-details-content">
+          <p>Loading...</p>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="close-zip-details">Close</button>
+        </div>
       </div>
     </div>
   </div>
