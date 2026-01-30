@@ -165,31 +165,41 @@ router.get('/overview', async (req, res) => {
       `),
 
       // Coverage gaps breakdown - true gaps vs engagement gaps
+      // Uses subqueries instead of CTEs for better compatibility
       safeQuery('coverageStats', `
-        WITH searched_zips AS (
-          SELECT DISTINCT zip_code
-          FROM user_locations
-          WHERE created_at > NOW() - INTERVAL '${days} days'
-        ),
-        covered_zips AS (
-          SELECT DISTINCT jsonb_array_elements_text(postal_codes_served) as zip_code
-          FROM suppliers
-          WHERE active = true
-            AND postal_codes_served IS NOT NULL
-            AND jsonb_array_length(postal_codes_served) > 0
-        ),
-        clicked_zips AS (
-          SELECT DISTINCT zip_code
-          FROM supplier_clicks
-          WHERE created_at > NOW() - INTERVAL '${days} days'
-        )
         SELECT
-          COUNT(*) FILTER (WHERE cov.zip_code IS NULL) as true_coverage_gaps,
-          COUNT(*) FILTER (WHERE cov.zip_code IS NOT NULL AND clk.zip_code IS NULL) as engagement_gaps,
-          COUNT(*) as total_searched
-        FROM searched_zips sz
-        LEFT JOIN covered_zips cov ON sz.zip_code = cov.zip_code
-        LEFT JOIN clicked_zips clk ON sz.zip_code = clk.zip_code
+          (
+            SELECT COUNT(DISTINCT ul.zip_code)
+            FROM user_locations ul
+            WHERE ul.created_at > NOW() - INTERVAL '${days} days'
+              AND NOT EXISTS (
+                SELECT 1 FROM suppliers s
+                WHERE s.active = true
+                  AND s.postal_codes_served IS NOT NULL
+                  AND s.postal_codes_served @> to_jsonb(ul.zip_code::text)
+              )
+          ) as true_coverage_gaps,
+          (
+            SELECT COUNT(DISTINCT ul.zip_code)
+            FROM user_locations ul
+            WHERE ul.created_at > NOW() - INTERVAL '${days} days'
+              AND EXISTS (
+                SELECT 1 FROM suppliers s
+                WHERE s.active = true
+                  AND s.postal_codes_served IS NOT NULL
+                  AND s.postal_codes_served @> to_jsonb(ul.zip_code::text)
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM supplier_clicks sc
+                WHERE sc.zip_code = ul.zip_code
+                  AND sc.created_at > NOW() - INTERVAL '${days} days'
+              )
+          ) as engagement_gaps,
+          (
+            SELECT COUNT(DISTINCT zip_code)
+            FROM user_locations
+            WHERE created_at > NOW() - INTERVAL '${days} days'
+          ) as total_searched
       `),
 
       // Data freshness (prices in supplier_prices table, scrape_runs may not exist)
@@ -226,6 +236,9 @@ router.get('/overview', async (req, res) => {
     const pwa = pwaStats[0] || {};
     const coverage = coverageStats[0] || {};
     const freshness = dataFreshness[0] || {};
+
+    // Debug logging for coverage stats
+    logger.info('[Dashboard] Coverage query result:', JSON.stringify(coverage));
 
     const conversionRate = pwa.prompts_shown > 0
       ? ((pwa.installs / pwa.prompts_shown) * 100).toFixed(1)

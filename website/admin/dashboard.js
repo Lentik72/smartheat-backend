@@ -169,12 +169,15 @@ async function loadOverview() {
         `${data.website.topSupplier.name} (${data.website.topSupplier.clicks} clicks)`;
     }
 
-    // Coverage gaps breakdown
-    const trueCoverageGaps = data.coverage.trueCoverageGaps || 0;
-    const engagementGaps = data.coverage.engagementGaps || 0;
+    // Coverage gaps breakdown (with defensive checks)
+    const coverage = data.coverage || {};
+    const trueCoverageGaps = coverage.trueCoverageGaps || 0;
+    const engagementGaps = coverage.engagementGaps || 0;
 
     document.getElementById('true-coverage-gaps').textContent = `${trueCoverageGaps} ZIPs`;
     document.getElementById('engagement-gaps').textContent = `${engagementGaps} ZIPs`;
+
+    console.log('[Dashboard] Coverage stats:', { trueCoverageGaps, engagementGaps, raw: data.coverage });
 
     // Alert banner - prioritize true coverage gaps
     if (trueCoverageGaps > 5) {
