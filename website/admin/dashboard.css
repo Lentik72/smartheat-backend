@@ -323,6 +323,36 @@ tbody tr:hover {
 }
 
 /* Map */
+.map-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot.blue {
+  background: #2563eb;
+  border: 1px solid #1d4ed8;
+}
+
+.dot.red {
+  background: #ef4444;
+  border: 2px solid #dc2626;
+}
+
 #map-container {
   height: 500px;
   border-radius: 8px;

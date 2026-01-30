@@ -430,41 +430,61 @@ async function loadMap() {
       }
     });
 
-    // Add markers
-    const maxCount = Math.max(...data.clicks.map(c => c.count), 1);
-    data.clicks.forEach(c => {
-      if (c.lat && c.lng) {
-        const radius = 5 + (c.count / maxCount) * 20;
-        L.circleMarker([c.lat, c.lng], {
-          radius: radius,
-          fillColor: '#2563eb',
-          color: '#1d4ed8',
-          weight: 1,
-          opacity: 0.8,
-          fillOpacity: 0.5
-        })
-        .bindPopup(`<b>${c.city}, ${c.state}</b><br>ZIP: ${c.zip}<br>Clicks: ${c.count}`)
-        .addTo(map);
-      }
+    // Add demand heatmap (blue circles)
+    const demandData = data.demandHeatmap || [];
+    const maxDemand = Math.max(...demandData.map(c => c.count), 1);
+    demandData.forEach(c => {
+      const radius = 6 + (c.count / maxDemand) * 18;
+      L.circleMarker([c.lat, c.lng], {
+        radius: radius,
+        fillColor: '#2563eb',
+        color: '#1d4ed8',
+        weight: 1,
+        opacity: 0.8,
+        fillOpacity: 0.4
+      })
+      .bindPopup(`<b>${c.city || 'Unknown'}, ${c.state || ''}</b><br>ZIP: ${c.zip}<br>Searches: ${c.count}`)
+      .addTo(map);
+    });
+
+    // Add coverage gaps (red circles) on top
+    const gapData = data.coverageGaps || [];
+    gapData.forEach(c => {
+      const radius = 8 + (c.count / maxDemand) * 16;
+      L.circleMarker([c.lat, c.lng], {
+        radius: radius,
+        fillColor: '#ef4444',
+        color: '#dc2626',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.6
+      })
+      .bindPopup(`<b>⚠️ COVERAGE GAP</b><br>${c.city || 'Unknown'}, ${c.state || ''}<br>ZIP: ${c.zip}<br>Searches: ${c.count}<br><i>No suppliers serve this area!</i>`)
+      .addTo(map);
     });
 
     // Fit bounds if we have points
-    if (data.clicks.length > 0) {
-      const bounds = data.clicks
-        .filter(c => c.lat && c.lng)
-        .map(c => [c.lat, c.lng]);
-      if (bounds.length > 0) {
-        map.fitBounds(bounds, { padding: [20, 20] });
-      }
+    const allPoints = [...demandData, ...gapData];
+    if (allPoints.length > 0) {
+      const bounds = allPoints.map(c => [c.lat, c.lng]);
+      map.fitBounds(bounds, { padding: [20, 20] });
     }
 
-    // Populate clicks table (shows all clicks including those without coords)
+    // Update stats
+    const stats = data.stats || {};
+    document.getElementById('map-stats').innerHTML = `
+      <span class="stat-item"><span class="dot blue"></span> Demand: ${stats.totalDemandZips || 0} ZIPs</span>
+      <span class="stat-item"><span class="dot red"></span> Coverage Gaps: ${stats.totalGapZips || 0} ZIPs</span>
+      <span class="stat-item">Supplier Coverage: ${stats.coveredZips || 0} ZIPs</span>
+    `;
+
+    // Populate clicks table
     const tbody = document.getElementById('geo-clicks-body');
     tbody.innerHTML = '';
-    const allClicks = data.allClicks || data.clicks || [];
+    const allClicks = data.allClicks || [];
 
     if (allClicks.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">No geographic click data yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">No click data yet</td></tr>';
     } else {
       allClicks.forEach(c => {
         const row = document.createElement('tr');

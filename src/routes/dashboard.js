@@ -456,7 +456,7 @@ router.get('/clicks', async (req, res) => {
   }
 });
 
-// GET /api/dashboard/geographic - Geographic click distribution
+// GET /api/dashboard/geographic - Demand heatmap and coverage gaps
 router.get('/geographic', async (req, res) => {
   const logger = req.app.locals.logger;
   const sequelize = req.app.locals.sequelize;
@@ -478,6 +478,54 @@ router.get('/geographic', async (req, res) => {
       logger.warn('[Dashboard] Could not load zip-database.json');
     }
 
+    // Get all ZIPs that suppliers serve
+    const supplierCoverage = await sequelize.query(`
+      SELECT DISTINCT unnest(postal_codes_served) as zip_code
+      FROM suppliers
+      WHERE active = true
+    `, { type: sequelize.QueryTypes.SELECT });
+    const coveredZips = new Set(supplierCoverage.map(r => r.zip_code));
+
+    // Get user search demand by ZIP (from user_locations)
+    const demand = await sequelize.query(`
+      SELECT
+        zip_code,
+        COUNT(*) as search_count
+      FROM user_locations
+      WHERE created_at > NOW() - INTERVAL '${days} days'
+        AND zip_code IS NOT NULL
+      GROUP BY zip_code
+      ORDER BY search_count DESC
+      LIMIT 200
+    `, { type: sequelize.QueryTypes.SELECT });
+
+    // Enrich demand with coordinates and identify coverage gaps
+    const demandHeatmap = [];
+    const coverageGaps = [];
+
+    demand.forEach(d => {
+      const zipData = zipCoords[d.zip_code];
+      if (!zipData?.lat || !zipData?.lng) return; // Skip if no coordinates
+
+      const entry = {
+        zip: d.zip_code,
+        count: parseInt(d.search_count),
+        lat: zipData.lat,
+        lng: zipData.lng,
+        city: zipData.city || null,
+        county: zipData.county || null,
+        state: zipData.state || null
+      };
+
+      demandHeatmap.push(entry);
+
+      // If this ZIP has searches but no supplier coverage, it's a gap
+      if (!coveredZips.has(d.zip_code)) {
+        coverageGaps.push(entry);
+      }
+    });
+
+    // Also get supplier click data for the table
     const clicks = await sequelize.query(`
       SELECT
         zip_code,
@@ -490,26 +538,26 @@ router.get('/geographic', async (req, res) => {
       LIMIT 100
     `, { type: sequelize.QueryTypes.SELECT });
 
-    // Enrich with location info (note: lat/lng may not be available)
-    const enrichedClicks = clicks.map(c => {
+    const allClicks = clicks.map(c => {
       const zipData = zipCoords[c.zip_code];
       return {
         zip: c.zip_code,
         count: parseInt(c.count),
-        lat: zipData?.lat || null,
-        lng: zipData?.lng || null,
         city: zipData?.city || null,
         county: zipData?.county || null,
         state: zipData?.state || null
       };
     });
 
-    // Separate clicks with coords (for map) and all clicks (for table)
-    const clicksWithCoords = enrichedClicks.filter(c => c.lat && c.lng);
-
     res.json({
-      clicks: clicksWithCoords,  // For map markers
-      allClicks: enrichedClicks  // For table view (includes all)
+      demandHeatmap,    // Blue circles - user search demand
+      coverageGaps,     // Red circles - searches with no supplier coverage
+      allClicks,        // Table data - supplier clicks
+      stats: {
+        totalDemandZips: demandHeatmap.length,
+        totalGapZips: coverageGaps.length,
+        coveredZips: coveredZips.size
+      }
     });
   } catch (error) {
     logger.error('[Dashboard] Geographic error:', error.message);
