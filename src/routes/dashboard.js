@@ -1735,7 +1735,7 @@ router.get('/zip-users', async (req, res) => {
     const days = parseDays(req, 90);
 
     // Get unique users who searched this ZIP
-    const [userStats] = await sequelize.query(`
+    const userStatsResult = await sequelize.query(`
       SELECT
         COUNT(DISTINCT device_id) as unique_devices,
         COUNT(DISTINCT ip_hash) as unique_ips,
@@ -1748,9 +1748,10 @@ router.get('/zip-users', async (req, res) => {
       replacements: { zip },
       type: sequelize.QueryTypes.SELECT
     });
+    const userStats = userStatsResult[0] || {};
 
     // Get breakdown by device/IP
-    const [deviceBreakdown] = await sequelize.query(`
+    const deviceBreakdown = await sequelize.query(`
       SELECT
         COALESCE(device_id, 'NO_DEVICE') as device_id,
         ip_hash,
