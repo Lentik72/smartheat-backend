@@ -1348,10 +1348,8 @@ async function loadAndroidSignals() {
     }
 
     // Platform breakdown
-    console.log('Platform breakdown data:', signals.platformBreakdown);
     if (signals.platformBreakdown) {
       const pb = signals.platformBreakdown;
-      console.log('Setting platform values - iOS:', pb.ios, 'Android:', pb.android, 'Desktop:', pb.desktop);
       document.getElementById('platform-ios').textContent = `${pb.ios?.percent || 0}%`;
       document.getElementById('platform-ios-users').textContent = `${pb.ios?.users || 0} users`;
       document.getElementById('platform-android').textContent = `${pb.android?.percent || 0}%`;
@@ -1360,7 +1358,6 @@ async function loadAndroidSignals() {
       document.getElementById('platform-desktop-users').textContent = `${pb.desktop?.users || 0} users`;
       document.getElementById('platform-note').textContent = '';
     } else {
-      console.log('No platform breakdown available');
       document.getElementById('platform-note').textContent = 'GA4 not configured - enable for platform data';
     }
 
