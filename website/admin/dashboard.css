@@ -1237,3 +1237,23 @@ legend {
     grid-template-columns: 1fr;
   }
 }
+
+/* No data message */
+.no-data {
+  text-align: center;
+  padding: 2rem;
+  color: var(--gray-500);
+}
+
+.no-data-message {
+  padding: 1rem;
+}
+
+.no-data-message p {
+  margin: 0.5rem 0;
+}
+
+.no-data-message .hint {
+  font-size: 0.85rem;
+  color: var(--gray-400);
+}

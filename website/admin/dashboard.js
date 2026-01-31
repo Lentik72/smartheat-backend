@@ -1141,6 +1141,13 @@ async function loadRetention() {
 
     if (!data.available) {
       console.log('Retention data not available:', data.reason);
+      showRetentionNoData(data.reason || 'Data not available');
+      return;
+    }
+
+    // Check if there's actual data
+    if (!data.hasData) {
+      showRetentionNoData(data.reason || 'No engagement data tracked yet');
       return;
     }
 
@@ -1150,10 +1157,13 @@ async function loadRetention() {
     if (week1Rate) {
       week1El.textContent = `${week1Rate}%`;
       week1El.classList.toggle('good', parseFloat(week1Rate) >= 30);
+    } else {
+      week1El.textContent = 'N/A';
     }
 
     // Cohort size
-    document.getElementById('cohort-size').textContent = data.data?.summary?.totalCohortSize || '--';
+    const cohortSize = data.data?.summary?.totalCohortSize;
+    document.getElementById('cohort-size').textContent = cohortSize || '0';
 
     // Behavior retention table
     const behaviorBody = document.getElementById('behavior-retention-body');
@@ -1165,16 +1175,21 @@ async function loadRetention() {
       browsed_only: 'Need to drive action'
     };
 
-    (data.data?.behaviorRetention || []).forEach(b => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${formatBehavior(b.behavior)}</td>
-        <td>${b.userCount}</td>
-        <td>${b.avgActiveDays.toFixed(1)} days</td>
-        <td>${behaviorInsights[b.behavior] || '--'}</td>
-      `;
-      behaviorBody.appendChild(row);
-    });
+    const behaviors = data.data?.behaviorRetention || [];
+    if (behaviors.length === 0) {
+      behaviorBody.innerHTML = '<tr><td colspan="4" class="no-data">No behavior data available</td></tr>';
+    } else {
+      behaviors.forEach(b => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formatBehavior(b.behavior)}</td>
+          <td>${b.userCount}</td>
+          <td>${b.avgActiveDays.toFixed(1)} days</td>
+          <td>${behaviorInsights[b.behavior] || '--'}</td>
+        `;
+        behaviorBody.appendChild(row);
+      });
+    }
 
     // Retention chart
     const cohorts = data.data?.cohorts || [];
@@ -1215,6 +1230,20 @@ async function loadRetention() {
   } catch (error) {
     console.error('Failed to load retention:', error);
   }
+}
+
+function showRetentionNoData(reason) {
+  document.getElementById('week1-retention').textContent = 'N/A';
+  document.getElementById('cohort-size').textContent = '0';
+  document.getElementById('behavior-retention-body').innerHTML = `
+    <tr><td colspan="4" class="no-data">
+      <div class="no-data-message">
+        <p><strong>No retention data available</strong></p>
+        <p class="hint">${reason}</p>
+        <p class="hint">Retention tracking requires iOS app engagement data with user IDs.</p>
+      </div>
+    </td></tr>
+  `;
 }
 
 function formatBehavior(behavior) {

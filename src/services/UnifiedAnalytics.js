@@ -536,8 +536,13 @@ class UnifiedAnalytics {
       const week1Retention = cohorts.find(c => c.week_number === 1);
       const week0 = cohorts.find(c => c.week_number === 0);
 
+      // Check if we have any data
+      const hasData = cohorts.length > 0 || behaviorRetention.length > 0;
+
       return {
         available: true,
+        hasData,
+        reason: hasData ? null : 'No user engagement data tracked yet. Retention requires user_id in supplier_engagements.',
         data: {
           cohorts,
           behaviorRetention: behaviorRetention.map(b => ({
