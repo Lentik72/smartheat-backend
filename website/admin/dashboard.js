@@ -117,6 +117,10 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById(`tab-${target}`).classList.add('active');
 
     // Load tab-specific data
+    if (target === 'recommendations') loadRecommendations();
+    if (target === 'retention') loadRetention();
+    if (target === 'acquisition') loadAcquisition();
+    if (target === 'android') loadAndroidSignals();
     if (target === 'searches') loadSearches();
     if (target === 'clicks') loadClicks();
     if (target === 'ios-app') loadIOSApp();
@@ -126,6 +130,12 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (target === 'suppliers') loadSuppliers();
   });
 });
+
+// Show tab function (called from HTML buttons)
+function showTab(tabName) {
+  const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+  if (tab) tab.click();
+}
 
 // Period selector
 document.querySelectorAll('.period-btn').forEach(btn => {
@@ -996,13 +1006,395 @@ function switchTab(tabName) {
   if (tab) tab.click();
 }
 
+// ========================================
+// INTELLIGENCE DASHBOARD FUNCTIONS
+// ========================================
+
+// Charts for intelligence tabs
+let retentionChart = null;
+let trafficSourcesChart = null;
+let acquisitionFunnelChart = null;
+let androidTrendChart = null;
+
+// Load recommendations
+async function loadRecommendations() {
+  const loadingEl = document.getElementById('recommendations-loading');
+  const contentEl = document.getElementById('recommendations-content');
+  const noRecsEl = document.getElementById('no-recommendations');
+
+  loadingEl.classList.remove('hidden');
+  contentEl.classList.add('hidden');
+  noRecsEl.classList.add('hidden');
+
+  try {
+    const data = await api(`/recommendations?days=${currentDays}`);
+
+    // Group recommendations by priority
+    const high = data.recommendations.filter(r => r.priority === 'CRITICAL' || r.priority === 'HIGH');
+    const medium = data.recommendations.filter(r => r.priority === 'MEDIUM');
+    const low = data.recommendations.filter(r => r.priority === 'LOW' || r.priority === 'OPPORTUNITY');
+
+    // Show top priority alert
+    if (data.summary.topPriority) {
+      document.getElementById('top-priority-alert').classList.remove('hidden');
+      document.getElementById('priority-title').textContent = data.summary.topPriority.title;
+      const topRec = data.recommendations[0];
+      document.getElementById('priority-insight').textContent = topRec?.insight || '';
+    }
+
+    // Render cards
+    renderRecommendationCards('cards-high', high);
+    renderRecommendationCards('cards-medium', medium);
+    renderRecommendationCards('cards-low', low);
+
+    // Show/hide sections
+    document.getElementById('section-high').style.display = high.length > 0 ? 'block' : 'none';
+    document.getElementById('section-medium').style.display = medium.length > 0 ? 'block' : 'none';
+    document.getElementById('section-low').style.display = low.length > 0 ? 'block' : 'none';
+
+    if (data.recommendations.length === 0) {
+      noRecsEl.classList.remove('hidden');
+    } else {
+      contentEl.classList.remove('hidden');
+    }
+  } catch (error) {
+    console.error('Failed to load recommendations:', error);
+    loadingEl.textContent = 'Failed to load recommendations';
+  } finally {
+    loadingEl.classList.add('hidden');
+  }
+}
+
+function renderRecommendationCards(containerId, recommendations) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+
+  recommendations.forEach(rec => {
+    const card = document.createElement('div');
+    card.className = `recommendation-card ${rec.priority.toLowerCase()}`;
+
+    const actions = rec.actions?.map(a =>
+      `<li>${a.text || a}</li>`
+    ).join('') || '';
+
+    const metricsHtml = rec.metrics ? `
+      <div class="rec-metrics">
+        ${Object.entries(rec.metrics).map(([k, v]) =>
+          `<span><strong>${k}:</strong> ${typeof v === 'object' ? JSON.stringify(v) : v}</span>`
+        ).join(' | ')}
+      </div>
+    ` : '';
+
+    card.innerHTML = `
+      <div class="rec-header">
+        <div class="rec-title">${rec.title}</div>
+        <span class="rec-category">${rec.category}</span>
+      </div>
+      <div class="rec-insight">${rec.insight}</div>
+      <ul class="rec-actions">${actions}</ul>
+      ${metricsHtml}
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+// Load retention data
+async function loadRetention() {
+  try {
+    const data = await api('/retention');
+
+    if (!data.available) {
+      console.log('Retention data not available:', data.reason);
+      return;
+    }
+
+    // Week 1 retention
+    const week1Rate = data.data?.summary?.week1RetentionRate;
+    const week1El = document.getElementById('week1-retention');
+    if (week1Rate) {
+      week1El.textContent = `${week1Rate}%`;
+      week1El.classList.toggle('good', parseFloat(week1Rate) >= 30);
+    }
+
+    // Cohort size
+    document.getElementById('cohort-size').textContent = data.data?.summary?.totalCohortSize || '--';
+
+    // Behavior retention table
+    const behaviorBody = document.getElementById('behavior-retention-body');
+    behaviorBody.innerHTML = '';
+
+    const behaviorInsights = {
+      made_call: 'Users who call stay much longer',
+      saved_supplier: 'Saving = investment in app',
+      browsed_only: 'Need to drive action'
+    };
+
+    (data.data?.behaviorRetention || []).forEach(b => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${formatBehavior(b.behavior)}</td>
+        <td>${b.userCount}</td>
+        <td>${b.avgActiveDays.toFixed(1)} days</td>
+        <td>${behaviorInsights[b.behavior] || '--'}</td>
+      `;
+      behaviorBody.appendChild(row);
+    });
+
+    // Retention chart
+    const cohorts = data.data?.cohorts || [];
+    if (cohorts.length > 0) {
+      const weeks = [...new Set(cohorts.map(c => c.week_number))].sort((a, b) => a - b);
+      const chartData = weeks.map(w => {
+        const cohort = cohorts.find(c => parseInt(c.week_number) === w);
+        return cohort ? parseFloat(cohort.retention_rate) : null;
+      });
+
+      const ctx = document.getElementById('retention-chart').getContext('2d');
+      if (retentionChart) retentionChart.destroy();
+
+      retentionChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: weeks.map(w => `Week ${w}`),
+          datasets: [{
+            label: 'Retention %',
+            data: chartData,
+            backgroundColor: chartData.map(v =>
+              v >= 30 ? '#22c55e' : v >= 15 ? '#f59e0b' : '#ef4444'
+            )
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100
+            }
+          }
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Failed to load retention:', error);
+  }
+}
+
+function formatBehavior(behavior) {
+  const names = {
+    made_call: 'Made a Call',
+    saved_supplier: 'Saved a Supplier',
+    browsed_only: 'Browsed Only'
+  };
+  return names[behavior] || behavior;
+}
+
+// Load acquisition data
+async function loadAcquisition() {
+  try {
+    const data = await api(`/acquisition?days=${currentDays}`);
+
+    if (!data.available) {
+      console.log('Acquisition data not available:', data.reason);
+      return;
+    }
+
+    // Summary stats
+    if (data.data?.websiteTraffic) {
+      document.getElementById('acq-sessions').textContent = data.data.websiteTraffic.sessions || '--';
+      document.getElementById('acq-organic').textContent = `${data.data.websiteTraffic.organicPercent || 0}%`;
+    } else {
+      document.getElementById('acq-sessions-source').textContent = 'GA4 not configured';
+    }
+
+    // Conversion rate from funnel
+    const funnel = data.data?.conversionFunnel?.daily || [];
+    if (funnel.length > 0) {
+      const totalSearches = funnel.reduce((sum, d) => sum + d.searches, 0);
+      const totalClicks = funnel.reduce((sum, d) => sum + d.clicks, 0);
+      const rate = totalSearches > 0 ? ((totalClicks / totalSearches) * 100).toFixed(1) : 0;
+      document.getElementById('acq-conversion').textContent = `${rate}%`;
+    }
+
+    // Traffic sources chart
+    if (data.data?.websiteTraffic?.trafficSources) {
+      const sources = data.data.websiteTraffic.trafficSources;
+      const ctx = document.getElementById('traffic-sources-chart').getContext('2d');
+      if (trafficSourcesChart) trafficSourcesChart.destroy();
+
+      trafficSourcesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sources.map(s => s.channel),
+          datasets: [{
+            label: 'Sessions',
+            data: sources.map(s => s.sessions),
+            backgroundColor: '#2563eb'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'y'
+        }
+      });
+    } else {
+      document.getElementById('traffic-sources-note').textContent =
+        'Configure GA4 API to see traffic sources';
+    }
+
+    // Daily funnel chart
+    if (funnel.length > 0) {
+      const ctx = document.getElementById('acquisition-funnel-chart').getContext('2d');
+      if (acquisitionFunnelChart) acquisitionFunnelChart.destroy();
+
+      acquisitionFunnelChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: funnel.map(d => d.date),
+          datasets: [
+            {
+              label: 'Searches',
+              data: funnel.map(d => d.searches),
+              borderColor: '#2563eb',
+              fill: false
+            },
+            {
+              label: 'Clicks',
+              data: funnel.map(d => d.clicks),
+              borderColor: '#22c55e',
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    // Top converting locations table
+    const locationsBody = document.getElementById('converting-locations-body');
+    locationsBody.innerHTML = '';
+
+    (data.data?.topConvertingLocations || []).slice(0, 15).forEach(loc => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${loc.zip}</td>
+        <td>${loc.city}</td>
+        <td>${loc.searches}</td>
+        <td>${loc.clicks}</td>
+        <td>${loc.conversionRate}%</td>
+      `;
+      locationsBody.appendChild(row);
+    });
+  } catch (error) {
+    console.error('Failed to load acquisition:', error);
+  }
+}
+
+// Load Android decision signals
+async function loadAndroidSignals() {
+  try {
+    const data = await api('/growth-signals');
+
+    if (!data.available) {
+      console.log('Android signals not available:', data.reason);
+      return;
+    }
+
+    const signals = data.data;
+
+    // Decision status
+    const statusEl = document.getElementById('android-status');
+    statusEl.textContent = signals.recommendation?.status || 'WAIT';
+    statusEl.className = 'decision-status ' + (signals.recommendation?.status || 'wait').toLowerCase();
+
+    document.getElementById('android-message').textContent =
+      signals.recommendation?.message || 'Loading...';
+
+    // Key metrics
+    document.getElementById('android-waitlist').textContent = signals.waitlist?.total || '--';
+    document.getElementById('android-growth').textContent = `${signals.waitlist?.growthRate || 0}%`;
+    document.getElementById('android-pwa').textContent = signals.pwa?.installs || '--';
+
+    // Thresholds
+    const thresholdsGrid = document.getElementById('thresholds-grid');
+    thresholdsGrid.innerHTML = '';
+
+    if (signals.thresholds) {
+      Object.entries(signals.thresholds).forEach(([key, threshold]) => {
+        const item = document.createElement('div');
+        item.className = 'threshold-item';
+        item.innerHTML = `
+          <div class="threshold-icon">${threshold.met ? '✅' : '⏳'}</div>
+          <div class="threshold-content">
+            <div class="threshold-label">${formatThresholdKey(key)}</div>
+            <div class="threshold-value">${threshold.current}</div>
+            <div class="threshold-target">Target: ${threshold.value}</div>
+          </div>
+        `;
+        thresholdsGrid.appendChild(item);
+      });
+    }
+
+    // Projections
+    document.getElementById('weeks-to-200').textContent =
+      signals.projection?.weeksTo200 || 'N/A';
+    document.getElementById('expected-users').textContent =
+      signals.projection?.expectedConversion || '--';
+
+    // Trend chart
+    const trend = signals.weeklyTrend || [];
+    if (trend.length > 0) {
+      const ctx = document.getElementById('android-trend-chart').getContext('2d');
+      if (androidTrendChart) androidTrendChart.destroy();
+
+      androidTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: trend.map(t => new Date(t.week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+          datasets: [{
+            label: 'Weekly Signups',
+            data: trend.map(t => t.signups),
+            borderColor: '#8b5cf6',
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Failed to load Android signals:', error);
+  }
+}
+
+function formatThresholdKey(key) {
+  const names = {
+    waitlist: 'Waitlist Size',
+    growthRate: 'Weekly Growth',
+    pwaAdoption: 'PWA Installs'
+  };
+  return names[key] || key;
+}
+
 // Load dashboard
 async function loadDashboard() {
   await Promise.all([
     loadOverview(),
     loadSupplierSignals(),
     loadConversion(),
-    loadPriceAlerts()
+    loadPriceAlerts(),
+    loadRecommendations()
   ]);
 }
 

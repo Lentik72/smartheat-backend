@@ -24,9 +24,29 @@ const router = express.Router();
 const { dashboardProtection } = require('../middleware/dashboard-auth');
 const path = require('path');
 const fs = require('fs');
+const UnifiedAnalytics = require('../services/UnifiedAnalytics');
+const RecommendationsEngine = require('../services/RecommendationsEngine');
 
 // Apply protection to all dashboard routes
 router.use(dashboardProtection);
+
+// Lazy-initialized service instances (created on first request)
+let unifiedAnalytics = null;
+let recommendationsEngine = null;
+
+const getUnifiedAnalytics = (req) => {
+  if (!unifiedAnalytics) {
+    unifiedAnalytics = new UnifiedAnalytics(req.app.locals.sequelize, req.app.locals.logger);
+  }
+  return unifiedAnalytics;
+};
+
+const getRecommendationsEngine = (req) => {
+  if (!recommendationsEngine) {
+    recommendationsEngine = new RecommendationsEngine(req.app.locals.sequelize, req.app.locals.logger);
+  }
+  return recommendationsEngine;
+};
 
 // Helper: Parse days parameter with default
 const parseDays = (req, defaultDays = 7) => {
@@ -1630,6 +1650,101 @@ router.delete('/suppliers/:id', async (req, res) => {
   } catch (error) {
     logger.error('[Dashboard] Supplier delete error:', error.message);
     res.status(500).json({ error: 'Failed to delete supplier', details: error.message });
+  }
+});
+
+// ========================================
+// UNIFIED INTELLIGENCE ENDPOINTS
+// ========================================
+
+// GET /api/dashboard/unified - Combined metrics from all sources
+router.get('/unified', async (req, res) => {
+  const logger = req.app.locals.logger;
+
+  try {
+    const days = parseDays(req);
+    const analytics = getUnifiedAnalytics(req);
+    const data = await analytics.getUnifiedOverview(days);
+
+    res.json(data);
+  } catch (error) {
+    logger.error('[Dashboard] Unified overview error:', error.message);
+    res.status(500).json({ error: 'Failed to load unified data', details: error.message });
+  }
+});
+
+// GET /api/dashboard/retention - Cohort analysis + recommendations
+router.get('/retention', async (req, res) => {
+  const logger = req.app.locals.logger;
+
+  try {
+    const weeks = parseInt(req.query.weeks) || 6;
+    const analytics = getUnifiedAnalytics(req);
+    const data = await analytics.getRetentionAnalysis(weeks);
+
+    res.json(data);
+  } catch (error) {
+    logger.error('[Dashboard] Retention analysis error:', error.message);
+    res.status(500).json({ error: 'Failed to load retention data', details: error.message });
+  }
+});
+
+// GET /api/dashboard/acquisition - Channel performance + suggestions
+router.get('/acquisition', async (req, res) => {
+  const logger = req.app.locals.logger;
+
+  try {
+    const days = parseDays(req, 30);
+    const analytics = getUnifiedAnalytics(req);
+    const data = await analytics.getAcquisitionAnalysis(days);
+
+    res.json(data);
+  } catch (error) {
+    logger.error('[Dashboard] Acquisition analysis error:', error.message);
+    res.status(500).json({ error: 'Failed to load acquisition data', details: error.message });
+  }
+});
+
+// GET /api/dashboard/growth-signals - Android decision data
+router.get('/growth-signals', async (req, res) => {
+  const logger = req.app.locals.logger;
+
+  try {
+    const analytics = getUnifiedAnalytics(req);
+    const data = await analytics.getAndroidDecisionSignals();
+
+    res.json(data);
+  } catch (error) {
+    logger.error('[Dashboard] Growth signals error:', error.message);
+    res.status(500).json({ error: 'Failed to load growth signals', details: error.message });
+  }
+});
+
+// GET /api/dashboard/recommendations - Smart actionable recommendations
+router.get('/recommendations', async (req, res) => {
+  const logger = req.app.locals.logger;
+
+  try {
+    const days = parseDays(req);
+    const analytics = getUnifiedAnalytics(req);
+    const engine = getRecommendationsEngine(req);
+
+    // Get unified data for recommendations
+    const unifiedData = await analytics.getUnifiedOverview(days);
+
+    // Generate recommendations
+    const recommendations = await engine.generateRecommendations(unifiedData);
+    const summary = engine.summarize(recommendations);
+
+    res.json({
+      period: `${days}d`,
+      summary,
+      recommendations,
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Recommendations error:', error.message);
+    res.status(500).json({ error: 'Failed to generate recommendations', details: error.message });
   }
 });
 

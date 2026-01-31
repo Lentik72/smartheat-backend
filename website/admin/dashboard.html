@@ -28,13 +28,25 @@
   <!-- Main Dashboard -->
   <div id="dashboard" class="hidden">
     <header>
-      <h1>SmartHeat Analytics</h1>
+      <h1>SmartHeat Intelligence</h1>
       <div class="period-selector">
         <button class="period-btn" data-days="7">7d</button>
         <button class="period-btn active" data-days="30">30d</button>
         <button class="period-btn" data-days="90">90d</button>
       </div>
     </header>
+
+    <!-- Top Priority Alert -->
+    <div id="top-priority-alert" class="top-priority hidden">
+      <div class="priority-badge">TOP PRIORITY</div>
+      <div class="priority-content">
+        <div class="priority-title" id="priority-title">Loading...</div>
+        <div class="priority-insight" id="priority-insight"></div>
+      </div>
+      <div class="priority-actions">
+        <button class="btn-outline" onclick="showTab('recommendations')">View Details</button>
+      </div>
+    </div>
 
     <!-- Summary Cards -->
     <div class="cards">
@@ -72,21 +84,199 @@
 
     <!-- Tabs -->
     <nav class="tabs">
-      <button class="tab active" data-tab="overview">Overview</button>
-      <button class="tab" data-tab="searches">Searches</button>
-      <button class="tab" data-tab="clicks">Clicks</button>
-      <button class="tab" data-tab="ios-app">iOS App</button>
-      <button class="tab" data-tab="prices">Prices</button>
-      <button class="tab" data-tab="map">Map</button>
-      <button class="tab" data-tab="scrapers">Scrapers</button>
+      <button class="tab active" data-tab="recommendations">Recommendations</button>
+      <button class="tab" data-tab="retention">Retention</button>
+      <button class="tab" data-tab="acquisition">Acquisition</button>
+      <button class="tab" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="android">Android</button>
+      <button class="tab" data-tab="scrapers">Data Health</button>
       <button class="tab" data-tab="suppliers">Suppliers</button>
       <button class="tab" data-tab="external">External</button>
     </nav>
 
     <!-- Tab Content -->
     <main class="tab-content">
+      <!-- Recommendations Tab (Default View) -->
+      <section id="tab-recommendations" class="tab-panel active">
+        <div class="recommendations-container">
+          <div id="recommendations-loading" class="loading">Generating recommendations...</div>
+
+          <div id="recommendations-content" class="hidden">
+            <!-- HIGH Priority -->
+            <div class="priority-section" id="section-high">
+              <h3 class="priority-header high">HIGH PRIORITY</h3>
+              <div class="recommendation-cards" id="cards-high"></div>
+            </div>
+
+            <!-- MEDIUM Priority -->
+            <div class="priority-section" id="section-medium">
+              <h3 class="priority-header medium">MEDIUM PRIORITY</h3>
+              <div class="recommendation-cards" id="cards-medium"></div>
+            </div>
+
+            <!-- LOW / OPPORTUNITY -->
+            <div class="priority-section" id="section-low">
+              <h3 class="priority-header low">OPPORTUNITIES</h3>
+              <div class="recommendation-cards" id="cards-low"></div>
+            </div>
+          </div>
+
+          <div id="no-recommendations" class="hidden">
+            <p class="success-message">All systems healthy - no urgent recommendations</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Retention Tab -->
+      <section id="tab-retention" class="tab-panel">
+        <div class="panel-grid">
+          <div class="panel">
+            <h3>Week 1 Retention</h3>
+            <div id="week1-retention" class="stat-large retention-stat">--%</div>
+            <div class="hint">Target: 30%+</div>
+          </div>
+          <div class="panel">
+            <h3>Active Cohort Size</h3>
+            <div id="cohort-size" class="stat-large">--</div>
+          </div>
+          <div class="panel full-width">
+            <h3>Cohort Retention Chart</h3>
+            <canvas id="retention-chart"></canvas>
+          </div>
+          <div class="panel full-width">
+            <h3>Retention by Behavior</h3>
+            <p class="hint">Users who take certain actions stay longer</p>
+            <table id="behavior-retention-table">
+              <thead>
+                <tr>
+                  <th>Behavior</th>
+                  <th>Users</th>
+                  <th>Avg Active Days</th>
+                  <th>Insight</th>
+                </tr>
+              </thead>
+              <tbody id="behavior-retention-body"></tbody>
+            </table>
+          </div>
+          <div class="panel full-width">
+            <h3>Retention Improvement Ideas</h3>
+            <div id="retention-ideas" class="ideas-list">
+              <div class="idea">
+                <span class="idea-icon">1.</span>
+                <span>Push users to log first delivery - retained users make calls</span>
+              </div>
+              <div class="idea">
+                <span class="idea-icon">2.</span>
+                <span>Add price drop alerts to bring users back</span>
+              </div>
+              <div class="idea">
+                <span class="idea-icon">3.</span>
+                <span>Weekly "your area prices" email for opted-in users</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Acquisition Tab -->
+      <section id="tab-acquisition" class="tab-panel">
+        <div class="panel-grid">
+          <div class="panel">
+            <h3>Total Sessions</h3>
+            <div id="acq-sessions" class="stat-large">--</div>
+            <div class="hint" id="acq-sessions-source">From GA4</div>
+          </div>
+          <div class="panel">
+            <h3>Organic %</h3>
+            <div id="acq-organic" class="stat-large">--%</div>
+            <div class="hint">Target: 30%+</div>
+          </div>
+          <div class="panel">
+            <h3>Search → Click Rate</h3>
+            <div id="acq-conversion" class="stat-large">--%</div>
+          </div>
+          <div class="panel full-width">
+            <h3>Traffic Sources</h3>
+            <canvas id="traffic-sources-chart"></canvas>
+            <div id="traffic-sources-note" class="hint"></div>
+          </div>
+          <div class="panel full-width">
+            <h3>Daily Conversion Funnel</h3>
+            <canvas id="acquisition-funnel-chart"></canvas>
+          </div>
+          <div class="panel full-width">
+            <h3>Top Converting Locations</h3>
+            <table id="converting-locations-table">
+              <thead>
+                <tr>
+                  <th>ZIP</th>
+                  <th>City</th>
+                  <th>Searches</th>
+                  <th>Clicks</th>
+                  <th>Conversion</th>
+                </tr>
+              </thead>
+              <tbody id="converting-locations-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Android Decision Tab -->
+      <section id="tab-android" class="tab-panel">
+        <div class="panel-grid">
+          <div class="panel decision-card" id="android-decision">
+            <h3>Android Decision</h3>
+            <div id="android-status" class="decision-status">WAIT</div>
+            <div id="android-message" class="decision-message">Loading...</div>
+          </div>
+          <div class="panel">
+            <h3>Waitlist Total</h3>
+            <div id="android-waitlist" class="stat-large">--</div>
+            <div class="hint">Target: 200</div>
+          </div>
+          <div class="panel">
+            <h3>Weekly Growth</h3>
+            <div id="android-growth" class="stat-large">--%</div>
+            <div class="hint">Target: 5%+</div>
+          </div>
+          <div class="panel">
+            <h3>PWA Installs</h3>
+            <div id="android-pwa" class="stat-large">--</div>
+            <div class="hint">Android users adopting PWA</div>
+          </div>
+          <div class="panel full-width">
+            <h3>Threshold Status</h3>
+            <div class="thresholds-grid" id="thresholds-grid">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+          <div class="panel full-width">
+            <h3>Weekly Waitlist Trend</h3>
+            <canvas id="android-trend-chart"></canvas>
+          </div>
+          <div class="panel full-width">
+            <h3>Projection</h3>
+            <div id="android-projection" class="projection-box">
+              <div class="projection-item">
+                <span class="projection-label">Weeks to 200:</span>
+                <span class="projection-value" id="weeks-to-200">--</span>
+              </div>
+              <div class="projection-item">
+                <span class="projection-label">Expected launch users (30% conv):</span>
+                <span class="projection-value" id="expected-users">--</span>
+              </div>
+              <div class="projection-item">
+                <span class="projection-label">Break-even threshold:</span>
+                <span class="projection-value">100 active users</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Overview Tab -->
-      <section id="tab-overview" class="tab-panel active">
+      <section id="tab-overview" class="tab-panel">
         <div class="overview-grid">
           <!-- Top Row: Key Metrics -->
           <div class="overview-metrics">
