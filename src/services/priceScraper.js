@@ -60,12 +60,20 @@ function extractPrice(html, config) {
 
   if (matches.length === 0) return null;
 
-  // If pattern is "table" (tiered pricing), get the lowest valid price (150+ tier is usually lowest)
+  // If pattern is "table" (tiered pricing), get the appropriate tier price
   // If pattern is "direct", get the first match
   if (config.pattern === 'table') {
-    // For tiered tables, typically the larger quantity = lower price
-    // Return the lowest price found (likely 150+ gallon tier)
-    return Math.min(...matches);
+    // Sort prices ascending (lowest first = highest quantity tier)
+    const sorted = [...matches].sort((a, b) => a - b);
+
+    // If targetTier is specified, use that tier (1 = lowest, 2 = second-lowest, etc.)
+    // This handles suppliers with 200+ gallon tiers when we want 150 gallon tier
+    if (config.targetTier && config.targetTier <= sorted.length) {
+      return sorted[config.targetTier - 1];
+    }
+
+    // Default: return the lowest price (150+ gallon tier)
+    return sorted[0];
   }
 
   // Default: return first match
