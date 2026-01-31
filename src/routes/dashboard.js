@@ -972,7 +972,7 @@ router.get('/suppliers', async (req, res) => {
   }
 
   try {
-    const { state, hasPrice, scrapeStatus, search, limit = 50, offset = 0 } = req.query;
+    const { state, hasPrice, scrapeStatus, search, limit = 50, offset = 0, sort = 'name', order = 'asc' } = req.query;
 
     // Build where clause with parameterized queries to prevent SQL injection
     let whereClause = 'WHERE 1=1';
@@ -992,6 +992,18 @@ router.get('/suppliers', async (req, res) => {
       params.push(`%${search}%`);
       paramIndex++;
     }
+
+    // Validate and build ORDER BY clause
+    const validSortFields = {
+      name: 's.name',
+      state: 's.state',
+      price: 'lp.price_per_gallon',
+      clicks: 'recent_clicks',
+      updated: 'lp.scraped_at'
+    };
+    const sortField = validSortFields[sort] || 's.name';
+    const sortOrder = order.toLowerCase() === 'desc' ? 'DESC NULLS LAST' : 'ASC NULLS LAST';
+    const orderByClause = `ORDER BY ${sortField} ${sortOrder}`;
 
     const [suppliers, countResult] = await Promise.all([
       sequelize.query(`
@@ -1013,11 +1025,11 @@ router.get('/suppliers', async (req, res) => {
           s.active as "isActive",
           s.allow_price_display as "allowPriceDisplay",
           CASE WHEN lp.scraped_at >= NOW() - INTERVAL '48 hours' THEN true ELSE false END as "scrapingEnabled",
-          (SELECT COUNT(*) FROM supplier_clicks sc WHERE sc.supplier_id = s.id AND sc.created_at > NOW() - INTERVAL '7 days') as "recentClicks"
+          (SELECT COUNT(*) FROM supplier_clicks sc WHERE sc.supplier_id = s.id AND sc.created_at > NOW() - INTERVAL '7 days') as recent_clicks
         FROM suppliers s
         LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
         ${whereClause}
-        ORDER BY s.name
+        ${orderByClause}
         LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
       `, { bind: params, type: sequelize.QueryTypes.SELECT }),
 
@@ -1039,8 +1051,10 @@ router.get('/suppliers', async (req, res) => {
       suppliers: suppliers.map(s => ({
         ...s,
         currentPrice: s.currentPrice ? parseFloat(s.currentPrice) : null,
-        recentClicks: parseInt(s.recentClicks) || 0
+        recentClicks: parseInt(s.recent_clicks) || 0
       })),
+      sort: sort,
+      order: order,
       pagination: {
         total: parseInt(countResult[0].count),
         limit: parseInt(limit),

@@ -307,6 +307,28 @@ th {
   background: var(--gray-100);
 }
 
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+th.sortable:hover {
+  background: var(--gray-200);
+}
+
+th.sortable.sorted {
+  color: var(--primary);
+}
+
+.sort-icon {
+  margin-left: 0.25rem;
+  opacity: 0.5;
+}
+
+th.sorted .sort-icon {
+  opacity: 1;
+}
+
 tbody tr:hover {
   background: var(--gray-50);
 }

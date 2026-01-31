@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1769875000">
+  <link rel="stylesheet" href="dashboard.css?v=1769875100">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -773,11 +773,11 @@
           <table id="suppliers-table">
             <thead>
               <tr>
-                <th>Supplier</th>
-                <th>State</th>
-                <th>Price</th>
-                <th>Updated</th>
-                <th>Clicks (7d)</th>
+                <th class="sortable" data-sort="name">Supplier <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-sort="state">State <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-sort="price">Price <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-sort="updated">Updated <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-sort="clicks">Clicks (7d) <span class="sort-icon">↕</span></th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
@@ -902,6 +902,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1769875000"></script>
+  <script src="dashboard.js?v=1769875100"></script>
 </body>
 </html>

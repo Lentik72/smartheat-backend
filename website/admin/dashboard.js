@@ -775,6 +775,10 @@ async function loadScrapers() {
   }
 }
 
+// Sorting state for suppliers
+let suppliersSort = 'clicks';
+let suppliersOrder = 'desc';
+
 // Load suppliers tab
 async function loadSuppliers() {
   try {
@@ -784,12 +788,25 @@ async function loadSuppliers() {
     const search = document.getElementById('filter-search').value;
 
     let url = `/suppliers?limit=${suppliersLimit}&offset=${suppliersPage * suppliersLimit}`;
+    url += `&sort=${suppliersSort}&order=${suppliersOrder}`;
     if (state) url += `&state=${state}`;
     if (hasPrice) url += `&hasPrice=${hasPrice}`;
     if (scrape) url += `&scrapeStatus=${scrape}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     const data = await api(url);
+
+    // Update sort indicators
+    document.querySelectorAll('#suppliers-table th.sortable').forEach(th => {
+      const icon = th.querySelector('.sort-icon');
+      if (th.dataset.sort === suppliersSort) {
+        icon.textContent = suppliersOrder === 'asc' ? '↑' : '↓';
+        th.classList.add('sorted');
+      } else {
+        icon.textContent = '↕';
+        th.classList.remove('sorted');
+      }
+    });
 
     // Populate state filter if empty
     const stateSelect = document.getElementById('filter-state');
@@ -859,6 +876,24 @@ document.getElementById('next-page').addEventListener('click', () => {
 document.getElementById('filter-apply').addEventListener('click', () => {
   suppliersPage = 0;
   loadSuppliers();
+});
+
+// Sortable column headers
+document.querySelectorAll('#suppliers-table th.sortable').forEach(th => {
+  th.style.cursor = 'pointer';
+  th.addEventListener('click', () => {
+    const newSort = th.dataset.sort;
+    if (suppliersSort === newSort) {
+      // Toggle order if same column
+      suppliersOrder = suppliersOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      // New column - default to desc for clicks/price, asc for name/state
+      suppliersSort = newSort;
+      suppliersOrder = ['clicks', 'price', 'updated'].includes(newSort) ? 'desc' : 'asc';
+    }
+    suppliersPage = 0;
+    loadSuppliers();
+  });
 });
 
 // Edit supplier
