@@ -1163,14 +1163,14 @@ router.put('/suppliers/:id', async (req, res) => {
 
     // Map frontend field names to database column names
     const fieldMapping = {
-      'is_active': 'active',
-      'scraping_enabled': 'scraping_enabled'
+      'is_active': 'active'
     };
 
     // Whitelist allowed fields (using actual column names)
+    // Note: scraping_enabled is not a real column - it's computed from price freshness
     const allowedFields = [
       'name', 'phone', 'website', 'state', 'city',
-      'active', 'allow_price_display', 'scraping_enabled'
+      'active', 'allow_price_display'
     ];
 
     const setClause = [];
