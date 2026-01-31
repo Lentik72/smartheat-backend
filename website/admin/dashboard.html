@@ -698,23 +698,28 @@
           <fieldset>
             <legend>Price Info</legend>
             <div class="form-row">
-              <label>Current Price</label>
-              <input type="text" id="edit-price" readonly>
+              <label>Current Price ($)</label>
+              <input type="number" id="edit-price" step="0.01" min="0" max="10" placeholder="e.g. 3.49">
+              <small class="hint">Leave blank to use scraped price</small>
             </div>
             <div class="form-row">
               <label>Last Updated</label>
-              <input type="text" id="edit-price-date" readonly>
+              <input type="text" id="edit-price-date" readonly class="readonly-field">
+            </div>
+            <div class="form-row">
+              <label>Price Source</label>
+              <input type="text" id="edit-price-source" readonly class="readonly-field">
             </div>
           </fieldset>
 
           <fieldset>
             <legend>Click Stats (7 days)</legend>
-            <div id="edit-click-stats"></div>
+            <div id="edit-click-stats" class="stats-grid"></div>
           </fieldset>
 
           <div class="form-actions">
-            <button type="button" id="cancel-edit">Cancel</button>
-            <button type="submit" class="primary">Save Changes</button>
+            <button type="button" id="cancel-edit" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary">Save Changes</button>
           </div>
         </form>
       </div>

@@ -440,9 +440,24 @@ canvas {
   background: var(--primary-dark);
 }
 
-button.primary {
+button.primary, .btn-primary {
   background: var(--primary);
   color: white;
+  border: none;
+}
+
+button.primary:hover, .btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+}
+
+.btn-secondary:hover {
+  background: var(--gray-100);
 }
 
 /* Forms */
@@ -456,6 +471,7 @@ fieldset {
 legend {
   padding: 0 0.5rem;
   font-weight: 600;
+  color: var(--gray-800);
 }
 
 .form-row {
@@ -465,6 +481,7 @@ legend {
 .form-row label {
   display: block;
   font-size: 0.875rem;
+  font-weight: 500;
   color: var(--gray-700);
   margin-bottom: 0.25rem;
 }
@@ -473,34 +490,82 @@ legend {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-weight: normal;
 }
 
 .form-row input[type="text"],
 .form-row input[type="tel"],
-.form-row input[type="url"] {
+.form-row input[type="url"],
+.form-row input[type="number"] {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--gray-300);
   border-radius: 6px;
+  font-size: 0.9rem;
 }
 
-.form-row input[readonly] {
+.form-row input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-row input[readonly],
+.form-row .readonly-field {
   background: var(--gray-100);
+  color: var(--gray-600);
+  cursor: not-allowed;
+}
+
+.form-row small.hint {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gray-200);
 }
 
 .form-actions button {
   padding: 0.75rem 1.5rem;
-  border: 1px solid var(--gray-300);
-  background: white;
   border-radius: 6px;
   cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+}
+
+/* Stats grid in edit modal */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.stats-grid .stat-item {
+  background: var(--gray-50);
+  padding: 0.75rem;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.stats-grid .stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.stats-grid .stat-label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
 }
 
 /* Status indicators */

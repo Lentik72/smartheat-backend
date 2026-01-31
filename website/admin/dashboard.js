@@ -686,13 +686,32 @@ async function editSupplier(id) {
     document.getElementById('edit-active').checked = s.is_active;
     document.getElementById('edit-price-display').checked = s.allow_price_display;
     document.getElementById('edit-scraping').checked = s.scraping_enabled;
-    document.getElementById('edit-price').value = formatPrice(s.current_price);
-    document.getElementById('edit-price-date').value = timeAgo(s.price_updated_at);
 
-    // Click stats
+    // Price info - allow manual entry
+    const priceEl = document.getElementById('edit-price');
+    priceEl.value = s.current_price ? parseFloat(s.current_price).toFixed(2) : '';
+    document.getElementById('edit-price-date').value = s.price_updated_at ? timeAgo(s.price_updated_at) : 'Never';
+    document.getElementById('edit-price-source').value = s.price_source || 'Not set';
+
+    // Click stats - improved display
     const stats = data.clickStats;
     document.getElementById('edit-click-stats').innerHTML = `
-      Total: ${stats.total} | Last 7d: ${stats.last7Days} | Calls: ${stats.calls} | Websites: ${stats.websites}
+      <div class="stat-item">
+        <div class="stat-value">${stats.total || 0}</div>
+        <div class="stat-label">Total Clicks</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">${stats.last7Days || 0}</div>
+        <div class="stat-label">Last 7 Days</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">${stats.calls || 0}</div>
+        <div class="stat-label">Phone Calls</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">${stats.websites || 0}</div>
+        <div class="stat-label">Website Visits</div>
+      </div>
     `;
 
     document.getElementById('supplier-modal').classList.remove('hidden');
@@ -715,6 +734,8 @@ document.getElementById('supplier-form').addEventListener('submit', async (e) =>
   e.preventDefault();
 
   const id = document.getElementById('edit-supplier-id').value;
+  const priceValue = document.getElementById('edit-price').value;
+
   const updates = {
     name: document.getElementById('edit-name').value,
     phone: document.getElementById('edit-phone').value,
@@ -723,7 +744,8 @@ document.getElementById('supplier-form').addEventListener('submit', async (e) =>
     city: document.getElementById('edit-city').value,
     is_active: document.getElementById('edit-active').checked,
     allow_price_display: document.getElementById('edit-price-display').checked,
-    scraping_enabled: document.getElementById('edit-scraping').checked
+    scraping_enabled: document.getElementById('edit-scraping').checked,
+    manual_price: priceValue ? parseFloat(priceValue) : null
   };
 
   try {

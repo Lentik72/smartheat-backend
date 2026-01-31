@@ -1065,10 +1065,13 @@ router.get('/suppliers/:id', async (req, res) => {
 
     // Get supplier with latest price
     const [supplier] = await sequelize.query(`
-      SELECT s.*, lp.price_per_gallon, lp.scraped_at as price_updated_at
+      SELECT s.*,
+        lp.price_per_gallon as current_price,
+        lp.scraped_at as price_updated_at,
+        lp.source as price_source
       FROM suppliers s
       LEFT JOIN (
-        SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
+        SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at, source
         FROM supplier_prices
         WHERE is_valid = true
         ORDER BY supplier_id, scraped_at DESC
@@ -1119,9 +1122,12 @@ router.get('/suppliers/:id', async (req, res) => {
       supplier: {
         ...supplier,
         is_active: supplier.active,
-        current_price: supplier.price_per_gallon ? parseFloat(supplier.price_per_gallon) : null,
-        scraping_enabled: supplier.price_updated_at &&
+        current_price: supplier.current_price ? parseFloat(supplier.current_price) : null,
+        price_source: supplier.price_source || null,
+        scraping_enabled: supplier.scraping_enabled ?? (
+          supplier.price_updated_at &&
           (new Date() - new Date(supplier.price_updated_at)) < 48 * 60 * 60 * 1000
+        )
       },
       priceHistory: priceHistory.map(p => ({
         price: parseFloat(p.price_per_gallon),
@@ -1154,37 +1160,71 @@ router.put('/suppliers/:id', async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
+    // Map frontend field names to database column names
+    const fieldMapping = {
+      'is_active': 'active',
+      'scraping_enabled': 'scraping_enabled'
+    };
+
     // Whitelist allowed fields (using actual column names)
     const allowedFields = [
       'name', 'phone', 'website', 'state', 'city',
-      'active', 'allow_price_display'
+      'active', 'allow_price_display', 'scraping_enabled'
     ];
 
     const setClause = [];
     const replacements = { id };
 
-    for (const field of allowedFields) {
-      if (updates[field] !== undefined) {
-        setClause.push(`${field} = :${field}`);
-        replacements[field] = updates[field];
+    for (const [key, value] of Object.entries(updates)) {
+      // Map frontend field name to database column name
+      const dbField = fieldMapping[key] || key;
+
+      if (allowedFields.includes(dbField) && value !== undefined) {
+        setClause.push(`${dbField} = :${dbField}`);
+        replacements[dbField] = value;
       }
     }
 
-    if (setClause.length === 0) {
+    if (setClause.length === 0 && !updates.manual_price) {
       return res.status(400).json({ error: 'No valid fields to update' });
     }
 
-    setClause.push('updated_at = NOW()');
+    // Update supplier fields
+    if (setClause.length > 0) {
+      setClause.push('updated_at = NOW()');
+      await sequelize.query(`
+        UPDATE suppliers SET ${setClause.join(', ')} WHERE id = :id
+      `, { replacements });
+    }
 
-    await sequelize.query(`
-      UPDATE suppliers SET ${setClause.join(', ')} WHERE id = :id
-    `, { replacements });
+    // Handle manual price update
+    if (updates.manual_price !== undefined && updates.manual_price !== null) {
+      const price = parseFloat(updates.manual_price);
+      if (!isNaN(price) && price > 0 && price < 10) {
+        // Insert manual price into supplier_prices
+        await sequelize.query(`
+          INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, source, is_valid)
+          VALUES (:id, :price, 100, NOW(), 'manual', true)
+        `, { replacements: { id, price } });
+        logger.info(`[Dashboard] Manual price set for supplier ${id}: $${price.toFixed(2)}`);
+      }
+    }
 
     logger.info(`[Dashboard] Updated supplier ${id}: ${Object.keys(updates).join(', ')}`);
 
-    // Return updated supplier
+    // Return updated supplier with latest price
     const [updated] = await sequelize.query(`
-      SELECT * FROM suppliers WHERE id = :id
+      SELECT s.*,
+        (SELECT price_per_gallon FROM supplier_prices
+         WHERE supplier_id = s.id AND is_valid = true
+         ORDER BY scraped_at DESC LIMIT 1) as current_price,
+        (SELECT scraped_at FROM supplier_prices
+         WHERE supplier_id = s.id AND is_valid = true
+         ORDER BY scraped_at DESC LIMIT 1) as price_updated_at,
+        (SELECT source FROM supplier_prices
+         WHERE supplier_id = s.id AND is_valid = true
+         ORDER BY scraped_at DESC LIMIT 1) as price_source
+      FROM suppliers s WHERE s.id = :id
     `, { replacements: { id }, type: sequelize.QueryTypes.SELECT });
 
     res.json({ success: true, supplier: updated });
