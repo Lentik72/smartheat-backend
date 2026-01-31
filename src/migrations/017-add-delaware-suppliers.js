@@ -119,8 +119,8 @@ module.exports = {
       // Add price if available
       if (supplier.price) {
         await sequelize.query(`
-          INSERT INTO supplier_prices (id, supplier_id, price_per_gallon, min_gallons, scraped_at, is_valid)
-          VALUES (gen_random_uuid(), :supplierId, :price, 150, NOW(), true)
+          INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, expires_at, is_valid)
+          VALUES (:supplierId, :price, 150, NOW(), NOW() + INTERVAL '7 days', true)
         `, { replacements: { supplierId, price: supplier.price } });
         console.log(`  Added price: $${supplier.price}/gal`);
       }
