@@ -66,7 +66,7 @@ async function api(endpoint, options = {}) {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'API error');
+      throw new Error(error.details || error.error || 'API error');
     }
 
     return await response.json();
@@ -870,7 +870,7 @@ async function editSupplier(id) {
     document.getElementById('supplier-modal').classList.remove('hidden');
   } catch (error) {
     console.error('Failed to load supplier:', error);
-    alert('Failed to load supplier details');
+    alert('Failed to load supplier details: ' + (error.message || 'Unknown error'));
   }
 }
 
