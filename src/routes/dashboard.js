@@ -1069,11 +1069,10 @@ router.get('/suppliers/:id', async (req, res) => {
     const [supplier] = await sequelize.query(`
       SELECT s.*,
         lp.price_per_gallon as current_price,
-        lp.scraped_at as price_updated_at,
-        lp.source as price_source
+        lp.scraped_at as price_updated_at
       FROM suppliers s
       LEFT JOIN (
-        SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at, source
+        SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
         FROM supplier_prices
         WHERE is_valid = true
         ORDER BY supplier_id, scraped_at DESC
@@ -1125,7 +1124,7 @@ router.get('/suppliers/:id', async (req, res) => {
         ...supplier,
         is_active: supplier.active,
         current_price: supplier.current_price ? parseFloat(supplier.current_price) : null,
-        price_source: supplier.price_source || null,
+        price_source: supplier.current_price ? 'scraped' : null,
         scraping_enabled: supplier.scraping_enabled ?? (
           supplier.price_updated_at &&
           (new Date() - new Date(supplier.price_updated_at)) < 48 * 60 * 60 * 1000
