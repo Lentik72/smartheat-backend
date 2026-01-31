@@ -359,8 +359,8 @@ async function loadWebsite() {
       website.topPages.slice(0, 10).forEach(p => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td>${p.page}</td>
-          <td>${p.views}</td>
+          <td>${p.path}</td>
+          <td>${p.views?.toLocaleString()}</td>
         `;
         pagesBody.appendChild(row);
       });
