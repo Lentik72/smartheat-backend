@@ -1912,4 +1912,62 @@ router.get('/recommendations', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/activity - Recent click activity feed
+router.get('/activity', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+
+    // Get recent clicks with supplier info
+    const [clicks] = await sequelize.query(`
+      SELECT
+        sc.id,
+        sc.supplier_name,
+        sc.action_type,
+        sc.zip_code,
+        sc.device_type,
+        sc.platform,
+        sc.page_source,
+        sc.created_at,
+        s.name as resolved_name,
+        s.state as supplier_state,
+        s.city as supplier_city
+      FROM supplier_clicks sc
+      LEFT JOIN suppliers s ON sc.supplier_id = s.id
+        OR (sc.supplier_id IS NULL AND sc.supplier_name = s.name)
+      ORDER BY sc.created_at DESC
+      LIMIT ${limit}
+    `);
+
+    // Format for display
+    const activity = clicks.map(c => ({
+      id: c.id,
+      supplier: c.resolved_name || c.supplier_name || 'Unknown',
+      supplierLocation: c.supplier_city && c.supplier_state
+        ? `${c.supplier_city}, ${c.supplier_state}`
+        : c.supplier_state || null,
+      action: c.action_type,
+      userZip: c.zip_code,
+      device: c.device_type,
+      platform: c.platform,
+      source: c.page_source,
+      timestamp: c.created_at
+    }));
+
+    res.json({
+      count: activity.length,
+      activity
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Activity error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch activity', details: error.message });
+  }
+});
+
 module.exports = router;

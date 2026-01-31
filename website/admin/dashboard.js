@@ -372,8 +372,48 @@ async function loadWebsite() {
       pagesBody.innerHTML = '<tr><td colspan="2" class="no-data">Enable GA4 for page data</td></tr>';
     }
 
+    // Load recent activity feed
+    loadRecentActivity();
+
   } catch (error) {
     console.error('Failed to load website data:', error);
+  }
+}
+
+// Load recent click activity
+async function loadRecentActivity() {
+  const tbody = document.getElementById('activity-body');
+  try {
+    const data = await api('/activity?limit=25');
+
+    if (!data.activity || data.activity.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="no-data">No clicks recorded yet</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+    data.activity.forEach(a => {
+      const row = document.createElement('tr');
+      const time = new Date(a.timestamp);
+      const timeStr = time.toLocaleString('en-US', {
+        month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+      });
+      const actionIcon = a.action === 'call' ? '📞' : '🌐';
+      const deviceIcon = a.device === 'mobile' ? '📱' : '💻';
+
+      row.innerHTML = `
+        <td>${timeStr}</td>
+        <td>${a.supplier}${a.supplierLocation ? '<br><small class="hint">' + a.supplierLocation + '</small>' : ''}</td>
+        <td>${actionIcon} ${a.action === 'call' ? 'Called' : 'Website'}</td>
+        <td>${a.userZip || '--'}</td>
+        <td>${deviceIcon} ${a.platform || a.device || '--'}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (error) {
+    console.error('Failed to load activity:', error);
+    tbody.innerHTML = '<tr><td colspan="5" class="no-data">Failed to load activity</td></tr>';
   }
 }
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1769874440">
+  <link rel="stylesheet" href="dashboard.css?v=1769875000">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -192,6 +192,23 @@
               </div>
             </div>
             <div class="hint" style="margin-top: 1rem;">From PostgreSQL tracking</div>
+          </div>
+          <div class="panel full-width">
+            <h3>Recent Activity</h3>
+            <table id="activity-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Supplier</th>
+                  <th>Action</th>
+                  <th>User ZIP</th>
+                  <th>Device</th>
+                </tr>
+              </thead>
+              <tbody id="activity-body">
+                <tr><td colspan="5" class="hint">Loading...</td></tr>
+              </tbody>
+            </table>
           </div>
           <div class="panel full-width" id="web-ga4-setup" style="display: none;">
             <div class="setup-guide">
@@ -885,6 +902,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1769874440"></script>
+  <script src="dashboard.js?v=1769875000"></script>
 </body>
 </html>
