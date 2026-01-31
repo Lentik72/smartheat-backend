@@ -248,7 +248,9 @@ router.get('/overview', async (req, res) => {
       safeQuery('dataFreshness', `
         SELECT
           (SELECT MAX(created_at) FROM supplier_clicks) as last_click,
-          (SELECT MAX(scraped_at) FROM supplier_prices WHERE is_valid = true) as last_price
+          (SELECT MAX(scraped_at) FROM supplier_prices WHERE is_valid = true) as last_price,
+          (SELECT MAX(created_at) FROM waitlist) as last_waitlist,
+          (SELECT MAX(created_at) FROM pwa_events) as last_pwa
       `)
     ]);
 
@@ -338,13 +340,13 @@ router.get('/overview', async (req, res) => {
       waitlist: {
         total: parseInt(waitlist.total) || 0,
         last7Days: parseInt(waitlist.last_7_days) || 0,
-        lastUpdated: freshness.last_click || null
+        lastUpdated: freshness.last_waitlist || null
       },
       pwa: {
         promptsShown: parseInt(pwa.prompts_shown) || 0,
         installs: parseInt(pwa.installs) || 0,
         conversionRate: parseFloat(conversionRate),
-        lastUpdated: freshness.last_click || null
+        lastUpdated: freshness.last_pwa || null
       },
       coverage: {
         trueCoverageGaps: parseInt(coverage.true_coverage_gaps) || 0,

@@ -161,12 +161,16 @@ async function loadOverview() {
     document.getElementById('total-clicks').textContent = data.website.totalClicks;
     document.getElementById('clicks-breakdown').textContent =
       `${data.website.callClicks} calls / ${data.website.websiteClicks} websites`;
-    document.getElementById('clicks-freshness').textContent = timeAgo(data.dataFreshness.supplier_clicks);
+    // Hide freshness if no data, otherwise show last click time
+    const clicksFreshness = data.website.lastUpdated || data.dataFreshness?.supplier_clicks;
+    document.getElementById('clicks-freshness').textContent = clicksFreshness ? timeAgo(clicksFreshness) : '';
 
     document.getElementById('scraper-status').textContent =
       `${data.scraping.suppliersWithPrices}/${data.scraping.suppliersTotal}`;
     document.getElementById('scraper-stale').textContent = `${data.scraping.staleCount} stale`;
-    document.getElementById('scraper-freshness').textContent = timeAgo(data.dataFreshness.scrape_runs);
+    // Use supplier_prices freshness for scraper (more relevant than scrape_runs)
+    const scraperFreshness = data.dataFreshness?.supplier_prices;
+    document.getElementById('scraper-freshness').textContent = scraperFreshness ? timeAgo(scraperFreshness) : '';
 
     if (data.scraping.staleCount > 5) {
       document.getElementById('card-scraper').classList.add('status-warning');
@@ -174,11 +178,15 @@ async function loadOverview() {
 
     document.getElementById('waitlist-total').textContent = data.waitlist.total;
     document.getElementById('waitlist-recent').textContent = `+${data.waitlist.last7Days} this week`;
-    document.getElementById('waitlist-freshness').textContent = timeAgo(data.dataFreshness.supplier_clicks);
+    // Use waitlist lastUpdated
+    const waitlistFreshness = data.waitlist?.lastUpdated;
+    document.getElementById('waitlist-freshness').textContent = waitlistFreshness ? timeAgo(waitlistFreshness) : '';
 
     document.getElementById('pwa-installs').textContent = data.pwa.installs;
     document.getElementById('pwa-rate').textContent = `${data.pwa.conversionRate}% conversion`;
-    document.getElementById('pwa-freshness').textContent = timeAgo(data.dataFreshness.supplier_clicks);
+    // Use PWA lastUpdated
+    const pwaFreshness = data.pwa?.lastUpdated;
+    document.getElementById('pwa-freshness').textContent = pwaFreshness ? timeAgo(pwaFreshness) : '';
 
     // Top supplier
     if (data.website.topSupplier) {
