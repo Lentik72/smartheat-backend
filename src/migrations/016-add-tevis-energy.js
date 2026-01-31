@@ -20,12 +20,13 @@ module.exports = {
       return;
     }
 
-    // Insert supplier
+    // Insert supplier with UUID
     await sequelize.query(`
       INSERT INTO suppliers (
-        name, phone, website, state, city,
+        id, name, phone, website, state, city,
         active, allow_price_display, created_at, updated_at
       ) VALUES (
+        gen_random_uuid(),
         'Tevis Energy',
         '(410) 876-6800',
         'https://www.tevisenergy.com',

@@ -94,10 +94,10 @@ module.exports = {
         continue;
       }
 
-      // Insert supplier
+      // Insert supplier with UUID
       await sequelize.query(`
-        INSERT INTO suppliers (name, phone, website, state, city, active, allow_price_display, created_at, updated_at)
-        VALUES (:name, :phone, :website, :state, :city, true, :allow_price_display, NOW(), NOW())
+        INSERT INTO suppliers (id, name, phone, website, state, city, active, allow_price_display, created_at, updated_at)
+        VALUES (gen_random_uuid(), :name, :phone, :website, :state, :city, true, :allow_price_display, NOW(), NOW())
       `, {
         replacements: {
           name: supplier.name,
@@ -119,8 +119,8 @@ module.exports = {
       // Add price if available
       if (supplier.price) {
         await sequelize.query(`
-          INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, is_valid)
-          VALUES (:supplierId, :price, 150, NOW(), true)
+          INSERT INTO supplier_prices (id, supplier_id, price_per_gallon, min_gallons, scraped_at, is_valid)
+          VALUES (gen_random_uuid(), :supplierId, :price, 150, NOW(), true)
         `, { replacements: { supplierId, price: supplier.price } });
         console.log(`  Added price: $${supplier.price}/gal`);
       }

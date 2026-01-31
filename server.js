@@ -298,6 +298,24 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  PWA events migration:', err.message);
         });
 
+        // V2.16.0: Add Town & Country Fuel supplier
+        const { up: runTcFuelMigration } = require('./src/migrations/015-add-tc-fuel-oil');
+        runTcFuelMigration(sequelize).catch(err => {
+          logger.warn('⚠️  TC Fuel Oil migration:', err.message);
+        });
+
+        // V2.16.1: Add Tevis Energy supplier
+        const { up: runTevisEnergyMigration } = require('./src/migrations/016-add-tevis-energy');
+        runTevisEnergyMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Tevis Energy migration:', err.message);
+        });
+
+        // V2.16.2: Add Delaware area suppliers
+        const { up: runDelawareMigration } = require('./src/migrations/017-add-delaware-suppliers');
+        runDelawareMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Delaware suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
