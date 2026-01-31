@@ -736,7 +736,7 @@
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     // 1. Log to backend (source of truth)
-    fetch(API_BASE + '/api/track-click', {
+    fetch(API_BASE + '/api/log-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -771,7 +771,7 @@
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     // 1. Log to backend (source of truth)
-    fetch(API_BASE + '/api/track-click', {
+    fetch(API_BASE + '/api/log-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -42,10 +42,10 @@ router.post('/track-pwa', async (req, res) => {
 });
 
 /**
- * POST /api/track-click
+ * POST /api/log-action (renamed from track-click to avoid ad blockers)
  * Records when a user clicks "Call" or "Website" for a supplier
  */
-router.post('/track-click', async (req, res) => {
+router.post('/log-action', async (req, res) => {
   const sequelize = req.app.locals.sequelize;
   const { supplierId, action, zipCode, supplierName, pageSource, deviceType, platform } = req.body;
   const userAgent = req.headers['user-agent'] || '';
