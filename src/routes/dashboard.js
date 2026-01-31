@@ -1720,6 +1720,107 @@ router.get('/growth-signals', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/zip-users - Analyze unique users by ZIP code
+// Helps identify if activity in a ZIP is from one user or multiple users
+router.get('/zip-users', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const zip = req.query.zip || '10549'; // Default to Mount Kisco
+    const days = parseDays(req, 90);
+
+    // Get unique users who searched this ZIP
+    const [userStats] = await sequelize.query(`
+      SELECT
+        COUNT(DISTINCT device_id) as unique_devices,
+        COUNT(DISTINCT ip_hash) as unique_ips,
+        COUNT(DISTINCT COALESCE(device_id, ip_hash)) as unique_users,
+        COUNT(*) as total_requests
+      FROM api_activity
+      WHERE zip_code = :zip
+        AND created_at >= NOW() - INTERVAL '${days} days'
+    `, {
+      replacements: { zip },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    // Get breakdown by device/IP
+    const [deviceBreakdown] = await sequelize.query(`
+      SELECT
+        COALESCE(device_id, 'NO_DEVICE') as device_id,
+        ip_hash,
+        COUNT(*) as request_count,
+        MIN(created_at) as first_seen,
+        MAX(created_at) as last_seen
+      FROM api_activity
+      WHERE zip_code = :zip
+        AND created_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY device_id, ip_hash
+      ORDER BY request_count DESC
+      LIMIT 50
+    `, {
+      replacements: { zip },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    // Check excluded device IDs
+    const excludedDevices = (process.env.EXCLUDED_DEVICE_IDS || '')
+      .split(',')
+      .map(id => id.trim().toUpperCase())
+      .filter(id => id.length > 0);
+
+    // Categorize devices as "yours" vs "other users"
+    const yourDevices = deviceBreakdown.filter(d =>
+      d.device_id !== 'NO_DEVICE' && excludedDevices.includes(d.device_id.toUpperCase())
+    );
+    const otherUsers = deviceBreakdown.filter(d =>
+      d.device_id === 'NO_DEVICE' || !excludedDevices.includes(d.device_id.toUpperCase())
+    );
+
+    res.json({
+      zip,
+      period: `${days}d`,
+      stats: {
+        uniqueDevices: parseInt(userStats.unique_devices) || 0,
+        uniqueIPs: parseInt(userStats.unique_ips) || 0,
+        uniqueUsers: parseInt(userStats.unique_users) || 0,
+        totalRequests: parseInt(userStats.total_requests) || 0
+      },
+      excludedDevicesConfigured: excludedDevices.length,
+      breakdown: {
+        yourDevices: yourDevices.map(d => ({
+          deviceIdPrefix: d.device_id.substring(0, 8) + '...',
+          ipHashPrefix: d.ip_hash ? d.ip_hash.substring(0, 8) + '...' : null,
+          requests: parseInt(d.request_count),
+          firstSeen: d.first_seen,
+          lastSeen: d.last_seen
+        })),
+        otherUsers: otherUsers.map(d => ({
+          hasDeviceId: d.device_id !== 'NO_DEVICE',
+          deviceIdPrefix: d.device_id !== 'NO_DEVICE' ? d.device_id.substring(0, 8) + '...' : null,
+          ipHashPrefix: d.ip_hash ? d.ip_hash.substring(0, 8) + '...' : null,
+          requests: parseInt(d.request_count),
+          firstSeen: d.first_seen,
+          lastSeen: d.last_seen
+        }))
+      },
+      summary: {
+        yourDeviceCount: yourDevices.length,
+        otherUserCount: otherUsers.length,
+        isOnlyYou: otherUsers.length === 0
+      }
+    });
+  } catch (error) {
+    logger.error('[Dashboard] ZIP users error:', error.message);
+    res.status(500).json({ error: 'Failed to analyze ZIP users', details: error.message });
+  }
+});
+
 // GET /api/dashboard/recommendations - Smart actionable recommendations
 router.get('/recommendations', async (req, res) => {
   const logger = req.app.locals.logger;
