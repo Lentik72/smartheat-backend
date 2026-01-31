@@ -1305,14 +1305,14 @@ async function loadAcquisition() {
 // Load Android decision signals
 async function loadAndroidSignals() {
   try {
-    const data = await api('/growth-signals');
+    // Use unified endpoint which has more reliable GA4 data
+    const unified = await api('/unified?days=30');
+    const signals = unified.android;
 
-    if (!data.available) {
-      console.log('Android signals not available:', data.reason);
+    if (!signals) {
+      console.log('Android signals not available');
       return;
     }
-
-    const signals = data.data;
 
     // Decision status
     const statusEl = document.getElementById('android-status');
