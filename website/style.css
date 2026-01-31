@@ -723,6 +723,10 @@ body {
     color: var(--primary-orange-hover);
 }
 
+.content-section .article-link {
+    font-weight: 500;
+}
+
 .last-updated {
     color: var(--text-gray);
     font-size: 0.875rem;
