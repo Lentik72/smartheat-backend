@@ -1795,6 +1795,7 @@ router.get('/zip-users', async (req, res) => {
       excludedDevicesConfigured: excludedDevices.length,
       breakdown: {
         yourDevices: yourDevices.map(d => ({
+          deviceId: d.device_id,
           deviceIdPrefix: d.device_id.substring(0, 8) + '...',
           ipHashPrefix: d.ip_hash ? d.ip_hash.substring(0, 8) + '...' : null,
           requests: parseInt(d.request_count),
@@ -1803,6 +1804,7 @@ router.get('/zip-users', async (req, res) => {
         })),
         otherUsers: otherUsers.map(d => ({
           hasDeviceId: d.device_id !== 'NO_DEVICE',
+          deviceId: d.device_id !== 'NO_DEVICE' ? d.device_id : null,
           deviceIdPrefix: d.device_id !== 'NO_DEVICE' ? d.device_id.substring(0, 8) + '...' : null,
           ipHashPrefix: d.ip_hash ? d.ip_hash.substring(0, 8) + '...' : null,
           requests: parseInt(d.request_count),
