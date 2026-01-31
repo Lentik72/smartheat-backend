@@ -31,6 +31,16 @@ class ActivityAnalyticsService {
       .map(hash => hash.trim().toLowerCase())
       .filter(hash => hash.length > 0);
 
+    // V2.14.0: Excluded states (Apple testers, crawlers)
+    // California excluded by default (Apple HQ testers)
+    this.excludedStates = (process.env.EXCLUDED_STATES || 'CA')
+      .split(',')
+      .map(s => s.trim().toUpperCase())
+      .filter(s => s.length > 0);
+
+    // V2.14.0: Allowed countries (US and Canada only)
+    this.allowedCountries = ['US', 'CA'];
+
     // Start periodic flush
     this.flushInterval = setInterval(() => this.flushRequestBuffer(), this.FLUSH_INTERVAL_MS);
 
@@ -41,6 +51,10 @@ class ActivityAnalyticsService {
     if (this.excludedIPHashes.length > 0) {
       console.log(`[ActivityAnalytics] Excluding ${this.excludedIPHashes.length} IP hash(es) from error reports`);
     }
+    if (this.excludedStates.length > 0) {
+      console.log(`[ActivityAnalytics] Excluding states: ${this.excludedStates.join(', ')}`);
+    }
+    console.log(`[ActivityAnalytics] Allowed countries: ${this.allowedCountries.join(', ')}`);
   }
 
   /**
@@ -104,10 +118,62 @@ class ActivityAnalyticsService {
       '07': 'NJ', '08': 'NJ',
       '10': 'NY', '11': 'NY', '12': 'NY', '13': 'NY', '14': 'NY',
       '15': 'PA', '16': 'PA', '17': 'PA', '18': 'PA', '19': 'PA',
-      '20': 'DC', '21': 'MD', '22': 'VA', '23': 'VA'
+      '20': 'DC', '21': 'MD', '22': 'VA', '23': 'VA',
+      // California (for exclusion detection)
+      '90': 'CA', '91': 'CA', '92': 'CA', '93': 'CA', '94': 'CA', '95': 'CA', '96': 'CA'
     };
 
     return stateMap[prefix2] || null;
+  }
+
+  /**
+   * V2.14.0: Detect country from ZIP/postal code format
+   * US: 5 digits (e.g., 10549)
+   * Canada: alphanumeric (e.g., K1A 0B1)
+   */
+  getCountryFromPostalCode(postalCode) {
+    if (!postalCode) return null;
+    const cleaned = postalCode.replace(/\s/g, '').toUpperCase();
+
+    // US ZIP: 5 digits or 5+4 format
+    if (/^\d{5}(-\d{4})?$/.test(cleaned)) {
+      return 'US';
+    }
+
+    // Canadian postal code: letter-number-letter number-letter-number
+    if (/^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(cleaned) || /^[A-Z]\d[A-Z]$/.test(cleaned)) {
+      return 'CA';
+    }
+
+    return null; // Unknown format
+  }
+
+  /**
+   * V2.14.0: Check if request should be excluded based on geography
+   * Excludes: non-US/Canada, California (Apple testers)
+   */
+  isExcludedGeography(req) {
+    const zipCode = req.params?.zipCode || req.params?.zip ||
+                    req.query?.zipCode || req.query?.zip ||
+                    req.body?.zipCode || req.body?.zip || null;
+
+    if (!zipCode) return false; // Can't determine, allow through
+
+    // Check country
+    const country = this.getCountryFromPostalCode(zipCode);
+    if (country && !this.allowedCountries.includes(country)) {
+      return true; // Non-US/Canada
+    }
+
+    // Check state (for US)
+    if (country === 'US') {
+      const state = this.getStateFromZip(zipCode);
+      if (state && this.excludedStates.includes(state)) {
+        return true; // Excluded state (e.g., California)
+      }
+    }
+
+    return false;
   }
 
   // ==================== API REQUEST LOGGING ====================
@@ -116,10 +182,16 @@ class ActivityAnalyticsService {
    * Log an API request (buffered for performance)
    * V2.7.0: Skip test traffic (simulator, excluded devices, X-Test-Mode header)
    * V2.8.0: Capture device_id for more accurate unique user tracking
+   * V2.14.0: Skip excluded geographies (non-US/CA, California)
    */
   logRequest(req, res, responseTimeMs) {
     // V2.7.0: Skip test traffic
     if (this.isTestTraffic(req)) {
+      return;
+    }
+
+    // V2.14.0: Skip excluded geographies
+    if (this.isExcludedGeography(req)) {
       return;
     }
 

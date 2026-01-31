@@ -89,6 +89,11 @@ router.get('/meta', (req, res) => {
     .map(h => h.trim())
     .filter(h => h.length > 0);
 
+  const excludedStates = (process.env.EXCLUDED_STATES || 'CA')
+    .split(',')
+    .map(s => s.trim().toUpperCase())
+    .filter(s => s.length > 0);
+
   res.json({
     version: '1.0',
     features: {
@@ -104,7 +109,9 @@ router.get('/meta', (req, res) => {
     },
     exclusions: {
       deviceIds: excludedDeviceIds,
-      ipHashes: excludedIPHashes
+      ipHashes: excludedIPHashes,
+      states: excludedStates,
+      allowedCountries: ['US', 'CA']
     }
   });
 });
