@@ -710,6 +710,19 @@ body {
     margin-bottom: 0.5rem;
 }
 
+.content-section a {
+    color: var(--primary-orange);
+    text-decoration: none;
+}
+
+.content-section a:hover {
+    text-decoration: underline;
+}
+
+.content-section a:visited {
+    color: var(--primary-orange-hover);
+}
+
 .last-updated {
     color: var(--text-gray);
     font-size: 0.875rem;
@@ -1725,6 +1738,19 @@ body {
     .feature-card p,
     .content-section p {
         color: var(--text-gray);
+    }
+
+    /* Links in content sections - brighter for dark mode contrast */
+    .content-section a {
+        color: #F4A259; /* sunset-gold - better contrast than coral */
+    }
+
+    .content-section a:hover {
+        color: #FFC078;
+    }
+
+    .content-section a:visited {
+        color: #D4845A; /* slightly muted for visited */
     }
 
     .price-low .price-value {
