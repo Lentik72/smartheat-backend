@@ -76,6 +76,14 @@ module.exports = {
     }
 
     console.log(`Added ${zipCodes.length} ZIP codes for Town & Country Fuel`);
+
+    // Add initial price (100+ gallons tier: $3.80/gal)
+    await sequelize.query(`
+      INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, is_valid)
+      VALUES (:supplierId, 3.80, 100, NOW(), true)
+    `, { replacements: { supplierId } });
+
+    console.log('Added initial price: $3.80/gal (100+ gallons)');
   },
 
   async down(sequelize) {
