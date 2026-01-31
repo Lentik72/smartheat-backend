@@ -318,6 +318,7 @@ async function loadWebsite() {
     }
 
     // Daily activity chart (use clicks data)
+    const dailyNote = document.getElementById('web-daily-note');
     if (clicks.daily?.length > 0) {
       const ctx = document.getElementById('web-daily-chart').getContext('2d');
       if (webDailyChart) webDailyChart.destroy();
@@ -349,6 +350,9 @@ async function loadWebsite() {
           scales: { y: { beginAtZero: true } }
         }
       });
+      dailyNote.textContent = '';
+    } else {
+      dailyNote.textContent = 'No click data for selected period';
     }
 
     // Top pages (from GA4 if available)

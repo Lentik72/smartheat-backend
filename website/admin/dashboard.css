@@ -379,6 +379,7 @@ tbody tr:hover {
 
 /* Charts */
 canvas {
+  min-height: 200px;
   max-height: 300px;
 }
 
