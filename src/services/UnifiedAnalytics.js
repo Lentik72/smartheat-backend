@@ -29,6 +29,13 @@ class UnifiedAnalytics {
       ga4: false,
       firebase: false
     };
+
+    // Cache for GA4 data (survives transient API failures)
+    this.cache = {
+      websiteMetrics: null,
+      websiteMetricsCachedAt: null,
+      cacheMaxAge: 30 * 60 * 1000 // 30 minutes
+    };
   }
 
   /**
@@ -247,7 +254,7 @@ class UnifiedAnalytics {
       const organicSessions = trafficSources.find(t => t.channel === 'Organic Search')?.sessions || 0;
       const organicPercent = sessions > 0 ? (organicSessions / sessions * 100).toFixed(1) : 0;
 
-      return {
+      const result = {
         available: true,
         data: {
           sessions,
@@ -261,8 +268,26 @@ class UnifiedAnalytics {
           platformBreakdown
         }
       };
+
+      // Cache successful result
+      this.cache.websiteMetrics = result;
+      this.cache.websiteMetricsCachedAt = Date.now();
+
+      return result;
     } catch (error) {
       this.logger.error('[UnifiedAnalytics] GA4 query error:', error.message);
+
+      // Return cached data if available and not too old
+      if (this.cache.websiteMetrics &&
+          (Date.now() - this.cache.websiteMetricsCachedAt) < this.cache.cacheMaxAge) {
+        this.logger.info('[UnifiedAnalytics] Returning cached GA4 data due to API error');
+        return {
+          ...this.cache.websiteMetrics,
+          cached: true,
+          cachedAt: new Date(this.cache.websiteMetricsCachedAt).toISOString()
+        };
+      }
+
       return {
         available: false,
         reason: error.message,
