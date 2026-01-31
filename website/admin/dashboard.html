@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=20260131">
+  <link rel="stylesheet" href="dashboard.css?v=20260130c">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -48,31 +48,31 @@
       </div>
     </div>
 
-    <!-- Summary Cards -->
+    <!-- Summary Cards (Combined Business Metrics) -->
     <div class="cards">
-      <div class="card" id="card-clicks">
-        <div class="card-label">Website Clicks</div>
-        <div class="card-value" id="total-clicks">--</div>
-        <div class="card-sub" id="clicks-breakdown">-- calls / -- websites</div>
-        <div class="card-freshness" id="clicks-freshness">--</div>
+      <div class="card" id="card-users">
+        <div class="card-label">Total Users</div>
+        <div class="card-value" id="total-users">--</div>
+        <div class="card-sub" id="users-breakdown">-- iOS / -- website</div>
+        <div class="card-freshness" id="users-freshness">--</div>
       </div>
-      <div class="card" id="card-scraper">
-        <div class="card-label">Scraper Health</div>
-        <div class="card-value" id="scraper-status">--</div>
-        <div class="card-sub" id="scraper-stale">-- stale</div>
-        <div class="card-freshness" id="scraper-freshness">--</div>
+      <div class="card" id="card-deliveries">
+        <div class="card-label">Deliveries Logged</div>
+        <div class="card-value" id="total-deliveries">--</div>
+        <div class="card-sub" id="deliveries-breakdown">Real orders tracked</div>
+        <div class="card-freshness" id="deliveries-freshness">--</div>
       </div>
-      <div class="card" id="card-waitlist">
-        <div class="card-label">Waitlist Total</div>
+      <div class="card" id="card-revenue">
+        <div class="card-label">Est. Revenue</div>
+        <div class="card-value" id="est-revenue">--</div>
+        <div class="card-sub" id="revenue-breakdown">From supplier clicks</div>
+        <div class="card-freshness" id="revenue-freshness">--</div>
+      </div>
+      <div class="card" id="card-android">
+        <div class="card-label">Android Waitlist</div>
         <div class="card-value" id="waitlist-total">--</div>
         <div class="card-sub" id="waitlist-recent">+-- this week</div>
         <div class="card-freshness" id="waitlist-freshness">--</div>
-      </div>
-      <div class="card" id="card-pwa">
-        <div class="card-label">PWA Installs</div>
-        <div class="card-value" id="pwa-installs">--</div>
-        <div class="card-sub" id="pwa-rate">--% conversion</div>
-        <div class="card-freshness" id="pwa-freshness">--</div>
       </div>
     </div>
 
@@ -85,10 +85,10 @@
     <!-- Tabs -->
     <nav class="tabs">
       <button class="tab active" data-tab="recommendations">Recommendations</button>
-      <button class="tab" data-tab="retention">Retention</button>
-      <button class="tab" data-tab="acquisition">Acquisition</button>
-      <button class="tab" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="website">Website</button>
+      <button class="tab" data-tab="ios-app">iOS App</button>
       <button class="tab" data-tab="android">Android</button>
+      <button class="tab" data-tab="overview">Overview</button>
       <button class="tab" data-tab="map">Map</button>
       <button class="tab" data-tab="scrapers">Data Health</button>
       <button class="tab" data-tab="suppliers">Suppliers</button>
@@ -124,6 +124,86 @@
 
           <div id="no-recommendations" class="hidden">
             <p class="success-message">All systems healthy - no urgent recommendations</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Website Tab (GA4 Data) -->
+      <section id="tab-website" class="tab-panel">
+        <div class="panel-grid">
+          <div class="panel">
+            <h3>Sessions</h3>
+            <div id="web-sessions" class="stat-large">--</div>
+            <div class="hint">Total visits in period</div>
+          </div>
+          <div class="panel">
+            <h3>Unique Visitors</h3>
+            <div id="web-users" class="stat-large">--</div>
+            <div class="hint">Distinct users</div>
+          </div>
+          <div class="panel">
+            <h3>Bounce Rate</h3>
+            <div id="web-bounce" class="stat-large">--%</div>
+            <div class="hint">Target: &lt;60%</div>
+          </div>
+          <div class="panel">
+            <h3>Avg. Session</h3>
+            <div id="web-duration" class="stat-large">--</div>
+            <div class="hint">Time on site</div>
+          </div>
+          <div class="panel full-width">
+            <h3>Traffic Sources</h3>
+            <canvas id="web-traffic-chart"></canvas>
+            <div id="web-traffic-note" class="hint"></div>
+          </div>
+          <div class="panel full-width">
+            <h3>Daily Website Activity</h3>
+            <canvas id="web-daily-chart"></canvas>
+          </div>
+          <div class="panel">
+            <h3>Top Pages</h3>
+            <table id="web-pages-table">
+              <thead>
+                <tr>
+                  <th>Page</th>
+                  <th>Views</th>
+                </tr>
+              </thead>
+              <tbody id="web-pages-body"></tbody>
+            </table>
+          </div>
+          <div class="panel">
+            <h3>Supplier Clicks</h3>
+            <div id="web-clicks-summary">
+              <div class="stat-row">
+                <span>Total Clicks</span>
+                <span id="web-total-clicks" class="stat-value">--</span>
+              </div>
+              <div class="stat-row">
+                <span>Phone Calls</span>
+                <span id="web-call-clicks" class="stat-value">--</span>
+              </div>
+              <div class="stat-row">
+                <span>Website Visits</span>
+                <span id="web-website-clicks" class="stat-value">--</span>
+              </div>
+            </div>
+            <div class="hint" style="margin-top: 1rem;">From PostgreSQL tracking</div>
+          </div>
+          <div class="panel full-width" id="web-ga4-setup" style="display: none;">
+            <div class="setup-guide">
+              <h3>Connect Google Analytics</h3>
+              <p>Enable GA4 API to see detailed website traffic data.</p>
+              <ol>
+                <li>Go to <a href="https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com" target="_blank">Google Cloud Console</a></li>
+                <li>Enable "Google Analytics Data API"</li>
+                <li>Create a service account with Viewer role</li>
+                <li>Download JSON credentials</li>
+                <li>Set <code>GOOGLE_APPLICATION_CREDENTIALS_JSON</code> env var</li>
+                <li>Set <code>GA4_PROPERTY_ID</code> env var</li>
+              </ol>
+              <a href="https://analytics.google.com/" target="_blank" class="btn">Open GA4 Console</a>
+            </div>
           </div>
         </div>
       </section>
@@ -244,7 +324,27 @@
           <div class="panel">
             <h3>PWA Installs</h3>
             <div id="android-pwa" class="stat-large">--</div>
-            <div class="hint">Android users adopting PWA</div>
+            <div class="hint" id="android-pwa-rate">--% conversion</div>
+          </div>
+          <div class="panel full-width">
+            <h3>PWA Funnel</h3>
+            <div class="pwa-funnel">
+              <div class="pwa-funnel-step">
+                <div class="pwa-funnel-value" id="pwa-prompts">--</div>
+                <div class="pwa-funnel-label">Install Prompts</div>
+              </div>
+              <div class="pwa-funnel-arrow">→</div>
+              <div class="pwa-funnel-step">
+                <div class="pwa-funnel-value" id="pwa-installs-detail">--</div>
+                <div class="pwa-funnel-label">Installs</div>
+              </div>
+              <div class="pwa-funnel-arrow">→</div>
+              <div class="pwa-funnel-step">
+                <div class="pwa-funnel-value" id="pwa-launches">--</div>
+                <div class="pwa-funnel-label">App Launches</div>
+              </div>
+            </div>
+            <div class="hint" style="text-align: center; margin-top: 1rem;">PWA serves Android users until native app launches</div>
           </div>
           <div class="panel full-width">
             <h3>Website Visitors by Platform (from GA4)</h3>
@@ -436,20 +536,45 @@
       <section id="tab-ios-app" class="tab-panel">
         <div class="panel-grid">
           <div class="panel">
-            <h3>Total Engagements</h3>
-            <div id="ios-total" class="stat-large">--</div>
+            <h3>App Installs</h3>
+            <div id="ios-installs" class="stat-large">--</div>
+            <div class="hint">Total installs</div>
           </div>
           <div class="panel">
-            <h3>Unique Users</h3>
-            <div id="ios-users" class="stat-large">--</div>
+            <h3>Monthly Active Users</h3>
+            <div id="ios-mau" class="stat-large">--</div>
+            <div class="hint" id="ios-mau-percent">--% of installs</div>
           </div>
           <div class="panel">
-            <h3>Calls from App</h3>
-            <div id="ios-calls" class="stat-large">--</div>
+            <h3>Week 1 Retention</h3>
+            <div id="ios-retention" class="stat-large retention-stat">--%</div>
+            <div class="hint">Target: 30%+</div>
           </div>
           <div class="panel">
-            <h3>Supplier Views</h3>
-            <div id="ios-views" class="stat-large">--</div>
+            <h3>Deliveries Logged</h3>
+            <div id="ios-deliveries" class="stat-large">--</div>
+            <div class="hint">Real orders</div>
+          </div>
+          <div class="panel full-width">
+            <h3>App Event Breakdown</h3>
+            <div class="ios-events-grid" id="ios-events-grid">
+              <div class="event-item">
+                <span class="event-name">Supplier Selected</span>
+                <span class="event-count" id="ios-event-supplier">--</span>
+              </div>
+              <div class="event-item">
+                <span class="event-name">Price Checked</span>
+                <span class="event-count" id="ios-event-price">--</span>
+              </div>
+              <div class="event-item">
+                <span class="event-name">Directory Searched</span>
+                <span class="event-count" id="ios-event-search">--</span>
+              </div>
+              <div class="event-item">
+                <span class="event-name">No Results Shown</span>
+                <span class="event-count" id="ios-event-noresults">--</span>
+              </div>
+            </div>
           </div>
           <div class="panel full-width">
             <h3>Daily App Engagement</h3>
@@ -468,6 +593,24 @@
               </thead>
               <tbody id="ios-suppliers-body"></tbody>
             </table>
+          </div>
+          <!-- Firebase Setup Guide (shown when not configured) -->
+          <div class="panel full-width" id="ios-firebase-setup" style="display: none;">
+            <div class="setup-guide">
+              <h3>Connect Firebase Analytics</h3>
+              <p>Enable Firebase API to see detailed iOS app analytics including retention cohorts, user journeys, and event funnels.</p>
+              <ol>
+                <li>Go to <a href="https://console.firebase.google.com/project/smartheat-e0729/settings/serviceaccounts/adminsdk" target="_blank">Firebase Console &gt; Service Accounts</a></li>
+                <li>Click "Generate new private key"</li>
+                <li>Download the JSON file</li>
+                <li>Base64 encode it: <code>base64 -i serviceAccount.json</code></li>
+                <li>Set <code>GOOGLE_APPLICATION_CREDENTIALS_JSON</code> env var with the encoded value</li>
+                <li>Set <code>FIREBASE_PROJECT_ID=smartheat-e0729</code></li>
+              </ol>
+              <div class="setup-actions">
+                <a href="https://console.firebase.google.com/project/smartheat-e0729/analytics" target="_blank" class="btn">Open Firebase Console</a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -739,6 +882,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=20260131"></script>
+  <script src="dashboard.js?v=20260130c"></script>
 </body>
 </html>

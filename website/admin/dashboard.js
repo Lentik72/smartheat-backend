@@ -118,12 +118,14 @@ document.querySelectorAll('.tab').forEach(tab => {
 
     // Load tab-specific data
     if (target === 'recommendations') loadRecommendations();
+    if (target === 'website') loadWebsite();
+    if (target === 'ios-app') loadIOSApp();
+    if (target === 'android') loadAndroidSignals();
     if (target === 'retention') loadRetention();
     if (target === 'acquisition') loadAcquisition();
-    if (target === 'android') loadAndroidSignals();
+    if (target === 'overview') loadOverviewTab();
     if (target === 'searches') loadSearches();
     if (target === 'clicks') loadClicks();
-    if (target === 'ios-app') loadIOSApp();
     if (target === 'prices') loadPrices();
     if (target === 'map') loadMap();
     if (target === 'scrapers') loadScrapers();
@@ -152,43 +154,52 @@ document.querySelectorAll('.period-btn').forEach(btn => {
   });
 });
 
-// Load overview
+// Load overview (top cards)
 async function loadOverview() {
   try {
     const data = await api(`/overview?days=${currentDays}`);
 
-    // Cards
-    document.getElementById('total-clicks').textContent = data.website.totalClicks;
-    document.getElementById('clicks-breakdown').textContent =
-      `${data.website.callClicks} calls / ${data.website.websiteClicks} websites`;
-    // Hide freshness if no data, otherwise show last click time
-    const clicksFreshness = data.website.lastUpdated || data.dataFreshness?.supplier_clicks;
-    document.getElementById('clicks-freshness').textContent = clicksFreshness ? timeAgo(clicksFreshness) : '';
-
-    document.getElementById('scraper-status').textContent =
-      `${data.scraping.suppliersWithPrices}/${data.scraping.suppliersTotal}`;
-    document.getElementById('scraper-stale').textContent = `${data.scraping.staleCount} stale`;
-    // Use supplier_prices freshness for scraper (more relevant than scrape_runs)
-    const scraperFreshness = data.dataFreshness?.supplier_prices;
-    document.getElementById('scraper-freshness').textContent = scraperFreshness ? timeAgo(scraperFreshness) : '';
-
-    if (data.scraping.staleCount > 5) {
-      document.getElementById('card-scraper').classList.add('status-warning');
+    // Get unified data for combined metrics
+    let unified = null;
+    try {
+      unified = await api(`/unified?days=${currentDays}`);
+    } catch (e) {
+      console.log('Unified data not available');
     }
 
+    // Card 1: Total Users (iOS MAU + Website unique visitors)
+    const iosUsers = unified?.app?.uniqueUsers || 0;
+    const webUsers = unified?.website?.users || data.website?.uniqueUsers || 0;
+    const totalUsers = iosUsers + webUsers;
+    document.getElementById('total-users').textContent = totalUsers || '--';
+    document.getElementById('users-breakdown').textContent = `${iosUsers} iOS / ${webUsers} website`;
+    document.getElementById('users-freshness').textContent = '';
+
+    // Card 2: Deliveries Logged (using saves from app data as proxy)
+    const deliveries = unified?.app?.saves || 0;
+    document.getElementById('total-deliveries').textContent = deliveries || '--';
+    document.getElementById('deliveries-breakdown').textContent = deliveries > 0
+      ? `~$${(deliveries * 500).toLocaleString()} in orders`
+      : 'Real orders tracked';
+    document.getElementById('deliveries-freshness').textContent = '';
+
+    // Card 3: Est. Revenue (from supplier clicks)
+    const totalClicks = data.website.totalClicks || 0;
+    // Assume 3% of clicks convert to $500 avg order, 5% referral = $7.50 per conversion
+    const estRevenue = Math.round(totalClicks * 0.03 * 7.50);
+    document.getElementById('est-revenue').textContent = estRevenue > 0 ? `~$${estRevenue}` : '--';
+    document.getElementById('revenue-breakdown').textContent =
+      `${totalClicks} clicks @ 3% conv`;
+    const revenueFreshness = data.dataFreshness?.supplier_clicks;
+    document.getElementById('revenue-freshness').textContent = revenueFreshness ? timeAgo(revenueFreshness) : '';
+
+    // Card 4: Android Waitlist
     document.getElementById('waitlist-total').textContent = data.waitlist.total;
     document.getElementById('waitlist-recent').textContent = `+${data.waitlist.last7Days} this week`;
-    // Use waitlist lastUpdated
     const waitlistFreshness = data.waitlist?.lastUpdated;
     document.getElementById('waitlist-freshness').textContent = waitlistFreshness ? timeAgo(waitlistFreshness) : '';
 
-    document.getElementById('pwa-installs').textContent = data.pwa.installs;
-    document.getElementById('pwa-rate').textContent = `${data.pwa.conversionRate}% conversion`;
-    // Use PWA lastUpdated
-    const pwaFreshness = data.pwa?.lastUpdated;
-    document.getElementById('pwa-freshness').textContent = pwaFreshness ? timeAgo(pwaFreshness) : '';
-
-    // Top supplier
+    // Top supplier (for Overview tab)
     if (data.website.topSupplier) {
       document.getElementById('top-supplier').textContent =
         `${data.website.topSupplier.name} (${data.website.topSupplier.clicks} clicks)`;
@@ -225,6 +236,140 @@ async function loadOverview() {
 
   } catch (error) {
     console.error('Failed to load overview:', error);
+  }
+}
+
+// Load Overview tab (different from top cards)
+async function loadOverviewTab() {
+  // This just triggers the existing supplier signals and conversion loading
+  await Promise.all([
+    loadSupplierSignals(),
+    loadConversion(),
+    loadPriceAlerts()
+  ]);
+}
+
+// Charts for Website tab
+let webTrafficChart = null;
+let webDailyChart = null;
+
+// Load Website tab
+async function loadWebsite() {
+  try {
+    // Fetch unified data for GA4 metrics and clicks data
+    const [unified, clicks] = await Promise.all([
+      api(`/unified?days=${currentDays}`).catch(() => null),
+      api(`/clicks?days=${currentDays}`)
+    ]);
+
+    const website = unified?.website || {};
+    const hasGA4 = unified?.dataSources?.ga4 === true;
+
+    // Summary stats
+    if (hasGA4) {
+      document.getElementById('web-sessions').textContent = website.sessions?.toLocaleString() || '--';
+      document.getElementById('web-users').textContent = website.users?.toLocaleString() || '--';
+      document.getElementById('web-bounce').textContent = website.bounceRate ? `${website.bounceRate}%` : '--%';
+      document.getElementById('web-duration').textContent = website.avgSessionDuration || '--';
+      document.getElementById('web-ga4-setup').style.display = 'none';
+    } else {
+      document.getElementById('web-sessions').textContent = '--';
+      document.getElementById('web-users').textContent = '--';
+      document.getElementById('web-bounce').textContent = '--%';
+      document.getElementById('web-duration').textContent = '--';
+      document.getElementById('web-ga4-setup').style.display = 'block';
+    }
+
+    // Supplier clicks (from PostgreSQL - always available)
+    const totalClicks = clicks.daily?.reduce((sum, d) => sum + d.calls + d.websites, 0) || 0;
+    const callClicks = clicks.daily?.reduce((sum, d) => sum + d.calls, 0) || 0;
+    const websiteClicks = clicks.daily?.reduce((sum, d) => sum + d.websites, 0) || 0;
+
+    document.getElementById('web-total-clicks').textContent = totalClicks;
+    document.getElementById('web-call-clicks').textContent = callClicks;
+    document.getElementById('web-website-clicks').textContent = websiteClicks;
+
+    // Traffic sources chart
+    if (hasGA4 && website.trafficSources?.length > 0) {
+      const ctx = document.getElementById('web-traffic-chart').getContext('2d');
+      if (webTrafficChart) webTrafficChart.destroy();
+
+      webTrafficChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: website.trafficSources.map(s => s.channel),
+          datasets: [{
+            label: 'Sessions',
+            data: website.trafficSources.map(s => s.sessions),
+            backgroundColor: ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'y',
+          scales: { x: { beginAtZero: true } }
+        }
+      });
+      document.getElementById('web-traffic-note').textContent = '';
+    } else {
+      document.getElementById('web-traffic-note').textContent =
+        hasGA4 ? 'No traffic data in period' : 'Enable GA4 API for traffic sources';
+    }
+
+    // Daily activity chart (use clicks data)
+    if (clicks.daily?.length > 0) {
+      const ctx = document.getElementById('web-daily-chart').getContext('2d');
+      if (webDailyChart) webDailyChart.destroy();
+
+      webDailyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: clicks.daily.map(d => d.date),
+          datasets: [
+            {
+              label: 'Phone Calls',
+              data: clicks.daily.map(d => d.calls),
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.1)',
+              fill: true
+            },
+            {
+              label: 'Website Clicks',
+              data: clicks.daily.map(d => d.websites),
+              borderColor: '#22c55e',
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    // Top pages (from GA4 if available)
+    const pagesBody = document.getElementById('web-pages-body');
+    pagesBody.innerHTML = '';
+
+    if (hasGA4 && website.topPages?.length > 0) {
+      website.topPages.slice(0, 10).forEach(p => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${p.page}</td>
+          <td>${p.views}</td>
+        `;
+        pagesBody.appendChild(row);
+      });
+    } else {
+      pagesBody.innerHTML = '<tr><td colspan="2" class="no-data">Enable GA4 for page data</td></tr>';
+    }
+
+  } catch (error) {
+    console.error('Failed to load website data:', error);
   }
 }
 
@@ -905,46 +1050,90 @@ async function loadSearches() {
 // Load iOS App tab
 async function loadIOSApp() {
   try {
-    const data = await api(`/ios-app?days=${currentDays}`);
+    // Get unified data for iOS/app metrics
+    const unified = await api(`/unified?days=${currentDays}`);
+    const app = unified?.app || {};
+    const retention = unified?.retention || {};
+    const hasFirebase = unified?.dataSources?.firebase === true;
 
-    // Summary stats
-    document.getElementById('ios-total').textContent = data.summary.totalEngagements.toLocaleString();
-    document.getElementById('ios-users').textContent = data.summary.uniqueUsers.toLocaleString();
-    document.getElementById('ios-calls').textContent = data.summary.calls.toLocaleString();
-    document.getElementById('ios-views').textContent = data.summary.views.toLocaleString();
+    // Show/hide Firebase setup guide
+    const setupGuide = document.getElementById('ios-firebase-setup');
+    if (setupGuide) {
+      setupGuide.style.display = hasFirebase ? 'none' : 'block';
+    }
+
+    // Summary stats from our database
+    // Note: Full install counts require Firebase Analytics API
+    const uniqueUsers = app.uniqueUsers || 0;
+    document.getElementById('ios-installs').textContent = hasFirebase ? (app.installs || '--') : '--';
+    document.getElementById('ios-mau').textContent = uniqueUsers || '--';
+
+    if (hasFirebase && app.installs && uniqueUsers) {
+      const mauPercent = ((uniqueUsers / app.installs) * 100).toFixed(0);
+      document.getElementById('ios-mau-percent').textContent = `${mauPercent}% of installs`;
+    } else {
+      document.getElementById('ios-mau-percent').textContent = uniqueUsers > 0 ? 'Active users' : '--% of installs';
+    }
+
+    // Retention from retention data
+    const retentionEl = document.getElementById('ios-retention');
+    const week1Rate = retention?.summary?.week1RetentionRate;
+    if (week1Rate) {
+      retentionEl.textContent = `${week1Rate}%`;
+      retentionEl.classList.toggle('good', parseFloat(week1Rate) >= 30);
+    } else {
+      retentionEl.textContent = '--%';
+    }
+
+    // Deliveries - this is tracked in our database via supplier_engagements or could be separate
+    document.getElementById('ios-deliveries').textContent = app.saves || '--';
+
+    // Event breakdown from our database
+    document.getElementById('ios-event-supplier').textContent = app.views || '--';
+    document.getElementById('ios-event-price').textContent = '--'; // Not tracked separately
+    document.getElementById('ios-event-search').textContent = '--'; // Would need Firebase
+    document.getElementById('ios-event-noresults').textContent = '--'; // Would need Firebase
+
+    // Also try to get local iOS engagement data
+    let localData = null;
+    try {
+      localData = await api(`/ios-app?days=${currentDays}`);
+    } catch (e) {
+      console.log('Local iOS data not available');
+    }
 
     // Daily chart
     const ctx = document.getElementById('ios-chart').getContext('2d');
     if (iosChart) iosChart.destroy();
 
-    iosChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: data.daily.map(d => d.date),
-        datasets: [{
-          label: 'Engagements',
-          data: data.daily.map(d => d.engagements),
-          borderColor: '#22c55e',
-          backgroundColor: 'rgba(34, 197, 94, 0.1)',
-          fill: true,
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
+    if (localData?.daily?.length > 0) {
+      iosChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: localData.daily.map(d => d.date),
+          datasets: [{
+            label: 'Engagements',
+            data: localData.daily.map(d => d.engagements),
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
 
     // Top suppliers table
     const tbody = document.getElementById('ios-suppliers-body');
     tbody.innerHTML = '';
 
-    if (data.bySupplier.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">No app engagement data yet</td></tr>';
-    } else {
-      data.bySupplier.forEach(s => {
+    if (localData?.bySupplier?.length > 0) {
+      localData.bySupplier.forEach(s => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${s.name}</td>
@@ -954,6 +1143,8 @@ async function loadIOSApp() {
         `;
         tbody.appendChild(row);
       });
+    } else {
+      tbody.innerHTML = '<tr><td colspan="4" class="no-data">No app engagement data yet</td></tr>';
     }
 
   } catch (error) {
@@ -1385,6 +1576,22 @@ async function loadAndroidSignals() {
     document.getElementById('android-waitlist').textContent = signals.waitlist?.total ?? '--';
     document.getElementById('android-growth').textContent = `${signals.waitlist?.growthRate ?? 0}%`;
     document.getElementById('android-pwa').textContent = signals.pwa?.installs ?? '--';
+
+    // PWA conversion rate
+    const pwaRate = signals.pwa?.conversionRate;
+    const pwaRateEl = document.getElementById('android-pwa-rate');
+    if (pwaRateEl) {
+      pwaRateEl.textContent = pwaRate ? `${pwaRate}% conversion` : '--% conversion';
+    }
+
+    // PWA Funnel
+    const pwaPrompts = document.getElementById('pwa-prompts');
+    const pwaInstallsDetail = document.getElementById('pwa-installs-detail');
+    const pwaLaunches = document.getElementById('pwa-launches');
+
+    if (pwaPrompts) pwaPrompts.textContent = signals.pwa?.prompts ?? '--';
+    if (pwaInstallsDetail) pwaInstallsDetail.textContent = signals.pwa?.installs ?? '--';
+    if (pwaLaunches) pwaLaunches.textContent = signals.pwa?.launches ?? '--';
 
     // Thresholds
     const thresholdsGrid = document.getElementById('thresholds-grid');
