@@ -1124,3 +1124,51 @@ legend {
   margin-top: 0.5rem;
   text-align: center;
 }
+
+/* Platform Breakdown */
+.platform-breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.platform-item {
+  background: var(--gray-50);
+  padding: 1.25rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.platform-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.platform-name {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin-bottom: 0.25rem;
+}
+
+.platform-value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.platform-users {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .platform-breakdown {
+    grid-template-columns: 1fr;
+  }
+}

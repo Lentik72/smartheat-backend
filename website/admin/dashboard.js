@@ -1347,6 +1347,20 @@ async function loadAndroidSignals() {
       });
     }
 
+    // Platform breakdown
+    if (signals.platformBreakdown) {
+      const pb = signals.platformBreakdown;
+      document.getElementById('platform-ios').textContent = `${pb.ios?.percent || 0}%`;
+      document.getElementById('platform-ios-users').textContent = `${pb.ios?.users || 0} users`;
+      document.getElementById('platform-android').textContent = `${pb.android?.percent || 0}%`;
+      document.getElementById('platform-android-users').textContent = `${pb.android?.users || 0} users`;
+      document.getElementById('platform-desktop').textContent = `${pb.desktop?.percent || 0}%`;
+      document.getElementById('platform-desktop-users').textContent = `${pb.desktop?.users || 0} users`;
+      document.getElementById('platform-note').textContent = '';
+    } else {
+      document.getElementById('platform-note').textContent = 'GA4 not configured - enable for platform data';
+    }
+
     // Projections
     document.getElementById('weeks-to-200').textContent =
       signals.projection?.weeksTo200 || 'N/A';

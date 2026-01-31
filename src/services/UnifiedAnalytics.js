@@ -149,7 +149,7 @@ class UnifiedAnalytics {
       const endDate = 'today';
 
       // Run multiple reports in parallel
-      const [sessionsReport, trafficReport, pagesReport] = await Promise.all([
+      const [sessionsReport, trafficReport, pagesReport, platformReport] = await Promise.all([
         // Sessions and users
         this.ga4Client.properties.runReport({
           property: `properties/${this.ga4PropertyId}`,
@@ -186,6 +186,17 @@ class UnifiedAnalytics {
             orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
             limit: 20
           }
+        }),
+
+        // Device platform (iOS vs Android vs Desktop)
+        this.ga4Client.properties.runReport({
+          property: `properties/${this.ga4PropertyId}`,
+          requestBody: {
+            dateRanges: [{ startDate, endDate }],
+            dimensions: [{ name: 'operatingSystem' }],
+            metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
+            limit: 10
+          }
         })
       ]);
 
@@ -210,6 +221,28 @@ class UnifiedAnalytics {
         views: parseInt(row.metricValues[0].value)
       }));
 
+      // Parse platform breakdown (iOS vs Android vs Desktop)
+      const platforms = (platformReport.data.rows || []).map(row => ({
+        os: row.dimensionValues[0].value,
+        users: parseInt(row.metricValues[0].value),
+        sessions: parseInt(row.metricValues[1].value)
+      }));
+
+      // Calculate platform percentages
+      const totalPlatformUsers = platforms.reduce((sum, p) => sum + p.users, 0);
+      const iosUsers = platforms.find(p => p.os === 'iOS')?.users || 0;
+      const androidUsers = platforms.find(p => p.os === 'Android')?.users || 0;
+      const desktopUsers = platforms.filter(p =>
+        ['Windows', 'Macintosh', 'Linux', 'Chrome OS'].includes(p.os)
+      ).reduce((sum, p) => sum + p.users, 0);
+
+      const platformBreakdown = {
+        ios: { users: iosUsers, percent: totalPlatformUsers > 0 ? (iosUsers / totalPlatformUsers * 100).toFixed(1) : 0 },
+        android: { users: androidUsers, percent: totalPlatformUsers > 0 ? (androidUsers / totalPlatformUsers * 100).toFixed(1) : 0 },
+        desktop: { users: desktopUsers, percent: totalPlatformUsers > 0 ? (desktopUsers / totalPlatformUsers * 100).toFixed(1) : 0 },
+        all: platforms
+      };
+
       // Calculate organic percentage
       const organicSessions = trafficSources.find(t => t.channel === 'Organic Search')?.sessions || 0;
       const organicPercent = sessions > 0 ? (organicSessions / sessions * 100).toFixed(1) : 0;
@@ -224,7 +257,8 @@ class UnifiedAnalytics {
           bounceRate: (bounceRate * 100).toFixed(1),
           trafficSources,
           topPages,
-          organicPercent: parseFloat(organicPercent)
+          organicPercent: parseFloat(organicPercent),
+          platformBreakdown
         }
       };
     } catch (error) {
@@ -618,6 +652,9 @@ class UnifiedAnalytics {
    */
   async getAndroidDecisionSignals() {
     try {
+      // Get website metrics for platform breakdown
+      const websiteMetrics = await this.getWebsiteMetrics(30);
+
       const [waitlist, pwa, growth] = await Promise.all([
         // Waitlist stats (all platforms - total demand matters for Android decision)
         this.sequelize.query(`
@@ -696,6 +733,11 @@ class UnifiedAnalytics {
         };
       }
 
+      // Get platform breakdown from GA4
+      const platformBreakdown = websiteMetrics.available && websiteMetrics.data?.platformBreakdown
+        ? websiteMetrics.data.platformBreakdown
+        : null;
+
       return {
         available: true,
         data: {
@@ -709,6 +751,7 @@ class UnifiedAnalytics {
             installs: parseInt(p.installs) || 0,
             launches: parseInt(p.launches) || 0
           },
+          platformBreakdown,
           weeklyTrend: growth.map(g => ({
             week: g.week,
             signups: parseInt(g.signups)
