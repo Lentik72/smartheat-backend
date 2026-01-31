@@ -600,10 +600,12 @@
 
   "fiorillaheatingoil.com": {
     "enabled": true,
-    "pattern": "direct",
+    "pattern": "table",
+    "targetTier": 2,
     "pricePath": "/select-your-town/",
     "name": "Fiorilla Heating Oil",
     "phone": "(203) 744-5352",
+    "notes": "Tiered pricing (50/100/125/150/200 gal). targetTier=2 gets 150 gal price",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2})",
     "postalCodesServed": ["06468", "06470", "06482", "06612", "06752", "06776", "06784", "06801", "06804", "06805", "06810", "06811", "06812", "06813", "06814", "06816", "06817", "06877", "06879", "06883", "06896", "06897", "06993"]
   },
