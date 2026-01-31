@@ -78,6 +78,17 @@ const formatResponse = (req, res, data, csvHeaders) => {
 
 // GET /api/dashboard/meta - Version and feature flags
 router.get('/meta', (req, res) => {
+  // Get excluded device IDs from env
+  const excludedDeviceIds = (process.env.EXCLUDED_DEVICE_IDS || '')
+    .split(',')
+    .map(id => id.trim())
+    .filter(id => id.length > 0);
+
+  const excludedIPHashes = (process.env.EXCLUDED_IP_HASHES || '')
+    .split(',')
+    .map(h => h.trim())
+    .filter(h => h.length > 0);
+
   res.json({
     version: '1.0',
     features: {
@@ -90,6 +101,10 @@ router.get('/meta', (req, res) => {
     dataRetention: {
       clicks: '90 days',
       prices: 'unlimited'
+    },
+    exclusions: {
+      deviceIds: excludedDeviceIds,
+      ipHashes: excludedIPHashes
     }
   });
 });
