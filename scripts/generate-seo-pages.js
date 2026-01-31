@@ -646,12 +646,14 @@ function generatePageHTML(data) {
         "@type": "Service",
         "name": `Heating Oil Delivery from ${s.name}`,
         "description": `Heating oil delivery service from ${s.name} in ${locationName}. Current price: $${s.price.toFixed(2)} per gallon.`,
+        "image": "https://www.gethomeheat.com/images/app-icon.png",
         "serviceType": "Heating Oil Delivery",
         "areaServed": locationName,
         "provider": {
           "@type": "LocalBusiness",
           "name": s.name,
           "@id": `https://www.gethomeheat.com/supplier/${s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+          "image": "https://www.gethomeheat.com/images/app-icon.png",
           ...(s.phone && { "telephone": s.phone }),
           "priceRange": `$${s.price.toFixed(2)}/gal`
         },
@@ -984,6 +986,7 @@ ${JSON.stringify({
       "@type": "Service",
       "name": `Heating Oil Delivery in ${d.city}, ${d.state}`,
       "description": `Heating oil delivery service in ${d.city}, ${d.state}. Current price: $${d.price} per gallon.`,
+      "image": "https://www.gethomeheat.com/images/app-icon.png",
       "serviceType": "Heating Oil Delivery",
       "areaServed": `${d.city}, ${d.state}`,
       "priceSpecification": {

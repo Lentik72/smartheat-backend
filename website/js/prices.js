@@ -670,6 +670,7 @@
 
     // V2.1.0: Use Service + PriceSpecification instead of Offer
     // to avoid Google's e-commerce field requirements (hasMerchantReturnPolicy, shippingDetails)
+    // V2.1.1: Added image field (required by Google for rich results)
     const itemListElements = suppliers.slice(0, 10).map((s, index) => ({
       "@type": "ListItem",
       "position": index + 1,
@@ -677,11 +678,13 @@
         "@type": "Service",
         "name": `Heating Oil Delivery from ${s.name}`,
         "description": `Heating oil delivery service from ${s.name}. Current price: $${s.currentPrice.pricePerGallon.toFixed(2)} per gallon.`,
+        "image": "https://www.gethomeheat.com/images/app-icon.png",
         "serviceType": "Heating Oil Delivery",
         "areaServed": locationName,
         "provider": {
           "@type": "LocalBusiness",
           "name": s.name,
+          "image": "https://www.gethomeheat.com/images/app-icon.png",
           "address": {
             "@type": "PostalAddress",
             "addressLocality": s.city || '',
