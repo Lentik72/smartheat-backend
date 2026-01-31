@@ -387,7 +387,7 @@ async function loadRecentActivity() {
     const data = await api('/activity?limit=25');
 
     if (!data.activity || data.activity.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="no-data">No clicks recorded yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">No activity recorded yet</td></tr>';
       return;
     }
 
@@ -399,21 +399,35 @@ async function loadRecentActivity() {
         month: 'short', day: 'numeric',
         hour: 'numeric', minute: '2-digit'
       });
-      const actionIcon = a.action === 'call' ? '📞' : '🌐';
-      const deviceIcon = a.device === 'mobile' ? '📱' : '💻';
+
+      // Action icons
+      const actionIcons = {
+        'call': '📞 Called',
+        'text': '💬 Texted',
+        'email': '✉️ Emailed',
+        'website': '🌐 Website',
+        'view': '👁️ Viewed',
+        'save': '⭐ Saved',
+        'request_quote': '📋 Quote'
+      };
+      const actionDisplay = actionIcons[a.action] || a.action;
+
+      // Source badge
+      const sourceClass = a.source === 'ios_app' ? 'source-ios' : 'source-web';
+      const sourceLabel = a.source === 'ios_app' ? '📱 iOS' : '🌐 Web';
 
       row.innerHTML = `
         <td>${timeStr}</td>
         <td>${a.supplier}${a.supplierLocation ? '<br><small class="hint">' + a.supplierLocation + '</small>' : ''}</td>
-        <td>${actionIcon} ${a.action === 'call' ? 'Called' : 'Website'}</td>
+        <td>${actionDisplay}</td>
         <td>${a.userZip || '--'}</td>
-        <td>${deviceIcon} ${a.platform || a.device || '--'}</td>
+        <td><span class="source-badge ${sourceClass}">${sourceLabel}</span></td>
       `;
       tbody.appendChild(row);
     });
   } catch (error) {
     console.error('Failed to load activity:', error);
-    tbody.innerHTML = '<tr><td colspan="5" class="no-data">Failed to load activity</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">Failed to load activity</td></tr>';
   }
 }
 

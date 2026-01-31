@@ -107,6 +107,87 @@ router.post('/log-action', async (req, res) => {
 });
 
 /**
+ * POST /api/app-engagement
+ * Records iOS app supplier engagements (separate from website clicks)
+ * V22.0: Dedicated endpoint for iOS app tracking
+ */
+router.post('/app-engagement', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const { supplierId, supplierName, engagementType, zipCode, fuelType } = req.body;
+  const userAgent = req.headers['user-agent'] || '';
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
+
+  // Validate required fields
+  if (!engagementType || (!supplierId && !supplierName)) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  // Validate engagement type
+  const validTypes = ['call', 'text', 'email', 'view', 'save', 'request_quote'];
+  if (!validTypes.includes(engagementType)) {
+    return res.status(400).json({ error: 'Invalid engagement type' });
+  }
+
+  try {
+    // Hash IP for privacy (just first few chars for rough deduplication)
+    const ipHash = ip ? require('crypto').createHash('sha256').update(ip).digest('hex').substring(0, 16) : null;
+
+    // Try to resolve supplier ID
+    let resolvedSupplierId = null;
+    let resolvedSupplierName = supplierName || 'Unknown';
+
+    if (supplierId) {
+      try {
+        const [suppliers] = await sequelize.query(
+          'SELECT id, name FROM suppliers WHERE id = $1 AND active = true',
+          { bind: [supplierId] }
+        );
+        if (suppliers && suppliers.length > 0) {
+          resolvedSupplierId = suppliers[0].id;
+          resolvedSupplierName = supplierName || suppliers[0].name;
+        }
+      } catch (lookupErr) {
+        console.log(`[AppEngagement] Supplier lookup failed for ${supplierId}: ${lookupErr.message}`);
+      }
+    }
+
+    // Derive state from ZIP if possible
+    let userState = null;
+    if (zipCode && zipCode.length >= 3) {
+      // Simple ZIP prefix to state mapping (Northeast focus)
+      const zipPrefix = zipCode.substring(0, 3);
+      const zipStateMap = {
+        '100': 'NY', '101': 'NY', '102': 'NY', '103': 'NY', '104': 'NY', '105': 'NY', '106': 'NY', '107': 'NY', '108': 'NY', '109': 'NY',
+        '110': 'NY', '111': 'NY', '112': 'NY', '113': 'NY', '114': 'NY', '115': 'NY', '116': 'NY', '117': 'NY', '118': 'NY', '119': 'NY',
+        '120': 'NY', '121': 'NY', '122': 'NY', '123': 'NY', '124': 'NY', '125': 'NY', '126': 'NY', '127': 'NY', '128': 'NY', '129': 'NY',
+        '130': 'NY', '131': 'NY', '132': 'NY', '133': 'NY', '134': 'NY', '135': 'NY', '136': 'NY', '137': 'NY', '138': 'NY', '139': 'NY', '140': 'NY', '141': 'NY', '142': 'NY', '143': 'NY', '144': 'NY', '145': 'NY', '146': 'NY', '147': 'NY', '148': 'NY', '149': 'NY',
+        '060': 'CT', '061': 'CT', '062': 'CT', '063': 'CT', '064': 'CT', '065': 'CT', '066': 'CT', '067': 'CT', '068': 'CT', '069': 'CT',
+        '010': 'MA', '011': 'MA', '012': 'MA', '013': 'MA', '014': 'MA', '015': 'MA', '016': 'MA', '017': 'MA', '018': 'MA', '019': 'MA', '020': 'MA', '021': 'MA', '022': 'MA', '023': 'MA', '024': 'MA', '025': 'MA', '026': 'MA', '027': 'MA',
+        '070': 'NJ', '071': 'NJ', '072': 'NJ', '073': 'NJ', '074': 'NJ', '075': 'NJ', '076': 'NJ', '077': 'NJ', '078': 'NJ', '079': 'NJ', '080': 'NJ', '081': 'NJ', '082': 'NJ', '083': 'NJ', '084': 'NJ', '085': 'NJ', '086': 'NJ', '087': 'NJ', '088': 'NJ', '089': 'NJ',
+        '028': 'RI', '029': 'RI',
+        '150': 'PA', '151': 'PA', '152': 'PA', '153': 'PA', '154': 'PA', '155': 'PA', '156': 'PA', '157': 'PA', '158': 'PA', '159': 'PA', '160': 'PA', '161': 'PA', '162': 'PA', '163': 'PA', '164': 'PA', '165': 'PA', '166': 'PA', '167': 'PA', '168': 'PA', '169': 'PA', '170': 'PA', '171': 'PA', '172': 'PA', '173': 'PA', '174': 'PA', '175': 'PA', '176': 'PA', '177': 'PA', '178': 'PA', '179': 'PA', '180': 'PA', '181': 'PA', '182': 'PA', '183': 'PA', '184': 'PA', '185': 'PA', '186': 'PA', '187': 'PA', '188': 'PA', '189': 'PA', '190': 'PA', '191': 'PA', '192': 'PA', '193': 'PA', '194': 'PA', '195': 'PA', '196': 'PA'
+      };
+      userState = zipStateMap[zipPrefix] || null;
+    }
+
+    // Insert engagement record
+    await sequelize.query(
+      `INSERT INTO supplier_engagements
+       (supplier_id, supplier_name, engagement_type, user_zip, user_state, ip_hash, source, fuel_type, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+      { bind: [resolvedSupplierId, resolvedSupplierName, engagementType, zipCode || null, userState, ipHash, 'ios_app', fuelType || 'heating_oil'] }
+    );
+
+    console.log(`[AppEngagement] ${engagementType} for ${resolvedSupplierName} from ZIP ${zipCode || 'unknown'}`);
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error('[AppEngagement Error]', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * GET /api/admin/tracking/pending
  * Get unprocessed clicks for email outreach (admin only)
  */

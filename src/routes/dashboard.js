@@ -1926,7 +1926,7 @@ router.get('/recommendations', async (req, res) => {
   }
 });
 
-// GET /api/dashboard/activity - Recent click activity feed
+// GET /api/dashboard/activity - Recent activity feed (website clicks + iOS app engagements)
 router.get('/activity', async (req, res) => {
   const logger = req.app.locals.logger;
   const sequelize = req.app.locals.sequelize;
@@ -1937,46 +1937,81 @@ router.get('/activity', async (req, res) => {
 
   try {
     const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const sourceFilter = req.query.source; // 'website', 'ios', or null for all
 
-    // Get recent clicks with supplier info
-    const [clicks] = await sequelize.query(`
-      SELECT
-        sc.id,
-        sc.supplier_name,
-        sc.action_type,
-        sc.zip_code,
-        sc.device_type,
-        sc.platform,
-        sc.page_source,
-        sc.created_at,
-        s.name as resolved_name,
-        s.state as supplier_state,
-        s.city as supplier_city
-      FROM supplier_clicks sc
-      LEFT JOIN suppliers s ON sc.supplier_id = s.id
-        OR (sc.supplier_id IS NULL AND sc.supplier_name = s.name)
-      ORDER BY sc.created_at DESC
+    // Get combined activity from both tables
+    const [activity] = await sequelize.query(`
+      WITH combined AS (
+        -- Website clicks
+        SELECT
+          sc.id,
+          sc.supplier_name,
+          sc.action_type as action,
+          sc.zip_code,
+          sc.device_type,
+          sc.platform,
+          sc.page_source,
+          sc.created_at,
+          'website' as source_type,
+          s.name as resolved_name,
+          s.state as supplier_state,
+          s.city as supplier_city
+        FROM supplier_clicks sc
+        LEFT JOIN suppliers s ON sc.supplier_id = s.id
+          OR (sc.supplier_id IS NULL AND sc.supplier_name = s.name)
+        ${sourceFilter === 'ios' ? 'WHERE 1=0' : ''}
+
+        UNION ALL
+
+        -- iOS app engagements
+        SELECT
+          se.id,
+          se.supplier_name,
+          se.engagement_type as action,
+          se.user_zip as zip_code,
+          'mobile' as device_type,
+          'ios' as platform,
+          'ios_app' as page_source,
+          se.created_at,
+          'ios_app' as source_type,
+          s.name as resolved_name,
+          s.state as supplier_state,
+          s.city as supplier_city
+        FROM supplier_engagements se
+        LEFT JOIN suppliers s ON se.supplier_id = s.id
+          OR (se.supplier_id IS NULL AND se.supplier_name = s.name)
+        ${sourceFilter === 'website' ? 'WHERE 1=0' : ''}
+      )
+      SELECT * FROM combined
+      ORDER BY created_at DESC
       LIMIT ${limit}
     `);
 
     // Format for display
-    const activity = clicks.map(c => ({
-      id: c.id,
-      supplier: c.resolved_name || c.supplier_name || 'Unknown',
-      supplierLocation: c.supplier_city && c.supplier_state
-        ? `${c.supplier_city}, ${c.supplier_state}`
-        : c.supplier_state || null,
-      action: c.action_type,
-      userZip: c.zip_code,
-      device: c.device_type,
-      platform: c.platform,
-      source: c.page_source,
-      timestamp: c.created_at
+    const formatted = activity.map(a => ({
+      id: a.id,
+      supplier: a.resolved_name || a.supplier_name || 'Unknown',
+      supplierLocation: a.supplier_city && a.supplier_state
+        ? `${a.supplier_city}, ${a.supplier_state}`
+        : a.supplier_state || null,
+      action: a.action,
+      userZip: a.zip_code,
+      device: a.device_type,
+      platform: a.platform,
+      source: a.source_type,  // 'website' or 'ios_app'
+      pageSource: a.page_source,
+      timestamp: a.created_at
     }));
 
+    // Count by source
+    const websiteCount = formatted.filter(a => a.source === 'website').length;
+    const iosCount = formatted.filter(a => a.source === 'ios_app').length;
+
     res.json({
-      count: activity.length,
-      activity
+      count: formatted.length,
+      websiteCount,
+      iosCount,
+      activity: formatted
     });
   } catch (error) {
     logger.error('[Dashboard] Activity error:', error.message);
