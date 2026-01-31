@@ -131,11 +131,16 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-// Show tab function (called from HTML buttons)
+// Show tab function
 function showTab(tabName) {
   const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
   if (tab) tab.click();
 }
+
+// Priority alert view details button
+document.getElementById('priority-view-details')?.addEventListener('click', () => {
+  showTab('recommendations');
+});
 
 // Period selector
 document.querySelectorAll('.period-btn').forEach(btn => {
