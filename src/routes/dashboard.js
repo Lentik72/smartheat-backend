@@ -1204,8 +1204,8 @@ router.put('/suppliers/:id', async (req, res) => {
       if (!isNaN(price) && price > 0 && price < 10) {
         // Insert manual price into supplier_prices
         await sequelize.query(`
-          INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, source, is_valid)
-          VALUES (:id, :price, 100, NOW(), 'manual', true)
+          INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, is_valid)
+          VALUES (:id, :price, 100, NOW(), true)
         `, { replacements: { id, price } });
         logger.info(`[Dashboard] Manual price set for supplier ${id}: $${price.toFixed(2)}`);
       }
@@ -1221,10 +1221,7 @@ router.put('/suppliers/:id', async (req, res) => {
          ORDER BY scraped_at DESC LIMIT 1) as current_price,
         (SELECT scraped_at FROM supplier_prices
          WHERE supplier_id = s.id AND is_valid = true
-         ORDER BY scraped_at DESC LIMIT 1) as price_updated_at,
-        (SELECT source FROM supplier_prices
-         WHERE supplier_id = s.id AND is_valid = true
-         ORDER BY scraped_at DESC LIMIT 1) as price_source
+         ORDER BY scraped_at DESC LIMIT 1) as price_updated_at
       FROM suppliers s WHERE s.id = :id
     `, { replacements: { id }, type: sequelize.QueryTypes.SELECT });
 
