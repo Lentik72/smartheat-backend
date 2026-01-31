@@ -654,6 +654,10 @@ class UnifiedAnalytics {
     try {
       // Get website metrics for platform breakdown
       const websiteMetrics = await this.getWebsiteMetrics(30);
+      this.logger.info('[UnifiedAnalytics] Android signals - websiteMetrics.available:', websiteMetrics.available);
+      if (!websiteMetrics.available) {
+        this.logger.info('[UnifiedAnalytics] Android signals - reason:', websiteMetrics.reason);
+      }
 
       const [waitlist, pwa, growth] = await Promise.all([
         // Waitlist stats (all platforms - total demand matters for Android decision)
@@ -752,6 +756,11 @@ class UnifiedAnalytics {
 
       return {
         available: true,
+        _debug: {
+          websiteMetricsAvailable: websiteMetrics.available,
+          websiteMetricsReason: websiteMetrics.reason || null,
+          hasPlatformBreakdown: !!websiteMetrics.data?.platformBreakdown
+        },
         data: {
           waitlist: {
             total,
