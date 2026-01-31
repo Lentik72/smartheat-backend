@@ -268,7 +268,7 @@ async function loadWebsite() {
     // Summary stats
     if (hasGA4) {
       document.getElementById('web-sessions').textContent = website.sessions?.toLocaleString() || '--';
-      document.getElementById('web-users').textContent = website.users?.toLocaleString() || '--';
+      document.getElementById('web-users').textContent = website.activeUsers?.toLocaleString() || '--';
       document.getElementById('web-bounce').textContent = website.bounceRate ? `${website.bounceRate}%` : '--%';
       document.getElementById('web-duration').textContent = website.avgSessionDuration || '--';
       document.getElementById('web-ga4-setup').style.display = 'none';
