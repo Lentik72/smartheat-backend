@@ -464,7 +464,7 @@ class CoverageIntelligenceService {
       const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
       const weekAgoStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      // Get all suppliers with scrape history
+      // Get all suppliers with scrape history (exclude phone-only and non-price-display)
       const [suppliers] = await this.sequelize.query(`
         SELECT
           s.id, s.name, s.website,
@@ -478,6 +478,8 @@ class CoverageIntelligenceService {
         WHERE s.active = true
           AND s.website IS NOT NULL
           AND s.website != ''
+          AND s.allow_price_display = true
+          AND (s.scrape_status IS NULL OR s.scrape_status NOT IN ('phone_only', 'disabled'))
         ORDER BY sp.scraped_at DESC NULLS LAST
       `);
 
