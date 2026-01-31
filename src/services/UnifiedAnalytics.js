@@ -692,7 +692,19 @@ class UnifiedAnalytics {
       // Calculate week-over-week growth
       const lastWeek = parseInt(w.last_week) || 0;
       const prevWeek = parseInt(w.prev_week) || 0;
-      const growthRate = prevWeek > 0 ? ((lastWeek - prevWeek) / prevWeek * 100).toFixed(1) : 0;
+
+      // Growth rate calculation with edge case handling
+      let growthRate;
+      if (prevWeek > 0) {
+        // Normal case: calculate percentage change
+        growthRate = ((lastWeek - prevWeek) / prevWeek * 100).toFixed(1);
+      } else if (lastWeek > 0) {
+        // Edge case: no signups last period but some this period = 100% growth (new growth)
+        growthRate = 100;
+      } else {
+        // No signups either period
+        growthRate = 0;
+      }
 
       // Decision thresholds
       const total = parseInt(w.total) || 0;
