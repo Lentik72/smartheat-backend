@@ -628,11 +628,16 @@ function generatePageHTML(data) {
   };
 
   // Schema.org product list
+  // V2.1.0: Use PriceSpecification instead of Offer to avoid Google's e-commerce field requirements
+  // (hasMerchantReturnPolicy, shippingDetails are not applicable to service businesses)
   const pricedSuppliers = suppliers.filter(s => s.hasPrice).slice(0, 25);
+  // Build location name for schema descriptions
+  const locationName = city ? `${city}, ${stateCode}` : (county ? `${county} County, ${stateCode}` : stateInfo.name);
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     "name": title,
+    "description": `Compare heating oil prices from local suppliers in ${locationName}`,
     "numberOfItems": pricedSuppliers.length,
     "itemListElement": pricedSuppliers.map((s, i) => ({
       "@type": "ListItem",
@@ -640,18 +645,22 @@ function generatePageHTML(data) {
       "item": {
         "@type": "Service",
         "name": `Heating Oil Delivery from ${s.name}`,
+        "description": `Heating oil delivery service from ${s.name} in ${locationName}. Current price: $${s.price.toFixed(2)} per gallon.`,
         "serviceType": "Heating Oil Delivery",
+        "areaServed": locationName,
         "provider": {
           "@type": "LocalBusiness",
           "name": s.name,
-          ...(s.phone && { "telephone": s.phone })
+          "@id": `https://www.gethomeheat.com/supplier/${s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+          ...(s.phone && { "telephone": s.phone }),
+          "priceRange": `$${s.price.toFixed(2)}/gal`
         },
-        "offers": {
-          "@type": "Offer",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
           "price": s.price.toFixed(2),
           "priceCurrency": "USD",
-          "priceValidUntil": new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          "availability": "https://schema.org/InStock"
+          "unitCode": "GLL",
+          "unitText": "gallon"
         }
       }
     }))
@@ -974,11 +983,15 @@ ${JSON.stringify({
     "item": {
       "@type": "Service",
       "name": `Heating Oil Delivery in ${d.city}, ${d.state}`,
+      "description": `Heating oil delivery service in ${d.city}, ${d.state}. Current price: $${d.price} per gallon.`,
       "serviceType": "Heating Oil Delivery",
-      "offers": {
-        "@type": "Offer",
+      "areaServed": `${d.city}, ${d.state}`,
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
         "price": d.price,
-        "priceCurrency": "USD"
+        "priceCurrency": "USD",
+        "unitCode": "GLL",
+        "unitText": "gallon"
       }
     }
   }))

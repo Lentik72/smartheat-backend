@@ -668,13 +668,18 @@
     const county = ZIP_COUNTY_MAP[zip] || '';
     const locationName = county ? `${county} (${zip})` : `ZIP ${zip}`;
 
+    // V2.1.0: Use Service + PriceSpecification instead of Offer
+    // to avoid Google's e-commerce field requirements (hasMerchantReturnPolicy, shippingDetails)
     const itemListElements = suppliers.slice(0, 10).map((s, index) => ({
       "@type": "ListItem",
       "position": index + 1,
       "item": {
-        "@type": "Offer",
-        "name": `Heating Oil from ${s.name}`,
-        "seller": {
+        "@type": "Service",
+        "name": `Heating Oil Delivery from ${s.name}`,
+        "description": `Heating oil delivery service from ${s.name}. Current price: $${s.currentPrice.pricePerGallon.toFixed(2)} per gallon.`,
+        "serviceType": "Heating Oil Delivery",
+        "areaServed": locationName,
+        "provider": {
           "@type": "LocalBusiness",
           "name": s.name,
           "address": {
@@ -682,19 +687,15 @@
             "addressLocality": s.city || '',
             "addressRegion": s.state || ''
           },
-          "telephone": s.phone || ''
+          "telephone": s.phone || '',
+          "priceRange": `$${s.currentPrice.pricePerGallon.toFixed(2)}/gal`
         },
-        "price": s.currentPrice.pricePerGallon.toFixed(2),
-        "priceCurrency": "USD",
         "priceSpecification": {
           "@type": "UnitPriceSpecification",
           "price": s.currentPrice.pricePerGallon.toFixed(2),
           "priceCurrency": "USD",
-          "referenceQuantity": {
-            "@type": "QuantitativeValue",
-            "value": 1,
-            "unitCode": "GLL"
-          }
+          "unitCode": "GLL",
+          "unitText": "gallon"
         }
       }
     }));
