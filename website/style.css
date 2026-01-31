@@ -245,6 +245,14 @@ body {
     color: var(--text-dark);
 }
 
+.hero-behavioral {
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--text-gray);
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+}
+
 .trust-badges {
     display: flex;
     justify-content: center;

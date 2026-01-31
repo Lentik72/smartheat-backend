@@ -27,7 +27,7 @@
     <meta name="keywords" content="heating oil tracker, propane tracker, oil tank monitor, propane tank app, heating oil app, oil usage tracker, tank level app, heating oil prediction, propane usage">
     <link rel="canonical" href="https://www.gethomeheat.com">
 
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=15">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
@@ -42,6 +42,56 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="HomeHeat">
+
+    <!-- FAQ structured data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "How does HomeHeat estimate when I'll run out?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "HomeHeat uses your logged tank readings, recent usage patterns, and local weather data to estimate how long your fuel supply will last."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Do I need a smart tank sensor?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "No. HomeHeat works with manual gauge readings and does not require any hardware or sensors."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Does HomeHeat work with propane?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes! HomeHeat supports both heating oil and propane tanks. Just select your fuel type in settings."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is HomeHeat free?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. HomeHeat is completely free to download and use on iOS. No subscriptions, no ads, no hidden costs."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is my data private?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. Your data stays on your device. HomeHeat does not require an account and does not sell or share your information."
+                }
+            }
+        ]
+    }
+    </script>
 </head>
 <body>
     <nav class="nav">
@@ -69,6 +119,8 @@
         <div class="hero-badge">Free on the App Store</div>
         <h1>Know when you'll run out — before it happens.</h1>
         <p class="hero-tagline">HomeHeat predicts when your heating oil or propane tank will need a refill using your usage and local weather — no sensors required.</p>
+
+        <p class="hero-behavioral">Most people don't run out because prices are high — they run out because life gets busy.</p>
 
         <div class="trust-badges">
             <span class="trust-badge">No sensors required</span>
@@ -228,7 +280,7 @@
             <div class="feature-card">
                 <div class="feature-icon">🌡️</div>
                 <h3>Weather-Based Predictions</h3>
-                <p>HomeHeat uses local weather data and heating degree days to predict your daily fuel consumption automatically.</p>
+                <p>HomeHeat uses local weather patterns to predict your daily fuel consumption automatically.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">📅</div>
