@@ -123,7 +123,12 @@ router.post('/app-engagement', async (req, res) => {
   }
 
   // Validate engagement type
-  const validTypes = ['call', 'text', 'email', 'view', 'save', 'request_quote'];
+  const validTypes = [
+    'call', 'text', 'email', 'view', 'save', 'request_quote',
+    'dealer_request',    // User requested quote/delivery
+    'order_placed',      // User logged delivery from this supplier
+    'price_compared'     // User viewed price comparison including this supplier
+  ];
   if (!validTypes.includes(engagementType)) {
     return res.status(400).json({ error: 'Invalid engagement type' });
   }
