@@ -1323,9 +1323,9 @@ async function loadAndroidSignals() {
       signals.recommendation?.message || 'Loading...';
 
     // Key metrics
-    document.getElementById('android-waitlist').textContent = signals.waitlist?.total || '--';
-    document.getElementById('android-growth').textContent = `${signals.waitlist?.growthRate || 0}%`;
-    document.getElementById('android-pwa').textContent = signals.pwa?.installs || '--';
+    document.getElementById('android-waitlist').textContent = signals.waitlist?.total ?? '--';
+    document.getElementById('android-growth').textContent = `${signals.waitlist?.growthRate ?? 0}%`;
+    document.getElementById('android-pwa').textContent = signals.pwa?.installs ?? '--';
 
     // Thresholds
     const thresholdsGrid = document.getElementById('thresholds-grid');

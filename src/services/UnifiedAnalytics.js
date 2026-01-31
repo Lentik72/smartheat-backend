@@ -619,14 +619,13 @@ class UnifiedAnalytics {
   async getAndroidDecisionSignals() {
     try {
       const [waitlist, pwa, growth] = await Promise.all([
-        // Waitlist stats
+        // Waitlist stats (all platforms - total demand matters for Android decision)
         this.sequelize.query(`
           SELECT
             COUNT(*) as total,
             COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_week,
             COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '14 days' AND created_at <= NOW() - INTERVAL '7 days') as prev_week
           FROM waitlist
-          WHERE platform = 'android' OR platform IS NULL
         `, { type: this.sequelize.QueryTypes.SELECT }),
 
         // PWA adoption
