@@ -1476,6 +1476,12 @@
 
   "_section_MD": "=== MARYLAND ===",
 
+  "tevisenergy.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "Phone-only pricing. Westminster MD. Serves Carroll, Baltimore, Frederick, Harford, Howard counties MD + Adams, York PA."
+  },
+
   "directfuelmd.com": {
     "enabled": true,
     "pattern": "table",
