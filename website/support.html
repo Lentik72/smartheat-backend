@@ -18,10 +18,118 @@
     <!-- OpenGraph meta tags -->
     <meta property="og:title" content="Support - HomeHeat">
     <meta property="og:description" content="Get help with HomeHeat. FAQs, troubleshooting, and contact information.">
-    <meta property="og:url" content="https://gethomeheat.com/support">
+    <meta property="og:url" content="https://www.gethomeheat.com/support.html">
     <meta property="og:type" content="website">
 
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="canonical" href="https://www.gethomeheat.com/support.html">
+    <link rel="stylesheet" href="style.css?v=15">
+
+    <!-- FAQ structured data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "How do I read my oil tank gauge?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Most oil tanks have a float gauge on top that shows your fuel level. Look at the dial or marker - it typically shows Empty, 1/4, 1/2, 3/4, and Full. Enter the percentage in HomeHeat (e.g., 50% for half full)."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How accurate are the predictions?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Predictions improve over time as HomeHeat learns your usage patterns. The more deliveries and readings you log, the better the estimates become. Weather data also affects accuracy - colder weather means faster consumption."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Why does my days remaining change?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "The estimate updates based on weather forecasts. If a cold snap is coming, your predicted consumption increases, which reduces days remaining. This is by design - it helps you plan ahead."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What is the safety reserve?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "HomeHeat calculates days remaining until you reach a minimum safe level (typically 10-15%), not empty. This gives you buffer time to order fuel and prevents running your tank dry, which can damage your heating system."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Do I need to create an account?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "No. HomeHeat works entirely on your device. No account, no login, no password to remember."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Where is my data stored?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "All your data is stored locally on your iPhone or iPad. It never leaves your device unless you choose to share a report with a supplier."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Can I transfer my data to a new phone?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, if you restore from an iCloud backup or transfer directly from your old phone, your HomeHeat data will transfer automatically."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How do I delete my data?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Go to Settings > Manage My Data > Delete My Data. This permanently removes all your information from the app."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is HomeHeat free?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, HomeHeat is completely free. No ads, no in-app purchases, no subscriptions."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "App won't open or crashes - what should I do?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Try force-closing the app and reopening it. If that doesn't work, restart your device. If problems persist, try deleting and reinstalling the app (note: this will erase your data)."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Weather data not loading - how do I fix it?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Make sure you have an internet connection. Check that you've entered a valid ZIP code in Settings. Weather data requires network access."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Why do my predictions seem wrong?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Double-check your tank size in Settings. Log at least 2-3 deliveries and readings over time for better accuracy. HomeHeat learns from your actual usage patterns to improve predictions."
+                }
+            }
+        ]
+    }
+    </script>
+
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
