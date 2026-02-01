@@ -193,6 +193,67 @@ router.post('/app-engagement', async (req, res) => {
 });
 
 /**
+ * POST /api/onboarding-step
+ * Records anonymous onboarding funnel data WITHOUT requiring user consent.
+ * Used to measure completion rates and identify drop-off points.
+ * V2.14.0: Anonymous onboarding tracking
+ */
+router.post('/onboarding-step', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const { step, action, zipCode, appVersion } = req.body;
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
+
+  // Validate required fields
+  if (!step || !action) {
+    return res.status(400).json({ error: 'Missing required fields (step, action)' });
+  }
+
+  // Validate step name
+  const validSteps = [
+    'value_screen', 'intent', 'fuel_type', 'postal_code', 'tank_size',
+    'home_size', 'tank_level', 'notifications', 'smartburn', 'consent',
+    'onboarding',  // For overall completion tracking
+    'settings'     // V22.1: For tracking analytics enable/disable in Settings
+  ];
+  if (!validSteps.includes(step)) {
+    return res.status(400).json({ error: 'Invalid step name' });
+  }
+
+  // Validate action
+  const validActions = [
+    'viewed', 'completed', 'skipped', 'granted', 'denied', 'continue', 'selected',
+    'analytics_enabled', 'analytics_disabled',           // V22.0: Onboarding consent choices
+    'settings_analytics_enabled', 'settings_analytics_disabled'  // V22.1: Settings changes
+  ];
+  if (!validActions.includes(action)) {
+    return res.status(400).json({ error: 'Invalid action' });
+  }
+
+  try {
+    // Hash IP for privacy (just first few chars for rough deduplication)
+    const ipHash = ip ? require('crypto').createHash('sha256').update(ip).digest('hex').substring(0, 16) : null;
+
+    // Extract ZIP prefix (first 3 digits) for anonymous regional data
+    const zipPrefix = zipCode && zipCode.length >= 3 ? zipCode.substring(0, 3) : null;
+
+    // Insert onboarding step record
+    await sequelize.query(
+      `INSERT INTO onboarding_steps (step_name, action, zip_prefix, ip_hash, app_version)
+       VALUES ($1, $2, $3, $4, $5)`,
+      { bind: [step, action, zipPrefix, ipHash, appVersion || null] }
+    );
+
+    console.log(`[Onboarding] ${step}/${action} from ZIP prefix ${zipPrefix || 'unknown'} (v${appVersion || '?'})`);
+    res.json({ received: true });
+
+  } catch (err) {
+    // Table might not exist yet - log but don't fail the app
+    console.log(`[Onboarding] ${step}/${action} (not persisted: ${err.message})`);
+    res.json({ received: true });
+  }
+});
+
+/**
  * GET /api/admin/tracking/pending
  * Get unprocessed clicks for email outreach (admin only)
  */
