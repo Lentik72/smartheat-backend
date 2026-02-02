@@ -83,23 +83,23 @@
           <td class="supplier-name">Allen&#039;s Oil &amp; Propane</td>
           <td class="supplier-city">Vincentown</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(609) 859-2334" class="phone-link" onclick="trackCall('c9e25a63-b44b-402f-ad99-49cadeb011da', 'Allen&#039;s Oil &amp; Propane')">(609) 859-2334</a></td>
-          <td class="supplier-website"><a href="https://allensoilandpropane.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('c9e25a63-b44b-402f-ad99-49cadeb011da', 'Allen&#039;s Oil &amp; Propane')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(609) 859-2334" class="phone-link" data-supplier-id="c9e25a63-b44b-402f-ad99-49cadeb011da" data-supplier-name="Allen&#039;s Oil &amp; Propane" data-action="call">(609) 859-2334</a></td>
+          <td class="supplier-website"><a href="https://allensoilandpropane.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="c9e25a63-b44b-402f-ad99-49cadeb011da" data-supplier-name="Allen&#039;s Oil &amp; Propane" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Lawes Online</td>
           <td class="supplier-city">Shrewsbury</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(732) 936-8400" class="phone-link" onclick="trackCall('0cfb4282-976a-42d3-9963-593ac89ec3a9', 'Lawes Online')">(732) 936-8400</a></td>
-          <td class="supplier-website"><a href="https://www.lawesonline.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('0cfb4282-976a-42d3-9963-593ac89ec3a9', 'Lawes Online')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(732) 936-8400" class="phone-link" data-supplier-id="0cfb4282-976a-42d3-9963-593ac89ec3a9" data-supplier-name="Lawes Online" data-action="call">(732) 936-8400</a></td>
+          <td class="supplier-website"><a href="https://www.lawesonline.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="0cfb4282-976a-42d3-9963-593ac89ec3a9" data-supplier-name="Lawes Online" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Oil Depot SJ</td>
           <td class="supplier-city">South Jersey</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(856) 282-4848" class="phone-link" onclick="trackCall('d208e16c-6fec-4231-bee2-8c597c8494cb', 'Oil Depot SJ')">(856) 282-4848</a></td>
+          <td class="supplier-phone"><a href="tel:(856) 282-4848" class="phone-link" data-supplier-id="d208e16c-6fec-4231-bee2-8c597c8494cb" data-supplier-name="Oil Depot SJ" data-action="call">(856) 282-4848</a></td>
           <td class="supplier-website"></td>
         </tr>
         </tbody>
@@ -154,53 +154,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

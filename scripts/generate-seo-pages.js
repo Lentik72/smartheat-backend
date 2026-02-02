@@ -829,14 +829,13 @@ function generatePageHTML(data) {
   // Generate supplier table
   const supplierRows = suppliers.map(s => {
     const hasValidWebsite = s.website && s.website.startsWith('https://');
-    const escapedName = escapeHtml(s.name).replace(/'/g, "\\'");
     return `
         <tr>
           <td class="supplier-name">${escapeHtml(s.name)}</td>
           <td class="supplier-city">${escapeHtml(s.city || '')}</td>
           <td class="supplier-price">${s.hasPrice ? `$${s.price.toFixed(2)}` : '<span class="call-for-price">Call</span>'}</td>
-          <td class="supplier-phone">${s.phone ? `<a href="tel:${s.phone}" class="phone-link" onclick="trackCall('${s.id}', '${escapedName}')">${escapeHtml(s.phone)}</a>` : '—'}</td>
-          <td class="supplier-website">${hasValidWebsite ? `<a href="${escapeHtml(s.website)}" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('${s.id}', '${escapedName}')">Website</a>` : ''}</td>
+          <td class="supplier-phone">${s.phone ? `<a href="tel:${s.phone}" class="phone-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="call">${escapeHtml(s.phone)}</a>` : '—'}</td>
+          <td class="supplier-website">${hasValidWebsite ? `<a href="${escapeHtml(s.website)}" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="website">Website</a>` : ''}</td>
         </tr>`;
   }).join('\n');
 
@@ -1055,54 +1054,7 @@ ${supplierRows}
   </footer>
 
   <script src="${assetPath}js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-${type}',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-${type}' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-${type}',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-${type}' });
-      }
-    }
-  </script>
+  <script src="${assetPath}js/seo-tracking.js"></script>
 </body>
 </html>`;
 }

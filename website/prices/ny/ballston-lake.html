@@ -97,15 +97,15 @@
           <td class="supplier-name">EZ Pay Oil</td>
           <td class="supplier-city">Scotia</td>
           <td class="supplier-price">$3.99</td>
-          <td class="supplier-phone"><a href="tel:(518) 793-7755" class="phone-link" onclick="trackCall('7a57235b-aa4f-4522-802d-391f4355758f', 'EZ Pay Oil')">(518) 793-7755</a></td>
-          <td class="supplier-website"><a href="https://ezpayoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('7a57235b-aa4f-4522-802d-391f4355758f', 'EZ Pay Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(518) 793-7755" class="phone-link" data-supplier-id="7a57235b-aa4f-4522-802d-391f4355758f" data-supplier-name="EZ Pay Oil" data-action="call">(518) 793-7755</a></td>
+          <td class="supplier-website"><a href="https://ezpayoil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="7a57235b-aa4f-4522-802d-391f4355758f" data-supplier-name="EZ Pay Oil" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Corinth Oil Delivery</td>
           <td class="supplier-city">Corinth</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(518) 654-2421" class="phone-link" onclick="trackCall('aa578b14-93bb-4942-a018-086fc14045d4', 'Corinth Oil Delivery')">(518) 654-2421</a></td>
+          <td class="supplier-phone"><a href="tel:(518) 654-2421" class="phone-link" data-supplier-id="aa578b14-93bb-4942-a018-086fc14045d4" data-supplier-name="Corinth Oil Delivery" data-action="call">(518) 654-2421</a></td>
           <td class="supplier-website"></td>
         </tr>
 
@@ -113,7 +113,7 @@
           <td class="supplier-name">H &amp; M Oil Company</td>
           <td class="supplier-city">Schenectady</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(518) 346-0337" class="phone-link" onclick="trackCall('5dfb9d73-a30a-4bcf-becf-9236664df542', 'H &amp; M Oil Company')">(518) 346-0337</a></td>
+          <td class="supplier-phone"><a href="tel:(518) 346-0337" class="phone-link" data-supplier-id="5dfb9d73-a30a-4bcf-becf-9236664df542" data-supplier-name="H &amp; M Oil Company" data-action="call">(518) 346-0337</a></td>
           <td class="supplier-website"></td>
         </tr>
 
@@ -121,7 +121,7 @@
           <td class="supplier-name">Tim Peek &amp; Son</td>
           <td class="supplier-city">Schenectady</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(518) 357-9897" class="phone-link" onclick="trackCall('9077ca8d-a95e-4e4d-b049-6a3d59fe1f22', 'Tim Peek &amp; Son')">(518) 357-9897</a></td>
+          <td class="supplier-phone"><a href="tel:(518) 357-9897" class="phone-link" data-supplier-id="9077ca8d-a95e-4e4d-b049-6a3d59fe1f22" data-supplier-name="Tim Peek &amp; Son" data-action="call">(518) 357-9897</a></td>
           <td class="supplier-website"></td>
         </tr>
         </tbody>
@@ -181,53 +181,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

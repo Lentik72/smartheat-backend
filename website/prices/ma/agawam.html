@@ -97,23 +97,23 @@
           <td class="supplier-name">Handford Oil</td>
           <td class="supplier-city">Springfield</td>
           <td class="supplier-price">$3.99</td>
-          <td class="supplier-phone"><a href="tel:(413) 736-5682" class="phone-link" onclick="trackCall('b984d0e2-72d0-40e9-91b5-823c8361c941', 'Handford Oil')">(413) 736-5682</a></td>
-          <td class="supplier-website"><a href="https://www.handfordoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('b984d0e2-72d0-40e9-91b5-823c8361c941', 'Handford Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(413) 736-5682" class="phone-link" data-supplier-id="b984d0e2-72d0-40e9-91b5-823c8361c941" data-supplier-name="Handford Oil" data-action="call">(413) 736-5682</a></td>
+          <td class="supplier-website"><a href="https://www.handfordoil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="b984d0e2-72d0-40e9-91b5-823c8361c941" data-supplier-name="Handford Oil" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Springer&#039;s Oil</td>
           <td class="supplier-city">Springfield</td>
           <td class="supplier-price">$4.00</td>
-          <td class="supplier-phone"><a href="tel:(413) 726-9517" class="phone-link" onclick="trackCall('f5c75335-7cd9-4142-bd8d-aa49cfb363e4', 'Springer&#039;s Oil')">(413) 726-9517</a></td>
-          <td class="supplier-website"><a href="https://springersoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('f5c75335-7cd9-4142-bd8d-aa49cfb363e4', 'Springer&#039;s Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(413) 726-9517" class="phone-link" data-supplier-id="f5c75335-7cd9-4142-bd8d-aa49cfb363e4" data-supplier-name="Springer&#039;s Oil" data-action="call">(413) 726-9517</a></td>
+          <td class="supplier-website"><a href="https://springersoil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="f5c75335-7cd9-4142-bd8d-aa49cfb363e4" data-supplier-name="Springer&#039;s Oil" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Just Oil Inc</td>
           <td class="supplier-city">Westborough</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(508) 480-0978" class="phone-link" onclick="trackCall('571d24e8-8a9b-46f5-9388-810c00ed54b6', 'Just Oil Inc')">(508) 480-0978</a></td>
+          <td class="supplier-phone"><a href="tel:(508) 480-0978" class="phone-link" data-supplier-id="571d24e8-8a9b-46f5-9388-810c00ed54b6" data-supplier-name="Just Oil Inc" data-action="call">(508) 480-0978</a></td>
           <td class="supplier-website"></td>
         </tr>
         </tbody>
@@ -173,53 +173,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

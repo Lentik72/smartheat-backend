@@ -97,23 +97,23 @@
           <td class="supplier-name">Nite Oil</td>
           <td class="supplier-city">Portsmouth</td>
           <td class="supplier-price">$3.45</td>
-          <td class="supplier-phone"><a href="tel:(401) 683-4667" class="phone-link" onclick="trackCall('1b6910cb-db28-4066-962b-876395ce8c8c', 'Nite Oil')">(401) 683-4667</a></td>
-          <td class="supplier-website"><a href="https://niteoil.net/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('1b6910cb-db28-4066-962b-876395ce8c8c', 'Nite Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(401) 683-4667" class="phone-link" data-supplier-id="1b6910cb-db28-4066-962b-876395ce8c8c" data-supplier-name="Nite Oil" data-action="call">(401) 683-4667</a></td>
+          <td class="supplier-website"><a href="https://niteoil.net/" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="1b6910cb-db28-4066-962b-876395ce8c8c" data-supplier-name="Nite Oil" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">The Heating Oil Lady</td>
           <td class="supplier-city">Pawtucket</td>
           <td class="supplier-price">$3.85</td>
-          <td class="supplier-phone"><a href="tel:(401) 305-5600" class="phone-link" onclick="trackCall('d6b99e7a-4434-4cf2-96fb-e660d4916aa1', 'The Heating Oil Lady')">(401) 305-5600</a></td>
-          <td class="supplier-website"><a href="https://theoilladyhho.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('d6b99e7a-4434-4cf2-96fb-e660d4916aa1', 'The Heating Oil Lady')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(401) 305-5600" class="phone-link" data-supplier-id="d6b99e7a-4434-4cf2-96fb-e660d4916aa1" data-supplier-name="The Heating Oil Lady" data-action="call">(401) 305-5600</a></td>
+          <td class="supplier-website"><a href="https://theoilladyhho.com/" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="d6b99e7a-4434-4cf2-96fb-e660d4916aa1" data-supplier-name="The Heating Oil Lady" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">1st Choice Fuel</td>
           <td class="supplier-city">Newport</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(401) 662-6121" class="phone-link" onclick="trackCall('2bfc159e-f2a4-41e6-bf8d-f787e01534d7', '1st Choice Fuel')">(401) 662-6121</a></td>
+          <td class="supplier-phone"><a href="tel:(401) 662-6121" class="phone-link" data-supplier-id="2bfc159e-f2a4-41e6-bf8d-f787e01534d7" data-supplier-name="1st Choice Fuel" data-action="call">(401) 662-6121</a></td>
           <td class="supplier-website"></td>
         </tr>
         </tbody>
@@ -166,53 +166,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

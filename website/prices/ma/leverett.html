@@ -97,23 +97,23 @@
           <td class="supplier-name">Orange Oil Co</td>
           <td class="supplier-city">New Salem</td>
           <td class="supplier-price">$3.48</td>
-          <td class="supplier-phone"><a href="tel:(978) 544-3222" class="phone-link" onclick="trackCall('a5415435-3007-4e96-97b2-24dd85f57cc3', 'Orange Oil Co')">(978) 544-3222</a></td>
-          <td class="supplier-website"><a href="https://www.orangeoilco.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('a5415435-3007-4e96-97b2-24dd85f57cc3', 'Orange Oil Co')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(978) 544-3222" class="phone-link" data-supplier-id="a5415435-3007-4e96-97b2-24dd85f57cc3" data-supplier-name="Orange Oil Co" data-action="call">(978) 544-3222</a></td>
+          <td class="supplier-website"><a href="https://www.orangeoilco.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="a5415435-3007-4e96-97b2-24dd85f57cc3" data-supplier-name="Orange Oil Co" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Surner Heating</td>
           <td class="supplier-city">Greenfield</td>
           <td class="supplier-price">$3.75</td>
-          <td class="supplier-phone"><a href="tel:(413) 773-5999" class="phone-link" onclick="trackCall('3be32723-02a5-444a-bc33-b33e57488f5d', 'Surner Heating')">(413) 773-5999</a></td>
-          <td class="supplier-website"><a href="https://surnerheat.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('3be32723-02a5-444a-bc33-b33e57488f5d', 'Surner Heating')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(413) 773-5999" class="phone-link" data-supplier-id="3be32723-02a5-444a-bc33-b33e57488f5d" data-supplier-name="Surner Heating" data-action="call">(413) 773-5999</a></td>
+          <td class="supplier-website"><a href="https://surnerheat.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="3be32723-02a5-444a-bc33-b33e57488f5d" data-supplier-name="Surner Heating" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Just Oil Inc</td>
           <td class="supplier-city">Westborough</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(508) 480-0978" class="phone-link" onclick="trackCall('571d24e8-8a9b-46f5-9388-810c00ed54b6', 'Just Oil Inc')">(508) 480-0978</a></td>
+          <td class="supplier-phone"><a href="tel:(508) 480-0978" class="phone-link" data-supplier-id="571d24e8-8a9b-46f5-9388-810c00ed54b6" data-supplier-name="Just Oil Inc" data-action="call">(508) 480-0978</a></td>
           <td class="supplier-website"></td>
         </tr>
 
@@ -121,8 +121,8 @@
           <td class="supplier-name">Preite Oil Company</td>
           <td class="supplier-city">North Adams</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(413) 664-6906" class="phone-link" onclick="trackCall('38124eaf-8b0d-4dae-83c1-715b43aa71db', 'Preite Oil Company')">(413) 664-6906</a></td>
-          <td class="supplier-website"><a href="https://www.preiteoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('38124eaf-8b0d-4dae-83c1-715b43aa71db', 'Preite Oil Company')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(413) 664-6906" class="phone-link" data-supplier-id="38124eaf-8b0d-4dae-83c1-715b43aa71db" data-supplier-name="Preite Oil Company" data-action="call">(413) 664-6906</a></td>
+          <td class="supplier-website"><a href="https://www.preiteoil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="38124eaf-8b0d-4dae-83c1-715b43aa71db" data-supplier-name="Preite Oil Company" data-action="website">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -181,53 +181,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

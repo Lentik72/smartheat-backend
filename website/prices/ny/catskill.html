@@ -97,23 +97,23 @@
           <td class="supplier-name">Economy Oil</td>
           <td class="supplier-city">Fishkill</td>
           <td class="supplier-price">$4.00</td>
-          <td class="supplier-phone"><a href="tel:(845) 206-4322" class="phone-link" onclick="trackCall('237422e0-0b01-40c6-aa17-e23e874cbd34', 'Economy Oil')">(845) 206-4322</a></td>
-          <td class="supplier-website"><a href="https://www.economy-oil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('237422e0-0b01-40c6-aa17-e23e874cbd34', 'Economy Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(845) 206-4322" class="phone-link" data-supplier-id="237422e0-0b01-40c6-aa17-e23e874cbd34" data-supplier-name="Economy Oil" data-action="call">(845) 206-4322</a></td>
+          <td class="supplier-website"><a href="https://www.economy-oil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="237422e0-0b01-40c6-aa17-e23e874cbd34" data-supplier-name="Economy Oil" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">AAA Fuel &amp; Service</td>
           <td class="supplier-city">Kingston</td>
           <td class="supplier-price">$4.10</td>
-          <td class="supplier-phone"><a href="tel:(845) 338-5626" class="phone-link" onclick="trackCall('21268fc8-dbb4-4b14-b2b9-646635a14224', 'AAA Fuel &amp; Service')">(845) 338-5626</a></td>
-          <td class="supplier-website"><a href="https://aaafuelandservice.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('21268fc8-dbb4-4b14-b2b9-646635a14224', 'AAA Fuel &amp; Service')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(845) 338-5626" class="phone-link" data-supplier-id="21268fc8-dbb4-4b14-b2b9-646635a14224" data-supplier-name="AAA Fuel &amp; Service" data-action="call">(845) 338-5626</a></td>
+          <td class="supplier-website"><a href="https://aaafuelandservice.com/" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="21268fc8-dbb4-4b14-b2b9-646635a14224" data-supplier-name="AAA Fuel &amp; Service" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Heim Fuel Service</td>
           <td class="supplier-city">Valatie</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(518) 784-5136" class="phone-link" onclick="trackCall('77aa1931-fc34-43c9-becc-476b2a24caa8', 'Heim Fuel Service')">(518) 784-5136</a></td>
+          <td class="supplier-phone"><a href="tel:(518) 784-5136" class="phone-link" data-supplier-id="77aa1931-fc34-43c9-becc-476b2a24caa8" data-supplier-name="Heim Fuel Service" data-action="call">(518) 784-5136</a></td>
           <td class="supplier-website"></td>
         </tr>
 
@@ -121,8 +121,8 @@
           <td class="supplier-name">Roesch Fuel Services</td>
           <td class="supplier-city">Rensselaer</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(518) 949-2018" class="phone-link" onclick="trackCall('150acecc-86c8-4076-be64-4f77f920e1ff', 'Roesch Fuel Services')">(518) 949-2018</a></td>
-          <td class="supplier-website"><a href="https://www.roeschfuels.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('150acecc-86c8-4076-be64-4f77f920e1ff', 'Roesch Fuel Services')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(518) 949-2018" class="phone-link" data-supplier-id="150acecc-86c8-4076-be64-4f77f920e1ff" data-supplier-name="Roesch Fuel Services" data-action="call">(518) 949-2018</a></td>
+          <td class="supplier-website"><a href="https://www.roeschfuels.com/" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="150acecc-86c8-4076-be64-4f77f920e1ff" data-supplier-name="Roesch Fuel Services" data-action="website">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -173,53 +173,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

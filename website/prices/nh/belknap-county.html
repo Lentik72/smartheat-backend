@@ -97,24 +97,24 @@
           <td class="supplier-name">603 Oil Co</td>
           <td class="supplier-city">Freedom</td>
           <td class="supplier-price">$3.45</td>
-          <td class="supplier-phone"><a href="tel:(603) 539-6200" class="phone-link" onclick="trackCall('17f3f1f8-71a1-4284-9c67-62774629b903', '603 Oil Co')">(603) 539-6200</a></td>
-          <td class="supplier-website"><a href="https://www.603oil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('17f3f1f8-71a1-4284-9c67-62774629b903', '603 Oil Co')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 539-6200" class="phone-link" data-supplier-id="17f3f1f8-71a1-4284-9c67-62774629b903" data-supplier-name="603 Oil Co" data-action="call">(603) 539-6200</a></td>
+          <td class="supplier-website"><a href="https://www.603oil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="17f3f1f8-71a1-4284-9c67-62774629b903" data-supplier-name="603 Oil Co" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Hebert Fuel Co</td>
           <td class="supplier-city">Allenstown</td>
           <td class="supplier-price">$3.50</td>
-          <td class="supplier-phone"><a href="tel:(603) 485-4744" class="phone-link" onclick="trackCall('1bf03365-7adf-4c95-af9a-62c4b156e4c1', 'Hebert Fuel Co')">(603) 485-4744</a></td>
-          <td class="supplier-website"><a href="https://hebertfuel.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('1bf03365-7adf-4c95-af9a-62c4b156e4c1', 'Hebert Fuel Co')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 485-4744" class="phone-link" data-supplier-id="1bf03365-7adf-4c95-af9a-62c4b156e4c1" data-supplier-name="Hebert Fuel Co" data-action="call">(603) 485-4744</a></td>
+          <td class="supplier-website"><a href="https://hebertfuel.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="1bf03365-7adf-4c95-af9a-62c4b156e4c1" data-supplier-name="Hebert Fuel Co" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Joel&#039;s Oil</td>
           <td class="supplier-city">Canterbury</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(603) 783-9311" class="phone-link" onclick="trackCall('1f5147ab-650d-4d92-9c82-bc8c09334185', 'Joel&#039;s Oil')">(603) 783-9311</a></td>
-          <td class="supplier-website"><a href="https://joelsoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('1f5147ab-650d-4d92-9c82-bc8c09334185', 'Joel&#039;s Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 783-9311" class="phone-link" data-supplier-id="1f5147ab-650d-4d92-9c82-bc8c09334185" data-supplier-name="Joel&#039;s Oil" data-action="call">(603) 783-9311</a></td>
+          <td class="supplier-website"><a href="https://joelsoil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="1f5147ab-650d-4d92-9c82-bc8c09334185" data-supplier-name="Joel&#039;s Oil" data-action="website">Website</a></td>
         </tr>
 
         <tr>
@@ -122,7 +122,7 @@
           <td class="supplier-city">Portsmouth</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone">—</td>
-          <td class="supplier-website"><a href="https://wickedwarm.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('c04b257e-afcb-412d-b8d9-5555cf385b80', 'Wicked Warm')">Website</a></td>
+          <td class="supplier-website"><a href="https://wickedwarm.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="c04b257e-afcb-412d-b8d9-5555cf385b80" data-supplier-name="Wicked Warm" data-action="website">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -166,53 +166,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-county',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-county' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-county',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-county' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

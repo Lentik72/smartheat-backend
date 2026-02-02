@@ -97,15 +97,15 @@
           <td class="supplier-name">Jimmy Jr&#039;s Oil</td>
           <td class="supplier-city">Weare</td>
           <td class="supplier-price">$3.48</td>
-          <td class="supplier-phone"><a href="tel:(603) 529-0934" class="phone-link" onclick="trackCall('9d32afdc-d42a-4bc0-92d6-71440c7961c6', 'Jimmy Jr&#039;s Oil')">(603) 529-0934</a></td>
-          <td class="supplier-website"><a href="https://jimmyjrsoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('9d32afdc-d42a-4bc0-92d6-71440c7961c6', 'Jimmy Jr&#039;s Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 529-0934" class="phone-link" data-supplier-id="9d32afdc-d42a-4bc0-92d6-71440c7961c6" data-supplier-name="Jimmy Jr&#039;s Oil" data-action="call">(603) 529-0934</a></td>
+          <td class="supplier-website"><a href="https://jimmyjrsoil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="9d32afdc-d42a-4bc0-92d6-71440c7961c6" data-supplier-name="Jimmy Jr&#039;s Oil" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Contoocook Valley Fuel</td>
           <td class="supplier-city">Contoocook</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(603) 746-3456" class="phone-link" onclick="trackCall('f07881d9-4b1c-495f-820f-cf1f4872c5e4', 'Contoocook Valley Fuel')">(603) 746-3456</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 746-3456" class="phone-link" data-supplier-id="f07881d9-4b1c-495f-820f-cf1f4872c5e4" data-supplier-name="Contoocook Valley Fuel" data-action="call">(603) 746-3456</a></td>
           <td class="supplier-website"></td>
         </tr>
 
@@ -113,16 +113,16 @@
           <td class="supplier-name">Libra Fuels</td>
           <td class="supplier-city">Epping</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(603) 244-8456" class="phone-link" onclick="trackCall('e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2', 'Libra Fuels')">(603) 244-8456</a></td>
-          <td class="supplier-website"><a href="https://librafuels.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2', 'Libra Fuels')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 244-8456" class="phone-link" data-supplier-id="e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2" data-supplier-name="Libra Fuels" data-action="call">(603) 244-8456</a></td>
+          <td class="supplier-website"><a href="https://librafuels.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2" data-supplier-name="Libra Fuels" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Nashua Fuel</td>
           <td class="supplier-city">Nashua</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(603) 888-5070" class="phone-link" onclick="trackCall('0aa72254-8e75-4a8e-9c00-c84eb9281dba', 'Nashua Fuel')">(603) 888-5070</a></td>
-          <td class="supplier-website"><a href="https://nashuafuel.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('0aa72254-8e75-4a8e-9c00-c84eb9281dba', 'Nashua Fuel')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 888-5070" class="phone-link" data-supplier-id="0aa72254-8e75-4a8e-9c00-c84eb9281dba" data-supplier-name="Nashua Fuel" data-action="call">(603) 888-5070</a></td>
+          <td class="supplier-website"><a href="https://nashuafuel.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="0aa72254-8e75-4a8e-9c00-c84eb9281dba" data-supplier-name="Nashua Fuel" data-action="website">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -181,53 +181,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

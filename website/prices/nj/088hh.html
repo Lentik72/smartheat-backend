@@ -97,23 +97,23 @@
           <td class="supplier-name">K W Rastall</td>
           <td class="supplier-city">North Brunswick</td>
           <td class="supplier-price">$3.28</td>
-          <td class="supplier-phone"><a href="tel:(732) 297-5600" class="phone-link" onclick="trackCall('d3249502-8e8c-4f0b-a2a7-f67cade4cd67', 'K W Rastall')">(732) 297-5600</a></td>
-          <td class="supplier-website"><a href="https://www.rastalloil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('d3249502-8e8c-4f0b-a2a7-f67cade4cd67', 'K W Rastall')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(732) 297-5600" class="phone-link" data-supplier-id="d3249502-8e8c-4f0b-a2a7-f67cade4cd67" data-supplier-name="K W Rastall" data-action="call">(732) 297-5600</a></td>
+          <td class="supplier-website"><a href="https://www.rastalloil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="d3249502-8e8c-4f0b-a2a7-f67cade4cd67" data-supplier-name="K W Rastall" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Hackettstown Oil</td>
           <td class="supplier-city">Hackettstown</td>
           <td class="supplier-price">$3.60</td>
-          <td class="supplier-phone"><a href="tel:(908) 850-6655" class="phone-link" onclick="trackCall('8eb1d32c-b0ad-4014-a62f-9b011aa2d135', 'Hackettstown Oil')">(908) 850-6655</a></td>
-          <td class="supplier-website"><a href="https://hackettstownoil.net" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('8eb1d32c-b0ad-4014-a62f-9b011aa2d135', 'Hackettstown Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(908) 850-6655" class="phone-link" data-supplier-id="8eb1d32c-b0ad-4014-a62f-9b011aa2d135" data-supplier-name="Hackettstown Oil" data-action="call">(908) 850-6655</a></td>
+          <td class="supplier-website"><a href="https://hackettstownoil.net" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="8eb1d32c-b0ad-4014-a62f-9b011aa2d135" data-supplier-name="Hackettstown Oil" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Stem Bros</td>
           <td class="supplier-city">Milford</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(908) 995-4825" class="phone-link" onclick="trackCall('6febf8c4-cc36-451f-b513-8b626d11e1c8', 'Stem Bros')">(908) 995-4825</a></td>
+          <td class="supplier-phone"><a href="tel:(908) 995-4825" class="phone-link" data-supplier-id="6febf8c4-cc36-451f-b513-8b626d11e1c8" data-supplier-name="Stem Bros" data-action="call">(908) 995-4825</a></td>
           <td class="supplier-website"></td>
         </tr>
         </tbody>
@@ -173,53 +173,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

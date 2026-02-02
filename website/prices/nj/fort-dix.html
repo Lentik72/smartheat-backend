@@ -97,23 +97,23 @@
           <td class="supplier-name">Princeton Fuel Online</td>
           <td class="supplier-city">Princeton</td>
           <td class="supplier-price">$3.87</td>
-          <td class="supplier-phone"><a href="tel:(800) 253-9001" class="phone-link" onclick="trackCall('85385b38-843c-4850-a6d5-93a9fd10d063', 'Princeton Fuel Online')">(800) 253-9001</a></td>
-          <td class="supplier-website"><a href="https://www.princetonfuelonline.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('85385b38-843c-4850-a6d5-93a9fd10d063', 'Princeton Fuel Online')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(800) 253-9001" class="phone-link" data-supplier-id="85385b38-843c-4850-a6d5-93a9fd10d063" data-supplier-name="Princeton Fuel Online" data-action="call">(800) 253-9001</a></td>
+          <td class="supplier-website"><a href="https://www.princetonfuelonline.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="85385b38-843c-4850-a6d5-93a9fd10d063" data-supplier-name="Princeton Fuel Online" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Eagle Petroleum</td>
           <td class="supplier-city">Trenton</td>
           <td class="supplier-price">$4.54</td>
-          <td class="supplier-phone"><a href="tel:(609) 394-5078" class="phone-link" onclick="trackCall('d97db11c-560a-4430-850c-7eadcaf1f2fa', 'Eagle Petroleum')">(609) 394-5078</a></td>
-          <td class="supplier-website"><a href="https://eaglepetroleumco.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('d97db11c-560a-4430-850c-7eadcaf1f2fa', 'Eagle Petroleum')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(609) 394-5078" class="phone-link" data-supplier-id="d97db11c-560a-4430-850c-7eadcaf1f2fa" data-supplier-name="Eagle Petroleum" data-action="call">(609) 394-5078</a></td>
+          <td class="supplier-website"><a href="https://eaglepetroleumco.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="d97db11c-560a-4430-850c-7eadcaf1f2fa" data-supplier-name="Eagle Petroleum" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Force Ten Heating</td>
           <td class="supplier-city">Robbinsville</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(609) 426-4700" class="phone-link" onclick="trackCall('41a64542-0790-497a-a29d-4ff8394e5622', 'Force Ten Heating')">(609) 426-4700</a></td>
+          <td class="supplier-phone"><a href="tel:(609) 426-4700" class="phone-link" data-supplier-id="41a64542-0790-497a-a29d-4ff8394e5622" data-supplier-name="Force Ten Heating" data-action="call">(609) 426-4700</a></td>
           <td class="supplier-website"></td>
         </tr>
 
@@ -121,7 +121,7 @@
           <td class="supplier-name">Oil Depot SJ</td>
           <td class="supplier-city">South Jersey</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(856) 282-4848" class="phone-link" onclick="trackCall('d208e16c-6fec-4231-bee2-8c597c8494cb', 'Oil Depot SJ')">(856) 282-4848</a></td>
+          <td class="supplier-phone"><a href="tel:(856) 282-4848" class="phone-link" data-supplier-id="d208e16c-6fec-4231-bee2-8c597c8494cb" data-supplier-name="Oil Depot SJ" data-action="call">(856) 282-4848</a></td>
           <td class="supplier-website"></td>
         </tr>
         </tbody>
@@ -181,53 +181,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

@@ -97,24 +97,24 @@
           <td class="supplier-name">603 Oil Co</td>
           <td class="supplier-city">Freedom</td>
           <td class="supplier-price">$3.45</td>
-          <td class="supplier-phone"><a href="tel:(603) 539-6200" class="phone-link" onclick="trackCall('17f3f1f8-71a1-4284-9c67-62774629b903', '603 Oil Co')">(603) 539-6200</a></td>
-          <td class="supplier-website"><a href="https://www.603oil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('17f3f1f8-71a1-4284-9c67-62774629b903', '603 Oil Co')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 539-6200" class="phone-link" data-supplier-id="17f3f1f8-71a1-4284-9c67-62774629b903" data-supplier-name="603 Oil Co" data-action="call">(603) 539-6200</a></td>
+          <td class="supplier-website"><a href="https://www.603oil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="17f3f1f8-71a1-4284-9c67-62774629b903" data-supplier-name="603 Oil Co" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Cardinal &amp; Glidden Oil</td>
           <td class="supplier-city">Farmington</td>
           <td class="supplier-price">$3.60</td>
-          <td class="supplier-phone"><a href="tel:(603) 755-3663" class="phone-link" onclick="trackCall('83d7c79d-6642-4d5d-af02-f0e8ecdf201b', 'Cardinal &amp; Glidden Oil')">(603) 755-3663</a></td>
-          <td class="supplier-website"><a href="https://www.cardinalglidden.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('83d7c79d-6642-4d5d-af02-f0e8ecdf201b', 'Cardinal &amp; Glidden Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 755-3663" class="phone-link" data-supplier-id="83d7c79d-6642-4d5d-af02-f0e8ecdf201b" data-supplier-name="Cardinal &amp; Glidden Oil" data-action="call">(603) 755-3663</a></td>
+          <td class="supplier-website"><a href="https://www.cardinalglidden.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="83d7c79d-6642-4d5d-af02-f0e8ecdf201b" data-supplier-name="Cardinal &amp; Glidden Oil" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Libra Fuels</td>
           <td class="supplier-city">Epping</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(603) 244-8456" class="phone-link" onclick="trackCall('e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2', 'Libra Fuels')">(603) 244-8456</a></td>
-          <td class="supplier-website"><a href="https://librafuels.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2', 'Libra Fuels')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 244-8456" class="phone-link" data-supplier-id="e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2" data-supplier-name="Libra Fuels" data-action="call">(603) 244-8456</a></td>
+          <td class="supplier-website"><a href="https://librafuels.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2" data-supplier-name="Libra Fuels" data-action="website">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -164,53 +164,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

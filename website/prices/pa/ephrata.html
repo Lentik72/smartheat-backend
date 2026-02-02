@@ -97,24 +97,24 @@
           <td class="supplier-name">Manor Fuels</td>
           <td class="supplier-city">Millersville</td>
           <td class="supplier-price">$3.59</td>
-          <td class="supplier-phone"><a href="tel:(717) 872-0617" class="phone-link" onclick="trackCall('35f7b854-4b73-40d5-b9eb-80f437beb125', 'Manor Fuels')">(717) 872-0617</a></td>
-          <td class="supplier-website"><a href="https://www.manorfuels.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('35f7b854-4b73-40d5-b9eb-80f437beb125', 'Manor Fuels')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(717) 872-0617" class="phone-link" data-supplier-id="35f7b854-4b73-40d5-b9eb-80f437beb125" data-supplier-name="Manor Fuels" data-action="call">(717) 872-0617</a></td>
+          <td class="supplier-website"><a href="https://www.manorfuels.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="35f7b854-4b73-40d5-b9eb-80f437beb125" data-supplier-name="Manor Fuels" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Eby&#039;s Oil Inc</td>
           <td class="supplier-city">New Holland</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(717) 354-5422" class="phone-link" onclick="trackCall('ab63170d-82f5-45d1-a763-907441d828e3', 'Eby&#039;s Oil Inc')">(717) 354-5422</a></td>
-          <td class="supplier-website"><a href="https://www.ebyoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('ab63170d-82f5-45d1-a763-907441d828e3', 'Eby&#039;s Oil Inc')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(717) 354-5422" class="phone-link" data-supplier-id="ab63170d-82f5-45d1-a763-907441d828e3" data-supplier-name="Eby&#039;s Oil Inc" data-action="call">(717) 354-5422</a></td>
+          <td class="supplier-website"><a href="https://www.ebyoil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="ab63170d-82f5-45d1-a763-907441d828e3" data-supplier-name="Eby&#039;s Oil Inc" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Nevco Fuel Service</td>
           <td class="supplier-city">Lititz</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(717) 627-2303" class="phone-link" onclick="trackCall('05919f7d-0d32-4a63-a141-85c41194203d', 'Nevco Fuel Service')">(717) 627-2303</a></td>
-          <td class="supplier-website"><a href="https://nevcofuelservice.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('05919f7d-0d32-4a63-a141-85c41194203d', 'Nevco Fuel Service')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(717) 627-2303" class="phone-link" data-supplier-id="05919f7d-0d32-4a63-a141-85c41194203d" data-supplier-name="Nevco Fuel Service" data-action="call">(717) 627-2303</a></td>
+          <td class="supplier-website"><a href="https://nevcofuelservice.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="05919f7d-0d32-4a63-a141-85c41194203d" data-supplier-name="Nevco Fuel Service" data-action="website">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -173,53 +173,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>

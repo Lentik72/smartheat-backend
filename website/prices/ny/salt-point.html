@@ -97,32 +97,32 @@
           <td class="supplier-name">Jurassic Fuels Inc</td>
           <td class="supplier-city">Lower Hudson Valley</td>
           <td class="supplier-price">$3.99</td>
-          <td class="supplier-phone"><a href="tel:(845) 202-1010" class="phone-link" onclick="trackCall('5330524b-8457-440f-98f5-8e79aadee4ae', 'Jurassic Fuels Inc')">(845) 202-1010</a></td>
-          <td class="supplier-website"><a href="https://www.jurassicfuelsinc.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('5330524b-8457-440f-98f5-8e79aadee4ae', 'Jurassic Fuels Inc')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(845) 202-1010" class="phone-link" data-supplier-id="5330524b-8457-440f-98f5-8e79aadee4ae" data-supplier-name="Jurassic Fuels Inc" data-action="call">(845) 202-1010</a></td>
+          <td class="supplier-website"><a href="https://www.jurassicfuelsinc.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="5330524b-8457-440f-98f5-8e79aadee4ae" data-supplier-name="Jurassic Fuels Inc" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Economy Oil</td>
           <td class="supplier-city">Fishkill</td>
           <td class="supplier-price">$4.00</td>
-          <td class="supplier-phone"><a href="tel:(845) 206-4322" class="phone-link" onclick="trackCall('237422e0-0b01-40c6-aa17-e23e874cbd34', 'Economy Oil')">(845) 206-4322</a></td>
-          <td class="supplier-website"><a href="https://www.economy-oil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('237422e0-0b01-40c6-aa17-e23e874cbd34', 'Economy Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(845) 206-4322" class="phone-link" data-supplier-id="237422e0-0b01-40c6-aa17-e23e874cbd34" data-supplier-name="Economy Oil" data-action="call">(845) 206-4322</a></td>
+          <td class="supplier-website"><a href="https://www.economy-oil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="237422e0-0b01-40c6-aa17-e23e874cbd34" data-supplier-name="Economy Oil" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Economy Fuel (Peekskill)</td>
           <td class="supplier-city">Peekskill</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(914) 739-5590" class="phone-link" onclick="trackCall('4542e02c-a5eb-4320-ab2f-1e38a843d90b', 'Economy Fuel (Peekskill)')">(914) 739-5590</a></td>
-          <td class="supplier-website"><a href="https://www.economyfuelny.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('4542e02c-a5eb-4320-ab2f-1e38a843d90b', 'Economy Fuel (Peekskill)')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(914) 739-5590" class="phone-link" data-supplier-id="4542e02c-a5eb-4320-ab2f-1e38a843d90b" data-supplier-name="Economy Fuel (Peekskill)" data-action="call">(914) 739-5590</a></td>
+          <td class="supplier-website"><a href="https://www.economyfuelny.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="4542e02c-a5eb-4320-ab2f-1e38a843d90b" data-supplier-name="Economy Fuel (Peekskill)" data-action="website">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Putnam Oil</td>
           <td class="supplier-city">Carmel</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(845) 225-3900" class="phone-link" onclick="trackCall('2d9cf3d9-a0b3-41f8-9668-06526391e106', 'Putnam Oil')">(845) 225-3900</a></td>
-          <td class="supplier-website"><a href="https://putnamoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('2d9cf3d9-a0b3-41f8-9668-06526391e106', 'Putnam Oil')">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(845) 225-3900" class="phone-link" data-supplier-id="2d9cf3d9-a0b3-41f8-9668-06526391e106" data-supplier-name="Putnam Oil" data-action="call">(845) 225-3900</a></td>
+          <td class="supplier-website"><a href="https://putnamoil.com" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="2d9cf3d9-a0b3-41f8-9668-06526391e106" data-supplier-name="Putnam Oil" data-action="website">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -181,53 +181,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script>
-    // Click tracking for SEO pages
-    var lastClick = 0;
-    function trackCall(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'call',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-    function trackWebsite(id, name) {
-      var now = Date.now();
-      if (now - lastClick < 500) return;
-      lastClick = now;
-      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      fetch('https://www.gethomeheat.com/api/log-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: id,
-          supplierName: name,
-          action: 'website',
-          pageSource: 'seo-city',
-          deviceType: isMobile ? 'mobile' : 'desktop',
-          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-        })
-      }).catch(function(){});
-      if (typeof gtag === 'function') {
-        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
-      }
-    }
-  </script>
+  <script src="../../js/seo-tracking.js"></script>
 </body>
 </html>
