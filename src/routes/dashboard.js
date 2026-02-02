@@ -2019,4 +2019,128 @@ router.get('/activity', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/dashboard/onboarding-funnel
+ * Returns onboarding step completion rates for funnel analysis.
+ * Used to identify drop-off points and measure onboarding effectiveness.
+ */
+router.get('/onboarding-funnel', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+  const days = parseDays(req, 30);
+
+  try {
+    // Get step counts by action
+    const [stepData] = await sequelize.query(`
+      SELECT
+        step_name,
+        action,
+        COUNT(*) as count,
+        COUNT(DISTINCT ip_hash) as unique_users
+      FROM onboarding_steps
+      WHERE created_at > NOW() - INTERVAL '${days} days'
+      GROUP BY step_name, action
+      ORDER BY step_name, action
+    `);
+
+    // Get daily totals for trend chart
+    const [dailyData] = await sequelize.query(`
+      SELECT
+        DATE(created_at) as date,
+        step_name,
+        action,
+        COUNT(*) as count
+      FROM onboarding_steps
+      WHERE created_at > NOW() - INTERVAL '${days} days'
+      GROUP BY DATE(created_at), step_name, action
+      ORDER BY date DESC
+    `);
+
+    // Get regional breakdown
+    const [regionalData] = await sequelize.query(`
+      SELECT
+        zip_prefix,
+        COUNT(*) as total_events,
+        COUNT(*) FILTER (WHERE step_name = 'onboarding' AND action = 'completed') as completions
+      FROM onboarding_steps
+      WHERE created_at > NOW() - INTERVAL '${days} days'
+        AND zip_prefix IS NOT NULL
+      GROUP BY zip_prefix
+      ORDER BY total_events DESC
+      LIMIT 20
+    `);
+
+    // Get app version breakdown
+    const [versionData] = await sequelize.query(`
+      SELECT
+        app_version,
+        COUNT(*) as total_events,
+        COUNT(*) FILTER (WHERE step_name = 'onboarding' AND action = 'completed') as completions
+      FROM onboarding_steps
+      WHERE created_at > NOW() - INTERVAL '${days} days'
+        AND app_version IS NOT NULL
+      GROUP BY app_version
+      ORDER BY total_events DESC
+    `);
+
+    // Calculate funnel metrics
+    const stepOrder = [
+      'value_screen', 'intent', 'postal_code', 'tank_size',
+      'home_size', 'tank_level', 'notifications', 'smartburn', 'consent'
+    ];
+
+    const funnelSteps = stepOrder.map(step => {
+      const viewed = stepData.find(d => d.step_name === step && d.action === 'viewed');
+      const completed = stepData.find(d => d.step_name === step && (d.action === 'completed' || d.action === 'continue' || d.action === 'selected' || d.action === 'granted'));
+      const skipped = stepData.find(d => d.step_name === step && d.action === 'skipped');
+
+      return {
+        step,
+        viewed: parseInt(viewed?.count || 0),
+        viewedUnique: parseInt(viewed?.unique_users || 0),
+        completed: parseInt(completed?.count || 0),
+        skipped: parseInt(skipped?.count || 0),
+        completionRate: viewed?.count > 0
+          ? Math.round((completed?.count || 0) / viewed.count * 100)
+          : 0
+      };
+    });
+
+    // Calculate overall completion rate
+    const firstStep = funnelSteps[0];
+    const lastStep = funnelSteps[funnelSteps.length - 1];
+    const overallCompletionRate = firstStep.viewed > 0
+      ? Math.round(lastStep.completed / firstStep.viewed * 100)
+      : 0;
+
+    res.json({
+      period: `${days}d`,
+      funnel: funnelSteps,
+      overallCompletionRate,
+      daily: dailyData,
+      byRegion: regionalData,
+      byVersion: versionData,
+      totalEvents: stepData.reduce((sum, d) => sum + parseInt(d.count), 0)
+    });
+
+  } catch (error) {
+    // Table might not exist yet
+    if (error.message.includes('relation "onboarding_steps" does not exist')) {
+      return res.json({
+        period: `${days}d`,
+        funnel: [],
+        overallCompletionRate: 0,
+        daily: [],
+        byRegion: [],
+        byVersion: [],
+        totalEvents: 0,
+        note: 'Onboarding tracking not yet set up - run migration 018'
+      });
+    }
+
+    logger.error('[Dashboard] Onboarding funnel error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch onboarding data', details: error.message });
+  }
+});
+
 module.exports = router;
