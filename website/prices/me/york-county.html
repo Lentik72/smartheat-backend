@@ -97,15 +97,15 @@
           <td class="supplier-name">Cleaves Energy</td>
           <td class="supplier-city">Buxton</td>
           <td class="supplier-price">$3.30</td>
-          <td class="supplier-phone"><a href="tel:(207) 468-6115" class="phone-link">(207) 468-6115</a></td>
-          <td class="supplier-website"><a href="https://cleavesenergy.com/" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(207) 468-6115" class="phone-link" onclick="trackCall('dcd26954-0217-40b2-a805-06acda226953', 'Cleaves Energy')">(207) 468-6115</a></td>
+          <td class="supplier-website"><a href="https://cleavesenergy.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('dcd26954-0217-40b2-a805-06acda226953', 'Cleaves Energy')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">AJ&#039;s Discount Oil</td>
           <td class="supplier-city">Portland</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(207) 791-2825" class="phone-link">(207) 791-2825</a></td>
+          <td class="supplier-phone"><a href="tel:(207) 791-2825" class="phone-link" onclick="trackCall('3cc35a1d-646b-4df7-b8f4-1243499f995b', 'AJ&#039;s Discount Oil')">(207) 791-2825</a></td>
           <td class="supplier-website"></td>
         </tr>
 
@@ -113,8 +113,8 @@
           <td class="supplier-name">Discount Energy Maine</td>
           <td class="supplier-city">Scarborough</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(207) 883-9330" class="phone-link">(207) 883-9330</a></td>
-          <td class="supplier-website"><a href="https://www.discountenergy.org/" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(207) 883-9330" class="phone-link" onclick="trackCall('8b0f0ece-3723-4e23-975b-a81df29d16d9', 'Discount Energy Maine')">(207) 883-9330</a></td>
+          <td class="supplier-website"><a href="https://www.discountenergy.org/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('8b0f0ece-3723-4e23-975b-a81df29d16d9', 'Discount Energy Maine')">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -164,5 +164,53 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
+  <script>
+    // Click tracking for SEO pages
+    var lastClick = 0;
+    function trackCall(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'call',
+          pageSource: 'seo-county',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-county' });
+      }
+    }
+    function trackWebsite(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'website',
+          pageSource: 'seo-county',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-county' });
+      }
+    }
+  </script>
 </body>
 </html>

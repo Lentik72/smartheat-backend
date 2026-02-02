@@ -97,32 +97,32 @@
           <td class="supplier-name">Nibroc Oil</td>
           <td class="supplier-city">Stratham</td>
           <td class="supplier-price">$3.50</td>
-          <td class="supplier-phone"><a href="tel:(603) 772-6532" class="phone-link">(603) 772-6532</a></td>
-          <td class="supplier-website"><a href="https://nibrocoil.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 772-6532" class="phone-link" onclick="trackCall('cf9d1457-dc57-41fc-a0d9-188c7098f56f', 'Nibroc Oil')">(603) 772-6532</a></td>
+          <td class="supplier-website"><a href="https://nibrocoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('cf9d1457-dc57-41fc-a0d9-188c7098f56f', 'Nibroc Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Granite State Oil</td>
           <td class="supplier-city">North Hampton</td>
           <td class="supplier-price">$3.80</td>
-          <td class="supplier-phone"><a href="tel:(603) 379-6633" class="phone-link">(603) 379-6633</a></td>
-          <td class="supplier-website"><a href="https://granitestateoil.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 379-6633" class="phone-link" onclick="trackCall('89730f3d-373d-4dc3-911f-f84659ada46b', 'Granite State Oil')">(603) 379-6633</a></td>
+          <td class="supplier-website"><a href="https://granitestateoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('89730f3d-373d-4dc3-911f-f84659ada46b', 'Granite State Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Flagship Fuel</td>
           <td class="supplier-city">Exeter</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(603) 778-7100" class="phone-link">(603) 778-7100</a></td>
-          <td class="supplier-website"><a href="https://flagshipfuelco.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 778-7100" class="phone-link" onclick="trackCall('1d43938f-117f-4936-8961-08a8f603ed23', 'Flagship Fuel')">(603) 778-7100</a></td>
+          <td class="supplier-website"><a href="https://flagshipfuelco.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('1d43938f-117f-4936-8961-08a8f603ed23', 'Flagship Fuel')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Libra Fuels</td>
           <td class="supplier-city">Epping</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(603) 244-8456" class="phone-link">(603) 244-8456</a></td>
-          <td class="supplier-website"><a href="https://librafuels.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 244-8456" class="phone-link" onclick="trackCall('e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2', 'Libra Fuels')">(603) 244-8456</a></td>
+          <td class="supplier-website"><a href="https://librafuels.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2', 'Libra Fuels')">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -172,5 +172,53 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
+  <script>
+    // Click tracking for SEO pages
+    var lastClick = 0;
+    function trackCall(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'call',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+    function trackWebsite(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'website',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+  </script>
 </body>
 </html>

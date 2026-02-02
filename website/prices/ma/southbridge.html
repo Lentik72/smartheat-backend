@@ -97,15 +97,15 @@
           <td class="supplier-name">LeBlanc Oil</td>
           <td class="supplier-city">Southbridge</td>
           <td class="supplier-price">$3.58</td>
-          <td class="supplier-phone"><a href="tel:(508) 248-1444" class="phone-link">(508) 248-1444</a></td>
-          <td class="supplier-website"><a href="https://leblancoil.org" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(508) 248-1444" class="phone-link" onclick="trackCall('016d8b6d-0987-4fdb-9fd7-f3143cdbb89c', 'LeBlanc Oil')">(508) 248-1444</a></td>
+          <td class="supplier-website"><a href="https://leblancoil.org" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('016d8b6d-0987-4fdb-9fd7-f3143cdbb89c', 'LeBlanc Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Midnight Oil Service</td>
           <td class="supplier-city">Shrewsbury</td>
           <td class="supplier-price">$3.60</td>
-          <td class="supplier-phone"><a href="tel:(508) 853-2539" class="phone-link">(508) 853-2539</a></td>
+          <td class="supplier-phone"><a href="tel:(508) 853-2539" class="phone-link" onclick="trackCall('b6402414-9a89-4333-9899-b4ac59f98e87', 'Midnight Oil Service')">(508) 853-2539</a></td>
           <td class="supplier-website"></td>
         </tr>
 
@@ -113,24 +113,24 @@
           <td class="supplier-name">Red Star Oil</td>
           <td class="supplier-city">Southbridge</td>
           <td class="supplier-price">$3.74</td>
-          <td class="supplier-phone"><a href="tel:(508) 764-4300" class="phone-link">(508) 764-4300</a></td>
-          <td class="supplier-website"><a href="https://redstaroil.net" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(508) 764-4300" class="phone-link" onclick="trackCall('f2d3ae71-c909-4cca-9fad-4103e75b59e5', 'Red Star Oil')">(508) 764-4300</a></td>
+          <td class="supplier-website"><a href="https://redstaroil.net" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('f2d3ae71-c909-4cca-9fad-4103e75b59e5', 'Red Star Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Hellen Fuels Corp</td>
           <td class="supplier-city">Uxbridge</td>
           <td class="supplier-price">$3.80</td>
-          <td class="supplier-phone"><a href="tel:(508) 278-6006" class="phone-link">(508) 278-6006</a></td>
-          <td class="supplier-website"><a href="https://hellenfuelscorp.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(508) 278-6006" class="phone-link" onclick="trackCall('5a529276-4dc1-4263-836c-d438f7f4c1de', 'Hellen Fuels Corp')">(508) 278-6006</a></td>
+          <td class="supplier-website"><a href="https://hellenfuelscorp.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('5a529276-4dc1-4263-836c-d438f7f4c1de', 'Hellen Fuels Corp')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Universal Oil</td>
           <td class="supplier-city">Providence</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(401) 521-0300" class="phone-link">(401) 521-0300</a></td>
-          <td class="supplier-website"><a href="https://univoil.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(401) 521-0300" class="phone-link" onclick="trackCall('f10442d3-5cdb-4ac4-b5db-3aab4ae36240', 'Universal Oil')">(401) 521-0300</a></td>
+          <td class="supplier-website"><a href="https://univoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('f10442d3-5cdb-4ac4-b5db-3aab4ae36240', 'Universal Oil')">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -189,5 +189,53 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
+  <script>
+    // Click tracking for SEO pages
+    var lastClick = 0;
+    function trackCall(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'call',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+    function trackWebsite(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'website',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+  </script>
 </body>
 </html>

@@ -97,24 +97,24 @@
           <td class="supplier-name">ACS Oil Service</td>
           <td class="supplier-city">Bronx</td>
           <td class="supplier-price">$3.60</td>
-          <td class="supplier-phone"><a href="tel:(718) 484-9594" class="phone-link">(718) 484-9594</a></td>
-          <td class="supplier-website"><a href="https://www.acsoilservice.com/" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(718) 484-9594" class="phone-link" onclick="trackCall('9d359ead-3028-4a28-9f9b-24f12c229764', 'ACS Oil Service')">(718) 484-9594</a></td>
+          <td class="supplier-website"><a href="https://www.acsoilservice.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('9d359ead-3028-4a28-9f9b-24f12c229764', 'ACS Oil Service')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">All Time Fuel</td>
           <td class="supplier-city">Yonkers</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(914) 979-0416" class="phone-link">(914) 979-0416</a></td>
-          <td class="supplier-website"><a href="https://alltimefuel.com/" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(914) 979-0416" class="phone-link" onclick="trackCall('f7ea6a2c-d312-4797-9897-148928332c35', 'All Time Fuel')">(914) 979-0416</a></td>
+          <td class="supplier-website"><a href="https://alltimefuel.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('f7ea6a2c-d312-4797-9897-148928332c35', 'All Time Fuel')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">D&amp;G Fuel Oil</td>
           <td class="supplier-city">Middle Village</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(516) 319-5025" class="phone-link">(516) 319-5025</a></td>
-          <td class="supplier-website"><a href="https://dgfueloil.com/" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(516) 319-5025" class="phone-link" onclick="trackCall('f39782b8-8688-4464-877d-2dd87c940a98', 'D&amp;G Fuel Oil')">(516) 319-5025</a></td>
+          <td class="supplier-website"><a href="https://dgfueloil.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('f39782b8-8688-4464-877d-2dd87c940a98', 'D&amp;G Fuel Oil')">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -158,5 +158,53 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
+  <script>
+    // Click tracking for SEO pages
+    var lastClick = 0;
+    function trackCall(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'call',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+    function trackWebsite(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'website',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+  </script>
 </body>
 </html>

@@ -97,40 +97,40 @@
           <td class="supplier-name">Joes Fuel Company</td>
           <td class="supplier-city">Bridgeport</td>
           <td class="supplier-price">$3.80</td>
-          <td class="supplier-phone"><a href="tel:(203) 374-1804" class="phone-link">(203) 374-1804</a></td>
-          <td class="supplier-website"><a href="https://www.joesfuelct.com/" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(203) 374-1804" class="phone-link" onclick="trackCall('9301de42-b3c4-43ac-9eb2-cdcc59e71680', 'Joes Fuel Company')">(203) 374-1804</a></td>
+          <td class="supplier-website"><a href="https://www.joesfuelct.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('9301de42-b3c4-43ac-9eb2-cdcc59e71680', 'Joes Fuel Company')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Parkway Oil</td>
           <td class="supplier-city">Stratford</td>
           <td class="supplier-price">$4.00</td>
-          <td class="supplier-phone"><a href="tel:(203) 367-0083" class="phone-link">(203) 367-0083</a></td>
-          <td class="supplier-website"><a href="https://parkwayoil.com/" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(203) 367-0083" class="phone-link" onclick="trackCall('a9e0eb89-7812-40ca-bc3f-fbb39a0b038e', 'Parkway Oil')">(203) 367-0083</a></td>
+          <td class="supplier-website"><a href="https://parkwayoil.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('a9e0eb89-7812-40ca-bc3f-fbb39a0b038e', 'Parkway Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Polar Energy CT</td>
           <td class="supplier-city">Monroe</td>
           <td class="supplier-price">$4.00</td>
-          <td class="supplier-phone"><a href="tel:(866) 214-0124" class="phone-link">(866) 214-0124</a></td>
-          <td class="supplier-website"><a href="https://www.polarenergyct.com/" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(866) 214-0124" class="phone-link" onclick="trackCall('a8bbbfe1-0ee7-45fc-b043-142bb3e1af63', 'Polar Energy CT')">(866) 214-0124</a></td>
+          <td class="supplier-website"><a href="https://www.polarenergyct.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('a8bbbfe1-0ee7-45fc-b043-142bb3e1af63', 'Polar Energy CT')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Coastline Fuel</td>
           <td class="supplier-city">Norwalk</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(203) 846-3601" class="phone-link">(203) 846-3601</a></td>
-          <td class="supplier-website"><a href="https://coastlinefuelinc.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(203) 846-3601" class="phone-link" onclick="trackCall('bd32084a-88f0-4209-b53d-c26a1a01ddea', 'Coastline Fuel')">(203) 846-3601</a></td>
+          <td class="supplier-website"><a href="https://coastlinefuelinc.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('bd32084a-88f0-4209-b53d-c26a1a01ddea', 'Coastline Fuel')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Knight Fuel Oil</td>
           <td class="supplier-city">Bridgeport</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(203) 243-1980" class="phone-link">(203) 243-1980</a></td>
-          <td class="supplier-website"><a href="https://knightfuelinc.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(203) 243-1980" class="phone-link" onclick="trackCall('829c8d74-bd8d-45da-a534-a0449710aa84', 'Knight Fuel Oil')">(203) 243-1980</a></td>
+          <td class="supplier-website"><a href="https://knightfuelinc.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('829c8d74-bd8d-45da-a534-a0449710aa84', 'Knight Fuel Oil')">Website</a></td>
         </tr>
 
         <tr>
@@ -138,7 +138,7 @@
           <td class="supplier-city">Bridgeport</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone">—</td>
-          <td class="supplier-website"><a href="https://residentialfuelsystems.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-website"><a href="https://residentialfuelsystems.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('aaa01976-de96-4622-916a-c898600f2f96', 'Residential Fuel Systems')">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -197,5 +197,53 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
+  <script>
+    // Click tracking for SEO pages
+    var lastClick = 0;
+    function trackCall(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'call',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+    function trackWebsite(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'website',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+  </script>
 </body>
 </html>

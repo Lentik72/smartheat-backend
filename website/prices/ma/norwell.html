@@ -97,32 +97,32 @@
           <td class="supplier-name">Cesar&#039;s Oil</td>
           <td class="supplier-city">Stoughton</td>
           <td class="supplier-price">$3.70</td>
-          <td class="supplier-phone"><a href="tel:(781) 344-6116" class="phone-link">(781) 344-6116</a></td>
-          <td class="supplier-website"><a href="https://cesarsoil.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(781) 344-6116" class="phone-link" onclick="trackCall('dd379922-4882-46c7-bd91-97c3a00bd0be', 'Cesar&#039;s Oil')">(781) 344-6116</a></td>
+          <td class="supplier-website"><a href="https://cesarsoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('dd379922-4882-46c7-bd91-97c3a00bd0be', 'Cesar&#039;s Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Fossil Fuel Enterprises</td>
           <td class="supplier-city">Weymouth</td>
           <td class="supplier-price">$3.80</td>
-          <td class="supplier-phone"><a href="tel:(781) 335-6464" class="phone-link">(781) 335-6464</a></td>
-          <td class="supplier-website"><a href="https://fossilfuelent.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(781) 335-6464" class="phone-link" onclick="trackCall('45d2068c-c0c5-406f-85cc-d6db20e26e27', 'Fossil Fuel Enterprises')">(781) 335-6464</a></td>
+          <td class="supplier-website"><a href="https://fossilfuelent.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('45d2068c-c0c5-406f-85cc-d6db20e26e27', 'Fossil Fuel Enterprises')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Kelley&#039;s Oil</td>
           <td class="supplier-city">South Weymouth</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(781) 331-1055" class="phone-link">(781) 331-1055</a></td>
-          <td class="supplier-website"><a href="https://kelleysoil.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(781) 331-1055" class="phone-link" onclick="trackCall('0e6fae96-27eb-4254-8e8d-080f7f552f4a', 'Kelley&#039;s Oil')">(781) 331-1055</a></td>
+          <td class="supplier-website"><a href="https://kelleysoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('0e6fae96-27eb-4254-8e8d-080f7f552f4a', 'Kelley&#039;s Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Scott Williams Oil</td>
           <td class="supplier-city">Quincy</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(617) 773-1553" class="phone-link">(617) 773-1553</a></td>
-          <td class="supplier-website"><a href="https://scottwilliamsoil.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(617) 773-1553" class="phone-link" onclick="trackCall('aaffa5b2-631f-4a60-ab47-6c22a5a8bf38', 'Scott Williams Oil')">(617) 773-1553</a></td>
+          <td class="supplier-website"><a href="https://scottwilliamsoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('aaffa5b2-631f-4a60-ab47-6c22a5a8bf38', 'Scott Williams Oil')">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -181,5 +181,53 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
+  <script>
+    // Click tracking for SEO pages
+    var lastClick = 0;
+    function trackCall(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'call',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+    function trackWebsite(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'website',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+  </script>
 </body>
 </html>

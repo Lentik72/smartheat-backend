@@ -97,40 +97,40 @@
           <td class="supplier-name">Just Oil and More</td>
           <td class="supplier-city">Rochester</td>
           <td class="supplier-price">$3.59</td>
-          <td class="supplier-phone"><a href="tel:(603) 664-1080" class="phone-link">(603) 664-1080</a></td>
-          <td class="supplier-website"><a href="https://www.justoilandmore.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 664-1080" class="phone-link" onclick="trackCall('9331b1a8-1fe5-4c05-b5ff-9405d827e373', 'Just Oil and More')">(603) 664-1080</a></td>
+          <td class="supplier-website"><a href="https://www.justoilandmore.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('9331b1a8-1fe5-4c05-b5ff-9405d827e373', 'Just Oil and More')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Cardinal &amp; Glidden Oil</td>
           <td class="supplier-city">Farmington</td>
           <td class="supplier-price">$3.60</td>
-          <td class="supplier-phone"><a href="tel:(603) 755-3663" class="phone-link">(603) 755-3663</a></td>
-          <td class="supplier-website"><a href="https://www.cardinalglidden.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 755-3663" class="phone-link" onclick="trackCall('83d7c79d-6642-4d5d-af02-f0e8ecdf201b', 'Cardinal &amp; Glidden Oil')">(603) 755-3663</a></td>
+          <td class="supplier-website"><a href="https://www.cardinalglidden.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('83d7c79d-6642-4d5d-af02-f0e8ecdf201b', 'Cardinal &amp; Glidden Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Local Pride Heating Oil</td>
           <td class="supplier-city">Rochester</td>
           <td class="supplier-price">$3.60</td>
-          <td class="supplier-phone"><a href="tel:(603) 343-4050" class="phone-link">(603) 343-4050</a></td>
-          <td class="supplier-website"><a href="https://localpridenh.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 343-4050" class="phone-link" onclick="trackCall('cc0fcb28-85cd-4f3d-8eb7-d342ce7d97f9', 'Local Pride Heating Oil')">(603) 343-4050</a></td>
+          <td class="supplier-website"><a href="https://localpridenh.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('cc0fcb28-85cd-4f3d-8eb7-d342ce7d97f9', 'Local Pride Heating Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Deke&#039;s Fuel</td>
           <td class="supplier-city">Rochester</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(603) 552-9925" class="phone-link">(603) 552-9925</a></td>
-          <td class="supplier-website"><a href="https://dekesfuel.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 552-9925" class="phone-link" onclick="trackCall('8cf23360-c536-4a69-acf9-c7e6250fc30e', 'Deke&#039;s Fuel')">(603) 552-9925</a></td>
+          <td class="supplier-website"><a href="https://dekesfuel.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('8cf23360-c536-4a69-acf9-c7e6250fc30e', 'Deke&#039;s Fuel')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Libra Fuels</td>
           <td class="supplier-city">Epping</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(603) 244-8456" class="phone-link">(603) 244-8456</a></td>
-          <td class="supplier-website"><a href="https://librafuels.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(603) 244-8456" class="phone-link" onclick="trackCall('e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2', 'Libra Fuels')">(603) 244-8456</a></td>
+          <td class="supplier-website"><a href="https://librafuels.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('e5f0ccb3-3f79-4bb3-88dd-386b85a75ca2', 'Libra Fuels')">Website</a></td>
         </tr>
 
         <tr>
@@ -138,7 +138,7 @@
           <td class="supplier-city">Portsmouth</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone">—</td>
-          <td class="supplier-website"><a href="https://wickedwarm.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-website"><a href="https://wickedwarm.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('c04b257e-afcb-412d-b8d9-5555cf385b80', 'Wicked Warm')">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -195,5 +195,53 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
+  <script>
+    // Click tracking for SEO pages
+    var lastClick = 0;
+    function trackCall(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'call',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+    function trackWebsite(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'website',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+  </script>
 </body>
 </html>

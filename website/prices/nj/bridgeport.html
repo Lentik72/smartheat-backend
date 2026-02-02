@@ -97,15 +97,15 @@
           <td class="supplier-name">Riggins Oil</td>
           <td class="supplier-city">Bridgeton</td>
           <td class="supplier-price">$3.25</td>
-          <td class="supplier-phone"><a href="tel:(856) 825-7600" class="phone-link">(856) 825-7600</a></td>
-          <td class="supplier-website"><a href="https://rigginsoil.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(856) 825-7600" class="phone-link" onclick="trackCall('1fc6f5fe-fc7d-4158-9226-9ddcae7b643c', 'Riggins Oil')">(856) 825-7600</a></td>
+          <td class="supplier-website"><a href="https://rigginsoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('1fc6f5fe-fc7d-4158-9226-9ddcae7b643c', 'Riggins Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Royal Oil</td>
           <td class="supplier-city">Woodbury</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(856) 845-1866" class="phone-link">(856) 845-1866</a></td>
+          <td class="supplier-phone"><a href="tel:(856) 845-1866" class="phone-link" onclick="trackCall('1d569f55-0eae-449a-a38a-e874a3c92680', 'Royal Oil')">(856) 845-1866</a></td>
           <td class="supplier-website"></td>
         </tr>
 
@@ -113,16 +113,16 @@
           <td class="supplier-name">W.H. Ferrell&#039;s Oil &amp; Gas</td>
           <td class="supplier-city">Pedricktown</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(856) 299-0500" class="phone-link">(856) 299-0500</a></td>
-          <td class="supplier-website"><a href="https://wmferrellsoil.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(856) 299-0500" class="phone-link" onclick="trackCall('39db6b4a-60ff-4583-95dd-6da05bde4db5', 'W.H. Ferrell&#039;s Oil &amp; Gas')">(856) 299-0500</a></td>
+          <td class="supplier-website"><a href="https://wmferrellsoil.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('39db6b4a-60ff-4583-95dd-6da05bde4db5', 'W.H. Ferrell&#039;s Oil &amp; Gas')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Weaver Oil Company</td>
           <td class="supplier-city">West Deptford</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(856) 845-1505" class="phone-link">(856) 845-1505</a></td>
-          <td class="supplier-website"><a href="https://www.weaveroilcompany.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(856) 845-1505" class="phone-link" onclick="trackCall('74f691f4-2016-4deb-b2f8-e5d644a91be2', 'Weaver Oil Company')">(856) 845-1505</a></td>
+          <td class="supplier-website"><a href="https://www.weaveroilcompany.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('74f691f4-2016-4deb-b2f8-e5d644a91be2', 'Weaver Oil Company')">Website</a></td>
         </tr>
         </tbody>
       </table>
@@ -181,5 +181,53 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
+  <script>
+    // Click tracking for SEO pages
+    var lastClick = 0;
+    function trackCall(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'call',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+    function trackWebsite(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'website',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+  </script>
 </body>
 </html>

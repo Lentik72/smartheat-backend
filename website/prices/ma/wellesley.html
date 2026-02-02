@@ -97,31 +97,31 @@
           <td class="supplier-name">Carey Discount Oil</td>
           <td class="supplier-city">Hanson</td>
           <td class="supplier-price">$3.84</td>
-          <td class="supplier-phone"><a href="tel:(781) 447-4444" class="phone-link">(781) 447-4444</a></td>
-          <td class="supplier-website"><a href="https://careysoil.com/" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(781) 447-4444" class="phone-link" onclick="trackCall('cd530893-aa22-4a8b-b445-6a43a3715bce', 'Carey Discount Oil')">(781) 447-4444</a></td>
+          <td class="supplier-website"><a href="https://careysoil.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('cd530893-aa22-4a8b-b445-6a43a3715bce', 'Carey Discount Oil')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Lapuma Fuel</td>
           <td class="supplier-city">Dedham</td>
           <td class="supplier-price">$3.90</td>
-          <td class="supplier-phone"><a href="tel:(781) 461-2525" class="phone-link">(781) 461-2525</a></td>
-          <td class="supplier-website"><a href="https://lapumafuel.com" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(781) 461-2525" class="phone-link" onclick="trackCall('3640e3ce-d60e-4b7d-acec-feb061aeb1ce', 'Lapuma Fuel')">(781) 461-2525</a></td>
+          <td class="supplier-website"><a href="https://lapumafuel.com" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('3640e3ce-d60e-4b7d-acec-feb061aeb1ce', 'Lapuma Fuel')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">Basile Oil Company</td>
           <td class="supplier-city">Watertown</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(888) 574-5234" class="phone-link">(888) 574-5234</a></td>
-          <td class="supplier-website"><a href="https://basileoilco.com/" target="_blank" rel="noopener noreferrer" class="website-link">Website</a></td>
+          <td class="supplier-phone"><a href="tel:(888) 574-5234" class="phone-link" onclick="trackCall('b3b8a4b1-bb31-4c92-b2fb-d8a7dd615f88', 'Basile Oil Company')">(888) 574-5234</a></td>
+          <td class="supplier-website"><a href="https://basileoilco.com/" target="_blank" rel="noopener noreferrer" class="website-link" onclick="trackWebsite('b3b8a4b1-bb31-4c92-b2fb-d8a7dd615f88', 'Basile Oil Company')">Website</a></td>
         </tr>
 
         <tr>
           <td class="supplier-name">COD Petro</td>
           <td class="supplier-city">Quincy</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
-          <td class="supplier-phone"><a href="tel:(781) 982-5585" class="phone-link">(781) 982-5585</a></td>
+          <td class="supplier-phone"><a href="tel:(781) 982-5585" class="phone-link" onclick="trackCall('937e70e7-28a1-4d42-aad4-612f814e6959', 'COD Petro')">(781) 982-5585</a></td>
           <td class="supplier-website"></td>
         </tr>
         </tbody>
@@ -181,5 +181,53 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
+  <script>
+    // Click tracking for SEO pages
+    var lastClick = 0;
+    function trackCall(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'call',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_call_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+    function trackWebsite(id, name) {
+      var now = Date.now();
+      if (now - lastClick < 500) return;
+      lastClick = now;
+      var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplierId: id,
+          supplierName: name,
+          action: 'website',
+          pageSource: 'seo-city',
+          deviceType: isMobile ? 'mobile' : 'desktop',
+          platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+        })
+      }).catch(function(){});
+      if (typeof gtag === 'function') {
+        gtag('event', 'supplier_outbound_click', { supplier_id: id, supplier_name: name, page_type: 'seo-city' });
+      }
+    }
+  </script>
 </body>
 </html>
