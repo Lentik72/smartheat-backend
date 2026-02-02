@@ -2256,4 +2256,352 @@ router.get('/onboarding-funnel', async (req, res) => {
   }
 });
 
+// ============================================================================
+// APP ANALYTICS ENDPOINTS (V2.15.0)
+// Comprehensive backend tracking without consent requirement
+// ============================================================================
+
+/**
+ * GET /api/dashboard/app-analytics
+ * Overview of all app analytics from app_events table
+ */
+router.get('/app-analytics', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+  const days = parseDays(req, 30);
+
+  try {
+    const [
+      // Retention metrics
+      [dauData],
+      [retentionData],
+      // Feature usage
+      [featureData],
+      // Conversion
+      [conversionData],
+      // Propane
+      [propaneData],
+      // Coverage
+      [coverageData],
+      // Totals
+      [totalData]
+    ] = await Promise.all([
+      // DAU/WAU/MAU
+      sequelize.query(`
+        SELECT
+          COUNT(DISTINCT device_id_hash) FILTER (WHERE created_at > NOW() - INTERVAL '1 day') as dau,
+          COUNT(DISTINCT device_id_hash) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as wau,
+          COUNT(DISTINCT device_id_hash) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') as mau,
+          COUNT(DISTINCT device_id_hash) as total_devices
+        FROM app_events
+        WHERE device_id_hash IS NOT NULL
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Retention by cohort (simplified - users who came back)
+      sequelize.query(`
+        SELECT
+          COUNT(DISTINCT device_id_hash) FILTER (
+            WHERE device_id_hash IN (
+              SELECT device_id_hash FROM app_events
+              WHERE event_name = 'app_opened'
+              AND created_at > NOW() - INTERVAL '7 days'
+              AND created_at < NOW() - INTERVAL '1 day'
+            )
+            AND created_at > NOW() - INTERVAL '1 day'
+          ) as returned_users,
+          COUNT(DISTINCT device_id_hash) FILTER (
+            WHERE event_name = 'app_opened'
+            AND created_at > NOW() - INTERVAL '7 days'
+            AND created_at < NOW() - INTERVAL '1 day'
+          ) as cohort_size
+        FROM app_events
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Feature usage
+      sequelize.query(`
+        SELECT
+          event_data->>'feature' as feature,
+          COUNT(*) as usage_count,
+          COUNT(DISTINCT device_id_hash) as unique_users
+        FROM app_events
+        WHERE event_name = 'feature_used'
+          AND created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY event_data->>'feature'
+        ORDER BY usage_count DESC
+        LIMIT 20
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Conversion events
+      sequelize.query(`
+        SELECT
+          event_name,
+          COUNT(*) as count,
+          COUNT(DISTINCT device_id_hash) as unique_users
+        FROM app_events
+        WHERE event_name IN ('delivery_logged', 'tank_reading_added', 'supplier_contacted', 'onboarding_completed')
+          AND created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY event_name
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Propane metrics
+      sequelize.query(`
+        SELECT
+          fuel_type,
+          COUNT(*) as event_count,
+          COUNT(DISTINCT device_id_hash) as unique_devices,
+          COUNT(DISTINCT zip_prefix) as unique_regions
+        FROM app_events
+        WHERE fuel_type IS NOT NULL
+          AND created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY fuel_type
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Coverage gaps (directory searches with no results)
+      sequelize.query(`
+        SELECT
+          zip_prefix,
+          COUNT(*) as no_result_count
+        FROM app_events
+        WHERE event_name = 'directory_no_results'
+          AND created_at > NOW() - INTERVAL '${days} days'
+          AND zip_prefix IS NOT NULL
+        GROUP BY zip_prefix
+        ORDER BY no_result_count DESC
+        LIMIT 20
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Total events
+      sequelize.query(`
+        SELECT
+          COUNT(*) as total_events,
+          COUNT(DISTINCT device_id_hash) as total_devices,
+          MIN(created_at) as first_event,
+          MAX(created_at) as last_event
+        FROM app_events
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+      `, { type: sequelize.QueryTypes.SELECT })
+    ]);
+
+    // Calculate retention rate
+    const retentionRate = retentionData.cohort_size > 0
+      ? Math.round((retentionData.returned_users / retentionData.cohort_size) * 100)
+      : 0;
+
+    // Calculate propane percentage
+    const propaneEvents = propaneData.find(p => p.fuel_type === 'propane');
+    const oilEvents = propaneData.find(p => p.fuel_type === 'heating_oil');
+    const propanePercentage = (propaneEvents?.unique_devices && oilEvents?.unique_devices)
+      ? Math.round((propaneEvents.unique_devices / (propaneEvents.unique_devices + oilEvents.unique_devices)) * 100)
+      : 0;
+
+    res.json({
+      period: `${days}d`,
+      retention: {
+        dau: parseInt(dauData.dau || 0),
+        wau: parseInt(dauData.wau || 0),
+        mau: parseInt(dauData.mau || 0),
+        totalDevices: parseInt(dauData.total_devices || 0),
+        retentionRate: retentionRate,
+        returnedUsers: parseInt(retentionData.returned_users || 0),
+        cohortSize: parseInt(retentionData.cohort_size || 0)
+      },
+      features: featureData.map(f => ({
+        feature: f.feature || 'unknown',
+        usageCount: parseInt(f.usage_count),
+        uniqueUsers: parseInt(f.unique_users)
+      })),
+      conversion: conversionData.reduce((acc, c) => {
+        acc[c.event_name] = {
+          count: parseInt(c.count),
+          uniqueUsers: parseInt(c.unique_users)
+        };
+        return acc;
+      }, {}),
+      propane: {
+        propaneUsers: parseInt(propaneEvents?.unique_devices || 0),
+        oilUsers: parseInt(oilEvents?.unique_devices || 0),
+        propanePercentage,
+        propaneRegions: parseInt(propaneEvents?.unique_regions || 0)
+      },
+      coverageGaps: coverageData.map(c => ({
+        zipPrefix: c.zip_prefix,
+        noResultCount: parseInt(c.no_result_count)
+      })),
+      totals: {
+        events: parseInt(totalData.total_events || 0),
+        devices: parseInt(totalData.total_devices || 0),
+        firstEvent: totalData.first_event,
+        lastEvent: totalData.last_event
+      }
+    });
+
+  } catch (error) {
+    // Table might not exist yet
+    if (error.message.includes('relation "app_events" does not exist')) {
+      return res.json({
+        period: `${days}d`,
+        retention: { dau: 0, wau: 0, mau: 0, totalDevices: 0, retentionRate: 0 },
+        features: [],
+        conversion: {},
+        propane: { propaneUsers: 0, oilUsers: 0, propanePercentage: 0 },
+        coverageGaps: [],
+        totals: { events: 0, devices: 0 },
+        note: 'App events tracking not yet set up - run migration 020'
+      });
+    }
+
+    logger.error('[Dashboard] App analytics error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch app analytics', details: error.message });
+  }
+});
+
+/**
+ * GET /api/dashboard/app-analytics/daily
+ * Daily breakdown of app events
+ */
+router.get('/app-analytics/daily', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+  const days = parseDays(req, 30);
+
+  try {
+    const [dailyData] = await sequelize.query(`
+      SELECT
+        DATE(created_at) as date,
+        COUNT(*) as events,
+        COUNT(DISTINCT device_id_hash) as unique_devices,
+        COUNT(*) FILTER (WHERE event_name = 'app_opened') as app_opens,
+        COUNT(*) FILTER (WHERE event_name = 'delivery_logged') as deliveries,
+        COUNT(*) FILTER (WHERE event_name = 'tank_reading_added') as readings,
+        COUNT(*) FILTER (WHERE fuel_type = 'propane') as propane_events
+      FROM app_events
+      WHERE created_at > NOW() - INTERVAL '${days} days'
+      GROUP BY DATE(created_at)
+      ORDER BY date
+    `, { type: sequelize.QueryTypes.SELECT });
+
+    res.json({
+      period: `${days}d`,
+      daily: dailyData.map(d => ({
+        date: d.date,
+        events: parseInt(d.events),
+        uniqueDevices: parseInt(d.unique_devices),
+        appOpens: parseInt(d.app_opens),
+        deliveries: parseInt(d.deliveries),
+        readings: parseInt(d.readings),
+        propaneEvents: parseInt(d.propane_events)
+      }))
+    });
+
+  } catch (error) {
+    if (error.message.includes('relation "app_events" does not exist')) {
+      return res.json({ period: `${days}d`, daily: [], note: 'Run migration 020' });
+    }
+    logger.error('[Dashboard] App daily error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch daily data' });
+  }
+});
+
+/**
+ * GET /api/dashboard/app-analytics/propane
+ * Detailed propane user analytics
+ */
+router.get('/app-analytics/propane', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+  const days = parseDays(req, 90);
+
+  try {
+    const [
+      [propaneOverview],
+      [propaneByRegion],
+      [propaneByEvent],
+      [propaneDaily]
+    ] = await Promise.all([
+      // Overview
+      sequelize.query(`
+        SELECT
+          COUNT(DISTINCT device_id_hash) as total_propane_users,
+          COUNT(DISTINCT zip_prefix) as unique_regions,
+          COUNT(*) as total_events
+        FROM app_events
+        WHERE fuel_type = 'propane'
+          AND created_at > NOW() - INTERVAL '${days} days'
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // By region
+      sequelize.query(`
+        SELECT
+          zip_prefix,
+          COUNT(DISTINCT device_id_hash) as users,
+          COUNT(*) as events
+        FROM app_events
+        WHERE fuel_type = 'propane'
+          AND zip_prefix IS NOT NULL
+          AND created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY zip_prefix
+        ORDER BY users DESC
+        LIMIT 20
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // By event type
+      sequelize.query(`
+        SELECT
+          event_name,
+          COUNT(*) as count,
+          COUNT(DISTINCT device_id_hash) as unique_users
+        FROM app_events
+        WHERE fuel_type = 'propane'
+          AND created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY event_name
+        ORDER BY count DESC
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // Daily trend
+      sequelize.query(`
+        SELECT
+          DATE(created_at) as date,
+          COUNT(DISTINCT device_id_hash) as users,
+          COUNT(*) as events
+        FROM app_events
+        WHERE fuel_type = 'propane'
+          AND created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `, { type: sequelize.QueryTypes.SELECT })
+    ]);
+
+    res.json({
+      period: `${days}d`,
+      overview: {
+        totalUsers: parseInt(propaneOverview.total_propane_users || 0),
+        uniqueRegions: parseInt(propaneOverview.unique_regions || 0),
+        totalEvents: parseInt(propaneOverview.total_events || 0)
+      },
+      byRegion: propaneByRegion.map(r => ({
+        zipPrefix: r.zip_prefix,
+        users: parseInt(r.users),
+        events: parseInt(r.events)
+      })),
+      byEvent: propaneByEvent.map(e => ({
+        event: e.event_name,
+        count: parseInt(e.count),
+        uniqueUsers: parseInt(e.unique_users)
+      })),
+      daily: propaneDaily.map(d => ({
+        date: d.date,
+        users: parseInt(d.users),
+        events: parseInt(d.events)
+      }))
+    });
+
+  } catch (error) {
+    if (error.message.includes('relation "app_events" does not exist')) {
+      return res.json({ period: `${days}d`, overview: {}, byRegion: [], byEvent: [], daily: [], note: 'Run migration 020' });
+    }
+    logger.error('[Dashboard] Propane analytics error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch propane data' });
+  }
+});
+
 module.exports = router;

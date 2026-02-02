@@ -263,6 +263,160 @@ router.post('/onboarding-step', async (req, res) => {
 });
 
 /**
+ * POST /api/app-event
+ * Records anonymous app events WITHOUT requiring user consent.
+ * V2.15.0: Comprehensive backend tracking for retention, features, conversion, etc.
+ */
+router.post('/app-event', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const {
+    event,           // Event name (required)
+    data,            // Event-specific data (optional JSONB)
+    deviceId,        // Hashed device ID for session tracking
+    zipCode,         // Full ZIP (we'll extract prefix)
+    fuelType,        // heating_oil or propane
+    appVersion,
+    deviceType,      // iPhone, iPad
+    osVersion
+  } = req.body;
+
+  // Validate required fields
+  if (!event) {
+    return res.status(400).json({ error: 'Missing required field: event' });
+  }
+
+  // Validate event name
+  const validEvents = [
+    // Retention
+    'app_opened', 'session_started', 'app_backgrounded',
+    // Feature usage
+    'feature_used', 'screen_viewed',
+    // Conversion
+    'delivery_logged', 'tank_reading_added', 'supplier_contacted',
+    'supplier_saved', 'prediction_viewed',
+    // Directory
+    'directory_searched', 'directory_no_results', 'directory_supplier_viewed',
+    // Onboarding (supplements existing onboarding_steps)
+    'onboarding_completed', 'onboarding_abandoned',
+    // Engagement
+    'notification_received', 'notification_opened', 'share_initiated',
+    // Propane-specific
+    'propane_directory_notice_viewed', 'propane_supplier_added'
+  ];
+
+  if (!validEvents.includes(event)) {
+    return res.status(400).json({ error: `Invalid event: ${event}` });
+  }
+
+  // Validate fuel type if provided
+  if (fuelType && !['heating_oil', 'propane'].includes(fuelType)) {
+    return res.status(400).json({ error: 'Invalid fuel type' });
+  }
+
+  try {
+    // Extract ZIP prefix for anonymous geographic tracking
+    const zipPrefix = zipCode && zipCode.length >= 3 ? zipCode.substring(0, 3) : null;
+
+    // Hash device ID if provided (for session tracking without identifying user)
+    let deviceIdHash = null;
+    if (deviceId) {
+      deviceIdHash = require('crypto')
+        .createHash('sha256')
+        .update(deviceId)
+        .digest('hex')
+        .substring(0, 32);
+    }
+
+    // Insert event
+    await sequelize.query(
+      `INSERT INTO app_events
+       (event_name, event_data, device_id_hash, zip_prefix, fuel_type, app_version, device_type, os_version)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      {
+        bind: [
+          event,
+          data ? JSON.stringify(data) : '{}',
+          deviceIdHash,
+          zipPrefix,
+          fuelType || null,
+          appVersion || null,
+          deviceType || null,
+          osVersion || null
+        ]
+      }
+    );
+
+    console.log(`[AppEvent] ${event} from ZIP ${zipPrefix || '???'} (${fuelType || 'oil'}) v${appVersion || '?'}`);
+    res.json({ received: true });
+
+  } catch (err) {
+    // Log but don't fail the app
+    console.log(`[AppEvent] ${event} (not persisted: ${err.message})`);
+    res.json({ received: true });
+  }
+});
+
+/**
+ * POST /api/app-events (batch)
+ * Records multiple events in one request for efficiency
+ */
+router.post('/app-events', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const { events, deviceId, zipCode, fuelType, appVersion, deviceType, osVersion } = req.body;
+
+  if (!events || !Array.isArray(events) || events.length === 0) {
+    return res.status(400).json({ error: 'Missing or invalid events array' });
+  }
+
+  // Limit batch size
+  if (events.length > 50) {
+    return res.status(400).json({ error: 'Too many events (max 50)' });
+  }
+
+  try {
+    const zipPrefix = zipCode && zipCode.length >= 3 ? zipCode.substring(0, 3) : null;
+    let deviceIdHash = null;
+    if (deviceId) {
+      deviceIdHash = require('crypto')
+        .createHash('sha256')
+        .update(deviceId)
+        .digest('hex')
+        .substring(0, 32);
+    }
+
+    // Insert all events
+    for (const evt of events) {
+      if (!evt.event) continue;
+
+      await sequelize.query(
+        `INSERT INTO app_events
+         (event_name, event_data, device_id_hash, zip_prefix, fuel_type, app_version, device_type, os_version)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        {
+          bind: [
+            evt.event,
+            evt.data ? JSON.stringify(evt.data) : '{}',
+            deviceIdHash,
+            zipPrefix,
+            fuelType || null,
+            appVersion || null,
+            deviceType || null,
+            osVersion || null
+          ]
+        }
+      );
+    }
+
+    console.log(`[AppEvent] Batch: ${events.length} events from ZIP ${zipPrefix || '???'}`);
+    res.json({ received: true, count: events.length });
+
+  } catch (err) {
+    console.log(`[AppEvent] Batch failed: ${err.message}`);
+    res.json({ received: true, count: 0 });
+  }
+});
+
+/**
  * GET /api/admin/tracking/pending
  * Get unprocessed clicks for email outreach (admin only)
  */
