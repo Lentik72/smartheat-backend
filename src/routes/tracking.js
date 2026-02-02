@@ -197,10 +197,11 @@ router.post('/app-engagement', async (req, res) => {
  * Records anonymous onboarding funnel data WITHOUT requiring user consent.
  * Used to measure completion rates and identify drop-off points.
  * V2.14.0: Anonymous onboarding tracking
+ * V2.15.0: Added fuel_type for propane visibility
  */
 router.post('/onboarding-step', async (req, res) => {
   const sequelize = req.app.locals.sequelize;
-  const { step, action, zipCode, appVersion } = req.body;
+  const { step, action, zipCode, appVersion, fuelType } = req.body;
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
 
   // Validate required fields
@@ -213,10 +214,18 @@ router.post('/onboarding-step', async (req, res) => {
     'value_screen', 'intent', 'fuel_type', 'postal_code', 'tank_size',
     'home_size', 'tank_level', 'notifications', 'smartburn', 'consent',
     'onboarding',  // For overall completion tracking
-    'settings'     // V22.1: For tracking analytics enable/disable in Settings
+    'settings',    // V22.1: For tracking analytics enable/disable in Settings
+    'propane_directory_notice',  // V2.15.0: Propane user sees "no propane suppliers" notice
+    'directory'    // V2.15.0: Directory interactions by fuel type
   ];
   if (!validSteps.includes(step)) {
     return res.status(400).json({ error: 'Invalid step name' });
+  }
+
+  // Validate fuel type if provided
+  const validFuelTypes = ['heating_oil', 'propane'];
+  if (fuelType && !validFuelTypes.includes(fuelType)) {
+    return res.status(400).json({ error: 'Invalid fuel type' });
   }
 
   // Validate action
@@ -238,12 +247,12 @@ router.post('/onboarding-step', async (req, res) => {
 
     // Insert onboarding step record
     await sequelize.query(
-      `INSERT INTO onboarding_steps (step_name, action, zip_prefix, ip_hash, app_version)
-       VALUES ($1, $2, $3, $4, $5)`,
-      { bind: [step, action, zipPrefix, ipHash, appVersion || null] }
+      `INSERT INTO onboarding_steps (step_name, action, zip_prefix, ip_hash, app_version, fuel_type)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      { bind: [step, action, zipPrefix, ipHash, appVersion || null, fuelType || null] }
     );
 
-    console.log(`[Onboarding] ${step}/${action} from ZIP prefix ${zipPrefix || 'unknown'} (v${appVersion || '?'})`);
+    console.log(`[Onboarding] ${step}/${action} from ZIP prefix ${zipPrefix || 'unknown'} (v${appVersion || '?'}) fuel=${fuelType || 'not specified'}`);
     res.json({ received: true });
 
   } catch (err) {
