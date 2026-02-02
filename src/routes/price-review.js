@@ -230,6 +230,7 @@ router.get('/', requireAuth, async (req, res) => {
         FROM suppliers
         WHERE active = true
           AND website IS NOT NULL
+          AND allow_price_display = true
           AND (scrape_status = 'cooldown' OR scrape_status = 'phone_only')
       `);
       blockedSites = result;
