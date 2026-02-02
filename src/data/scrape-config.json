@@ -77,9 +77,9 @@
   },
 
   "jcdiscountoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "table",
-    "notes": "Long Island Suffolk County - tiered pricing",
+    "notes": "DISABLED: Long Island Suffolk County - ordering system offline.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -318,9 +318,9 @@
   },
 
   "lakewoodfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NY Queens/Brooklyn - True COD. Price displayed on homepage.",
+    "notes": "DISABLED: NY Queens/Brooklyn - Pricing currently unavailable. Call for price.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -508,6 +508,13 @@
     "pattern": "direct",
     "notes": "DISABLED: SSL certificate error",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "falconoil.net": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ Northern - Falcon Oil. COD. Price in announcement section near bottom of page.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})\\s*per gallon"
   },
 
   "reisfuel.com": {
@@ -965,6 +972,13 @@
     "priceRegex": "\"current\":\"([0-9]+\\.[0-9]{2})\""
   },
 
+  "blackstonevalleyoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Blackstone/Worcester County - COD. $X.XX per gallon for 125+ deliveries.",
+    "priceRegex": "([0-9]+\\.[0-9]{2})\\s*per gallon"
+  },
+
   "luzofuel.com": {
     "enabled": true,
     "pattern": "direct",
@@ -1347,9 +1361,9 @@
   },
 
   "loveenergyfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "PA - Love Energy",
+    "notes": "DISABLED: PA - Love Energy. Prices not displayed (placeholder values only).",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
