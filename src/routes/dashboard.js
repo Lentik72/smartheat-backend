@@ -1927,6 +1927,7 @@ router.get('/recommendations', async (req, res) => {
 });
 
 // GET /api/dashboard/activity - Recent activity feed (website clicks + iOS app engagements)
+// Supports filtering, pagination, and summary stats
 router.get('/activity', async (req, res) => {
   const logger = req.app.locals.logger;
   const sequelize = req.app.locals.sequelize;
@@ -1936,13 +1937,88 @@ router.get('/activity', async (req, res) => {
   }
 
   try {
+    // Parse query params
     const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const offset = (page - 1) * limit;
     const sourceFilter = req.query.source; // 'website', 'ios', or null for all
+    const actionFilter = req.query.action; // 'call', 'website', etc.
+    const pageSourceFilter = req.query.pageSource; // 'prices', 'seo-city', etc.
+    const supplierSearch = req.query.supplier ? req.query.supplier.trim() : null;
+    const dateFrom = req.query.dateFrom; // ISO date string
+    const dateTo = req.query.dateTo; // ISO date string
+    const days = parseInt(req.query.days) || null; // Quick filter: last N days
 
-    // Get combined activity from both tables
+    // Build WHERE clauses
+    const websiteWhere = [];
+    const iosWhere = [];
+    const replacements = {};
+
+    // Date filtering
+    if (days) {
+      websiteWhere.push(`sc.created_at > NOW() - INTERVAL '${days} days'`);
+      iosWhere.push(`se.created_at > NOW() - INTERVAL '${days} days'`);
+    } else {
+      if (dateFrom) {
+        websiteWhere.push(`sc.created_at >= :dateFrom`);
+        iosWhere.push(`se.created_at >= :dateFrom`);
+        replacements.dateFrom = dateFrom;
+      }
+      if (dateTo) {
+        websiteWhere.push(`sc.created_at <= :dateTo`);
+        iosWhere.push(`se.created_at <= :dateTo`);
+        replacements.dateTo = dateTo;
+      }
+    }
+
+    // Action filtering
+    if (actionFilter) {
+      websiteWhere.push(`sc.action_type = :action`);
+      iosWhere.push(`se.engagement_type = :action`);
+      replacements.action = actionFilter;
+    }
+
+    // Page source filtering
+    if (pageSourceFilter) {
+      websiteWhere.push(`sc.page_source = :pageSource`);
+      iosWhere.push(`1=0`); // iOS doesn't have page_source matching website values
+      replacements.pageSource = pageSourceFilter;
+    }
+
+    // Supplier search
+    if (supplierSearch) {
+      websiteWhere.push(`(sc.supplier_name ILIKE :supplier OR s.name ILIKE :supplier)`);
+      iosWhere.push(`(se.supplier_name ILIKE :supplier OR s.name ILIKE :supplier)`);
+      replacements.supplier = `%${supplierSearch}%`;
+    }
+
+    // Source filtering
+    if (sourceFilter === 'ios') {
+      websiteWhere.push('1=0');
+    } else if (sourceFilter === 'website') {
+      iosWhere.push('1=0');
+    }
+
+    const websiteWhereClause = websiteWhere.length > 0 ? `WHERE ${websiteWhere.join(' AND ')}` : '';
+    const iosWhereClause = iosWhere.length > 0 ? `WHERE ${iosWhere.join(' AND ')}` : '';
+
+    // Get total count first
+    const [countResult] = await sequelize.query(`
+      SELECT COUNT(*) as total FROM (
+        SELECT sc.id FROM supplier_clicks sc
+        LEFT JOIN suppliers s ON sc.supplier_id = s.id
+        ${websiteWhereClause}
+        UNION ALL
+        SELECT se.id FROM supplier_engagements se
+        LEFT JOIN suppliers s ON se.supplier_id = s.id
+        ${iosWhereClause}
+      ) combined
+    `, { replacements });
+    const totalCount = parseInt(countResult[0]?.total || 0);
+
+    // Get paginated activity
     const [activity] = await sequelize.query(`
       WITH combined AS (
-        -- Website clicks
         SELECT
           sc.id,
           sc.supplier_name,
@@ -1958,12 +2034,10 @@ router.get('/activity', async (req, res) => {
           s.city as supplier_city
         FROM supplier_clicks sc
         LEFT JOIN suppliers s ON sc.supplier_id = s.id
-          OR (sc.supplier_id IS NULL AND sc.supplier_name = s.name)
-        ${sourceFilter === 'ios' ? 'WHERE 1=0' : ''}
+        ${websiteWhereClause}
 
         UNION ALL
 
-        -- iOS app engagements
         SELECT
           se.id,
           se.supplier_name,
@@ -1979,12 +2053,33 @@ router.get('/activity', async (req, res) => {
           s.city as supplier_city
         FROM supplier_engagements se
         LEFT JOIN suppliers s ON se.supplier_id = s.id
-          OR (se.supplier_id IS NULL AND se.supplier_name = s.name)
-        ${sourceFilter === 'website' ? 'WHERE 1=0' : ''}
+        ${iosWhereClause}
       )
       SELECT * FROM combined
       ORDER BY created_at DESC
-      LIMIT ${limit}
+      LIMIT ${limit} OFFSET ${offset}
+    `, { replacements });
+
+    // Get summary stats
+    const [summaryStats] = await sequelize.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '1 day') as today,
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as this_week,
+        COUNT(*) FILTER (WHERE action_type = 'call' AND created_at > NOW() - INTERVAL '7 days') as calls_week,
+        COUNT(*) FILTER (WHERE action_type = 'website' AND created_at > NOW() - INTERVAL '7 days') as websites_week,
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '14 days' AND created_at <= NOW() - INTERVAL '7 days') as last_week
+      FROM supplier_clicks
+    `);
+
+    // Get top supplier this week
+    const [topSupplier] = await sequelize.query(`
+      SELECT supplier_name, COUNT(*) as clicks
+      FROM supplier_clicks
+      WHERE created_at > NOW() - INTERVAL '7 days'
+        AND supplier_name IS NOT NULL
+      GROUP BY supplier_name
+      ORDER BY clicks DESC
+      LIMIT 1
     `);
 
     // Format for display
@@ -1998,19 +2093,37 @@ router.get('/activity', async (req, res) => {
       userZip: a.zip_code,
       device: a.device_type,
       platform: a.platform,
-      source: a.source_type,  // 'website' or 'ios_app'
+      source: a.source_type,
       pageSource: a.page_source,
       timestamp: a.created_at
     }));
 
-    // Count by source
-    const websiteCount = formatted.filter(a => a.source === 'website').length;
-    const iosCount = formatted.filter(a => a.source === 'ios_app').length;
+    // Calculate trend (this week vs last week)
+    const thisWeek = parseInt(summaryStats[0]?.this_week || 0);
+    const lastWeek = parseInt(summaryStats[0]?.last_week || 0);
+    const trend = lastWeek > 0 ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : (thisWeek > 0 ? 100 : 0);
 
     res.json({
+      // Pagination info
+      page,
+      limit,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+
+      // Summary stats
+      summary: {
+        today: parseInt(summaryStats[0]?.today || 0),
+        thisWeek: thisWeek,
+        callsThisWeek: parseInt(summaryStats[0]?.calls_week || 0),
+        websitesThisWeek: parseInt(summaryStats[0]?.websites_week || 0),
+        topSupplier: topSupplier[0]?.supplier_name || null,
+        topSupplierClicks: parseInt(topSupplier[0]?.clicks || 0),
+        trend: trend,
+        trendDirection: trend > 0 ? 'up' : trend < 0 ? 'down' : 'flat'
+      },
+
+      // Activity data
       count: formatted.length,
-      websiteCount,
-      iosCount,
       activity: formatted
     });
   } catch (error) {

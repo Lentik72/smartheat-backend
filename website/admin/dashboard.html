@@ -194,21 +194,80 @@
             <div class="hint" style="margin-top: 1rem;">From PostgreSQL tracking</div>
           </div>
           <div class="panel full-width">
-            <h3>Recent Activity</h3>
-            <table id="activity-table">
+            <h3>Supplier Clicks</h3>
+
+            <!-- Summary Stats -->
+            <div class="activity-summary">
+              <div class="summary-stat">
+                <span class="summary-value" id="activity-today">--</span>
+                <span class="summary-label">Today</span>
+              </div>
+              <div class="summary-stat">
+                <span class="summary-value" id="activity-week">--</span>
+                <span class="summary-label">This Week</span>
+              </div>
+              <div class="summary-stat">
+                <span class="summary-value" id="activity-calls">--</span>
+                <span class="summary-label">Calls</span>
+              </div>
+              <div class="summary-stat">
+                <span class="summary-value" id="activity-websites">--</span>
+                <span class="summary-label">Websites</span>
+              </div>
+              <div class="summary-stat">
+                <span class="summary-value" id="activity-top-supplier">--</span>
+                <span class="summary-label">Top Supplier</span>
+              </div>
+              <div class="summary-stat">
+                <span class="summary-value" id="activity-trend">--</span>
+                <span class="summary-label">vs Last Week</span>
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="activity-filters">
+              <select id="activity-date-filter" class="filter-select">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="">All time</option>
+              </select>
+              <select id="activity-action-filter" class="filter-select">
+                <option value="">All Actions</option>
+                <option value="call">Calls Only</option>
+                <option value="website">Website Only</option>
+              </select>
+              <select id="activity-source-filter" class="filter-select">
+                <option value="">All Sources</option>
+                <option value="prices">Prices Page</option>
+                <option value="seo-city">City Pages</option>
+                <option value="seo-county">County Pages</option>
+              </select>
+              <input type="text" id="activity-supplier-search" class="filter-input" placeholder="Search supplier...">
+            </div>
+
+            <!-- Table -->
+            <table id="activity-table" class="sortable-table">
               <thead>
                 <tr>
-                  <th>Time</th>
-                  <th>Supplier</th>
-                  <th>Action</th>
-                  <th>User ZIP</th>
-                  <th>Source</th>
+                  <th data-sort="timestamp" class="sortable sorted-desc">Time ▼</th>
+                  <th data-sort="supplier" class="sortable">Supplier</th>
+                  <th data-sort="action" class="sortable">Action</th>
+                  <th data-sort="userZip" class="sortable">User ZIP</th>
+                  <th data-sort="pageSource" class="sortable">Source</th>
                 </tr>
               </thead>
               <tbody id="activity-body">
                 <tr><td colspan="5" class="hint">Loading...</td></tr>
               </tbody>
             </table>
+
+            <!-- Pagination -->
+            <div class="activity-pagination">
+              <button id="activity-prev" class="btn-small" disabled>← Prev</button>
+              <span id="activity-page-info">Page 1 of 1</span>
+              <button id="activity-next" class="btn-small" disabled>Next →</button>
+            </div>
           </div>
           <div class="panel full-width" id="web-ga4-setup" style="display: none;">
             <div class="setup-guide">

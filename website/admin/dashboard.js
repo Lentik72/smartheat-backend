@@ -380,14 +380,57 @@ async function loadWebsite() {
   }
 }
 
-// Load recent click activity
+// Activity state
+let activityState = {
+  page: 1,
+  totalPages: 1,
+  sortColumn: 'timestamp',
+  sortDirection: 'desc'
+};
+
+// Load recent click activity with filters and pagination
 async function loadRecentActivity() {
   const tbody = document.getElementById('activity-body');
+
+  // Get filter values
+  const days = document.getElementById('activity-date-filter')?.value || '30';
+  const action = document.getElementById('activity-action-filter')?.value || '';
+  const pageSource = document.getElementById('activity-source-filter')?.value || '';
+  const supplier = document.getElementById('activity-supplier-search')?.value || '';
+
+  // Build query string
+  const params = new URLSearchParams();
+  params.append('limit', '50');
+  params.append('page', activityState.page);
+  if (days) params.append('days', days);
+  if (action) params.append('action', action);
+  if (pageSource) params.append('pageSource', pageSource);
+  if (supplier) params.append('supplier', supplier);
+
   try {
-    const data = await api('/activity?limit=25');
+    tbody.innerHTML = '<tr><td colspan="5" class="hint">Loading...</td></tr>';
+    const data = await api(`/activity?${params.toString()}`);
+
+    // Update summary stats
+    if (data.summary) {
+      document.getElementById('activity-today').textContent = data.summary.today;
+      document.getElementById('activity-week').textContent = data.summary.thisWeek;
+      document.getElementById('activity-calls').textContent = data.summary.callsThisWeek;
+      document.getElementById('activity-websites').textContent = data.summary.websitesThisWeek;
+      document.getElementById('activity-top-supplier').textContent = data.summary.topSupplier || '--';
+
+      const trendEl = document.getElementById('activity-trend');
+      const trend = data.summary.trend;
+      trendEl.textContent = (trend > 0 ? '+' : '') + trend + '%';
+      trendEl.className = 'summary-value trend-' + data.summary.trendDirection;
+    }
+
+    // Update pagination
+    activityState.totalPages = data.totalPages || 1;
+    updateActivityPagination();
 
     if (!data.activity || data.activity.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="no-data">No activity recorded yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="no-data">No activity found</td></tr>';
       return;
     }
 
@@ -402,32 +445,99 @@ async function loadRecentActivity() {
 
       // Action icons
       const actionIcons = {
-        'call': '📞 Called',
-        'text': '💬 Texted',
-        'email': '✉️ Emailed',
+        'call': '📞 Call',
+        'text': '💬 Text',
+        'email': '✉️ Email',
         'website': '🌐 Website',
-        'view': '👁️ Viewed',
-        'save': '⭐ Saved',
+        'view': '👁️ View',
+        'save': '⭐ Save',
         'request_quote': '📋 Quote'
       };
       const actionDisplay = actionIcons[a.action] || a.action;
 
-      // Source badge
-      const sourceClass = a.source === 'ios_app' ? 'source-ios' : 'source-web';
-      const sourceLabel = a.source === 'ios_app' ? '📱 iOS' : '🌐 Web';
+      // Page source display
+      const pageSourceDisplay = {
+        'prices': 'Prices',
+        'seo-city': 'City',
+        'seo-county': 'County',
+        'seo-state': 'State',
+        'seo-region': 'Region',
+        'ios_app': '📱 iOS'
+      };
+      const sourceDisplay = pageSourceDisplay[a.pageSource] || a.pageSource || '--';
 
       row.innerHTML = `
         <td>${timeStr}</td>
         <td>${a.supplier}${a.supplierLocation ? '<br><small class="hint">' + a.supplierLocation + '</small>' : ''}</td>
         <td>${actionDisplay}</td>
         <td>${a.userZip || '--'}</td>
-        <td><span class="source-badge ${sourceClass}">${sourceLabel}</span></td>
+        <td>${sourceDisplay}</td>
       `;
       tbody.appendChild(row);
     });
   } catch (error) {
     console.error('Failed to load activity:', error);
-    tbody.innerHTML = '<tr><td colspan="6" class="no-data">Failed to load activity</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="no-data">Failed to load activity</td></tr>';
+  }
+}
+
+// Update pagination controls
+function updateActivityPagination() {
+  const prevBtn = document.getElementById('activity-prev');
+  const nextBtn = document.getElementById('activity-next');
+  const pageInfo = document.getElementById('activity-page-info');
+
+  if (prevBtn) prevBtn.disabled = activityState.page <= 1;
+  if (nextBtn) nextBtn.disabled = activityState.page >= activityState.totalPages;
+  if (pageInfo) pageInfo.textContent = `Page ${activityState.page} of ${activityState.totalPages}`;
+}
+
+// Initialize activity filters and pagination
+function initActivityControls() {
+  // Filter change handlers
+  ['activity-date-filter', 'activity-action-filter', 'activity-source-filter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', () => {
+        activityState.page = 1;
+        loadRecentActivity();
+      });
+    }
+  });
+
+  // Supplier search with debounce
+  const searchInput = document.getElementById('activity-supplier-search');
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        activityState.page = 1;
+        loadRecentActivity();
+      }, 300);
+    });
+  }
+
+  // Pagination buttons
+  const prevBtn = document.getElementById('activity-prev');
+  const nextBtn = document.getElementById('activity-next');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (activityState.page > 1) {
+        activityState.page--;
+        loadRecentActivity();
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (activityState.page < activityState.totalPages) {
+        activityState.page++;
+        loadRecentActivity();
+      }
+    });
   }
 }
 
@@ -1785,3 +1895,6 @@ if (authToken) {
 } else {
   showLogin();
 }
+
+// Initialize activity controls (filters, pagination)
+initActivityControls();
