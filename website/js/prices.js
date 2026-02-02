@@ -346,8 +346,8 @@
           <div class="supplier-name">${escapeHtml(supplier.name)}</div>
           <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
           <div class="supplier-actions">
-            ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone" onclick="trackCallClick('${supplier.id}', '${escapeHtml(supplier.name).replace(/'/g, "\\'")}')">Call ${escapeHtml(phone)}</a>` : ''}
-            ${hasValidWebsite ? `<a href="${escapeHtml(supplier.website)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="supplier-website-btn" onclick="trackWebsiteClick('${supplier.id}', '${escapeHtml(supplier.name).replace(/'/g, "\\'")}')">Visit Website</a>` : ''}
+            ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone" data-track-supplier-id="${supplier.id}" data-track-supplier-name="${escapeHtml(supplier.name)}" data-track-action="call">Call ${escapeHtml(phone)}</a>` : ''}
+            ${hasValidWebsite ? `<a href="${escapeHtml(supplier.website)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="supplier-website-btn" data-track-supplier-id="${supplier.id}" data-track-supplier-name="${escapeHtml(supplier.name)}" data-track-action="website">Visit Website</a>` : ''}
           </div>
         </div>
         <div class="supplier-price">
@@ -584,7 +584,7 @@
 
     if (nearbyZips.length > 0 && container && buttonsContainer) {
       buttonsContainer.innerHTML = nearbyZips.map(z =>
-        `<button class="nearby-zip-btn" onclick="window.lookupZip('${z}')">${z}</button>`
+        `<button class="nearby-zip-btn" data-nearby-zip="${z}">${z}</button>`
       ).join('');
       container.style.display = 'block';
     }
@@ -798,6 +798,38 @@
       });
     }
   };
+
+  // ========================================
+  // EVENT DELEGATION (CSP compliant - no inline handlers)
+  // ========================================
+
+  document.addEventListener('click', function(e) {
+    // Track supplier clicks (call/website buttons)
+    var trackLink = e.target.closest('a[data-track-supplier-id]');
+    if (trackLink) {
+      var supplierId = trackLink.getAttribute('data-track-supplier-id');
+      var supplierName = trackLink.getAttribute('data-track-supplier-name');
+      var action = trackLink.getAttribute('data-track-action');
+
+      if (supplierId && supplierName && action) {
+        if (action === 'call') {
+          window.trackCallClick(supplierId, supplierName);
+        } else if (action === 'website') {
+          window.trackWebsiteClick(supplierId, supplierName);
+        }
+      }
+      return;
+    }
+
+    // Nearby ZIP buttons
+    var zipBtn = e.target.closest('button[data-nearby-zip]');
+    if (zipBtn) {
+      var zip = zipBtn.getAttribute('data-nearby-zip');
+      if (zip) {
+        window.lookupZip(zip);
+      }
+    }
+  });
 
   // ========================================
   // DESKTOP QR WIDGET
