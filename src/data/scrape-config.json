@@ -498,8 +498,9 @@
   "eaglepetroleumco.com": {
     "enabled": true,
     "pattern": "table",
-    "notes": "NJ/PA - Eagle Petroleum - tiered pricing without $ in HTML. May be CAPTCHA blocked intermittently.",
-    "priceRegex": "([3-4]\\.[0-9]{2,3})"
+    "targetTier": 1,
+    "notes": "NJ/PA - Eagle Petroleum - tiered pricing. data-price attr has prices. 150gal ($3.099) is lowest of 2 tiers shown.",
+    "priceRegex": "data-price=\"([0-9]+\\.[0-9]{2,3})\""
   },
 
   "forceten.org": {
