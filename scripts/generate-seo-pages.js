@@ -732,7 +732,8 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
     stateCode,
     city: cityName,
     county: countyNameFormatted,
-    siblingCities: siblingCities.slice(0, 10).map(s => ({ ...s, name: toTitleCase(s.name) }))  // Limit to 10
+    siblingCities: siblingCities.slice(0, 10).map(s => ({ ...s, name: toTitleCase(s.name) })),  // Limit to 10
+    zips
   });
 
   return { html, supplierCount: suppliers.length, county: countyName };
@@ -763,7 +764,8 @@ function generatePageHTML(data) {
     countyLinks,
     cityLinks,
     siblingCities,
-    otherStates
+    otherStates,
+    zips
   } = data;
 
   // Schema.org breadcrumb
@@ -961,7 +963,7 @@ function generatePageHTML(data) {
   <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
   <script type="application/ld+json">${JSON.stringify(itemListSchema)}</script>
 </head>
-<body data-zip="${zips && zips[0] ? zips[0] : ''}">
+<body${zips && zips[0] ? ` data-zip="${zips[0]}"` : ''}>
   <nav class="nav">
     <div class="nav-container">
       <a href="${assetPath}index.html" class="nav-logo">
