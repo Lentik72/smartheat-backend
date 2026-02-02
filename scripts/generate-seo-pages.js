@@ -45,7 +45,8 @@ const STATES = {
   'VA': { name: 'Virginia', abbrev: 'va' },
   'MD': { name: 'Maryland', abbrev: 'md' },
   'DE': { name: 'Delaware', abbrev: 'de' },
-  'AK': { name: 'Alaska', abbrev: 'ak' }
+  'AK': { name: 'Alaska', abbrev: 'ak' },
+  'OH': { name: 'Ohio', abbrev: 'oh' }
 };
 
 // Parse CLI args
