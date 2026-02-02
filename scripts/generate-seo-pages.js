@@ -961,7 +961,7 @@ function generatePageHTML(data) {
   <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
   <script type="application/ld+json">${JSON.stringify(itemListSchema)}</script>
 </head>
-<body>
+<body data-zip="${zips && zips[0] ? zips[0] : ''}">
   <nav class="nav">
     <div class="nav-container">
       <a href="${assetPath}index.html" class="nav-logo">

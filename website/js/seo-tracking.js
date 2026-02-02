@@ -3,6 +3,7 @@
   var lastClick = 0;
   var pageType = document.body.className.match(/seo-(\w+)/) ?
     'seo-' + document.body.className.match(/seo-(\w+)/)[1] : 'seo-page';
+  var pageZip = document.body.getAttribute('data-zip') || null;
 
   // Detect page type from URL path
   var path = window.location.pathname;
@@ -25,6 +26,7 @@
       supplierId: id,
       supplierName: name,
       action: action,
+      zipCode: pageZip,
       pageSource: pageType,
       deviceType: isMobile ? 'mobile' : 'desktop',
       platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
