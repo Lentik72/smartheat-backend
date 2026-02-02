@@ -739,20 +739,27 @@
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
 
-    // 1. Log to backend (source of truth)
-    fetch(API_BASE + '/api/log-action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        supplierId: supplierId,
-        supplierName: supplierName,
-        action: 'website',
-        zipCode: currentZip || null,
-        pageSource: 'prices',
-        deviceType: isMobile ? 'mobile' : 'desktop',
-        platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-      })
-    }).catch(function(err) { console.error('[Tracking] Website click failed:', err); });
+    // 1. Log to backend (source of truth) - use sendBeacon for Safari compatibility
+    const data = JSON.stringify({
+      supplierId: supplierId,
+      supplierName: supplierName,
+      action: 'website',
+      zipCode: currentZip || null,
+      pageSource: 'prices',
+      deviceType: isMobile ? 'mobile' : 'desktop',
+      platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+    });
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(API_BASE + '/api/log-action', new Blob([data], { type: 'application/json' }));
+    } else {
+      fetch(API_BASE + '/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: data,
+        keepalive: true
+      }).catch(function(err) { console.error('[Tracking] Website click failed:', err); });
+    }
 
     // 2. Log to Firebase Analytics (via gtag)
     if (typeof gtag === 'function') {
@@ -774,20 +781,27 @@
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
 
-    // 1. Log to backend (source of truth)
-    fetch(API_BASE + '/api/log-action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        supplierId: supplierId,
-        supplierName: supplierName,
-        action: 'call',
-        zipCode: currentZip || null,
-        pageSource: 'prices',
-        deviceType: isMobile ? 'mobile' : 'desktop',
-        platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-      })
-    }).catch(function(err) { console.error('[Tracking] Call click failed:', err); });
+    // 1. Log to backend (source of truth) - use sendBeacon for Safari compatibility
+    const data = JSON.stringify({
+      supplierId: supplierId,
+      supplierName: supplierName,
+      action: 'call',
+      zipCode: currentZip || null,
+      pageSource: 'prices',
+      deviceType: isMobile ? 'mobile' : 'desktop',
+      platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+    });
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(API_BASE + '/api/log-action', new Blob([data], { type: 'application/json' }));
+    } else {
+      fetch(API_BASE + '/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: data,
+        keepalive: true
+      }).catch(function(err) { console.error('[Tracking] Call click failed:', err); });
+    }
 
     // 2. Log to Firebase Analytics (via gtag)
     if (typeof gtag === 'function') {

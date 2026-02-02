@@ -20,18 +20,27 @@
     var isMobile = /Mobi|Android/i.test(navigator.userAgent);
     var isAndroid = /Android/i.test(navigator.userAgent);
 
-    fetch('https://www.gethomeheat.com/api/log-action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        supplierId: id,
-        supplierName: name,
-        action: action,
-        pageSource: pageType,
-        deviceType: isMobile ? 'mobile' : 'desktop',
-        platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
-      })
-    }).catch(function(){});
+    // Use sendBeacon for better Safari compatibility (ITP doesn't block it)
+    var data = JSON.stringify({
+      supplierId: id,
+      supplierName: name,
+      action: action,
+      pageSource: pageType,
+      deviceType: isMobile ? 'mobile' : 'desktop',
+      platform: isAndroid ? 'android' : (isMobile ? 'ios' : 'web')
+    });
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('https://www.gethomeheat.com/api/log-action', new Blob([data], { type: 'application/json' }));
+    } else {
+      // Fallback for older browsers
+      fetch('https://www.gethomeheat.com/api/log-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: data,
+        keepalive: true
+      }).catch(function(){});
+    }
 
     if (typeof gtag === 'function') {
       var eventName = action === 'call' ? 'supplier_call_click' : 'supplier_outbound_click';
