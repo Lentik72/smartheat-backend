@@ -86,10 +86,11 @@ body {
 .nav-logo {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
     text-decoration: none;
+    color: #1a1a1a;
     color: var(--text-dark);
     font-weight: 700;
+    font-size: 1.25rem;
     font-size: var(--font-xl);
     margin-right: auto;
 }
@@ -98,6 +99,7 @@ body {
     width: 28px;
     height: 28px;
     border-radius: 6px;
+    margin-right: 0.5rem; /* Fallback for gap */
 }
 
 /* Hamburger Menu Button - Mobile Only */
@@ -1229,8 +1231,12 @@ body {
 .supplier-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
     margin-top: 0.5rem;
+}
+
+.supplier-actions > * {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .supplier-website-btn {
@@ -1966,34 +1972,51 @@ body {
 /* Market Stats Card */
 .market-stats-card {
     display: flex;
-    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
     margin-bottom: 2rem;
     padding: 1.25rem;
+    background: #FFFFFF;
     background: var(--background-card);
+    border: 1px solid #F0E6E0;
     border: 1px solid var(--border-color);
     border-radius: 12px;
 }
 
 .stat-item {
     flex: 1;
+    min-width: 80px;
     text-align: center;
     padding: 0.5rem;
+    /* Fallback for gap - use margin instead */
+    margin: 0 0.5rem;
+}
+
+.stat-item:first-child {
+    margin-left: 0;
+}
+
+.stat-item:last-child {
+    margin-right: 0;
 }
 
 .stat-value {
     display: block;
     font-size: 1.5rem;
     font-weight: 700;
+    color: #1a1a1a;
     color: var(--text-dark);
 }
 
 .stat-highlight .stat-value {
+    color: #E07A5F;
     color: var(--primary-orange);
 }
 
 .stat-label {
     display: block;
     font-size: 0.75rem;
+    color: #6b7280;
     color: var(--text-gray);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -2062,6 +2085,7 @@ body {
 .supplier-price {
     font-weight: 700;
     font-size: 1.1rem;
+    color: #E07A5F;
     color: var(--primary-orange);
 }
 
@@ -2107,9 +2131,81 @@ body {
 }
 
 .website-link:hover {
+    background: #E07A5F;
     background: var(--primary-orange);
+    border-color: #E07A5F;
     border-color: var(--primary-orange);
     color: white;
+}
+
+/* Supplier Table - Mobile Responsive */
+@media (max-width: 600px) {
+    .supplier-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .supplier-table th,
+    .supplier-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    /* Hide website column on small screens */
+    .supplier-table th:nth-child(5),
+    .supplier-table td:nth-child(5) {
+        display: none;
+    }
+
+    /* Hide location column on very small screens */
+    .supplier-table th:nth-child(2),
+    .supplier-table td:nth-child(2) {
+        display: none;
+    }
+
+    .supplier-price {
+        font-size: 1rem;
+    }
+
+    .supplier-name {
+        font-size: 0.9rem;
+    }
+
+    /* Stack stats on mobile */
+    .market-stats-card {
+        flex-direction: row;
+        padding: 1rem 0.5rem;
+    }
+
+    .stat-item {
+        margin: 0 0.25rem;
+        padding: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .stat-label {
+        font-size: 0.65rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .supplier-table th,
+    .supplier-table td {
+        padding: 0.5rem 0.35rem;
+        font-size: 0.8rem;
+    }
+
+    .supplier-price {
+        font-size: 0.9rem;
+    }
+
+    .stat-value {
+        font-size: 1rem;
+    }
 }
 
 /* Disclaimer */
@@ -2184,13 +2280,16 @@ body {
 .hub-links {
     margin: 2rem 0;
     padding: 1.5rem;
+    background: #FFFFFF;
     background: var(--background-card);
+    border: 1px solid #F0E6E0;
     border: 1px solid var(--border-color);
     border-radius: 12px;
 }
 
 .hub-links h3 {
     font-size: 1rem;
+    color: #1a1a1a;
     color: var(--text-dark);
     margin-bottom: 1rem;
 }
@@ -2198,14 +2297,16 @@ body {
 .link-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
 }
 
 .link-grid a {
     display: inline-block;
     padding: 0.5rem 0.75rem;
+    margin: 0 0.5rem 0.5rem 0; /* Fallback for gap */
+    background: #FFF5F0;
     background: var(--background-secondary);
     border-radius: 6px;
+    color: #1a1a1a;
     color: var(--text-dark);
     text-decoration: none;
     font-size: 0.875rem;
@@ -2213,6 +2314,7 @@ body {
 }
 
 .link-grid a:hover {
+    background: #E07A5F;
     background: var(--primary-orange);
     color: white;
 }
