@@ -49,6 +49,39 @@ const STATES = {
   'OH': { name: 'Ohio', abbrev: 'oh' }
 };
 
+// Regional configuration - aggregates multiple counties for SEO
+// These match how locals search (e.g., "Long Island heating oil")
+const REGIONS = {
+  'NY': [
+    {
+      name: 'Long Island',
+      slug: 'long-island',
+      counties: ['Nassau', 'Suffolk'],
+      description: 'Nassau and Suffolk counties on Long Island'
+    },
+    {
+      name: 'Hudson Valley',
+      slug: 'hudson-valley',
+      counties: ['Dutchess', 'Orange', 'Putnam', 'Ulster', 'Rockland'],
+      description: 'The Hudson Valley region of New York'
+    },
+    {
+      name: 'Capital Region',
+      slug: 'capital-region',
+      counties: ['Albany', 'Rensselaer', 'Saratoga', 'Schenectady'],
+      description: 'The Capital District around Albany'
+    }
+  ],
+  'CT': [
+    {
+      name: 'Connecticut Shoreline',
+      slug: 'shoreline',
+      counties: ['New Haven', 'Middlesex', 'New London'],
+      description: 'The Connecticut shoreline along Long Island Sound'
+    }
+  ]
+};
+
 // Parse CLI args
 const args = process.argv.slice(2);
 const cliDryRun = args.includes('--dry-run');
@@ -115,6 +148,7 @@ async function generateSEOPages(options = {}) {
     // 3. Track generated pages for sitemap
     const generatedPages = {
       states: [],
+      regions: [],
       counties: [],
       cities: []
     };
@@ -158,7 +192,30 @@ async function generateSEOPages(options = {}) {
         });
       }
 
-      // B. Generate County Pages
+      // B. Generate Regional Pages (e.g., Long Island, Hudson Valley)
+      const stateRegions = REGIONS[stateCode] || [];
+      for (const region of stateRegions) {
+        const regionData = await generateRegionalPage(
+          stateCode, stateInfo, region, suppliers, priceMap, sequelize
+        );
+
+        if (regionData && regionData.supplierCount >= MIN_SUPPLIERS_FOR_PAGE) {
+          const regionPath = path.join(stateDir, `${region.slug}.html`);
+          if (!dryRun) {
+            await fs.writeFile(regionPath, regionData.html, 'utf-8');
+          }
+          log(`   ✅ Region: ${stateInfo.abbrev}/${region.slug}.html (${regionData.supplierCount} suppliers)`);
+          generatedPages.regions.push({
+            state: stateInfo.abbrev,
+            stateName: stateInfo.name,
+            region: region.name,
+            slug: region.slug,
+            supplierCount: regionData.supplierCount
+          });
+        }
+      }
+
+      // C. Generate County Pages
       const counties = locationResolver.getCountiesForState(stateCode);
       for (const county of counties) {
         const countyData = await generateCountyPage(
@@ -182,7 +239,7 @@ async function generateSEOPages(options = {}) {
         }
       }
 
-      // C. Generate City Pages
+      // D. Generate City Pages
       const cities = locationResolver.getCitiesForState(stateCode);
       for (const city of cities) {
         const cityData = await generateCityPage(
@@ -235,14 +292,16 @@ async function generateSEOPages(options = {}) {
     log('  GENERATION COMPLETE');
     log('═══════════════════════════════════════════════════════════');
     log(`  State pages: ${generatedPages.states.length}`);
+    log(`  Regional pages: ${generatedPages.regions.length}`);
     log(`  County pages: ${generatedPages.counties.length}`);
     log(`  City pages: ${generatedPages.cities.length}`);
-    log(`  Total pages: ${generatedPages.states.length + generatedPages.counties.length + generatedPages.cities.length}`);
+    log(`  Total pages: ${generatedPages.states.length + generatedPages.regions.length + generatedPages.counties.length + generatedPages.cities.length}`);
 
     if (shouldCloseConnection) await sequelize.close();
     return {
       success: true,
       states: generatedPages.states.length,
+      regions: generatedPages.regions.length,
       counties: generatedPages.counties.length,
       cities: generatedPages.cities.length
     };
@@ -395,6 +454,26 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
   const dateStr = formatDate();
   const timeStr = formatTime();
 
+  // Get regions with enough suppliers for links
+  const stateRegions = REGIONS[stateCode] || [];
+  const regionLinks = [];
+  for (const region of stateRegions) {
+    const regionZips = new Set();
+    for (const county of region.counties) {
+      const countyZips = locationResolver.getZipsForCounty(county, stateCode);
+      countyZips.forEach(z => regionZips.add(z));
+    }
+    const regionSuppliers = getSuppliersForZips(allSuppliers, Array.from(regionZips), priceMap);
+    if (regionSuppliers.length >= MIN_SUPPLIERS_FOR_PAGE) {
+      regionLinks.push({
+        name: region.name,
+        slug: region.slug,
+        count: regionSuppliers.length
+      });
+    }
+  }
+  regionLinks.sort((a, b) => b.count - a.count);
+
   // Get counties with enough suppliers for links
   const countyLinks = [];
   for (const county of counties) {
@@ -427,6 +506,7 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
     timeStr,
     stateInfo,
     stateCode,
+    regionLinks,
     countyLinks,
     otherStates: Object.entries(STATES)
       .filter(([code]) => code !== stateCode)
@@ -502,6 +582,73 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
   });
 
   return { html, supplierCount: suppliers.length, county };
+}
+
+/**
+ * Generate Regional Page (e.g., Long Island, Hudson Valley)
+ * Aggregates multiple counties into a single regional landing page
+ */
+async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, priceMap, sequelize) {
+  // Collect all ZIPs from the region's counties
+  const allZips = new Set();
+  for (const county of region.counties) {
+    const countyZips = locationResolver.getZipsForCounty(county, stateCode);
+    countyZips.forEach(z => allZips.add(z));
+  }
+
+  if (allZips.size === 0) {
+    return null;
+  }
+
+  const suppliers = getSuppliersForZips(allSuppliers, Array.from(allZips), priceMap);
+
+  if (suppliers.length < MIN_SUPPLIERS_FOR_PAGE) {
+    return null;
+  }
+
+  const stats = calculateMarketStats(suppliers);
+  const dateStr = formatDate();
+  const timeStr = formatTime();
+
+  // Get counties in this region with their supplier counts (for links)
+  const countyLinks = [];
+  for (const county of region.counties) {
+    const countyZips = locationResolver.getZipsForCounty(county, stateCode);
+    const countySuppliers = getSuppliersForZips(allSuppliers, countyZips, priceMap);
+    if (countySuppliers.length >= MIN_SUPPLIERS_FOR_PAGE) {
+      countyLinks.push({
+        name: toTitleCase(county),
+        slug: slugify(county) + '-county',
+        count: countySuppliers.length
+      });
+    }
+  }
+  countyLinks.sort((a, b) => b.count - a.count);
+
+  const html = generatePageHTML({
+    type: 'region',
+    title: `Heating Oil Prices in ${region.name}, ${stateInfo.name}`,
+    h1: `${region.name} Heating Oil Prices`,
+    description: `Compare ${suppliers.length} heating oil suppliers in ${region.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Covers ${region.counties.join(', ')} counties. Updated daily.`,
+    canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/${region.slug}.html`,
+    breadcrumbs: [
+      { name: 'Home', url: '/' },
+      { name: 'Prices', url: '/prices.html' },
+      { name: stateInfo.name, url: `/prices/${stateInfo.abbrev}/` },
+      { name: region.name, url: null }
+    ],
+    stats,
+    suppliers,
+    dateStr,
+    timeStr,
+    stateInfo,
+    stateCode,
+    region: region.name,
+    regionDescription: region.description,
+    countyLinks
+  });
+
+  return { html, supplierCount: suppliers.length };
 }
 
 /**
@@ -610,6 +757,9 @@ function generatePageHTML(data) {
     stateCode,
     county,
     city,
+    region,
+    regionDescription,
+    regionLinks,
     countyLinks,
     cityLinks,
     siblingCities,
@@ -709,12 +859,38 @@ function generatePageHTML(data) {
   // Hub links section
   let hubLinksHtml = '';
 
-  if (type === 'state' && countyLinks && countyLinks.length > 0) {
-    hubLinksHtml = `
+  if (type === 'state') {
+    // Show regional links if available (e.g., Long Island, Hudson Valley)
+    const regionSection = regionLinks && regionLinks.length > 0 ? `
+    <section class="hub-links hub-links-featured">
+      <h3>Popular Regions</h3>
+      <div class="link-grid">
+        ${regionLinks.map(r =>
+          `<a href="${r.slug}.html" class="featured-link">${escapeHtml(r.name)} <span class="count">(${r.count})</span></a>`
+        ).join('\n        ')}
+      </div>
+    </section>` : '';
+
+    // Show county links
+    const countySection = countyLinks && countyLinks.length > 0 ? `
     <section class="hub-links">
       <h3>Counties in ${stateInfo.name}</h3>
       <div class="link-grid">
         ${countyLinks.slice(0, 20).map(c =>
+          `<a href="${c.slug}.html">${escapeHtml(c.name)} County <span class="count">(${c.count})</span></a>`
+        ).join('\n        ')}
+      </div>
+    </section>` : '';
+
+    hubLinksHtml = regionSection + countySection;
+  }
+
+  if (type === 'region' && countyLinks && countyLinks.length > 0) {
+    hubLinksHtml = `
+    <section class="hub-links">
+      <h3>Counties in ${data.region}</h3>
+      <div class="link-grid">
+        ${countyLinks.map(c =>
           `<a href="${c.slug}.html">${escapeHtml(c.name)} County <span class="count">(${c.count})</span></a>`
         ).join('\n        ')}
       </div>
@@ -1018,6 +1194,14 @@ function generateSitemap(pages) {
     <priority>0.8</priority>
   </url>`).join('');
 
+  const regionUrls = pages.regions.map(r => `
+  <url>
+    <loc>https://www.gethomeheat.com/prices/${r.state}/${r.slug}.html</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>`).join('');
+
   const countyUrls = pages.counties.map(c => `
   <url>
     <loc>https://www.gethomeheat.com/prices/${c.state}/${c.slug}.html</loc>
@@ -1049,6 +1233,7 @@ function generateSitemap(pages) {
     <priority>0.9</priority>
   </url>
 ${stateUrls}
+${regionUrls}
 ${countyUrls}
 ${cityUrls}
   <url>
