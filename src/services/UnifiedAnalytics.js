@@ -2263,6 +2263,7 @@ class UnifiedAnalytics {
       // If no ZIP data, fall back to supplier locations with their click counts
       let supplierLocationFallback = [];
       if (zipData.length === 0 && locationData.length === 0) {
+        // First try: suppliers with clicks
         const [supplierData] = await this.sequelize.query(`
           WITH supplier_clicks_agg AS (
             SELECT supplier_id, COUNT(*) as clicks
@@ -2299,6 +2300,30 @@ class UnifiedAnalytics {
         `, { type: this.sequelize.QueryTypes.SELECT });
 
         supplierLocationFallback = supplierData;
+
+        // Second fallback: if no clicks at all, just show active suppliers
+        if (supplierLocationFallback.length === 0) {
+          const [allSuppliers] = await this.sequelize.query(`
+            SELECT
+              s.id,
+              s.name,
+              s.city,
+              s.state,
+              CASE
+                WHEN jsonb_array_length(s.postal_codes_served) > 0
+                THEN s.postal_codes_served->>0
+                ELSE NULL
+              END as zip_code,
+              1 as total_activity
+            FROM suppliers s
+            WHERE s.active = true
+              AND jsonb_array_length(s.postal_codes_served) > 0
+            ORDER BY s.name
+            LIMIT 100
+          `, { type: this.sequelize.QueryTypes.SELECT });
+
+          supplierLocationFallback = allSuppliers;
+        }
       }
 
       // Merge location searches with engagement data
