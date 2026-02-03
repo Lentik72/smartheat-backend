@@ -2984,9 +2984,18 @@ async function loadCoverage() {
     };
 
     // Get geo stats from unified data
-    const geoStats = unified?.geoHeatmap?.data?.summary || {};
-    const stateBreakdown = unified?.geoHeatmap?.data?.stateBreakdown || [];
-    const topLocations = unified?.geoHeatmap?.data?.topLocations || [];
+    const geoHeatmap = unified?.geoHeatmap || {};
+    const geoStats = geoHeatmap?.data?.summary || {};
+    const stateBreakdown = geoHeatmap?.data?.stateBreakdown || [];
+    const topLocations = geoHeatmap?.data?.topLocations || [];
+
+    // Debug: log geo data status
+    console.log('[Coverage] geoHeatmap:', {
+      available: geoHeatmap.available,
+      hasData: geoHeatmap.hasData,
+      error: geoHeatmap.error,
+      pointsCount: geoHeatmap?.data?.points?.length || 0
+    });
 
     // Calculate unique states from both sources
     const allPoints = [...(geographic.demandHeatmap || []), ...(geographic.coverageGaps || [])];
@@ -2996,8 +3005,13 @@ async function loadCoverage() {
     // Summary cards
     document.getElementById('cov-suppliers').textContent = overview.scraping?.suppliersTotal || '--';
     document.getElementById('cov-states').textContent = statesCount || '--';
-    document.getElementById('cov-active-zips').textContent = geoStats.totalZips || '--';
+    document.getElementById('cov-active-zips').textContent = geoStats.totalZips || (geoHeatmap.error ? 'Error' : '--');
     document.getElementById('cov-gaps').textContent = overview.coverage?.trueCoverageGaps || '--';
+
+    // Show error if geoHeatmap failed
+    if (geoHeatmap.error) {
+      console.error('[Coverage] GeoHeatmap error:', geoHeatmap.error);
+    }
 
     // State breakdown table
     const stateBody = document.getElementById('state-breakdown-body');
