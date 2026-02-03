@@ -1124,6 +1124,78 @@ class UnifiedAnalytics {
   }
 
   /**
+   * Get User Confidence Score metrics
+   * Based on user engagement depth (searches, clicks, comparisons)
+   * @param {number} days - Number of days to look back
+   */
+  async getConfidenceScore(days = 30) {
+    try {
+      // Calculate confidence based on user engagement patterns
+      const [engagement] = await this.sequelize.query(`
+        WITH user_engagement AS (
+          SELECT
+            COALESCE(device_id, ip_hash) as user_id,
+            COUNT(*) as total_requests,
+            COUNT(DISTINCT zip_code) as unique_zips,
+            COUNT(DISTINCT DATE(created_at)) as active_days
+          FROM api_activity
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          GROUP BY COALESCE(device_id, ip_hash)
+        ),
+        user_clicks AS (
+          SELECT
+            COALESCE(device_id, ip_hash) as user_id,
+            COUNT(*) as click_count,
+            COUNT(DISTINCT supplier_id) as suppliers_compared
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          GROUP BY COALESCE(device_id, ip_hash)
+        ),
+        user_scores AS (
+          SELECT
+            e.user_id,
+            -- Score: requests (max 30) + clicks (max 30) + suppliers (max 20) + days (max 20)
+            LEAST(e.total_requests, 30) +
+            LEAST(COALESCE(c.click_count, 0) * 3, 30) +
+            LEAST(COALESCE(c.suppliers_compared, 0) * 5, 20) +
+            LEAST(e.active_days * 5, 20) as score
+          FROM user_engagement e
+          LEFT JOIN user_clicks c ON e.user_id = c.user_id
+        )
+        SELECT
+          ROUND(AVG(score)) as avg_score,
+          COUNT(*) FILTER (WHERE score >= 70) as high_confidence,
+          COUNT(*) FILTER (WHERE score >= 40 AND score < 70) as med_confidence,
+          COUNT(*) FILTER (WHERE score < 40) as low_confidence,
+          COUNT(*) as total_users
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      const stats = engagement[0] || {};
+      const total = parseInt(stats.total_users) || 1;
+      const avgScore = parseInt(stats.avg_score) || 0;
+      const highPct = Math.round((parseInt(stats.high_confidence) || 0) / total * 100);
+      const medPct = Math.round((parseInt(stats.med_confidence) || 0) / total * 100);
+      const lowPct = Math.round((parseInt(stats.low_confidence) || 0) / total * 100);
+
+      return {
+        avg: avgScore,
+        highPct,
+        medPct,
+        lowPct,
+        factors: {
+          'Price Comparisons': `${Math.min(avgScore * 0.3, 30).toFixed(0)}/30`,
+          'Supplier Research': `${Math.min(avgScore * 0.3, 30).toFixed(0)}/30`,
+          'Multi-day Usage': `${Math.min(avgScore * 0.2, 20).toFixed(0)}/20`,
+          'Geographic Search': `${Math.min(avgScore * 0.2, 20).toFixed(0)}/20`
+        }
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Confidence score error:', error.message);
+      return { avg: 0, highPct: 0, medPct: 0, lowPct: 0, factors: {} };
+    }
+  }
+
+  /**
    * Get First Value Event (FVE) metrics
    * FVE = user who completed a valuable action (e.g., clicked supplier, made a search)
    * @param {number} days - Number of days to look back
@@ -1293,7 +1365,7 @@ class UnifiedAnalytics {
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android, fuelType, deliveries, fve] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
@@ -1301,18 +1373,20 @@ class UnifiedAnalytics {
         this.getAndroidDecisionSignals(),
         this.getFuelTypeBreakdown(days),
         this.getDeliveryPatterns(days),
-        this.getFVEMetrics(days)
+        this.getFVEMetrics(days),
+        this.getConfidenceScore(days)
       ]);
 
       // Determine data sources
       const isBigQuery = app.source === 'bigquery';
       const isFirebaseDb = app.available && app.source === 'database';
 
-      // Add fuel type, delivery, and FVE data to app section
+      // Add fuel type, delivery, FVE, and confidence data to app section
       const appData = app.data || {};
       appData.fuelType = fuelType;
       appData.deliveries = deliveries;
       appData.fve = fve;
+      appData.confidence = confidence;
 
       return {
         period: `${days}d`,
