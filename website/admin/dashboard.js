@@ -2517,8 +2517,8 @@ async function loadGrowth() {
     const iosUsers = ios.summary?.totalUsers || ios.uniqueUsers || 0;
     const iosDeliveries = ios.deliveries?.total || ios.saves || 0;
 
-    document.getElementById('p-ios-users').textContent = iosUsers || '--';
-    document.getElementById('p-ios-deliveries').textContent = iosDeliveries || '--';
+    document.getElementById('p-ios-users').textContent = iosUsers ?? '--';
+    document.getElementById('p-ios-deliveries').textContent = iosDeliveries ?? '--';
     document.getElementById('p-ios-retention').textContent = retention?.data?.summary?.week1RetentionRate
       ? `${retention.data.summary.week1RetentionRate}%`
       : '--%';
