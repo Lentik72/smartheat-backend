@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1770137000">
+  <link rel="stylesheet" href="dashboard.css?v=1770138000">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -211,6 +211,56 @@
               <div class="chart-stats">
                 <span>Avg Daily: <strong id="dau-avg">--</strong></span>
                 <span>Peak: <strong id="dau-peak">--</strong></span>
+              </div>
+            </div>
+
+            <!-- Onboarding Funnel -->
+            <div class="panel full-width">
+              <h3>🚀 Onboarding Funnel</h3>
+              <div class="funnel-container" id="onboarding-funnel">
+                <div class="funnel-step">
+                  <div class="funnel-bar-container">
+                    <div class="funnel-bar" id="funnel-install" style="width: 100%"></div>
+                  </div>
+                  <div class="funnel-label">
+                    <span class="funnel-name">Install</span>
+                    <span class="funnel-count" id="funnel-install-count">--</span>
+                    <span class="funnel-pct" id="funnel-install-pct">100%</span>
+                  </div>
+                </div>
+                <div class="funnel-step">
+                  <div class="funnel-bar-container">
+                    <div class="funnel-bar" id="funnel-onboard" style="width: 0%"></div>
+                  </div>
+                  <div class="funnel-label">
+                    <span class="funnel-name">Start Onboarding</span>
+                    <span class="funnel-count" id="funnel-onboard-count">--</span>
+                    <span class="funnel-pct" id="funnel-onboard-pct">--%</span>
+                  </div>
+                </div>
+                <div class="funnel-step">
+                  <div class="funnel-bar-container">
+                    <div class="funnel-bar" id="funnel-complete" style="width: 0%"></div>
+                  </div>
+                  <div class="funnel-label">
+                    <span class="funnel-name">Complete Onboarding</span>
+                    <span class="funnel-count" id="funnel-complete-count">--</span>
+                    <span class="funnel-pct" id="funnel-complete-pct">--%</span>
+                  </div>
+                </div>
+                <div class="funnel-step">
+                  <div class="funnel-bar-container">
+                    <div class="funnel-bar activated" id="funnel-fva" style="width: 0%"></div>
+                  </div>
+                  <div class="funnel-label">
+                    <span class="funnel-name">First Value Action</span>
+                    <span class="funnel-count" id="funnel-fva-count">--</span>
+                    <span class="funnel-pct" id="funnel-fva-pct">--%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="funnel-insight" id="funnel-insight">
+                💡 Track user activation from install to first meaningful action
               </div>
             </div>
 
@@ -1611,6 +1661,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1770137000"></script>
+  <script src="dashboard.js?v=1770138000"></script>
 </body>
 </html>

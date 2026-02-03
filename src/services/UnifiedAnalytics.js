@@ -1372,6 +1372,83 @@ class UnifiedAnalytics {
   }
 
   /**
+   * Get onboarding funnel data from BigQuery
+   * @param {number} days - Number of days to look back
+   */
+  async getOnboardingFunnel(days = 30) {
+    await this.initBigQuery();
+
+    if (!this.bigQueryClient) {
+      return null;
+    }
+
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      const startDateStr = startDate.toISOString().split('T')[0].replace(/-/g, '');
+      const endDateStr = endDate.toISOString().split('T')[0].replace(/-/g, '');
+
+      const [result] = await this.bigQueryClient.query({
+        query: `
+          WITH funnel_events AS (
+            SELECT
+              user_pseudo_id,
+              event_name,
+              TIMESTAMP_MICROS(event_timestamp) as event_time
+            FROM \`${this.bigQueryProject}.${this.bigQueryDataset}.events_*\`
+            WHERE _TABLE_SUFFIX BETWEEN '${startDateStr}' AND '${endDateStr}'
+              AND event_name IN ('first_open', 'onboarding_step', 'onboarding_complete',
+                                 'directory_viewed', 'forecast_viewed', 'tank_reading',
+                                 'feature_used', 'session_start')
+          )
+          SELECT
+            COUNT(DISTINCT CASE WHEN event_name = 'first_open' THEN user_pseudo_id END) as installs,
+            COUNT(DISTINCT CASE WHEN event_name = 'onboarding_step' THEN user_pseudo_id END) as started_onboarding,
+            COUNT(DISTINCT CASE WHEN event_name = 'onboarding_complete' THEN user_pseudo_id END) as completed_onboarding,
+            COUNT(DISTINCT CASE WHEN event_name = 'directory_viewed' THEN user_pseudo_id END) as searched_supplier,
+            COUNT(DISTINCT CASE WHEN event_name = 'forecast_viewed' THEN user_pseudo_id END) as viewed_forecast,
+            COUNT(DISTINCT CASE WHEN event_name = 'tank_reading' THEN user_pseudo_id END) as logged_tank,
+            COUNT(DISTINCT CASE WHEN event_name = 'feature_used' THEN user_pseudo_id END) as used_feature,
+            COUNT(DISTINCT user_pseudo_id) as total_users
+          FROM funnel_events
+        `
+      });
+
+      const data = result[0] || {};
+      const installs = parseInt(data.installs) || 0;
+      const startedOnboarding = parseInt(data.started_onboarding) || 0;
+      const completedOnboarding = parseInt(data.completed_onboarding) || 0;
+      const searchedSupplier = parseInt(data.searched_supplier) || 0;
+      const viewedForecast = parseInt(data.viewed_forecast) || 0;
+      const loggedTank = parseInt(data.logged_tank) || 0;
+
+      // If no onboarding_complete event, estimate from onboarding_step
+      const effectiveCompleted = completedOnboarding > 0 ? completedOnboarding : startedOnboarding;
+
+      // First value event = any meaningful action after install
+      const firstValueUsers = Math.max(searchedSupplier, viewedForecast, loggedTank);
+
+      return {
+        steps: [
+          { name: 'Install', count: installs, percent: 100 },
+          { name: 'Start Onboarding', count: startedOnboarding, percent: installs > 0 ? Math.round((startedOnboarding / installs) * 100) : 0 },
+          { name: 'Complete Onboarding', count: effectiveCompleted, percent: installs > 0 ? Math.round((effectiveCompleted / installs) * 100) : 0 },
+          { name: 'First Value Action', count: firstValueUsers, percent: installs > 0 ? Math.round((firstValueUsers / installs) * 100) : 0 }
+        ],
+        summary: {
+          installs,
+          onboardingRate: installs > 0 ? ((effectiveCompleted / installs) * 100).toFixed(1) : 0,
+          activationRate: installs > 0 ? ((firstValueUsers / installs) * 100).toFixed(1) : 0
+        }
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Onboarding funnel error:', error.message);
+      return null;
+    }
+  }
+
+  /**
    * Get trend data comparing current period to previous period
    * @param {number} days - Number of days for current period
    */
@@ -1457,7 +1534,7 @@ class UnifiedAnalytics {
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends, onboardingFunnel] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
@@ -1467,19 +1544,21 @@ class UnifiedAnalytics {
         this.getDeliveryPatterns(days),
         this.getFVEMetrics(days),
         this.getConfidenceScore(days),
-        this.getTrendData(days)
+        this.getTrendData(days),
+        this.getOnboardingFunnel(days)
       ]);
 
       // Determine data sources
       const isBigQuery = app.source === 'bigquery';
       const isFirebaseDb = app.available && app.source === 'database';
 
-      // Add fuel type, delivery, FVE, and confidence data to app section
+      // Add fuel type, delivery, FVE, confidence, and onboarding data to app section
       const appData = app.data || {};
       appData.fuelType = fuelType;
       appData.deliveries = deliveries;
       appData.fve = fve;
       appData.confidence = confidence;
+      appData.onboardingFunnel = onboardingFunnel;
 
       // Add click data to website section
       const websiteData = website.data || {};

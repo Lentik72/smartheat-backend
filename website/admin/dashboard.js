@@ -2358,6 +2358,40 @@ async function loadAppAnalytics() {
         document.getElementById('dau-peak').textContent = peakDAU;
       }
 
+      // Onboarding Funnel
+      const funnel = appData?.onboardingFunnel;
+      if (funnel && funnel.steps) {
+        const steps = funnel.steps;
+        // Install
+        document.getElementById('funnel-install-count').textContent = steps[0]?.count ?? '--';
+        document.getElementById('funnel-install-pct').textContent = '100%';
+        document.getElementById('funnel-install').style.width = '100%';
+        // Start Onboarding
+        document.getElementById('funnel-onboard-count').textContent = steps[1]?.count ?? '--';
+        document.getElementById('funnel-onboard-pct').textContent = `${steps[1]?.percent ?? 0}%`;
+        document.getElementById('funnel-onboard').style.width = `${steps[1]?.percent ?? 0}%`;
+        // Complete Onboarding
+        document.getElementById('funnel-complete-count').textContent = steps[2]?.count ?? '--';
+        document.getElementById('funnel-complete-pct').textContent = `${steps[2]?.percent ?? 0}%`;
+        document.getElementById('funnel-complete').style.width = `${steps[2]?.percent ?? 0}%`;
+        // First Value Action
+        document.getElementById('funnel-fva-count').textContent = steps[3]?.count ?? '--';
+        document.getElementById('funnel-fva-pct').textContent = `${steps[3]?.percent ?? 0}%`;
+        document.getElementById('funnel-fva').style.width = `${steps[3]?.percent ?? 0}%`;
+
+        // Update insight
+        const onboardingRate = funnel.summary?.onboardingRate || 0;
+        const activationRate = funnel.summary?.activationRate || 0;
+        const insight = document.getElementById('funnel-insight');
+        if (onboardingRate < 20) {
+          insight.textContent = `💡 Only ${onboardingRate}% complete onboarding - simplify the flow`;
+        } else if (activationRate < 30) {
+          insight.textContent = `💡 ${activationRate}% reach first value - improve time-to-value`;
+        } else {
+          insight.textContent = `💡 ${activationRate}% activation rate - healthy funnel!`;
+        }
+      }
+
       // Top Events table
       const eventsBody = document.getElementById('top-events-body');
       if (eventsBody) {
