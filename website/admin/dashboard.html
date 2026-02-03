@@ -929,13 +929,13 @@
         </div>
       </section>
 
-      <!-- Android Decision Tab -->
+      <!-- Android Decision Tab (Legacy) -->
       <section id="tab-android" class="tab-panel">
         <div class="panel-grid">
-          <div class="panel decision-card" id="android-decision">
+          <div class="panel decision-card" id="legacy-android-decision">
             <h3>Android Decision</h3>
-            <div id="android-status" class="decision-status">WAIT</div>
-            <div id="android-message" class="decision-message">Loading...</div>
+            <div id="legacy-android-status" class="decision-status">WAIT</div>
+            <div id="legacy-android-message" class="decision-message">Loading...</div>
           </div>
           <div class="panel">
             <h3>Waitlist Total</h3>
@@ -1302,12 +1302,12 @@
         </div>
       </section>
 
-      <!-- Map Tab -->
+      <!-- Map Tab (Legacy) -->
       <section id="tab-map" class="tab-panel">
         <div class="panel full-width">
           <h3>Demand Heatmap & Coverage Gaps</h3>
-          <div id="map-stats" class="map-legend"></div>
-          <div id="map-container"></div>
+          <div id="legacy-map-stats" class="map-legend"></div>
+          <div id="legacy-map-container"></div>
         </div>
         <div class="panel full-width">
           <h3>Supplier Clicks by Location</h3>
@@ -1326,20 +1326,20 @@
         </div>
       </section>
 
-      <!-- Scrapers Tab -->
+      <!-- Scrapers Tab (Legacy) -->
       <section id="tab-scrapers" class="tab-panel">
         <div class="panel-grid">
           <div class="panel">
             <h3>Last Scrape Run</h3>
-            <div id="last-scrape" class="stat-large">--</div>
+            <div id="legacy-last-scrape" class="stat-large">--</div>
           </div>
           <div class="panel">
             <h3>Suppliers Scraped</h3>
-            <div id="suppliers-scraped" class="stat-large">--</div>
+            <div id="legacy-suppliers-scraped" class="stat-large">--</div>
           </div>
           <div class="panel full-width">
             <h3>Stale Suppliers (No update in 48h)</h3>
-            <table id="stale-table">
+            <table id="legacy-stale-table">
               <thead>
                 <tr>
                   <th>Supplier</th>
@@ -1349,34 +1349,34 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody id="stale-body"></tbody>
+              <tbody id="legacy-stale-body"></tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- Suppliers Tab -->
+      <!-- Suppliers Tab (Legacy) -->
       <section id="tab-suppliers" class="tab-panel">
         <div class="panel full-width">
           <div class="filters">
-            <select id="filter-state">
+            <select id="legacy-filter-state">
               <option value="">All States</option>
             </select>
-            <select id="filter-price">
+            <select id="legacy-filter-price">
               <option value="">All Price Status</option>
               <option value="true">Has Price</option>
               <option value="false">No Price</option>
             </select>
-            <select id="filter-scrape">
+            <select id="legacy-filter-scrape">
               <option value="">All Scrape Status</option>
               <option value="enabled">Enabled</option>
               <option value="disabled">Disabled</option>
               <option value="stale">Stale</option>
             </select>
-            <input type="text" id="filter-search" placeholder="Search...">
-            <button id="filter-apply">Apply</button>
+            <input type="text" id="legacy-filter-search" placeholder="Search...">
+            <button id="legacy-filter-apply">Apply</button>
           </div>
-          <table id="suppliers-table">
+          <table id="legacy-suppliers-table">
             <thead>
               <tr>
                 <th class="sortable" data-sort="name">Supplier <span class="sort-icon">↕</span></th>
@@ -1388,12 +1388,12 @@
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody id="suppliers-body"></tbody>
+            <tbody id="legacy-suppliers-body"></tbody>
           </table>
           <div class="pagination">
-            <button id="prev-page" disabled>Previous</button>
-            <span id="page-info">Page 1</span>
-            <button id="next-page">Next</button>
+            <button id="legacy-prev-page" disabled>Previous</button>
+            <span id="legacy-page-info">Page 1</span>
+            <button id="legacy-next-page">Next</button>
           </div>
         </div>
       </section>
