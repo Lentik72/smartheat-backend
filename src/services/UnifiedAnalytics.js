@@ -194,15 +194,20 @@ class UnifiedAnalytics {
         }
       }
 
-      this.logger.info(`[UnifiedAnalytics] BigQuery using project: ${this.bigQueryProject}, credentials project: ${credentials.project_id}`);
+      // Use project from credentials if env var not set, or if they don't match
+      const projectToUse = credentials.project_id || this.bigQueryProject;
+      this.logger.info(`[UnifiedAnalytics] BigQuery using project: ${projectToUse} (env: ${this.bigQueryProject}, creds: ${credentials.project_id})`);
+
+      // Update the project for queries
+      this.bigQueryProject = projectToUse;
 
       this.bigQueryClient = new BigQuery({
-        projectId: this.bigQueryProject,
+        projectId: projectToUse,
         credentials: credentials
       });
 
       this.initialized.bigquery = true;
-      this.logger.info(`[UnifiedAnalytics] BigQuery client initialized for project ${this.bigQueryProject}`);
+      this.logger.info(`[UnifiedAnalytics] BigQuery client initialized for project ${projectToUse}`);
       return true;
     } catch (error) {
       this.logger.error('[UnifiedAnalytics] BigQuery init error:', error.message || error.toString());
@@ -1134,22 +1139,24 @@ class UnifiedAnalytics {
       const [engagement] = await this.sequelize.query(`
         WITH user_engagement AS (
           SELECT
-            COALESCE(device_id, ip_hash) as user_id,
+            ip_hash as user_id,
             COUNT(*) as total_requests,
             COUNT(DISTINCT zip_code) as unique_zips,
             COUNT(DISTINCT DATE(created_at)) as active_days
           FROM api_activity
           WHERE created_at > NOW() - INTERVAL '${days} days'
-          GROUP BY COALESCE(device_id, ip_hash)
+            AND ip_hash IS NOT NULL
+          GROUP BY ip_hash
         ),
         user_clicks AS (
           SELECT
-            COALESCE(device_id, ip_hash) as user_id,
+            ip_address as user_id,
             COUNT(*) as click_count,
             COUNT(DISTINCT supplier_id) as suppliers_compared
           FROM supplier_clicks
           WHERE created_at > NOW() - INTERVAL '${days} days'
-          GROUP BY COALESCE(device_id, ip_hash)
+            AND ip_address IS NOT NULL
+          GROUP BY ip_address
         ),
         user_scores AS (
           SELECT
@@ -1205,18 +1212,20 @@ class UnifiedAnalytics {
       // Get users who completed an FVE (clicked a supplier or searched)
       const [fveStats] = await this.sequelize.query(`
         WITH all_users AS (
-          SELECT DISTINCT COALESCE(device_id, ip_hash) as user_id,
+          SELECT DISTINCT ip_hash as user_id,
                  MIN(created_at) as first_seen
           FROM api_activity
           WHERE created_at > NOW() - INTERVAL '${days} days'
-          GROUP BY COALESCE(device_id, ip_hash)
+            AND ip_hash IS NOT NULL
+          GROUP BY ip_hash
         ),
         fve_users AS (
-          SELECT DISTINCT COALESCE(device_id, ip_hash) as user_id,
+          SELECT DISTINCT ip_address as user_id,
                  MIN(created_at) as fve_time
           FROM supplier_clicks
           WHERE created_at > NOW() - INTERVAL '${days} days'
-          GROUP BY COALESCE(device_id, ip_hash)
+            AND ip_address IS NOT NULL
+          GROUP BY ip_address
         ),
         fve_within_72h AS (
           SELECT f.user_id
@@ -1227,17 +1236,18 @@ class UnifiedAnalytics {
         returning_fve AS (
           SELECT DISTINCT f.user_id
           FROM fve_users f
-          JOIN api_activity a ON COALESCE(a.device_id, a.ip_hash) = f.user_id
+          JOIN api_activity a ON a.ip_hash = f.user_id
           WHERE a.created_at > f.fve_time + INTERVAL '7 days'
         ),
         returning_non_fve AS (
-          SELECT DISTINCT COALESCE(a1.device_id, a1.ip_hash) as user_id
+          SELECT DISTINCT a1.ip_hash as user_id
           FROM api_activity a1
-          WHERE COALESCE(a1.device_id, a1.ip_hash) NOT IN (SELECT user_id FROM fve_users)
+          WHERE a1.ip_hash NOT IN (SELECT user_id FROM fve_users)
             AND a1.created_at > NOW() - INTERVAL '${days} days'
+            AND a1.ip_hash IS NOT NULL
             AND EXISTS (
               SELECT 1 FROM api_activity a2
-              WHERE COALESCE(a2.device_id, a2.ip_hash) = COALESCE(a1.device_id, a1.ip_hash)
+              WHERE a2.ip_hash = a1.ip_hash
                 AND a2.created_at > a1.created_at + INTERVAL '7 days'
             )
         )
@@ -1388,6 +1398,24 @@ class UnifiedAnalytics {
       appData.fve = fve;
       appData.confidence = confidence;
 
+      // Add click data to website section
+      const websiteData = website.data || {};
+      try {
+        const [clicks] = await this.sequelize.query(`
+          SELECT
+            COUNT(*) as total_clicks,
+            COUNT(*) FILTER (WHERE action_type = 'call') as call_clicks,
+            COUNT(*) FILTER (WHERE action_type = 'website') as website_clicks
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        `, { type: this.sequelize.QueryTypes.SELECT });
+        websiteData.totalClicks = parseInt(clicks[0]?.total_clicks) || 0;
+        websiteData.callClicks = parseInt(clicks[0]?.call_clicks) || 0;
+        websiteData.websiteClicks = parseInt(clicks[0]?.website_clicks) || 0;
+      } catch (e) {
+        this.logger.error('[UnifiedAnalytics] Click data error:', e.message);
+      }
+
       return {
         period: `${days}d`,
         dataSources: {
@@ -1396,7 +1424,7 @@ class UnifiedAnalytics {
           bigquery: isBigQuery,
           database: backend.available
         },
-        website: website.data,
+        website: websiteData,
         app: appData,
         appSource: app.source || 'none',
         backend: backend.data,
