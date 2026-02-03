@@ -1894,16 +1894,61 @@ class UnifiedAnalytics {
    * Get fuel type breakdown from API activity
    * @param {number} days - Number of days to look back
    */
-  async getFuelTypeBreakdown(days = 7) {
+  async getFuelTypeBreakdown(days = 30) {
     try {
-      const result = await this.sequelize.query(`
-        SELECT
-          COALESCE(fuel_type, 'heating_oil') as fuel_type,
-          COUNT(DISTINCT COALESCE(device_id, ip_hash)) as unique_users
-        FROM api_activity
-        WHERE created_at > NOW() - INTERVAL '${days} days'
-        GROUP BY COALESCE(fuel_type, 'heating_oil')
-      `, { type: this.sequelize.QueryTypes.SELECT });
+      // Try multiple sources for fuel type data
+      let result = [];
+
+      // Source 1: onboarding_steps (users who selected fuel type during onboarding)
+      try {
+        const onboardingData = await this.sequelize.query(`
+          SELECT
+            COALESCE(fuel_type, 'heating_oil') as fuel_type,
+            COUNT(DISTINCT ip_hash) as unique_users
+          FROM onboarding_steps
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND fuel_type IS NOT NULL
+          GROUP BY fuel_type
+        `, { type: this.sequelize.QueryTypes.SELECT });
+        if (onboardingData.length > 0) result = onboardingData;
+      } catch (e) {
+        this.logger.debug('[UnifiedAnalytics] onboarding_steps query failed:', e.message);
+      }
+
+      // Source 2: app_events (if onboarding didn't have data)
+      if (result.length === 0) {
+        try {
+          const appEventsData = await this.sequelize.query(`
+            SELECT
+              COALESCE(fuel_type, 'heating_oil') as fuel_type,
+              COUNT(DISTINCT device_id_hash) as unique_users
+            FROM app_events
+            WHERE created_at > NOW() - INTERVAL '${days} days'
+              AND fuel_type IS NOT NULL
+            GROUP BY fuel_type
+          `, { type: this.sequelize.QueryTypes.SELECT });
+          if (appEventsData.length > 0) result = appEventsData;
+        } catch (e) {
+          this.logger.debug('[UnifiedAnalytics] app_events query failed:', e.message);
+        }
+      }
+
+      // Source 3: supplier_engagements (has fuel_type column)
+      if (result.length === 0) {
+        try {
+          const engagementsData = await this.sequelize.query(`
+            SELECT
+              COALESCE(fuel_type, 'heating_oil') as fuel_type,
+              COUNT(DISTINCT ip_hash) as unique_users
+            FROM supplier_engagements
+            WHERE created_at > NOW() - INTERVAL '${days} days'
+            GROUP BY COALESCE(fuel_type, 'heating_oil')
+          `, { type: this.sequelize.QueryTypes.SELECT });
+          if (engagementsData.length > 0) result = engagementsData;
+        } catch (e) {
+          this.logger.debug('[UnifiedAnalytics] supplier_engagements query failed:', e.message);
+        }
+      }
 
       const totalUsers = result.reduce((sum, r) => sum + parseInt(r.unique_users || 0), 0);
 
@@ -1913,19 +1958,28 @@ class UnifiedAnalytics {
       const oilUsers = parseInt(oil?.unique_users || 0);
       const propaneUsers = parseInt(propane?.unique_users || 0);
 
+      // If no data from any source, return placeholder
+      if (totalUsers === 0) {
+        return {
+          oil: { users: 'N/A', pct: '--' },
+          propane: { users: 'N/A', pct: '--' },
+          noData: true
+        };
+      }
+
       return {
         oil: {
           users: oilUsers,
-          pct: totalUsers > 0 ? ((oilUsers / totalUsers) * 100).toFixed(1) : 0
+          pct: totalUsers > 0 ? ((oilUsers / totalUsers) * 100).toFixed(0) : 0
         },
         propane: {
           users: propaneUsers,
-          pct: totalUsers > 0 ? ((propaneUsers / totalUsers) * 100).toFixed(1) : 0
+          pct: totalUsers > 0 ? ((propaneUsers / totalUsers) * 100).toFixed(0) : 0
         }
       };
     } catch (error) {
       this.logger.error('[UnifiedAnalytics] Fuel type breakdown error:', error.message);
-      return { oil: { users: 0, pct: 0 }, propane: { users: 0, pct: 0 } };
+      return { oil: { users: 'N/A', pct: '--' }, propane: { users: 'N/A', pct: '--' }, noData: true };
     }
   }
 
