@@ -2143,50 +2143,50 @@ class UnifiedAnalytics {
       `, { type: this.sequelize.QueryTypes.SELECT });
 
       // Calculate overall retention rates
-      const totalUsers = cohortData.reduce((sum, c) => sum + parseInt(c.cohort_size), 0);
-      const totalDay1 = cohortData.reduce((sum, c) => sum + parseInt(c.day1_retained), 0);
-      const totalDay7 = cohortData.reduce((sum, c) => sum + parseInt(c.day7_retained), 0);
-      const totalDay30 = cohortData.reduce((sum, c) => sum + parseInt(c.day30_retained), 0);
+      const totalUsers = cohortData.reduce((sum, c) => sum + parseInt(c.cohort_size || 0), 0);
+      const totalDay1 = cohortData.reduce((sum, c) => sum + parseInt(c.day1_retained || 0), 0);
+      const totalDay7 = cohortData.reduce((sum, c) => sum + parseInt(c.day7_retained || 0), 0);
+      const totalDay30 = cohortData.reduce((sum, c) => sum + parseInt(c.day30_retained || 0), 0);
 
-      // Build retention curve data (average across cohorts)
-      const retentionCurve = [];
+      // Build retention curve data in a single efficient query
+      const [curveData] = await this.sequelize.query(`
+        WITH all_activity AS (
+          SELECT ip_address as user_id, created_at::date as activity_date
+          FROM supplier_clicks WHERE ip_address IS NOT NULL
+          UNION ALL
+          SELECT ip_hash as user_id, created_at::date as activity_date
+          FROM supplier_engagements WHERE ip_hash IS NOT NULL
+        ),
+        user_first AS (
+          SELECT user_id, MIN(activity_date) as cohort_date
+          FROM all_activity
+          GROUP BY user_id
+        ),
+        day_retention AS (
+          SELECT
+            (aa.activity_date - uf.cohort_date) as days_since,
+            COUNT(DISTINCT aa.user_id) as users
+          FROM user_first uf
+          JOIN all_activity aa ON uf.user_id = aa.user_id
+          WHERE uf.cohort_date >= NOW()::date - INTERVAL '${days} days'
+            AND (aa.activity_date - uf.cohort_date) BETWEEN 0 AND 30
+          GROUP BY (aa.activity_date - uf.cohort_date)
+        )
+        SELECT days_since, users FROM day_retention ORDER BY days_since
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      // Build curve array with all 31 days
+      const curveMap = new Map(curveData.map(d => [parseInt(d.days_since), parseInt(d.users)]));
+      const day0Users = curveMap.get(0) || 1;
+
+      const normalizedCurve = [];
       for (let day = 0; day <= 30; day++) {
-        const [dayData] = await this.sequelize.query(`
-          WITH all_activity AS (
-            SELECT ip_address as user_id, created_at::date as activity_date
-            FROM supplier_clicks WHERE ip_address IS NOT NULL
-            UNION ALL
-            SELECT ip_hash as user_id, created_at::date as activity_date
-            FROM supplier_engagements WHERE ip_hash IS NOT NULL
-          ),
-          user_first AS (
-            SELECT user_id, MIN(activity_date) as cohort_date
-            FROM all_activity
-            GROUP BY user_id
-          ),
-          retained AS (
-            SELECT COUNT(DISTINCT aa.user_id) as users
-            FROM user_first uf
-            JOIN all_activity aa ON uf.user_id = aa.user_id
-            WHERE (aa.activity_date - uf.cohort_date) = ${day}
-              AND uf.cohort_date >= NOW()::date - INTERVAL '${days} days'
-              AND uf.cohort_date <= NOW()::date - INTERVAL '${day} days'
-          )
-          SELECT users FROM retained
-        `, { type: this.sequelize.QueryTypes.SELECT });
-
-        retentionCurve.push({
+        const users = curveMap.get(day) || 0;
+        normalizedCurve.push({
           day,
-          users: parseInt(dayData[0]?.users) || 0
+          rate: day0Users > 0 ? ((users / day0Users) * 100).toFixed(1) : '0'
         });
       }
-
-      // Normalize curve to percentages
-      const day0Users = retentionCurve[0]?.users || 1;
-      const normalizedCurve = retentionCurve.map(d => ({
-        day: d.day,
-        rate: day0Users > 0 ? ((d.users / day0Users) * 100).toFixed(1) : 0
-      }));
 
       return {
         available: true,

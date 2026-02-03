@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1770148000">
+  <link rel="stylesheet" href="dashboard.css?v=1770149000">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -97,7 +97,6 @@
       <button class="tab active" data-tab="leaderboard">🏆 Leaderboard</button>
       <button class="tab" data-tab="app-analytics">📊 App Analytics</button>
       <button class="tab" data-tab="retention">🔄 Retention</button>
-      <button class="tab" data-tab="geography">📍 Geography</button>
       <button class="tab" data-tab="growth">📈 Growth</button>
       <button class="tab" data-tab="coverage">🗺️ Coverage</button>
       <button class="tab" data-tab="settings">⚙️ Settings</button>
@@ -678,7 +677,7 @@
       </section>
 
       <!-- ============================================================ -->
-      <!-- COVERAGE TAB - Scope 18 (Merged Map + Overview gaps) -->
+      <!-- COVERAGE TAB - Scope 18 (Merged Map + Overview gaps + Geography) -->
       <!-- ============================================================ -->
       <section id="tab-coverage" class="tab-panel">
         <div class="coverage-container">
@@ -689,13 +688,68 @@
               <div class="card-value" id="cov-suppliers">--</div>
             </div>
             <div class="card">
-              <div class="card-label">States</div>
+              <div class="card-label">States Active</div>
               <div class="card-value" id="cov-states">--</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Active ZIPs</div>
+              <div class="card-value" id="cov-active-zips">--</div>
+              <div class="card-sub">ZIPs with user activity</div>
             </div>
             <div class="card">
               <div class="card-label">Coverage Gaps</div>
               <div class="card-value" id="cov-gaps">--</div>
               <div class="card-sub">ZIPs with demand, no suppliers</div>
+            </div>
+          </div>
+
+          <!-- Map with View Toggle -->
+          <div class="panel full-width">
+            <div class="panel-header-with-toggle">
+              <h3>🗺️ Geographic Activity</h3>
+              <div class="map-view-toggle">
+                <button class="map-toggle-btn active" data-view="engagement">Engagement</button>
+                <button class="map-toggle-btn" data-view="demand">Demand</button>
+                <button class="map-toggle-btn" data-view="gaps">Gaps</button>
+              </div>
+            </div>
+            <div id="map-stats" class="map-legend"></div>
+            <div id="map-container" style="height: 450px;"></div>
+          </div>
+
+          <!-- State Breakdown and Top Locations side by side -->
+          <div class="coverage-tables-grid">
+            <div class="panel">
+              <h3>📊 Activity by State</h3>
+              <div class="table-scroll" style="max-height: 300px;">
+                <table id="state-breakdown-table">
+                  <thead>
+                    <tr>
+                      <th>State</th>
+                      <th>ZIPs</th>
+                      <th>Searches</th>
+                      <th>Engagements</th>
+                    </tr>
+                  </thead>
+                  <tbody id="state-breakdown-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h3>🔥 Top Active Locations</h3>
+              <div class="table-scroll" style="max-height: 300px;">
+                <table id="top-locations-table">
+                  <thead>
+                    <tr>
+                      <th>Location</th>
+                      <th>ZIP</th>
+                      <th>Activity</th>
+                    </tr>
+                  </thead>
+                  <tbody id="top-locations-body"></tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -713,13 +767,6 @@
               </thead>
               <tbody id="coverage-gaps-body"></tbody>
             </table>
-          </div>
-
-          <!-- Map -->
-          <div class="panel full-width">
-            <h3>🗺️ Demand Heatmap</h3>
-            <div id="map-stats" class="map-legend"></div>
-            <div id="map-container"></div>
           </div>
         </div>
       </section>
@@ -1119,71 +1166,6 @@
                 <span class="idea-icon">3.</span>
                 <span>Weekly "your area prices" email for opted-in users</span>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Geographic Heatmap Tab -->
-      <section id="tab-geography" class="tab-panel">
-        <div class="panel-grid">
-          <!-- Summary Cards -->
-          <div class="panel">
-            <h3>Active ZIP Codes</h3>
-            <div id="geo-total-zips" class="stat-large">--</div>
-          </div>
-          <div class="panel">
-            <h3>States Active</h3>
-            <div id="geo-states-active" class="stat-large">--</div>
-          </div>
-          <div class="panel">
-            <h3>Total Searches</h3>
-            <div id="geo-total-searches" class="stat-large">--</div>
-          </div>
-          <div class="panel">
-            <h3>Total Engagements</h3>
-            <div id="geo-total-engagements" class="stat-large">--</div>
-          </div>
-
-          <!-- Map -->
-          <div class="panel full-width">
-            <h3>Engagement Heatmap</h3>
-            <p class="hint">Click markers for details</p>
-            <div id="geo-heatmap" style="height: 400px; border-radius: 8px;"></div>
-          </div>
-
-          <!-- State Breakdown -->
-          <div class="panel half-width">
-            <h3>Engagement by State</h3>
-            <div class="table-scroll">
-              <table id="state-breakdown-table">
-                <thead>
-                  <tr>
-                    <th>State</th>
-                    <th>ZIPs</th>
-                    <th>Searches</th>
-                    <th>Engagements</th>
-                  </tr>
-                </thead>
-                <tbody id="state-breakdown-body"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Top Locations -->
-          <div class="panel half-width">
-            <h3>Top Locations</h3>
-            <div class="table-scroll">
-              <table id="top-locations-table">
-                <thead>
-                  <tr>
-                    <th>Location</th>
-                    <th>ZIP</th>
-                    <th>Activity</th>
-                  </tr>
-                </thead>
-                <tbody id="top-locations-body"></tbody>
-              </table>
             </div>
           </div>
         </div>
@@ -1812,6 +1794,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1770148000"></script>
+  <script src="dashboard.js?v=1770149000"></script>
 </body>
 </html>

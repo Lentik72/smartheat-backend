@@ -197,7 +197,6 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (target === 'ios-app') loadIOSApp();
     if (target === 'android') loadAndroidSignals();
     if (target === 'retention') loadRetention();
-    if (target === 'geography') loadGeography();
     if (target === 'acquisition') loadAcquisition();
     if (target === 'overview') loadOverviewTab();
     if (target === 'searches') loadSearches();
@@ -1927,152 +1926,6 @@ function formatBehavior(behavior) {
   return names[behavior] || behavior.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// Geographic heatmap
-let geoMap = null;
-
-async function loadGeography() {
-  try {
-    const unified = await api(`/unified?days=${currentDays}`);
-    const geoData = unified?.geoHeatmap;
-
-    if (!geoData?.available || !geoData?.hasData) {
-      showGeoNoData('No geographic data available');
-      return;
-    }
-
-    const data = geoData.data;
-
-    // Summary cards
-    document.getElementById('geo-total-zips').textContent = data.summary?.totalZips || 0;
-    document.getElementById('geo-states-active').textContent = data.summary?.statesActive || 0;
-    document.getElementById('geo-total-searches').textContent = (data.summary?.totalSearches || 0).toLocaleString();
-    document.getElementById('geo-total-engagements').textContent = (data.summary?.totalEngagements || 0).toLocaleString();
-
-    // State breakdown table
-    const stateBody = document.getElementById('state-breakdown-body');
-    if (stateBody) {
-      stateBody.innerHTML = '';
-      (data.stateBreakdown || []).forEach(s => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td><strong>${s.state}</strong></td>
-          <td>${s.zips}</td>
-          <td>${s.searches.toLocaleString()}</td>
-          <td>${s.engagements.toLocaleString()}</td>
-        `;
-        stateBody.appendChild(row);
-      });
-    }
-
-    // Top locations table
-    const locBody = document.getElementById('top-locations-body');
-    if (locBody) {
-      locBody.innerHTML = '';
-      (data.topLocations || []).forEach(loc => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${loc.city}, ${loc.state}</td>
-          <td>${loc.zip}</td>
-          <td>${loc.intensity.toLocaleString()}</td>
-        `;
-        locBody.appendChild(row);
-      });
-    }
-
-    // Render heatmap
-    renderGeoHeatmap(data.points || []);
-
-  } catch (error) {
-    console.error('Failed to load geography:', error);
-    showGeoNoData('Error loading geographic data');
-  }
-}
-
-function renderGeoHeatmap(points) {
-  const mapContainer = document.getElementById('geo-heatmap');
-  if (!mapContainer) return;
-
-  // Initialize or reset map
-  if (geoMap) {
-    geoMap.remove();
-  }
-
-  // Center on US Northeast (where most heating oil users are)
-  geoMap = L.map('geo-heatmap').setView([41.5, -73.5], 6);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-  }).addTo(geoMap);
-
-  // Add markers for each point
-  const maxIntensity = Math.max(...points.map(p => p.intensity), 1);
-
-  points.forEach(point => {
-    // Calculate marker size based on intensity
-    const size = Math.max(8, Math.min(25, (point.intensity / maxIntensity) * 25));
-    const opacity = Math.max(0.4, Math.min(0.9, (point.intensity / maxIntensity) * 0.9));
-
-    const marker = L.circleMarker([point.lat, point.lng], {
-      radius: size,
-      fillColor: getHeatColor(point.intensity, maxIntensity),
-      color: '#fff',
-      weight: 1,
-      opacity: 1,
-      fillOpacity: opacity
-    });
-
-    marker.bindPopup(`
-      <div class="geo-popup">
-        <div class="geo-popup-zip">${point.zip}</div>
-        <div class="geo-popup-city">${point.city}, ${point.state}</div>
-        <div class="geo-popup-stats">
-          <div class="geo-popup-stat">
-            <div class="value">${point.searches}</div>
-            <div class="label">Searches</div>
-          </div>
-          <div class="geo-popup-stat">
-            <div class="value">${point.engagements}</div>
-            <div class="label">Engagements</div>
-          </div>
-        </div>
-      </div>
-    `);
-
-    marker.addTo(geoMap);
-  });
-
-  // Fit bounds to show all points
-  if (points.length > 0) {
-    const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng]));
-    geoMap.fitBounds(bounds, { padding: [20, 20] });
-  }
-}
-
-function getHeatColor(intensity, maxIntensity) {
-  const ratio = intensity / maxIntensity;
-  if (ratio > 0.7) return '#ef4444'; // Hot - red
-  if (ratio > 0.4) return '#f59e0b'; // Medium - orange
-  if (ratio > 0.2) return '#eab308'; // Warm - yellow
-  return '#22c55e'; // Cool - green
-}
-
-function showGeoNoData(reason) {
-  document.getElementById('geo-total-zips').textContent = '0';
-  document.getElementById('geo-states-active').textContent = '0';
-  document.getElementById('geo-total-searches').textContent = '0';
-  document.getElementById('geo-total-engagements').textContent = '0';
-
-  const stateBody = document.getElementById('state-breakdown-body');
-  if (stateBody) {
-    stateBody.innerHTML = `<tr><td colspan="4" class="no-data">${reason}</td></tr>`;
-  }
-
-  const locBody = document.getElementById('top-locations-body');
-  if (locBody) {
-    locBody.innerHTML = `<tr><td colspan="3" class="no-data">${reason}</td></tr>`;
-  }
-}
-
 // Load acquisition data
 async function loadAcquisition() {
   try {
@@ -3106,22 +2959,80 @@ function setRetentionBar(id, value, max) {
   }
 }
 
+// Store coverage data globally for map view switching
+let coverageData = { geographic: null, geoHeatmap: null, overview: null };
+let currentMapView = 'engagement';
+
 // Load Coverage tab
 async function loadCoverage() {
   try {
-    const [overview, geographic] = await Promise.all([
+    const [overview, geographic, unified] = await Promise.all([
       api(`/overview?days=${currentDays}`),
-      api(`/geographic?days=${currentDays}`)
+      api(`/geographic?days=${currentDays}`),
+      api(`/unified?days=${currentDays}`)
     ]);
 
-    // Calculate unique states from demand data
+    // Store for map view switching
+    coverageData = {
+      geographic,
+      geoHeatmap: unified?.geoHeatmap?.data || null,
+      overview
+    };
+
+    // Get geo stats from unified data
+    const geoStats = unified?.geoHeatmap?.data?.summary || {};
+    const stateBreakdown = unified?.geoHeatmap?.data?.stateBreakdown || [];
+    const topLocations = unified?.geoHeatmap?.data?.topLocations || [];
+
+    // Calculate unique states from both sources
     const allPoints = [...(geographic.demandHeatmap || []), ...(geographic.coverageGaps || [])];
     const uniqueStates = new Set(allPoints.map(p => p.state).filter(Boolean));
+    const statesCount = stateBreakdown.length || uniqueStates.size || 0;
 
     // Summary cards
     document.getElementById('cov-suppliers').textContent = overview.scraping?.suppliersTotal || '--';
-    document.getElementById('cov-states').textContent = uniqueStates.size || '--';
+    document.getElementById('cov-states').textContent = statesCount || '--';
+    document.getElementById('cov-active-zips').textContent = geoStats.totalZips || '--';
     document.getElementById('cov-gaps').textContent = overview.coverage?.trueCoverageGaps || '--';
+
+    // State breakdown table
+    const stateBody = document.getElementById('state-breakdown-body');
+    if (stateBody) {
+      stateBody.innerHTML = '';
+      if (stateBreakdown.length === 0) {
+        stateBody.innerHTML = '<tr><td colspan="4" class="no-data">No state data</td></tr>';
+      } else {
+        stateBreakdown.forEach(s => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><strong>${s.state}</strong></td>
+            <td>${s.zips}</td>
+            <td>${(s.searches || 0).toLocaleString()}</td>
+            <td>${(s.engagements || 0).toLocaleString()}</td>
+          `;
+          stateBody.appendChild(row);
+        });
+      }
+    }
+
+    // Top locations table
+    const locBody = document.getElementById('top-locations-body');
+    if (locBody) {
+      locBody.innerHTML = '';
+      if (topLocations.length === 0) {
+        locBody.innerHTML = '<tr><td colspan="3" class="no-data">No location data</td></tr>';
+      } else {
+        topLocations.slice(0, 15).forEach(loc => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${loc.city || '--'}, ${loc.state || '--'}</td>
+            <td>${loc.zip}</td>
+            <td>${(loc.intensity || 0).toLocaleString()}</td>
+          `;
+          locBody.appendChild(row);
+        });
+      }
+    }
 
     // Coverage gaps table
     const gapsBody = document.getElementById('coverage-gaps-body');
@@ -3143,16 +3054,31 @@ async function loadCoverage() {
       });
     }
 
-    // Map - pass overview for consistent gap count
-    loadCoverageMap(geographic, overview);
+    // Setup map view toggle
+    setupMapViewToggle();
+
+    // Load map with current view
+    loadCoverageMapWithView(currentMapView);
 
   } catch (error) {
     console.error('Failed to load coverage:', error);
   }
 }
 
-// Map for coverage tab
-function loadCoverageMap(data, overview = null) {
+function setupMapViewToggle() {
+  document.querySelectorAll('.map-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.map-toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentMapView = btn.dataset.view;
+      loadCoverageMapWithView(currentMapView);
+    });
+  });
+}
+
+function loadCoverageMapWithView(view) {
+  const { geographic, geoHeatmap, overview } = coverageData;
+
   // Initialize map if needed
   if (!map) {
     map = L.map('map-container').setView([40.7, -74.0], 7);
@@ -3168,61 +3094,81 @@ function loadCoverageMap(data, overview = null) {
     }
   });
 
-  // Add demand heatmap (blue circles)
-  const demandData = data.demandHeatmap || [];
-  const maxDemand = Math.max(...demandData.map(c => c.count), 1);
-  demandData.forEach(c => {
-    const radius = 6 + (c.count / maxDemand) * 18;
-    L.circleMarker([c.lat, c.lng], {
-      radius: radius,
-      fillColor: '#2563eb',
-      color: '#1d4ed8',
-      weight: 1,
-      opacity: 0.8,
-      fillOpacity: 0.4
-    })
-    .bindPopup(`<b>${c.city || 'Unknown'}, ${c.state || ''}</b><br>ZIP: ${c.zip}<br>Searches: ${c.count}`)
-    .addTo(map);
-  });
+  // Update legend
+  const statsEl = document.getElementById('map-stats');
 
-  // Add coverage gaps (red circles) - only if they have coordinates
-  const gapData = data.coverageGaps || [];
-  const gapsWithCoords = gapData.filter(c => c.lat && c.lng);
-  const gapsWithoutCoords = gapData.filter(c => !c.lat || !c.lng);
+  if (view === 'engagement' && geoHeatmap?.points) {
+    // Show engagement heatmap
+    const points = geoHeatmap.points || [];
+    const maxIntensity = Math.max(...points.map(p => p.intensity), 1);
 
-  gapsWithCoords.forEach(c => {
-    const radius = 8 + (c.count / maxDemand) * 16;
-    L.circleMarker([c.lat, c.lng], {
-      radius: radius,
-      fillColor: '#ef4444',
-      color: '#dc2626',
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.6
-    })
-    .bindPopup(`<b>⚠️ COVERAGE GAP</b><br>${c.city || 'Unknown'}, ${c.state || ''}<br>ZIP: ${c.zip}<br>Searches: ${c.count}`)
-    .addTo(map);
-  });
+    statsEl.innerHTML = `<span style="color: #22c55e">●</span> Low &nbsp; <span style="color: #f59e0b">●</span> Medium &nbsp; <span style="color: #ef4444">●</span> High Engagement`;
 
-  // Fit bounds (only use points with coordinates)
-  const allPoints = [...demandData, ...gapsWithCoords];
-  if (allPoints.length > 0) {
-    const bounds = allPoints.map(c => [c.lat, c.lng]);
-    map.fitBounds(bounds, { padding: [20, 20] });
+    points.forEach(p => {
+      const ratio = p.intensity / maxIntensity;
+      const radius = 6 + ratio * 18;
+      const color = ratio > 0.7 ? '#ef4444' : ratio > 0.4 ? '#f59e0b' : '#22c55e';
+
+      L.circleMarker([p.lat, p.lng], {
+        radius,
+        fillColor: color,
+        color: '#fff',
+        weight: 1,
+        fillOpacity: 0.7
+      })
+      .bindPopup(`<b>${p.city || '--'}, ${p.state || '--'}</b><br>ZIP: ${p.zip}<br>Searches: ${p.searches}<br>Engagements: ${p.engagements}`)
+      .addTo(map);
+    });
+
+    if (points.length > 0) {
+      const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng]));
+      map.fitBounds(bounds, { padding: [20, 20] });
+    }
+
+  } else if (view === 'demand' && geographic) {
+    // Show demand heatmap (searches)
+    const demandData = geographic.demandHeatmap || [];
+    const maxDemand = Math.max(...demandData.map(c => c.count), 1);
+
+    statsEl.innerHTML = `<span style="color: #2563eb">●</span> User Searches`;
+
+    demandData.forEach(c => {
+      const radius = 6 + (c.count / maxDemand) * 18;
+      L.circleMarker([c.lat, c.lng], {
+        radius,
+        fillColor: '#2563eb',
+        color: '#1d4ed8',
+        weight: 1,
+        fillOpacity: 0.5
+      })
+      .bindPopup(`<b>${c.city || '--'}, ${c.state || ''}</b><br>ZIP: ${c.zip}<br>Searches: ${c.count}`)
+      .addTo(map);
+    });
+
+  } else if (view === 'gaps' && geographic) {
+    // Show only coverage gaps
+    const gapData = geographic.coverageGaps || [];
+    const gapsWithCoords = gapData.filter(c => c.lat && c.lng);
+
+    statsEl.innerHTML = `<span style="color: #ef4444">●</span> Coverage Gaps (${gapsWithCoords.length} ZIPs)`;
+
+    gapsWithCoords.forEach(c => {
+      L.circleMarker([c.lat, c.lng], {
+        radius: 10,
+        fillColor: '#ef4444',
+        color: '#dc2626',
+        weight: 2,
+        fillOpacity: 0.7
+      })
+      .bindPopup(`<b>⚠️ COVERAGE GAP</b><br>${c.city || '--'}, ${c.state || ''}<br>ZIP: ${c.zip}<br>Searches: ${c.count}`)
+      .addTo(map);
+    });
+
+    if (gapsWithCoords.length > 0) {
+      const bounds = L.latLngBounds(gapsWithCoords.map(c => [c.lat, c.lng]));
+      map.fitBounds(bounds, { padding: [30, 30] });
+    }
   }
-
-  // Note: Some gaps may not show on map if coordinates are missing
-  if (gapsWithoutCoords.length > 0) {
-    console.log(`${gapsWithoutCoords.length} coverage gaps missing coordinates:`, gapsWithoutCoords.map(g => g.zip));
-  }
-
-  // Update stats - use overview.trueCoverageGaps for consistency with card
-  const stats = data.stats || {};
-  const gapCount = overview?.coverage?.trueCoverageGaps ?? stats.totalGapZips ?? gapData.length;
-  document.getElementById('map-stats').innerHTML = `
-    <span class="stat-item"><span class="dot blue"></span> Demand: ${stats.totalDemandZips || demandData.length} ZIPs</span>
-    <span class="stat-item"><span class="dot red"></span> Gaps: ${gapCount} ZIPs</span>
-  `;
 }
 
 // Load Settings tab
