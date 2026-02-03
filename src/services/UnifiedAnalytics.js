@@ -2089,7 +2089,7 @@ class UnifiedAnalytics {
   async getCohortRetention(days = 30) {
     try {
       // Get retention by cohort week with Day 1, 7, 30 breakdown
-      const [cohortData] = await this.sequelize.query(`
+      const cohortData = await this.sequelize.query(`
         WITH all_activity AS (
           SELECT ip_address as user_id, created_at::date as activity_date, 'web' as source
           FROM supplier_clicks
@@ -2142,14 +2142,17 @@ class UnifiedAnalytics {
         WHERE cohort_size >= 1
       `, { type: this.sequelize.QueryTypes.SELECT });
 
+      // Ensure cohortData is an array
+      const cohorts = Array.isArray(cohortData) ? cohortData : [];
+
       // Calculate overall retention rates
-      const totalUsers = cohortData.reduce((sum, c) => sum + parseInt(c.cohort_size || 0), 0);
-      const totalDay1 = cohortData.reduce((sum, c) => sum + parseInt(c.day1_retained || 0), 0);
-      const totalDay7 = cohortData.reduce((sum, c) => sum + parseInt(c.day7_retained || 0), 0);
-      const totalDay30 = cohortData.reduce((sum, c) => sum + parseInt(c.day30_retained || 0), 0);
+      const totalUsers = cohorts.reduce((sum, c) => sum + parseInt(c.cohort_size || 0), 0);
+      const totalDay1 = cohorts.reduce((sum, c) => sum + parseInt(c.day1_retained || 0), 0);
+      const totalDay7 = cohorts.reduce((sum, c) => sum + parseInt(c.day7_retained || 0), 0);
+      const totalDay30 = cohorts.reduce((sum, c) => sum + parseInt(c.day30_retained || 0), 0);
 
       // Build retention curve data in a single efficient query
-      const [curveData] = await this.sequelize.query(`
+      const curveData = await this.sequelize.query(`
         WITH all_activity AS (
           SELECT ip_address as user_id, created_at::date as activity_date
           FROM supplier_clicks WHERE ip_address IS NOT NULL
@@ -2175,8 +2178,11 @@ class UnifiedAnalytics {
         SELECT days_since, users FROM day_retention ORDER BY days_since
       `, { type: this.sequelize.QueryTypes.SELECT });
 
+      // Ensure curveData is an array
+      const curveArray = Array.isArray(curveData) ? curveData : [];
+
       // Build curve array with all 31 days
-      const curveMap = new Map(curveData.map(d => [parseInt(d.days_since), parseInt(d.users)]));
+      const curveMap = new Map(curveArray.map(d => [parseInt(d.days_since), parseInt(d.users)]));
       const day0Users = curveMap.get(0) || 1;
 
       const normalizedCurve = [];
@@ -2190,9 +2196,9 @@ class UnifiedAnalytics {
 
       return {
         available: true,
-        hasData: cohortData.length > 0,
+        hasData: cohorts.length > 0,
         data: {
-          cohorts: cohortData.map(c => ({
+          cohorts: cohorts.map(c => ({
             date: c.cohort_date,
             size: parseInt(c.cohort_size),
             day1: { retained: parseInt(c.day1_retained), rate: parseFloat(c.day1_rate) },
