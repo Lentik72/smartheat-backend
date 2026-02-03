@@ -2216,6 +2216,7 @@ class UnifiedAnalytics {
 
   /**
    * Get geographic heatmap data based on ZIP codes
+   * Falls back to supplier locations if no click-level ZIP data exists
    * @param {number} days - Lookback period
    */
   async getGeographicHeatmap(days = 30) {
@@ -2259,6 +2260,42 @@ class UnifiedAnalytics {
         ORDER BY searches DESC
       `, { type: this.sequelize.QueryTypes.SELECT });
 
+      // If no ZIP data, fall back to supplier locations with their click counts
+      let supplierLocationFallback = [];
+      if (zipData.length === 0 && locationData.length === 0) {
+        const [supplierData] = await this.sequelize.query(`
+          WITH supplier_clicks_agg AS (
+            SELECT supplier_id, COUNT(*) as clicks
+            FROM supplier_clicks
+            WHERE created_at > NOW() - INTERVAL '${days} days'
+            GROUP BY supplier_id
+          ),
+          supplier_engagements_agg AS (
+            SELECT supplier_id, COUNT(*) as engagements
+            FROM supplier_engagements
+            WHERE created_at > NOW() - INTERVAL '${days} days'
+            GROUP BY supplier_id
+          )
+          SELECT
+            s.id,
+            s.name,
+            s.city,
+            s.state,
+            s.zip_code,
+            COALESCE(sc.clicks, 0) + COALESCE(se.engagements, 0) as total_activity
+          FROM suppliers s
+          LEFT JOIN supplier_clicks_agg sc ON s.id = sc.supplier_id
+          LEFT JOIN supplier_engagements_agg se ON s.id = se.supplier_id
+          WHERE s.active = true
+            AND s.zip_code IS NOT NULL
+            AND (COALESCE(sc.clicks, 0) + COALESCE(se.engagements, 0)) > 0
+          ORDER BY total_activity DESC
+          LIMIT 100
+        `, { type: this.sequelize.QueryTypes.SELECT });
+
+        supplierLocationFallback = supplierData;
+      }
+
       // Merge location searches with engagement data
       const zipMap = new Map();
 
@@ -2298,31 +2335,61 @@ class UnifiedAnalytics {
       const heatmapPoints = [];
       const stateStats = {};
 
-      for (const [zip, data] of zipMap) {
-        const coords = zipCoords[zip];
-        if (coords && coords.lat && coords.lng) {
-          const intensity = data.searches + data.engagements;
-          heatmapPoints.push({
-            zip,
-            lat: coords.lat,
-            lng: coords.lng,
-            city: coords.city || '--',
-            state: coords.state || '--',
-            intensity,
-            searches: data.searches,
-            engagements: data.engagements,
-            users: data.users
-          });
+      // Use zipMap if we have ZIP-level data, otherwise use supplier fallback
+      if (zipMap.size > 0) {
+        for (const [zip, data] of zipMap) {
+          const coords = zipCoords[zip];
+          if (coords && coords.lat && coords.lng) {
+            const intensity = data.searches + data.engagements;
+            heatmapPoints.push({
+              zip,
+              lat: coords.lat,
+              lng: coords.lng,
+              city: coords.city || '--',
+              state: coords.state || '--',
+              intensity,
+              searches: data.searches,
+              engagements: data.engagements,
+              users: data.users
+            });
 
-          // Aggregate by state
-          const state = coords.state || 'Unknown';
-          if (!stateStats[state]) {
-            stateStats[state] = { searches: 0, engagements: 0, users: 0, zips: 0 };
+            // Aggregate by state
+            const state = coords.state || 'Unknown';
+            if (!stateStats[state]) {
+              stateStats[state] = { searches: 0, engagements: 0, users: 0, zips: 0 };
+            }
+            stateStats[state].searches += data.searches;
+            stateStats[state].engagements += data.engagements;
+            stateStats[state].users += data.users;
+            stateStats[state].zips += 1;
           }
-          stateStats[state].searches += data.searches;
-          stateStats[state].engagements += data.engagements;
-          stateStats[state].users += data.users;
-          stateStats[state].zips += 1;
+        }
+      } else if (supplierLocationFallback.length > 0) {
+        // Fall back to supplier locations
+        for (const supplier of supplierLocationFallback) {
+          const coords = zipCoords[supplier.zip_code];
+          if (coords && coords.lat && coords.lng) {
+            heatmapPoints.push({
+              zip: supplier.zip_code,
+              lat: coords.lat,
+              lng: coords.lng,
+              city: supplier.city || coords.city || '--',
+              state: supplier.state || coords.state || '--',
+              intensity: parseInt(supplier.total_activity) || 0,
+              searches: 0,
+              engagements: parseInt(supplier.total_activity) || 0,
+              users: 0,
+              supplierName: supplier.name
+            });
+
+            // Aggregate by state
+            const state = supplier.state || coords.state || 'Unknown';
+            if (!stateStats[state]) {
+              stateStats[state] = { searches: 0, engagements: 0, users: 0, zips: 0 };
+            }
+            stateStats[state].engagements += parseInt(supplier.total_activity) || 0;
+            stateStats[state].zips += 1;
+          }
         }
       }
 
