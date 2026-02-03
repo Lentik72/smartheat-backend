@@ -2224,7 +2224,7 @@ class UnifiedAnalytics {
       // Get engagement counts by ZIP code from both sources
       // Note: supplier_clicks uses zip_code, supplier_engagements uses user_zip
       let zipData = [];
-      const [zipResults] = await this.sequelize.query(`
+      const zipResults = await this.sequelize.query(`
         WITH all_engagements AS (
           SELECT zip_code, COUNT(*) as engagements, COUNT(DISTINCT ip_address) as users
           FROM supplier_clicks
@@ -2251,12 +2251,12 @@ class UnifiedAnalytics {
         WHERE total_engagements > 0
         ORDER BY total_engagements DESC
       `, { type: this.sequelize.QueryTypes.SELECT });
-      zipData = zipResults || [];
+      zipData = Array.isArray(zipResults) ? zipResults : [];
 
       // Also get user_locations data (table may not exist)
       let locationData = [];
       try {
-        const [locResults] = await this.sequelize.query(`
+        const locResults = await this.sequelize.query(`
           SELECT zip_code, COUNT(*) as searches
           FROM user_locations
           WHERE created_at > NOW() - INTERVAL '${days} days'
@@ -2264,7 +2264,7 @@ class UnifiedAnalytics {
           GROUP BY zip_code
           ORDER BY searches DESC
         `, { type: this.sequelize.QueryTypes.SELECT });
-        locationData = locResults || [];
+        locationData = Array.isArray(locResults) ? locResults : [];
       } catch (e) {
         // user_locations table may not exist
         this.logger.debug('[UnifiedAnalytics] user_locations query failed:', e.message);
@@ -2274,7 +2274,7 @@ class UnifiedAnalytics {
       let supplierLocationFallback = [];
       if ((zipData?.length || 0) === 0 && locationData.length === 0) {
         // First try: suppliers with clicks
-        const [supplierData] = await this.sequelize.query(`
+        const supplierData = await this.sequelize.query(`
           WITH supplier_clicks_agg AS (
             SELECT supplier_id, COUNT(*) as clicks
             FROM supplier_clicks
@@ -2309,11 +2309,11 @@ class UnifiedAnalytics {
           LIMIT 100
         `, { type: this.sequelize.QueryTypes.SELECT });
 
-        supplierLocationFallback = supplierData;
+        supplierLocationFallback = Array.isArray(supplierData) ? supplierData : [];
 
         // Second fallback: if no clicks at all, just show active suppliers
         if (supplierLocationFallback.length === 0) {
-          const [allSuppliers] = await this.sequelize.query(`
+          const allSuppliers = await this.sequelize.query(`
             SELECT
               s.id,
               s.name,
@@ -2332,7 +2332,7 @@ class UnifiedAnalytics {
             LIMIT 100
           `, { type: this.sequelize.QueryTypes.SELECT });
 
-          supplierLocationFallback = allSuppliers;
+          supplierLocationFallback = Array.isArray(allSuppliers) ? allSuppliers : [];
         }
       }
 
