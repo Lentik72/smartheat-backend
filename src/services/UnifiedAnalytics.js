@@ -1124,22 +1124,66 @@ class UnifiedAnalytics {
   }
 
   /**
+   * Get fuel type breakdown from API activity
+   * @param {number} days - Number of days to look back
+   */
+  async getFuelTypeBreakdown(days = 7) {
+    try {
+      const result = await this.sequelize.query(`
+        SELECT
+          COALESCE(fuel_type, 'heating_oil') as fuel_type,
+          COUNT(DISTINCT COALESCE(device_id, ip_hash)) as unique_users
+        FROM api_activity
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY COALESCE(fuel_type, 'heating_oil')
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      const totalUsers = result.reduce((sum, r) => sum + parseInt(r.unique_users || 0), 0);
+
+      const oil = result.find(r => r.fuel_type === 'heating_oil');
+      const propane = result.find(r => r.fuel_type === 'propane');
+
+      const oilUsers = parseInt(oil?.unique_users || 0);
+      const propaneUsers = parseInt(propane?.unique_users || 0);
+
+      return {
+        oil: {
+          users: oilUsers,
+          pct: totalUsers > 0 ? ((oilUsers / totalUsers) * 100).toFixed(1) : 0
+        },
+        propane: {
+          users: propaneUsers,
+          pct: totalUsers > 0 ? ((propaneUsers / totalUsers) * 100).toFixed(1) : 0
+        }
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Fuel type breakdown error:', error.message);
+      return { oil: { users: 0, pct: 0 }, propane: { users: 0, pct: 0 } };
+    }
+  }
+
+  /**
    * Get unified overview combining all data sources
    * @param {number} days - Number of days to look back
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
         this.getRetentionAnalysis(6),
-        this.getAndroidDecisionSignals()
+        this.getAndroidDecisionSignals(),
+        this.getFuelTypeBreakdown(days)
       ]);
 
       // Determine data sources
       const isBigQuery = app.source === 'bigquery';
       const isFirebaseDb = app.available && app.source === 'database';
+
+      // Add fuel type data to app section
+      const appData = app.data || {};
+      appData.fuelType = fuelType;
 
       return {
         period: `${days}d`,
@@ -1150,7 +1194,7 @@ class UnifiedAnalytics {
           database: backend.available
         },
         website: website.data,
-        app: app.data,
+        app: appData,
         appSource: app.source || 'none',
         backend: backend.data,
         retention: retention.data,
