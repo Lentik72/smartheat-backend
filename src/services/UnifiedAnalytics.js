@@ -115,12 +115,13 @@ class UnifiedAnalytics {
         return false;
       }
 
-      // Decode credentials
+      // Decode credentials (trim whitespace that Railway might add)
+      const trimmedCreds = credentialsJson.trim();
       let credentials;
       try {
-        credentials = JSON.parse(Buffer.from(credentialsJson, 'base64').toString('utf8'));
+        credentials = JSON.parse(Buffer.from(trimmedCreds, 'base64').toString('utf8'));
       } catch {
-        credentials = JSON.parse(credentialsJson);
+        credentials = JSON.parse(trimmedCreds);
       }
 
       const admin = require('firebase-admin');
@@ -162,14 +163,16 @@ class UnifiedAnalytics {
         return false;
       }
 
-      // Decode credentials
+      // Decode credentials (trim whitespace that Railway might add)
+      const trimmedCreds = credentialsJson.trim();
       let credentials;
       try {
-        credentials = JSON.parse(Buffer.from(credentialsJson, 'base64').toString('utf8'));
+        credentials = JSON.parse(Buffer.from(trimmedCreds, 'base64').toString('utf8'));
         this.logger.info('[UnifiedAnalytics] BigQuery credentials decoded from base64');
-      } catch {
+      } catch (base64Err) {
+        this.logger.info('[UnifiedAnalytics] Base64 decode failed, trying raw JSON:', base64Err.message);
         try {
-          credentials = JSON.parse(credentialsJson);
+          credentials = JSON.parse(trimmedCreds);
           this.logger.info('[UnifiedAnalytics] BigQuery credentials parsed as JSON');
         } catch (parseErr) {
           this.logger.error('[UnifiedAnalytics] Failed to parse credentials:', parseErr.message);
