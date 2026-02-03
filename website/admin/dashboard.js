@@ -45,6 +45,16 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+// Trend arrow helper - returns HTML for trend indicator
+function trendArrow(trend) {
+  if (!trend || trend.direction === 'flat') {
+    return '<span class="trend flat">—</span>';
+  }
+  const arrow = trend.direction === 'up' ? '↑' : '↓';
+  const colorClass = trend.direction === 'up' ? 'trend-up' : 'trend-down';
+  return `<span class="trend ${colorClass}">${arrow} ${trend.display}</span>`;
+}
+
 // Data source connection status banner
 function updateDataSourceBanner(unified) {
   const banner = document.getElementById('data-source-warnings');
@@ -238,26 +248,31 @@ async function loadOverview() {
     // Show data source connection warnings
     updateDataSourceBanner(unified);
 
+    // Get trend data
+    const trends = unified?.trends || {};
+
     // Card 1: Total Users (iOS MAU + Website unique visitors)
     // Try unified data first (GA4/Firebase), fallback to database estimates
     const ga4Available = unified?.dataSources?.ga4;
-    const iosUsers = unified?.app?.uniqueUsers || data.users?.ios || 0;
+    const iosUsersCount = unified?.app?.summary?.totalUsers || unified?.app?.uniqueUsers || data.users?.ios || 0;
     const webUsers = ga4Available
       ? (unified?.website?.activeUsers || 0)
       : (data.users?.website || 0);
-    const totalUsers = iosUsers + webUsers;
+    const totalUsers = iosUsersCount + webUsers;
 
     document.getElementById('total-users').textContent = totalUsers || '--';
-    document.getElementById('users-breakdown').textContent = `${iosUsers} iOS / ${webUsers} website`;
-    // Show data source
+    document.getElementById('users-breakdown').innerHTML = `${iosUsersCount} iOS / ${webUsers} website`;
+    // Show data source with trend
     if (totalUsers > 0) {
-      document.getElementById('users-freshness').textContent = ga4Available ? 'via GA4' : 'unique searches';
+      const usersTrend = trends.iosUsers || trends.websiteUsers;
+      document.getElementById('users-freshness').innerHTML = (ga4Available ? 'via GA4' : 'unique searches') +
+        (usersTrend ? ' ' + trendArrow(usersTrend) : '');
     } else {
       document.getElementById('users-freshness').textContent = 'No activity yet';
     }
 
     // Card 2: Deliveries Logged (using saves from app data as proxy)
-    const deliveries = unified?.app?.saves || 0;
+    const deliveries = unified?.app?.deliveries?.total || unified?.app?.saves || 0;
     document.getElementById('total-deliveries').textContent = deliveries || '--';
     document.getElementById('deliveries-breakdown').textContent = deliveries > 0
       ? `~$${(deliveries * 500).toLocaleString()} in orders`
@@ -272,11 +287,15 @@ async function loadOverview() {
     document.getElementById('revenue-breakdown').textContent =
       `${totalClicks} clicks @ 3% conv`;
     const revenueFreshness = data.dataFreshness?.supplier_clicks;
-    document.getElementById('revenue-freshness').textContent = revenueFreshness ? timeAgo(revenueFreshness) : '';
+    const clicksTrend = trends.clicks;
+    document.getElementById('revenue-freshness').innerHTML = (revenueFreshness ? timeAgo(revenueFreshness) : '') +
+      (clicksTrend ? ' ' + trendArrow(clicksTrend) : '');
 
     // Card 4: Android Waitlist
     document.getElementById('waitlist-total').textContent = data.waitlist.total;
-    document.getElementById('waitlist-recent').textContent = `+${data.waitlist.last7Days} this week`;
+    const waitlistTrend = trends.waitlist;
+    document.getElementById('waitlist-recent').innerHTML = `+${data.waitlist.last7Days} this week` +
+      (waitlistTrend ? ' ' + trendArrow(waitlistTrend) : '');
     const waitlistFreshness = data.waitlist?.lastUpdated;
     document.getElementById('waitlist-freshness').textContent = waitlistFreshness ? timeAgo(waitlistFreshness) : '';
 

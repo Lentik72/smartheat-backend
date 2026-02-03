@@ -182,6 +182,21 @@ header h1 {
   opacity: 0.7;
 }
 
+/* Trend arrows */
+.trend {
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+.trend-up {
+  color: #10b981;
+}
+.trend-down {
+  color: #ef4444;
+}
+.trend.flat {
+  color: var(--gray-400);
+}
+
 /* Alert Banner */
 .alert {
   background: var(--warning);

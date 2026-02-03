@@ -1359,6 +1359,60 @@ class UnifiedAnalytics {
   }
 
   /**
+   * Calculate trend (% change) between two values
+   */
+  calculateTrend(current, previous) {
+    if (!previous || previous === 0) {
+      return current > 0 ? { direction: 'up', percent: 100, display: '+100%' } : { direction: 'flat', percent: 0, display: '0%' };
+    }
+    const change = ((current - previous) / previous) * 100;
+    const direction = change > 0 ? 'up' : change < 0 ? 'down' : 'flat';
+    const display = `${change >= 0 ? '+' : ''}${change.toFixed(0)}%`;
+    return { direction, percent: Math.abs(change), display };
+  }
+
+  /**
+   * Get trend data comparing current period to previous period
+   * @param {number} days - Number of days for current period
+   */
+  async getTrendData(days = 7) {
+    try {
+      // Get current and previous period data from database
+      const [clicks, searches, waitlist] = await Promise.all([
+        this.sequelize.query(`
+          SELECT
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '${days} days') as current,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '${days * 2} days' AND created_at <= NOW() - INTERVAL '${days} days') as previous
+          FROM supplier_clicks
+        `, { type: this.sequelize.QueryTypes.SELECT }),
+
+        this.sequelize.query(`
+          SELECT
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '${days} days') as current,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '${days * 2} days' AND created_at <= NOW() - INTERVAL '${days} days') as previous
+          FROM api_activity
+        `, { type: this.sequelize.QueryTypes.SELECT }),
+
+        this.sequelize.query(`
+          SELECT
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '${days} days') as current,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '${days * 2} days' AND created_at <= NOW() - INTERVAL '${days} days') as previous
+          FROM waitlist
+        `, { type: this.sequelize.QueryTypes.SELECT })
+      ]);
+
+      return {
+        clicks: this.calculateTrend(parseInt(clicks[0]?.current) || 0, parseInt(clicks[0]?.previous) || 0),
+        searches: this.calculateTrend(parseInt(searches[0]?.current) || 0, parseInt(searches[0]?.previous) || 0),
+        waitlist: this.calculateTrend(parseInt(waitlist[0]?.current) || 0, parseInt(waitlist[0]?.previous) || 0)
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Trend data error:', error.message);
+      return {};
+    }
+  }
+
+  /**
    * Get fuel type breakdown from API activity
    * @param {number} days - Number of days to look back
    */
@@ -1403,7 +1457,7 @@ class UnifiedAnalytics {
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
@@ -1412,7 +1466,8 @@ class UnifiedAnalytics {
         this.getFuelTypeBreakdown(days),
         this.getDeliveryPatterns(days),
         this.getFVEMetrics(days),
-        this.getConfidenceScore(days)
+        this.getConfidenceScore(days),
+        this.getTrendData(days)
       ]);
 
       // Determine data sources
@@ -1467,6 +1522,23 @@ class UnifiedAnalytics {
         ];
       }
 
+      // Calculate iOS user trend from DAU data if available
+      const allTrends = { ...trends };
+      if (appData.dailyActiveUsers && appData.dailyActiveUsers.length >= 14) {
+        const dau = appData.dailyActiveUsers;
+        // First half (recent) vs second half (older)
+        const halfPoint = Math.floor(dau.length / 2);
+        const recentSum = dau.slice(0, halfPoint).reduce((s, d) => s + d.users, 0);
+        const olderSum = dau.slice(halfPoint).reduce((s, d) => s + d.users, 0);
+        allTrends.iosUsers = this.calculateTrend(recentSum, olderSum);
+      }
+
+      // Website users trend from GA4 if we had previous period (estimate from session data)
+      if (websiteData.activeUsers) {
+        // We don't have previous period GA4 data easily, so mark as flat for now
+        allTrends.websiteUsers = { direction: 'flat', percent: 0, display: '—' };
+      }
+
       return {
         period: `${days}d`,
         dataSources: {
@@ -1481,6 +1553,7 @@ class UnifiedAnalytics {
         backend: backend.data,
         retention: retentionData,
         android: android.data,
+        trends: allTrends,
         lastUpdated: new Date().toISOString()
       };
     } catch (error) {
