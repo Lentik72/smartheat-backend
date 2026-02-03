@@ -1363,7 +1363,7 @@ class UnifiedAnalytics {
    * @param {number} days - Number of days to look back
    * @param {number} limit - Max suppliers to return
    */
-  async getTopSuppliers(days = 30, limit = 10) {
+  async getTopSuppliers(days = 30, limit = 30) {
     try {
       const results = await this.sequelize.query(`
         WITH all_engagements AS (
