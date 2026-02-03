@@ -1736,16 +1736,20 @@ async function loadRetention() {
   try {
     // Fetch unified data which contains cohortRetention
     const unified = await api(`/unified?days=${currentDays}`);
-    const cohortData = unified?.cohortRetention;
+    const cohortData = unified?.cohortRetention || {};
     const legacyData = await api('/retention').catch(() => null);
 
-    if (!cohortData?.available && !legacyData?.available) {
-      showRetentionNoData('No retention data available');
+    // Check if we have any data
+    const hasCohortData = cohortData.available && cohortData.hasData;
+    const hasLegacyData = legacyData?.available && legacyData?.hasData;
+
+    if (!hasCohortData && !hasLegacyData) {
+      showRetentionNoData('Retention requires repeat user visits. Data will appear as users return.');
       return;
     }
 
     // Use new cohort data if available
-    if (cohortData?.hasData && cohortData?.data) {
+    if (hasCohortData && cohortData.data) {
       const summary = cohortData.data.summary || {};
       const cohorts = cohortData.data.cohorts || [];
       const curve = cohortData.data.curve || [];
