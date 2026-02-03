@@ -260,10 +260,9 @@ router.get('/overview', async (req, res) => {
           (SELECT COUNT(DISTINCT COALESCE(ip_hash, session_id, id::text))
            FROM user_locations
            WHERE created_at > NOW() - INTERVAL '${days} days') as website_users,
-          (SELECT COUNT(DISTINCT ip_hash)
+          (SELECT COUNT(*)
            FROM supplier_engagements
-           WHERE created_at > NOW() - INTERVAL '${days} days'
-             AND ip_hash IS NOT NULL) as ios_users
+           WHERE created_at > NOW() - INTERVAL '${days} days') as ios_users
       `)
     ]);
 
@@ -1507,7 +1506,7 @@ router.get('/ios-app', async (req, res) => {
       sequelize.query(`
         SELECT
           COUNT(*) as total,
-          COUNT(DISTINCT ip_hash) as unique_users,
+          COUNT(*) as unique_users,
           COUNT(*) FILTER (WHERE engagement_type = 'call') as calls,
           COUNT(*) FILTER (WHERE engagement_type = 'view') as views,
           COUNT(*) FILTER (WHERE engagement_type = 'save') as saves

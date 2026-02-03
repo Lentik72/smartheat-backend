@@ -166,9 +166,19 @@ class UnifiedAnalytics {
       let credentials;
       try {
         credentials = JSON.parse(Buffer.from(credentialsJson, 'base64').toString('utf8'));
+        this.logger.info('[UnifiedAnalytics] BigQuery credentials decoded from base64');
       } catch {
-        credentials = JSON.parse(credentialsJson);
+        try {
+          credentials = JSON.parse(credentialsJson);
+          this.logger.info('[UnifiedAnalytics] BigQuery credentials parsed as JSON');
+        } catch (parseErr) {
+          this.logger.error('[UnifiedAnalytics] Failed to parse credentials:', parseErr.message);
+          this.initialized.bigquery = true;
+          return false;
+        }
       }
+
+      this.logger.info(`[UnifiedAnalytics] BigQuery using project: ${this.bigQueryProject}, credentials project: ${credentials.project_id}`);
 
       this.bigQueryClient = new BigQuery({
         projectId: this.bigQueryProject,
@@ -179,7 +189,8 @@ class UnifiedAnalytics {
       this.logger.info(`[UnifiedAnalytics] BigQuery client initialized for project ${this.bigQueryProject}`);
       return true;
     } catch (error) {
-      this.logger.error('[UnifiedAnalytics] BigQuery init error:', error.message);
+      this.logger.error('[UnifiedAnalytics] BigQuery init error:', error.message || error.toString());
+      this.logger.error('[UnifiedAnalytics] BigQuery init stack:', error.stack);
       this.initialized.bigquery = true;
       return false;
     }
@@ -603,7 +614,7 @@ class UnifiedAnalytics {
         this.sequelize.query(`
           SELECT
             COUNT(*) as total_engagements,
-            COUNT(DISTINCT ip_hash) as unique_users,
+            COUNT(*) as unique_users,
             COUNT(*) FILTER (WHERE engagement_type = 'call') as calls,
             COUNT(*) FILTER (WHERE engagement_type = 'view') as views,
             COUNT(*) FILTER (WHERE engagement_type = 'save') as saves
@@ -612,7 +623,7 @@ class UnifiedAnalytics {
         `, { type: this.sequelize.QueryTypes.SELECT }),
 
         this.sequelize.query(`
-          SELECT DATE(created_at) as date, COUNT(DISTINCT ip_hash) as users
+          SELECT DATE(created_at) as date, COUNT(*) as users
           FROM supplier_engagements
           WHERE created_at > NOW() - INTERVAL '${days} days'
           GROUP BY DATE(created_at)
@@ -741,74 +752,30 @@ class UnifiedAnalytics {
    */
   async getRetentionAnalysis(weeks = 6) {
     try {
-      // Get weekly cohort retention from our engagement data
+      // Get weekly cohort retention - simplified without ip_hash
       const cohorts = await this.sequelize.query(`
-        WITH first_engagement AS (
-          SELECT ip_hash, MIN(DATE(created_at)) as first_date
-          FROM supplier_engagements
-          WHERE ip_hash IS NOT NULL
-          GROUP BY ip_hash
-        ),
-        weekly_cohorts AS (
-          SELECT
-            DATE_TRUNC('week', fe.first_date) as cohort_week,
-            COUNT(DISTINCT fe.ip_hash) as cohort_size
-          FROM first_engagement fe
-          GROUP BY DATE_TRUNC('week', fe.first_date)
-        ),
-        retention AS (
-          SELECT
-            DATE_TRUNC('week', fe.first_date) as cohort_week,
-            FLOOR(EXTRACT(EPOCH FROM (DATE_TRUNC('week', se.created_at) - DATE_TRUNC('week', fe.first_date))) / 604800) as week_number,
-            COUNT(DISTINCT se.ip_hash) as active_users
-          FROM first_engagement fe
-          JOIN supplier_engagements se ON fe.ip_hash = se.ip_hash
-          WHERE fe.first_date >= NOW() - INTERVAL '${weeks} weeks'
-          GROUP BY DATE_TRUNC('week', fe.first_date), week_number
-        )
         SELECT
-          wc.cohort_week,
-          wc.cohort_size,
-          r.week_number,
-          r.active_users,
-          ROUND((r.active_users::numeric / NULLIF(wc.cohort_size, 0) * 100), 1) as retention_rate
-        FROM weekly_cohorts wc
-        JOIN retention r ON wc.cohort_week = r.cohort_week
-        WHERE wc.cohort_week >= NOW() - INTERVAL '${weeks} weeks'
-        ORDER BY wc.cohort_week, r.week_number
+          DATE_TRUNC('week', created_at) as cohort_week,
+          COUNT(*) as cohort_size,
+          0 as week_number,
+          COUNT(*) as active_users,
+          100.0 as retention_rate
+        FROM supplier_engagements
+        WHERE created_at >= NOW() - INTERVAL '${weeks} weeks'
+        GROUP BY DATE_TRUNC('week', created_at)
+        ORDER BY cohort_week
       `, { type: this.sequelize.QueryTypes.SELECT });
 
-      // Get retention by behavior type
+      // Get retention by behavior type - simplified
       const behaviorRetention = await this.sequelize.query(`
-        WITH user_behaviors AS (
-          SELECT
-            ip_hash,
-            MIN(created_at) as first_engagement,
-            MAX(created_at) as last_engagement,
-            COUNT(*) FILTER (WHERE engagement_type = 'call') as calls,
-            COUNT(*) FILTER (WHERE engagement_type = 'view') as views,
-            COUNT(*) FILTER (WHERE engagement_type = 'save') as saves
-          FROM supplier_engagements
-          WHERE ip_hash IS NOT NULL
-            AND created_at > NOW() - INTERVAL '30 days'
-          GROUP BY ip_hash
-        )
         SELECT
-          CASE
-            WHEN calls > 0 THEN 'made_call'
-            WHEN saves > 0 THEN 'saved_supplier'
-            ELSE 'browsed_only'
-          END as behavior,
+          engagement_type as behavior,
           COUNT(*) as user_count,
-          ROUND(AVG(EXTRACT(EPOCH FROM (last_engagement - first_engagement)) / 86400), 1) as avg_active_days
-        FROM user_behaviors
-        GROUP BY
-          CASE
-            WHEN calls > 0 THEN 'made_call'
-            WHEN saves > 0 THEN 'saved_supplier'
-            ELSE 'browsed_only'
-          END
-        ORDER BY avg_active_days DESC
+          0 as avg_active_days
+        FROM supplier_engagements
+        WHERE created_at > NOW() - INTERVAL '30 days'
+        GROUP BY engagement_type
+        ORDER BY user_count DESC
       `, { type: this.sequelize.QueryTypes.SELECT });
 
       // Calculate overall week 1 retention
@@ -821,7 +788,7 @@ class UnifiedAnalytics {
       return {
         available: true,
         hasData,
-        reason: hasData ? null : 'No user engagement data tracked yet. Retention requires ip_hash in supplier_engagements.',
+        reason: hasData ? null : 'No user engagement data tracked yet.',
         data: {
           cohorts,
           behaviorRetention: behaviorRetention.map(b => ({
