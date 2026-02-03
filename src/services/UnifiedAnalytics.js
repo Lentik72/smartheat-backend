@@ -1472,6 +1472,225 @@ class UnifiedAnalytics {
   }
 
   /**
+   * Get price vs clicks correlation analysis
+   * Analyzes how price changes correlate with engagement
+   * @param {number} days - Number of days to analyze
+   */
+  async getPriceCorrelation(days = 30) {
+    try {
+      // Get daily average price and click counts
+      const results = await this.sequelize.query(`
+        WITH daily_prices AS (
+          SELECT
+            DATE(scraped_at) as date,
+            AVG(price_per_gallon) as avg_price,
+            MIN(price_per_gallon) as min_price,
+            MAX(price_per_gallon) as max_price,
+            COUNT(DISTINCT supplier_id) as suppliers_with_price
+          FROM supplier_prices
+          WHERE scraped_at > NOW() - INTERVAL '${days} days'
+            AND is_valid = true
+          GROUP BY DATE(scraped_at)
+        ),
+        daily_clicks AS (
+          SELECT
+            DATE(created_at) as date,
+            COUNT(*) as total_clicks,
+            COUNT(*) FILTER (WHERE action_type = 'call') as calls,
+            COUNT(*) FILTER (WHERE action_type = 'website') as website_clicks,
+            COUNT(DISTINCT ip_address) as unique_users
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          GROUP BY DATE(created_at)
+        )
+        SELECT
+          COALESCE(p.date, c.date) as date,
+          p.avg_price,
+          p.min_price,
+          p.max_price,
+          COALESCE(c.total_clicks, 0) as total_clicks,
+          COALESCE(c.calls, 0) as calls,
+          COALESCE(c.website_clicks, 0) as website_clicks,
+          COALESCE(c.unique_users, 0) as unique_users
+        FROM daily_prices p
+        FULL OUTER JOIN daily_clicks c ON p.date = c.date
+        WHERE COALESCE(p.date, c.date) IS NOT NULL
+        ORDER BY date ASC
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      // Calculate correlation coefficient
+      const data = results.filter(r => r.avg_price && r.total_clicks);
+
+      if (data.length < 3) {
+        return {
+          correlation: null,
+          insight: 'Not enough data points for correlation analysis',
+          dailyData: results.map(r => ({
+            date: r.date,
+            avgPrice: r.avg_price ? parseFloat(r.avg_price).toFixed(2) : null,
+            minPrice: r.min_price ? parseFloat(r.min_price).toFixed(2) : null,
+            maxPrice: r.max_price ? parseFloat(r.max_price).toFixed(2) : null,
+            totalClicks: parseInt(r.total_clicks) || 0,
+            calls: parseInt(r.calls) || 0,
+            websiteClicks: parseInt(r.website_clicks) || 0,
+            uniqueUsers: parseInt(r.unique_users) || 0
+          }))
+        };
+      }
+
+      // Pearson correlation calculation
+      const prices = data.map(d => parseFloat(d.avg_price));
+      const clicks = data.map(d => parseInt(d.total_clicks));
+
+      const n = prices.length;
+      const sumX = prices.reduce((a, b) => a + b, 0);
+      const sumY = clicks.reduce((a, b) => a + b, 0);
+      const sumXY = prices.reduce((sum, x, i) => sum + x * clicks[i], 0);
+      const sumX2 = prices.reduce((sum, x) => sum + x * x, 0);
+      const sumY2 = clicks.reduce((sum, y) => sum + y * y, 0);
+
+      const numerator = (n * sumXY) - (sumX * sumY);
+      const denominator = Math.sqrt(((n * sumX2) - (sumX * sumX)) * ((n * sumY2) - (sumY * sumY)));
+
+      const correlation = denominator !== 0 ? numerator / denominator : 0;
+
+      // Generate insight based on correlation
+      let insight = '';
+      if (correlation < -0.5) {
+        insight = '📉 Strong negative correlation: When prices drop, clicks increase significantly. Users are price-sensitive!';
+      } else if (correlation < -0.2) {
+        insight = '📊 Moderate negative correlation: Lower prices tend to drive more engagement.';
+      } else if (correlation > 0.5) {
+        insight = '📈 Strong positive correlation: Clicks increase with prices - possibly seasonal demand driving both.';
+      } else if (correlation > 0.2) {
+        insight = '📊 Moderate positive correlation: Higher engagement when prices are up - users checking prices more.';
+      } else {
+        insight = '➡️ No significant correlation between price and clicks. Other factors may be driving engagement.';
+      }
+
+      return {
+        correlation: parseFloat(correlation.toFixed(3)),
+        insight,
+        dailyData: results.map(r => ({
+          date: r.date,
+          avgPrice: r.avg_price ? parseFloat(r.avg_price).toFixed(2) : null,
+          minPrice: r.min_price ? parseFloat(r.min_price).toFixed(2) : null,
+          maxPrice: r.max_price ? parseFloat(r.max_price).toFixed(2) : null,
+          totalClicks: parseInt(r.total_clicks) || 0,
+          calls: parseInt(r.calls) || 0,
+          websiteClicks: parseInt(r.website_clicks) || 0,
+          uniqueUsers: parseInt(r.unique_users) || 0
+        }))
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Price correlation error:', error.message);
+      return { correlation: null, insight: 'Error calculating correlation', dailyData: [] };
+    }
+  }
+
+  /**
+   * Get weather vs clicks correlation analysis
+   * Uses OpenWeatherMap API for historical temperature data
+   * @param {number} days - Number of days to analyze
+   */
+  async getWeatherCorrelation(days = 30) {
+    try {
+      // Get daily click data first
+      const clickData = await this.sequelize.query(`
+        SELECT
+          DATE(created_at) as date,
+          COUNT(*) as total_clicks,
+          COUNT(DISTINCT ip_address) as unique_users
+        FROM supplier_clicks
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      // Try to get weather data from OpenWeatherMap (if API key available)
+      const weatherApiKey = process.env.OPENWEATHER_API_KEY;
+
+      if (!weatherApiKey) {
+        // Return click data without weather correlation
+        return {
+          available: false,
+          message: 'Weather API not configured. Set OPENWEATHER_API_KEY to enable.',
+          dailyData: clickData.map(r => ({
+            date: r.date,
+            totalClicks: parseInt(r.total_clicks) || 0,
+            uniqueUsers: parseInt(r.unique_users) || 0,
+            temperature: null,
+            conditions: null
+          }))
+        };
+      }
+
+      // Hartford, CT coordinates (center of Northeast coverage area)
+      const lat = 41.7658;
+      const lon = -72.6734;
+
+      // OpenWeatherMap One Call API for historical data
+      // Note: Historical data requires paid subscription, using current + forecast as proxy
+      const axios = require('axios');
+
+      try {
+        // Get current weather as baseline
+        const currentWeather = await axios.get(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${weatherApiKey}`
+        );
+
+        const currentTemp = currentWeather.data.main.temp;
+        const conditions = currentWeather.data.weather[0].main;
+
+        // For now, return click data with current temp as reference
+        // In production, would use historical API or store daily temps
+        const avgClicks = clickData.length > 0
+          ? clickData.reduce((sum, d) => sum + parseInt(d.total_clicks), 0) / clickData.length
+          : 0;
+
+        // Generate insight based on current conditions
+        let insight = '';
+        if (currentTemp < 40) {
+          insight = `🥶 Current temp: ${currentTemp.toFixed(0)}°F - Cold weather typically drives heating oil demand up.`;
+        } else if (currentTemp < 55) {
+          insight = `🍂 Current temp: ${currentTemp.toFixed(0)}°F - Moderate temps, expect steady engagement.`;
+        } else {
+          insight = `☀️ Current temp: ${currentTemp.toFixed(0)}°F - Warm weather, lower heating oil demand expected.`;
+        }
+
+        return {
+          available: true,
+          currentTemp: currentTemp.toFixed(0),
+          conditions,
+          insight,
+          correlation: null, // Would calculate with historical data
+          dailyData: clickData.map(r => ({
+            date: r.date,
+            totalClicks: parseInt(r.total_clicks) || 0,
+            uniqueUsers: parseInt(r.unique_users) || 0,
+            temperature: null, // Would fill with historical
+            conditions: null
+          }))
+        };
+      } catch (apiError) {
+        this.logger.error('[UnifiedAnalytics] Weather API error:', apiError.message);
+        return {
+          available: false,
+          message: 'Weather API error: ' + apiError.message,
+          dailyData: clickData.map(r => ({
+            date: r.date,
+            totalClicks: parseInt(r.total_clicks) || 0,
+            uniqueUsers: parseInt(r.unique_users) || 0
+          }))
+        };
+      }
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Weather correlation error:', error.message);
+      return { available: false, message: 'Error fetching data', dailyData: [] };
+    }
+  }
+
+  /**
    * Get onboarding funnel data from BigQuery
    * @param {number} days - Number of days to look back
    */
@@ -1634,7 +1853,7 @@ class UnifiedAnalytics {
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends, onboardingFunnel, topSuppliers] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends, onboardingFunnel, topSuppliers, priceCorrelation, weatherCorrelation] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
@@ -1646,7 +1865,9 @@ class UnifiedAnalytics {
         this.getConfidenceScore(days),
         this.getTrendData(days),
         this.getOnboardingFunnel(days),
-        this.getTopSuppliers(days, 0)  // 0 = no limit, show all suppliers with activity
+        this.getTopSuppliers(days, 0),  // 0 = no limit, show all suppliers with activity
+        this.getPriceCorrelation(days),
+        this.getWeatherCorrelation(days)
       ]);
 
       // Determine data sources
@@ -1735,6 +1956,10 @@ class UnifiedAnalytics {
         android: android.data,
         trends: allTrends,
         topSuppliers,
+        correlations: {
+          price: priceCorrelation,
+          weather: weatherCorrelation
+        },
         lastUpdated: new Date().toISOString()
       };
     } catch (error) {

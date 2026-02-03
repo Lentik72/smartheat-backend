@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1770142000">
+  <link rel="stylesheet" href="dashboard.css?v=1770143000">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -460,6 +460,55 @@
               <div class="propane-signals" id="propane-signals">
                 <h4>Propane Demand Signals</h4>
                 <div id="propane-signal-list"></div>
+              </div>
+            </div>
+
+            <!-- Correlation Analysis -->
+            <div class="panel-grid two-col">
+              <!-- Price vs Clicks Correlation -->
+              <div class="panel">
+                <h3>💰 Price vs Engagement</h3>
+                <div class="correlation-summary" id="price-correlation">
+                  <div class="correlation-value">
+                    <span class="corr-number" id="price-corr-value">--</span>
+                    <span class="corr-label">Correlation</span>
+                  </div>
+                  <div class="correlation-scale">
+                    <div class="scale-bar">
+                      <div class="scale-marker" id="price-corr-marker"></div>
+                    </div>
+                    <div class="scale-labels">
+                      <span>-1 (inverse)</span>
+                      <span>0</span>
+                      <span>+1 (direct)</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="insight-box" id="price-corr-insight">Loading...</div>
+              </div>
+
+              <!-- Weather vs Clicks Correlation -->
+              <div class="panel">
+                <h3>🌡️ Weather Impact</h3>
+                <div class="weather-summary" id="weather-correlation">
+                  <div class="weather-current">
+                    <span class="weather-temp" id="weather-temp">--°F</span>
+                    <span class="weather-conditions" id="weather-conditions">--</span>
+                  </div>
+                </div>
+                <div class="insight-box" id="weather-insight">Loading...</div>
+              </div>
+            </div>
+
+            <!-- Price & Clicks Chart -->
+            <div class="panel full-width">
+              <h3>📊 Price & Engagement Trends</h3>
+              <div class="correlation-chart-container">
+                <canvas id="correlation-chart"></canvas>
+              </div>
+              <div class="chart-legend">
+                <span><span class="legend-dot price"></span> Avg Price</span>
+                <span><span class="legend-dot clicks"></span> Daily Clicks</span>
               </div>
             </div>
           </div>
@@ -1660,6 +1709,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1770142000"></script>
+  <script src="dashboard.js?v=1770143000"></script>
 </body>
 </html>

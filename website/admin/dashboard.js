@@ -2538,6 +2538,55 @@ async function loadAppAnalytics() {
       ? `<div class="signal-item">📊 ${fuel.propane.users} propane users tracked - expansion opportunity</div>`
       : '<div class="signal-item hint">No propane demand signals yet</div>';
 
+    // Correlation Analysis
+    const correlations = unified?.correlations || {};
+
+    // Price correlation
+    const priceCorr = correlations.price || {};
+    const priceCorrValue = document.getElementById('price-corr-value');
+    const priceCorrMarker = document.getElementById('price-corr-marker');
+    const priceCorrInsight = document.getElementById('price-corr-insight');
+
+    if (priceCorr.correlation !== null && priceCorr.correlation !== undefined) {
+      priceCorrValue.textContent = priceCorr.correlation.toFixed(2);
+      // Position marker: -1 = 0%, 0 = 50%, +1 = 100%
+      const markerPosition = ((priceCorr.correlation + 1) / 2) * 100;
+      priceCorrMarker.style.left = `${markerPosition}%`;
+
+      // Color code based on correlation strength
+      if (priceCorr.correlation < -0.3) {
+        priceCorrValue.style.color = '#22c55e'; // green - good inverse
+      } else if (priceCorr.correlation > 0.3) {
+        priceCorrValue.style.color = '#ef4444'; // red - might indicate price driving demand
+      } else {
+        priceCorrValue.style.color = 'var(--gray-600)'; // neutral
+      }
+    } else {
+      priceCorrValue.textContent = '--';
+    }
+    priceCorrInsight.textContent = priceCorr.insight || 'No correlation data available';
+
+    // Weather correlation
+    const weatherCorr = correlations.weather || {};
+    const weatherTemp = document.getElementById('weather-temp');
+    const weatherConditions = document.getElementById('weather-conditions');
+    const weatherInsight = document.getElementById('weather-insight');
+
+    if (weatherCorr.available && weatherCorr.currentTemp) {
+      weatherTemp.textContent = `${weatherCorr.currentTemp}°F`;
+      weatherConditions.textContent = weatherCorr.conditions || '--';
+      weatherInsight.textContent = weatherCorr.insight || 'Weather data loaded';
+    } else {
+      weatherTemp.textContent = '--°F';
+      weatherConditions.textContent = weatherCorr.message || 'Weather API not configured';
+      weatherInsight.textContent = weatherCorr.message || 'Set OPENWEATHER_API_KEY to enable weather correlation';
+    }
+
+    // Render correlation chart (Price + Clicks over time)
+    if (priceCorr.dailyData && priceCorr.dailyData.length > 0) {
+      renderCorrelationChart(priceCorr.dailyData);
+    }
+
     contentEl.classList.remove('hidden');
   } catch (error) {
     console.error('Failed to load app analytics:', error);
@@ -2545,6 +2594,90 @@ async function loadAppAnalytics() {
   } finally {
     loadingEl.classList.add('hidden');
   }
+}
+
+// Correlation chart instance
+let correlationChart = null;
+
+// Render Price & Clicks correlation chart
+function renderCorrelationChart(data) {
+  const canvas = document.getElementById('correlation-chart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (correlationChart) {
+    correlationChart.destroy();
+  }
+
+  const labels = data.map(d => {
+    const date = new Date(d.date);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  });
+
+  const prices = data.map(d => d.avgPrice ? parseFloat(d.avgPrice) : null);
+  const clicks = data.map(d => d.totalClicks || 0);
+
+  correlationChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Avg Price ($)',
+          data: prices,
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          yAxisID: 'y-price',
+          tension: 0.3,
+          pointRadius: 2
+        },
+        {
+          label: 'Daily Clicks',
+          data: clicks,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          yAxisID: 'y-clicks',
+          tension: 0.3,
+          pointRadius: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      scales: {
+        'y-price': {
+          type: 'linear',
+          position: 'left',
+          title: { display: true, text: 'Price ($)' },
+          grid: { display: false }
+        },
+        'y-clicks': {
+          type: 'linear',
+          position: 'right',
+          title: { display: true, text: 'Clicks' },
+          grid: { drawOnChartArea: false }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              if (ctx.dataset.label === 'Avg Price ($)') {
+                return `Price: $${ctx.raw?.toFixed(2) || '--'}`;
+              }
+              return `Clicks: ${ctx.raw || 0}`;
+            }
+          }
+        }
+      }
+    }
+  });
 }
 
 // Load Growth tab
