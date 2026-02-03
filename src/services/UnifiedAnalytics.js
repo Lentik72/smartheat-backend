@@ -1478,7 +1478,7 @@ class UnifiedAnalytics {
    */
   async getPriceCorrelation(days = 30) {
     try {
-      // Get daily average price and click counts
+      // Get daily average price and click counts (web + app combined)
       const results = await this.sequelize.query(`
         WITH daily_prices AS (
           SELECT
@@ -1492,15 +1492,27 @@ class UnifiedAnalytics {
             AND is_valid = true
           GROUP BY DATE(scraped_at)
         ),
+        all_engagements AS (
+          -- Web clicks
+          SELECT created_at, action_type, ip_address, 'web' as source
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          UNION ALL
+          -- App engagements
+          SELECT created_at, engagement_type as action_type, ip_hash as ip_address, 'app' as source
+          FROM supplier_engagements
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        ),
         daily_clicks AS (
           SELECT
             DATE(created_at) as date,
             COUNT(*) as total_clicks,
             COUNT(*) FILTER (WHERE action_type = 'call') as calls,
             COUNT(*) FILTER (WHERE action_type = 'website') as website_clicks,
-            COUNT(DISTINCT ip_address) as unique_users
-          FROM supplier_clicks
-          WHERE created_at > NOW() - INTERVAL '${days} days'
+            COUNT(DISTINCT ip_address) as unique_users,
+            COUNT(*) FILTER (WHERE source = 'web') as web_clicks,
+            COUNT(*) FILTER (WHERE source = 'app') as app_clicks
+          FROM all_engagements
           GROUP BY DATE(created_at)
         )
         SELECT
@@ -1645,15 +1657,27 @@ class UnifiedAnalytics {
         }
       }
 
-      // Get daily data with weather history
+      // Get daily data with weather history (web + app combined)
       const dailyData = await this.sequelize.query(`
-        WITH click_data AS (
+        WITH all_engagements AS (
+          -- Web clicks
+          SELECT created_at, ip_address, 'web' as source
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          UNION ALL
+          -- App engagements
+          SELECT created_at, ip_hash as ip_address, 'app' as source
+          FROM supplier_engagements
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        ),
+        click_data AS (
           SELECT
             DATE(created_at) as date,
             COUNT(*) as total_clicks,
-            COUNT(DISTINCT ip_address) as unique_users
-          FROM supplier_clicks
-          WHERE created_at > NOW() - INTERVAL '${days} days'
+            COUNT(DISTINCT ip_address) as unique_users,
+            COUNT(*) FILTER (WHERE source = 'web') as web_clicks,
+            COUNT(*) FILTER (WHERE source = 'app') as app_clicks
+          FROM all_engagements
           GROUP BY DATE(created_at)
         ),
         date_series AS (
@@ -1667,6 +1691,8 @@ class UnifiedAnalytics {
           ds.date,
           COALESCE(cd.total_clicks, 0) as total_clicks,
           COALESCE(cd.unique_users, 0) as unique_users,
+          COALESCE(cd.web_clicks, 0) as web_clicks,
+          COALESCE(cd.app_clicks, 0) as app_clicks,
           wh.temp_avg as temperature,
           wh.temp_high,
           wh.temp_low,
@@ -1732,6 +1758,8 @@ class UnifiedAnalytics {
           date: r.date,
           totalClicks: parseInt(r.total_clicks) || 0,
           uniqueUsers: parseInt(r.unique_users) || 0,
+          webClicks: parseInt(r.web_clicks) || 0,
+          appClicks: parseInt(r.app_clicks) || 0,
           temperature: r.temperature ? parseFloat(r.temperature) : null,
           tempHigh: r.temp_high ? parseFloat(r.temp_high) : null,
           tempLow: r.temp_low ? parseFloat(r.temp_low) : null,
