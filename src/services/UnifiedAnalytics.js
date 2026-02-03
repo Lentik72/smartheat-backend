@@ -1124,6 +1124,94 @@ class UnifiedAnalytics {
   }
 
   /**
+   * Get First Value Event (FVE) metrics
+   * FVE = user who completed a valuable action (e.g., clicked supplier, made a search)
+   * @param {number} days - Number of days to look back
+   */
+  async getFVEMetrics(days = 30) {
+    try {
+      // Get users who completed an FVE (clicked a supplier or searched)
+      const [fveStats] = await this.sequelize.query(`
+        WITH all_users AS (
+          SELECT DISTINCT COALESCE(device_id, ip_hash) as user_id,
+                 MIN(created_at) as first_seen
+          FROM api_activity
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          GROUP BY COALESCE(device_id, ip_hash)
+        ),
+        fve_users AS (
+          SELECT DISTINCT COALESCE(device_id, ip_hash) as user_id,
+                 MIN(created_at) as fve_time
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          GROUP BY COALESCE(device_id, ip_hash)
+        ),
+        fve_within_72h AS (
+          SELECT f.user_id
+          FROM fve_users f
+          JOIN all_users a ON f.user_id = a.user_id
+          WHERE f.fve_time <= a.first_seen + INTERVAL '72 hours'
+        ),
+        returning_fve AS (
+          SELECT DISTINCT f.user_id
+          FROM fve_users f
+          JOIN api_activity a ON COALESCE(a.device_id, a.ip_hash) = f.user_id
+          WHERE a.created_at > f.fve_time + INTERVAL '7 days'
+        ),
+        returning_non_fve AS (
+          SELECT DISTINCT COALESCE(a1.device_id, a1.ip_hash) as user_id
+          FROM api_activity a1
+          WHERE COALESCE(a1.device_id, a1.ip_hash) NOT IN (SELECT user_id FROM fve_users)
+            AND a1.created_at > NOW() - INTERVAL '${days} days'
+            AND EXISTS (
+              SELECT 1 FROM api_activity a2
+              WHERE COALESCE(a2.device_id, a2.ip_hash) = COALESCE(a1.device_id, a1.ip_hash)
+                AND a2.created_at > a1.created_at + INTERVAL '7 days'
+            )
+        )
+        SELECT
+          (SELECT COUNT(*) FROM all_users) as total_users,
+          (SELECT COUNT(*) FROM fve_users) as fve_users,
+          (SELECT COUNT(*) FROM fve_within_72h) as fve_within_72h,
+          (SELECT COUNT(*) FROM returning_fve) as fve_retained,
+          (SELECT COUNT(*) FROM returning_non_fve) as non_fve_retained,
+          (SELECT COUNT(*) FROM all_users WHERE user_id NOT IN (SELECT user_id FROM fve_users)) as non_fve_users
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      const stats = fveStats[0] || {};
+      const totalUsers = parseInt(stats.total_users) || 0;
+      const fveUsers = parseInt(stats.fve_users) || 0;
+      const fveWithin72h = parseInt(stats.fve_within_72h) || 0;
+      const fveRetained = parseInt(stats.fve_retained) || 0;
+      const nonFveUsers = parseInt(stats.non_fve_users) || 0;
+      const nonFveRetained = parseInt(stats.non_fve_retained) || 0;
+
+      const completionRate = totalUsers > 0 ? ((fveUsers / totalUsers) * 100).toFixed(0) : 0;
+      const within72hRate = fveUsers > 0 ? ((fveWithin72h / fveUsers) * 100).toFixed(0) : 0;
+      const fveRetentionRate = fveUsers > 0 ? ((fveRetained / fveUsers) * 100).toFixed(0) : 0;
+      const nonFveRetentionRate = nonFveUsers > 0 ? ((nonFveRetained / nonFveUsers) * 100).toFixed(0) : 0;
+      const multiplier = nonFveRetentionRate > 0 ? (fveRetentionRate / nonFveRetentionRate).toFixed(1) : 0;
+
+      return {
+        completionRate: `${completionRate}%`,
+        within72h: `${within72hRate}%`,
+        userRetention: `${fveRetentionRate}%`,
+        nonUserRetention: `${nonFveRetentionRate}%`,
+        multiplier: `${multiplier}×`
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] FVE metrics error:', error.message);
+      return {
+        completionRate: '0%',
+        within72h: '0%',
+        userRetention: '0%',
+        nonUserRetention: '0%',
+        multiplier: '0×'
+      };
+    }
+  }
+
+  /**
    * Get delivery patterns from community_deliveries
    * @param {number} days - Number of days to look back
    */
@@ -1205,24 +1293,26 @@ class UnifiedAnalytics {
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android, fuelType, deliveries] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType, deliveries, fve] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
         this.getRetentionAnalysis(6),
         this.getAndroidDecisionSignals(),
         this.getFuelTypeBreakdown(days),
-        this.getDeliveryPatterns(days)
+        this.getDeliveryPatterns(days),
+        this.getFVEMetrics(days)
       ]);
 
       // Determine data sources
       const isBigQuery = app.source === 'bigquery';
       const isFirebaseDb = app.available && app.source === 'database';
 
-      // Add fuel type and delivery data to app section
+      // Add fuel type, delivery, and FVE data to app section
       const appData = app.data || {};
       appData.fuelType = fuelType;
       appData.deliveries = deliveries;
+      appData.fve = fve;
 
       return {
         period: `${days}d`,
