@@ -1963,7 +1963,7 @@ class UnifiedAnalytics {
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends, onboardingFunnel, topSuppliers, priceCorrelation, weatherCorrelation] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends, onboardingFunnel, topSuppliers, priceCorrelation, weatherCorrelation, cohortRetention, geoHeatmap] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
@@ -1977,7 +1977,9 @@ class UnifiedAnalytics {
         this.getOnboardingFunnel(days),
         this.getTopSuppliers(days, 0),  // 0 = no limit, show all suppliers with activity
         this.getPriceCorrelation(days),
-        this.getWeatherCorrelation(days)
+        this.getWeatherCorrelation(days),
+        this.getCohortRetention(days),
+        this.getGeographicHeatmap(days)
       ]);
 
       // Determine data sources
@@ -2070,11 +2072,286 @@ class UnifiedAnalytics {
           price: priceCorrelation,
           weather: weatherCorrelation
         },
+        cohortRetention,
+        geoHeatmap,
         lastUpdated: new Date().toISOString()
       };
     } catch (error) {
       this.logger.error('[UnifiedAnalytics] Unified overview error:', error.message);
       throw error;
+    }
+  }
+
+  /**
+   * Get Day 1/7/30 cohort retention analysis
+   * @param {number} days - Lookback period for cohorts
+   */
+  async getCohortRetention(days = 30) {
+    try {
+      // Get retention by cohort week with Day 1, 7, 30 breakdown
+      const [cohortData] = await this.sequelize.query(`
+        WITH all_activity AS (
+          SELECT ip_address as user_id, created_at::date as activity_date, 'web' as source
+          FROM supplier_clicks
+          WHERE ip_address IS NOT NULL
+          UNION ALL
+          SELECT ip_hash as user_id, created_at::date as activity_date, 'app' as source
+          FROM supplier_engagements
+          WHERE ip_hash IS NOT NULL
+        ),
+        user_first_activity AS (
+          SELECT
+            user_id,
+            MIN(activity_date) as cohort_date
+          FROM all_activity
+          GROUP BY user_id
+        ),
+        user_activity_days AS (
+          SELECT
+            ufa.user_id,
+            ufa.cohort_date,
+            aa.activity_date,
+            (aa.activity_date - ufa.cohort_date) as days_since_cohort
+          FROM user_first_activity ufa
+          JOIN all_activity aa ON ufa.user_id = aa.user_id
+          WHERE ufa.cohort_date >= NOW()::date - INTERVAL '${days} days'
+        ),
+        cohort_retention AS (
+          SELECT
+            cohort_date,
+            COUNT(DISTINCT user_id) as cohort_size,
+            COUNT(DISTINCT CASE WHEN days_since_cohort = 1 THEN user_id END) as day1_retained,
+            COUNT(DISTINCT CASE WHEN days_since_cohort = 7 THEN user_id END) as day7_retained,
+            COUNT(DISTINCT CASE WHEN days_since_cohort = 30 THEN user_id END) as day30_retained,
+            COUNT(DISTINCT CASE WHEN days_since_cohort BETWEEN 1 AND 7 THEN user_id END) as week1_active
+          FROM user_activity_days
+          GROUP BY cohort_date
+          ORDER BY cohort_date DESC
+        )
+        SELECT
+          cohort_date,
+          cohort_size,
+          day1_retained,
+          day7_retained,
+          day30_retained,
+          week1_active,
+          CASE WHEN cohort_size > 0 THEN ROUND((day1_retained::numeric / cohort_size * 100), 1) ELSE 0 END as day1_rate,
+          CASE WHEN cohort_size > 0 THEN ROUND((day7_retained::numeric / cohort_size * 100), 1) ELSE 0 END as day7_rate,
+          CASE WHEN cohort_size > 0 THEN ROUND((day30_retained::numeric / cohort_size * 100), 1) ELSE 0 END as day30_rate
+        FROM cohort_retention
+        WHERE cohort_size >= 1
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      // Calculate overall retention rates
+      const totalUsers = cohortData.reduce((sum, c) => sum + parseInt(c.cohort_size), 0);
+      const totalDay1 = cohortData.reduce((sum, c) => sum + parseInt(c.day1_retained), 0);
+      const totalDay7 = cohortData.reduce((sum, c) => sum + parseInt(c.day7_retained), 0);
+      const totalDay30 = cohortData.reduce((sum, c) => sum + parseInt(c.day30_retained), 0);
+
+      // Build retention curve data (average across cohorts)
+      const retentionCurve = [];
+      for (let day = 0; day <= 30; day++) {
+        const [dayData] = await this.sequelize.query(`
+          WITH all_activity AS (
+            SELECT ip_address as user_id, created_at::date as activity_date
+            FROM supplier_clicks WHERE ip_address IS NOT NULL
+            UNION ALL
+            SELECT ip_hash as user_id, created_at::date as activity_date
+            FROM supplier_engagements WHERE ip_hash IS NOT NULL
+          ),
+          user_first AS (
+            SELECT user_id, MIN(activity_date) as cohort_date
+            FROM all_activity
+            GROUP BY user_id
+          ),
+          retained AS (
+            SELECT COUNT(DISTINCT aa.user_id) as users
+            FROM user_first uf
+            JOIN all_activity aa ON uf.user_id = aa.user_id
+            WHERE (aa.activity_date - uf.cohort_date) = ${day}
+              AND uf.cohort_date >= NOW()::date - INTERVAL '${days} days'
+              AND uf.cohort_date <= NOW()::date - INTERVAL '${day} days'
+          )
+          SELECT users FROM retained
+        `, { type: this.sequelize.QueryTypes.SELECT });
+
+        retentionCurve.push({
+          day,
+          users: parseInt(dayData[0]?.users) || 0
+        });
+      }
+
+      // Normalize curve to percentages
+      const day0Users = retentionCurve[0]?.users || 1;
+      const normalizedCurve = retentionCurve.map(d => ({
+        day: d.day,
+        rate: day0Users > 0 ? ((d.users / day0Users) * 100).toFixed(1) : 0
+      }));
+
+      return {
+        available: true,
+        hasData: cohortData.length > 0,
+        data: {
+          cohorts: cohortData.map(c => ({
+            date: c.cohort_date,
+            size: parseInt(c.cohort_size),
+            day1: { retained: parseInt(c.day1_retained), rate: parseFloat(c.day1_rate) },
+            day7: { retained: parseInt(c.day7_retained), rate: parseFloat(c.day7_rate) },
+            day30: { retained: parseInt(c.day30_retained), rate: parseFloat(c.day30_rate) }
+          })),
+          summary: {
+            totalUsers,
+            day1Rate: totalUsers > 0 ? ((totalDay1 / totalUsers) * 100).toFixed(1) : 0,
+            day7Rate: totalUsers > 0 ? ((totalDay7 / totalUsers) * 100).toFixed(1) : 0,
+            day30Rate: totalUsers > 0 ? ((totalDay30 / totalUsers) * 100).toFixed(1) : 0
+          },
+          curve: normalizedCurve
+        }
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Cohort retention error:', error.message);
+      return { available: false, error: error.message };
+    }
+  }
+
+  /**
+   * Get geographic heatmap data based on ZIP codes
+   * @param {number} days - Lookback period
+   */
+  async getGeographicHeatmap(days = 30) {
+    try {
+      // Get engagement counts by ZIP code from both sources
+      const [zipData] = await this.sequelize.query(`
+        WITH all_engagements AS (
+          SELECT zip_code, COUNT(*) as engagements, COUNT(DISTINCT ip_address) as users
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND zip_code IS NOT NULL
+          GROUP BY zip_code
+          UNION ALL
+          SELECT zip_code, COUNT(*) as engagements, COUNT(DISTINCT ip_hash) as users
+          FROM supplier_engagements
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND zip_code IS NOT NULL
+          GROUP BY zip_code
+        ),
+        combined AS (
+          SELECT
+            zip_code,
+            SUM(engagements) as total_engagements,
+            SUM(users) as total_users
+          FROM all_engagements
+          GROUP BY zip_code
+        )
+        SELECT zip_code, total_engagements, total_users
+        FROM combined
+        WHERE total_engagements > 0
+        ORDER BY total_engagements DESC
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      // Also get user_locations data
+      const [locationData] = await this.sequelize.query(`
+        SELECT zip_code, COUNT(*) as searches
+        FROM user_locations
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+          AND zip_code IS NOT NULL
+        GROUP BY zip_code
+        ORDER BY searches DESC
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      // Merge location searches with engagement data
+      const zipMap = new Map();
+
+      for (const loc of locationData) {
+        zipMap.set(loc.zip_code, {
+          zip: loc.zip_code,
+          searches: parseInt(loc.searches),
+          engagements: 0,
+          users: 0
+        });
+      }
+
+      for (const eng of zipData) {
+        if (zipMap.has(eng.zip_code)) {
+          zipMap.get(eng.zip_code).engagements = parseInt(eng.total_engagements);
+          zipMap.get(eng.zip_code).users = parseInt(eng.total_users);
+        } else {
+          zipMap.set(eng.zip_code, {
+            zip: eng.zip_code,
+            searches: 0,
+            engagements: parseInt(eng.total_engagements),
+            users: parseInt(eng.total_users)
+          });
+        }
+      }
+
+      // Load ZIP coordinates
+      const zipDbPath = path.join(__dirname, '../data/zip-database.json');
+      let zipCoords = {};
+      try {
+        zipCoords = JSON.parse(fs.readFileSync(zipDbPath, 'utf8'));
+      } catch (e) {
+        this.logger.warn('[UnifiedAnalytics] Could not load zip-database.json');
+      }
+
+      // Build heatmap points with coordinates
+      const heatmapPoints = [];
+      const stateStats = {};
+
+      for (const [zip, data] of zipMap) {
+        const coords = zipCoords[zip];
+        if (coords && coords.lat && coords.lng) {
+          const intensity = data.searches + data.engagements;
+          heatmapPoints.push({
+            zip,
+            lat: coords.lat,
+            lng: coords.lng,
+            city: coords.city || '--',
+            state: coords.state || '--',
+            intensity,
+            searches: data.searches,
+            engagements: data.engagements,
+            users: data.users
+          });
+
+          // Aggregate by state
+          const state = coords.state || 'Unknown';
+          if (!stateStats[state]) {
+            stateStats[state] = { searches: 0, engagements: 0, users: 0, zips: 0 };
+          }
+          stateStats[state].searches += data.searches;
+          stateStats[state].engagements += data.engagements;
+          stateStats[state].users += data.users;
+          stateStats[state].zips += 1;
+        }
+      }
+
+      // Sort by intensity for top locations
+      heatmapPoints.sort((a, b) => b.intensity - a.intensity);
+
+      // Convert state stats to sorted array
+      const stateBreakdown = Object.entries(stateStats)
+        .map(([state, stats]) => ({ state, ...stats }))
+        .sort((a, b) => b.engagements - a.engagements);
+
+      return {
+        available: true,
+        hasData: heatmapPoints.length > 0,
+        data: {
+          points: heatmapPoints.slice(0, 500), // Limit for performance
+          topLocations: heatmapPoints.slice(0, 20),
+          stateBreakdown,
+          summary: {
+            totalZips: heatmapPoints.length,
+            totalSearches: heatmapPoints.reduce((sum, p) => sum + p.searches, 0),
+            totalEngagements: heatmapPoints.reduce((sum, p) => sum + p.engagements, 0),
+            statesActive: stateBreakdown.length
+          }
+        }
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Geographic heatmap error:', error.message);
+      return { available: false, error: error.message };
     }
   }
 }

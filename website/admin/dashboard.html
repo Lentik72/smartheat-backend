@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1770147000">
+  <link rel="stylesheet" href="dashboard.css?v=1770148000">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -96,6 +96,8 @@
     <nav class="tabs">
       <button class="tab active" data-tab="leaderboard">🏆 Leaderboard</button>
       <button class="tab" data-tab="app-analytics">📊 App Analytics</button>
+      <button class="tab" data-tab="retention">🔄 Retention</button>
+      <button class="tab" data-tab="geography">📍 Geography</button>
       <button class="tab" data-tab="growth">📈 Growth</button>
       <button class="tab" data-tab="coverage">🗺️ Coverage</button>
       <button class="tab" data-tab="settings">⚙️ Settings</button>
@@ -1035,19 +1037,56 @@
       <!-- Retention Tab -->
       <section id="tab-retention" class="tab-panel">
         <div class="panel-grid">
+          <!-- Day 1/7/30 Retention Cards -->
           <div class="panel">
-            <h3>Week 1 Retention</h3>
-            <div id="week1-retention" class="stat-large retention-stat">--%</div>
-            <div class="hint">Target: 30%+</div>
+            <h3>Day 1 Retention</h3>
+            <div id="day1-retention" class="stat-large retention-stat">--%</div>
+            <div class="hint">Target: 40%+</div>
           </div>
           <div class="panel">
-            <h3>Active Cohort Size</h3>
+            <h3>Day 7 Retention</h3>
+            <div id="day7-retention" class="stat-large retention-stat">--%</div>
+            <div class="hint">Target: 20%+</div>
+          </div>
+          <div class="panel">
+            <h3>Day 30 Retention</h3>
+            <div id="day30-retention" class="stat-large retention-stat">--%</div>
+            <div class="hint">Target: 10%+</div>
+          </div>
+          <div class="panel">
+            <h3>Total Users Tracked</h3>
             <div id="cohort-size" class="stat-large">--</div>
+            <div class="hint">Combined web + app</div>
           </div>
+
+          <!-- Retention Curve Chart -->
           <div class="panel full-width">
-            <h3>Cohort Retention Chart</h3>
-            <canvas id="retention-chart"></canvas>
+            <h3>Retention Curve (30 Days)</h3>
+            <p class="hint">What % of users return each day after first visit</p>
+            <canvas id="retention-curve-chart"></canvas>
           </div>
+
+          <!-- Cohort Table -->
+          <div class="panel full-width">
+            <h3>Cohort Breakdown</h3>
+            <p class="hint">Retention by user acquisition date</p>
+            <div class="table-scroll">
+              <table id="cohort-table">
+                <thead>
+                  <tr>
+                    <th>Cohort Date</th>
+                    <th>Users</th>
+                    <th>Day 1</th>
+                    <th>Day 7</th>
+                    <th>Day 30</th>
+                  </tr>
+                </thead>
+                <tbody id="cohort-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Behavior Retention -->
           <div class="panel full-width">
             <h3>Retention by Behavior</h3>
             <p class="hint">Users who take certain actions stay longer</p>
@@ -1063,6 +1102,8 @@
               <tbody id="behavior-retention-body"></tbody>
             </table>
           </div>
+
+          <!-- Retention Ideas -->
           <div class="panel full-width">
             <h3>Retention Improvement Ideas</h3>
             <div id="retention-ideas" class="ideas-list">
@@ -1078,6 +1119,71 @@
                 <span class="idea-icon">3.</span>
                 <span>Weekly "your area prices" email for opted-in users</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Geographic Heatmap Tab -->
+      <section id="tab-geography" class="tab-panel">
+        <div class="panel-grid">
+          <!-- Summary Cards -->
+          <div class="panel">
+            <h3>Active ZIP Codes</h3>
+            <div id="geo-total-zips" class="stat-large">--</div>
+          </div>
+          <div class="panel">
+            <h3>States Active</h3>
+            <div id="geo-states-active" class="stat-large">--</div>
+          </div>
+          <div class="panel">
+            <h3>Total Searches</h3>
+            <div id="geo-total-searches" class="stat-large">--</div>
+          </div>
+          <div class="panel">
+            <h3>Total Engagements</h3>
+            <div id="geo-total-engagements" class="stat-large">--</div>
+          </div>
+
+          <!-- Map -->
+          <div class="panel full-width">
+            <h3>Engagement Heatmap</h3>
+            <p class="hint">Click markers for details</p>
+            <div id="geo-heatmap" style="height: 400px; border-radius: 8px;"></div>
+          </div>
+
+          <!-- State Breakdown -->
+          <div class="panel half-width">
+            <h3>Engagement by State</h3>
+            <div class="table-scroll">
+              <table id="state-breakdown-table">
+                <thead>
+                  <tr>
+                    <th>State</th>
+                    <th>ZIPs</th>
+                    <th>Searches</th>
+                    <th>Engagements</th>
+                  </tr>
+                </thead>
+                <tbody id="state-breakdown-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Top Locations -->
+          <div class="panel half-width">
+            <h3>Top Locations</h3>
+            <div class="table-scroll">
+              <table id="top-locations-table">
+                <thead>
+                  <tr>
+                    <th>Location</th>
+                    <th>ZIP</th>
+                    <th>Activity</th>
+                  </tr>
+                </thead>
+                <tbody id="top-locations-body"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1706,6 +1812,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1770147000"></script>
+  <script src="dashboard.js?v=1770148000"></script>
 </body>
 </html>

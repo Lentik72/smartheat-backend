@@ -197,6 +197,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (target === 'ios-app') loadIOSApp();
     if (target === 'android') loadAndroidSignals();
     if (target === 'retention') loadRetention();
+    if (target === 'geography') loadGeography();
     if (target === 'acquisition') loadAcquisition();
     if (target === 'overview') loadOverviewTab();
     if (target === 'searches') loadSearches();
@@ -1731,125 +1732,345 @@ function renderRecommendationCards(containerId, recommendations) {
   });
 }
 
-// Load retention data
+// Load retention data with Day 1/7/30 cohort analysis
 async function loadRetention() {
   try {
-    const data = await api('/retention');
+    // Fetch unified data which contains cohortRetention
+    const unified = await api(`/unified?days=${currentDays}`);
+    const cohortData = unified?.cohortRetention;
+    const legacyData = await api('/retention').catch(() => null);
 
-    if (!data.available) {
-      console.log('Retention data not available:', data.reason);
-      showRetentionNoData(data.reason || 'Data not available');
+    if (!cohortData?.available && !legacyData?.available) {
+      showRetentionNoData('No retention data available');
       return;
     }
 
-    // Check if there's actual data
-    if (!data.hasData) {
-      showRetentionNoData(data.reason || 'No engagement data tracked yet');
-      return;
-    }
+    // Use new cohort data if available
+    if (cohortData?.hasData && cohortData?.data) {
+      const summary = cohortData.data.summary || {};
+      const cohorts = cohortData.data.cohorts || [];
+      const curve = cohortData.data.curve || [];
 
-    // Week 1 retention
-    const week1Rate = data.data?.summary?.week1RetentionRate;
-    const week1El = document.getElementById('week1-retention');
-    if (week1Rate) {
-      week1El.textContent = `${week1Rate}%`;
-      week1El.classList.toggle('good', parseFloat(week1Rate) >= 30);
-    } else {
-      week1El.textContent = 'N/A';
-    }
+      // Day 1/7/30 retention cards
+      const day1El = document.getElementById('day1-retention');
+      const day7El = document.getElementById('day7-retention');
+      const day30El = document.getElementById('day30-retention');
 
-    // Cohort size
-    const cohortSize = data.data?.summary?.totalCohortSize;
-    document.getElementById('cohort-size').textContent = cohortSize || '0';
+      if (day1El) {
+        const day1Rate = parseFloat(summary.day1Rate) || 0;
+        day1El.textContent = `${day1Rate}%`;
+        day1El.className = 'stat-large retention-stat ' + (day1Rate >= 40 ? 'good' : day1Rate >= 20 ? 'warning' : 'poor');
+      }
 
-    // Behavior retention table
-    const behaviorBody = document.getElementById('behavior-retention-body');
-    behaviorBody.innerHTML = '';
+      if (day7El) {
+        const day7Rate = parseFloat(summary.day7Rate) || 0;
+        day7El.textContent = `${day7Rate}%`;
+        day7El.className = 'stat-large retention-stat ' + (day7Rate >= 20 ? 'good' : day7Rate >= 10 ? 'warning' : 'poor');
+      }
 
-    const behaviorInsights = {
-      made_call: 'Users who call stay much longer',
-      saved_supplier: 'Saving = investment in app',
-      browsed_only: 'Need to drive action'
-    };
+      if (day30El) {
+        const day30Rate = parseFloat(summary.day30Rate) || 0;
+        day30El.textContent = `${day30Rate}%`;
+        day30El.className = 'stat-large retention-stat ' + (day30Rate >= 10 ? 'good' : day30Rate >= 5 ? 'warning' : 'poor');
+      }
 
-    const behaviors = data.data?.behaviorRetention || [];
-    if (behaviors.length === 0) {
-      behaviorBody.innerHTML = '<tr><td colspan="4" class="no-data">No behavior data available</td></tr>';
-    } else {
-      behaviors.forEach(b => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${formatBehavior(b.behavior)}</td>
-          <td>${b.userCount}</td>
-          <td>${b.avgActiveDays.toFixed(1)} days</td>
-          <td>${behaviorInsights[b.behavior] || '--'}</td>
-        `;
-        behaviorBody.appendChild(row);
-      });
-    }
+      // Total users
+      document.getElementById('cohort-size').textContent = summary.totalUsers || '0';
 
-    // Retention chart
-    const cohorts = data.data?.cohorts || [];
-    if (cohorts.length > 0) {
-      const weeks = [...new Set(cohorts.map(c => c.week_number))].sort((a, b) => a - b);
-      const chartData = weeks.map(w => {
-        const cohort = cohorts.find(c => parseInt(c.week_number) === w);
-        return cohort ? parseFloat(cohort.retention_rate) : null;
-      });
+      // Cohort table
+      const cohortBody = document.getElementById('cohort-table-body');
+      if (cohortBody) {
+        cohortBody.innerHTML = '';
+        cohorts.slice(0, 14).forEach(c => { // Last 14 days
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${formatDate(c.date)}</td>
+            <td>${c.size}</td>
+            <td class="rate-cell ${getRateClass(c.day1.rate, 40, 20)}">${c.day1.rate}%</td>
+            <td class="rate-cell ${getRateClass(c.day7.rate, 20, 10)}">${c.day7.rate}%</td>
+            <td class="rate-cell ${getRateClass(c.day30.rate, 10, 5)}">${c.day30.rate}%</td>
+          `;
+          cohortBody.appendChild(row);
+        });
+      }
 
-      const ctx = document.getElementById('retention-chart').getContext('2d');
-      if (retentionChart) retentionChart.destroy();
-
-      retentionChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: weeks.map(w => `Week ${w}`),
-          datasets: [{
-            label: 'Retention %',
-            data: chartData,
-            backgroundColor: chartData.map(v =>
-              v >= 30 ? '#22c55e' : v >= 15 ? '#f59e0b' : '#ef4444'
-            )
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 100
+      // Retention curve chart
+      if (curve.length > 0) {
+        const ctx = document.getElementById('retention-curve-chart');
+        if (ctx) {
+          if (retentionChart) retentionChart.destroy();
+          retentionChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: curve.map(d => `Day ${d.day}`),
+              datasets: [{
+                label: 'Retention %',
+                data: curve.map(d => parseFloat(d.rate)),
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                fill: true,
+                tension: 0.3
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  title: { display: true, text: 'Retention %' }
+                },
+                x: {
+                  ticks: {
+                    maxTicksLimit: 10
+                  }
+                }
+              }
             }
-          }
+          });
         }
-      });
+      }
+    }
+
+    // Behavior retention table (from legacy data)
+    if (legacyData?.data?.behaviorRetention) {
+      const behaviorBody = document.getElementById('behavior-retention-body');
+      if (behaviorBody) {
+        behaviorBody.innerHTML = '';
+
+        const behaviorInsights = {
+          made_call: 'Users who call stay much longer',
+          saved_supplier: 'Saving = investment in app',
+          browsed_only: 'Need to drive action',
+          logged_delivery: 'High engagement behavior',
+          set_up_tank: 'Shows app investment',
+          searched_supplier: 'Active user signal'
+        };
+
+        const behaviors = legacyData.data.behaviorRetention || [];
+        if (behaviors.length === 0) {
+          behaviorBody.innerHTML = '<tr><td colspan="4" class="no-data">No behavior data available</td></tr>';
+        } else {
+          behaviors.forEach(b => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${formatBehavior(b.behavior)}</td>
+              <td>${b.userCount}</td>
+              <td>${(b.avgActiveDays || 0).toFixed(1)} days</td>
+              <td>${behaviorInsights[b.behavior] || '--'}</td>
+            `;
+            behaviorBody.appendChild(row);
+          });
+        }
+      }
     }
   } catch (error) {
     console.error('Failed to load retention:', error);
+    showRetentionNoData('Error loading retention data');
   }
 }
 
+function getRateClass(rate, goodThreshold, warnThreshold) {
+  const r = parseFloat(rate) || 0;
+  if (r >= goodThreshold) return 'rate-good';
+  if (r >= warnThreshold) return 'rate-warning';
+  return 'rate-poor';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '--';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 function showRetentionNoData(reason) {
-  document.getElementById('week1-retention').textContent = 'N/A';
+  const day1El = document.getElementById('day1-retention');
+  const day7El = document.getElementById('day7-retention');
+  const day30El = document.getElementById('day30-retention');
+  if (day1El) day1El.textContent = 'N/A';
+  if (day7El) day7El.textContent = 'N/A';
+  if (day30El) day30El.textContent = 'N/A';
   document.getElementById('cohort-size').textContent = '0';
-  document.getElementById('behavior-retention-body').innerHTML = `
-    <tr><td colspan="4" class="no-data">
-      <div class="no-data-message">
-        <p><strong>No retention data available</strong></p>
-        <p class="hint">${reason}</p>
-        <p class="hint">Retention tracking requires iOS app engagement data with user IDs.</p>
-      </div>
-    </td></tr>
-  `;
+
+  const cohortBody = document.getElementById('cohort-table-body');
+  if (cohortBody) {
+    cohortBody.innerHTML = `<tr><td colspan="5" class="no-data">${reason}</td></tr>`;
+  }
+
+  const behaviorBody = document.getElementById('behavior-retention-body');
+  if (behaviorBody) {
+    behaviorBody.innerHTML = `
+      <tr><td colspan="4" class="no-data">
+        <div class="no-data-message">
+          <p><strong>No retention data available</strong></p>
+          <p class="hint">${reason}</p>
+          <p class="hint">Retention tracking requires user engagement data.</p>
+        </div>
+      </td></tr>
+    `;
+  }
 }
 
 function formatBehavior(behavior) {
   const names = {
     made_call: 'Made a Call',
     saved_supplier: 'Saved a Supplier',
-    browsed_only: 'Browsed Only'
+    browsed_only: 'Browsed Only',
+    logged_delivery: 'Logged Delivery',
+    set_up_tank: 'Set Up Tank',
+    searched_supplier: 'Searched Suppliers'
   };
-  return names[behavior] || behavior;
+  return names[behavior] || behavior.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Geographic heatmap
+let geoMap = null;
+
+async function loadGeography() {
+  try {
+    const unified = await api(`/unified?days=${currentDays}`);
+    const geoData = unified?.geoHeatmap;
+
+    if (!geoData?.available || !geoData?.hasData) {
+      showGeoNoData('No geographic data available');
+      return;
+    }
+
+    const data = geoData.data;
+
+    // Summary cards
+    document.getElementById('geo-total-zips').textContent = data.summary?.totalZips || 0;
+    document.getElementById('geo-states-active').textContent = data.summary?.statesActive || 0;
+    document.getElementById('geo-total-searches').textContent = (data.summary?.totalSearches || 0).toLocaleString();
+    document.getElementById('geo-total-engagements').textContent = (data.summary?.totalEngagements || 0).toLocaleString();
+
+    // State breakdown table
+    const stateBody = document.getElementById('state-breakdown-body');
+    if (stateBody) {
+      stateBody.innerHTML = '';
+      (data.stateBreakdown || []).forEach(s => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${s.state}</strong></td>
+          <td>${s.zips}</td>
+          <td>${s.searches.toLocaleString()}</td>
+          <td>${s.engagements.toLocaleString()}</td>
+        `;
+        stateBody.appendChild(row);
+      });
+    }
+
+    // Top locations table
+    const locBody = document.getElementById('top-locations-body');
+    if (locBody) {
+      locBody.innerHTML = '';
+      (data.topLocations || []).forEach(loc => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${loc.city}, ${loc.state}</td>
+          <td>${loc.zip}</td>
+          <td>${loc.intensity.toLocaleString()}</td>
+        `;
+        locBody.appendChild(row);
+      });
+    }
+
+    // Render heatmap
+    renderGeoHeatmap(data.points || []);
+
+  } catch (error) {
+    console.error('Failed to load geography:', error);
+    showGeoNoData('Error loading geographic data');
+  }
+}
+
+function renderGeoHeatmap(points) {
+  const mapContainer = document.getElementById('geo-heatmap');
+  if (!mapContainer) return;
+
+  // Initialize or reset map
+  if (geoMap) {
+    geoMap.remove();
+  }
+
+  // Center on US Northeast (where most heating oil users are)
+  geoMap = L.map('geo-heatmap').setView([41.5, -73.5], 6);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(geoMap);
+
+  // Add markers for each point
+  const maxIntensity = Math.max(...points.map(p => p.intensity), 1);
+
+  points.forEach(point => {
+    // Calculate marker size based on intensity
+    const size = Math.max(8, Math.min(25, (point.intensity / maxIntensity) * 25));
+    const opacity = Math.max(0.4, Math.min(0.9, (point.intensity / maxIntensity) * 0.9));
+
+    const marker = L.circleMarker([point.lat, point.lng], {
+      radius: size,
+      fillColor: getHeatColor(point.intensity, maxIntensity),
+      color: '#fff',
+      weight: 1,
+      opacity: 1,
+      fillOpacity: opacity
+    });
+
+    marker.bindPopup(`
+      <div class="geo-popup">
+        <div class="geo-popup-zip">${point.zip}</div>
+        <div class="geo-popup-city">${point.city}, ${point.state}</div>
+        <div class="geo-popup-stats">
+          <div class="geo-popup-stat">
+            <div class="value">${point.searches}</div>
+            <div class="label">Searches</div>
+          </div>
+          <div class="geo-popup-stat">
+            <div class="value">${point.engagements}</div>
+            <div class="label">Engagements</div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    marker.addTo(geoMap);
+  });
+
+  // Fit bounds to show all points
+  if (points.length > 0) {
+    const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng]));
+    geoMap.fitBounds(bounds, { padding: [20, 20] });
+  }
+}
+
+function getHeatColor(intensity, maxIntensity) {
+  const ratio = intensity / maxIntensity;
+  if (ratio > 0.7) return '#ef4444'; // Hot - red
+  if (ratio > 0.4) return '#f59e0b'; // Medium - orange
+  if (ratio > 0.2) return '#eab308'; // Warm - yellow
+  return '#22c55e'; // Cool - green
+}
+
+function showGeoNoData(reason) {
+  document.getElementById('geo-total-zips').textContent = '0';
+  document.getElementById('geo-states-active').textContent = '0';
+  document.getElementById('geo-total-searches').textContent = '0';
+  document.getElementById('geo-total-engagements').textContent = '0';
+
+  const stateBody = document.getElementById('state-breakdown-body');
+  if (stateBody) {
+    stateBody.innerHTML = `<tr><td colspan="4" class="no-data">${reason}</td></tr>`;
+  }
+
+  const locBody = document.getElementById('top-locations-body');
+  if (locBody) {
+    locBody.innerHTML = `<tr><td colspan="3" class="no-data">${reason}</td></tr>`;
+  }
 }
 
 // Load acquisition data

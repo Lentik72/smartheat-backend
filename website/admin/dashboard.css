@@ -2967,3 +2967,171 @@ legend {
 .banner-dismiss:hover {
   opacity: 1;
 }
+
+/* ============================================
+   RETENTION TAB STYLES
+   ============================================ */
+
+#tab-retention .retention-stat {
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+#tab-retention .retention-stat.good {
+  color: var(--success);
+}
+
+#tab-retention .retention-stat.warning {
+  color: var(--warning);
+}
+
+#tab-retention .retention-stat.poor {
+  color: var(--danger);
+}
+
+#cohort-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+#cohort-table th,
+#cohort-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+#cohort-table th {
+  background: var(--gray-50);
+  font-weight: 600;
+}
+
+#cohort-table .rate-cell {
+  font-weight: 600;
+}
+
+#cohort-table .rate-good { color: var(--success); }
+#cohort-table .rate-warning { color: var(--warning); }
+#cohort-table .rate-poor { color: var(--danger); }
+
+.table-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Retention curve chart */
+#retention-curve-chart {
+  max-height: 280px;
+}
+
+/* ============================================
+   GEOGRAPHY TAB STYLES
+   ============================================ */
+
+#tab-geography .panel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+#tab-geography .panel {
+  background: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+#tab-geography .panel.full-width {
+  grid-column: 1 / -1;
+}
+
+#tab-geography .panel.half-width {
+  grid-column: span 2;
+}
+
+#tab-geography .stat-large {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+#geo-heatmap {
+  width: 100%;
+  z-index: 1;
+}
+
+/* Leaflet popup styling */
+.leaflet-popup-content {
+  margin: 8px 12px;
+  line-height: 1.4;
+}
+
+.geo-popup {
+  text-align: center;
+}
+
+.geo-popup-zip {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.geo-popup-city {
+  color: var(--gray-500);
+  margin-bottom: 0.5rem;
+}
+
+.geo-popup-stats {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.geo-popup-stat {
+  text-align: center;
+}
+
+.geo-popup-stat .value {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.geo-popup-stat .label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+#state-breakdown-table,
+#top-locations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+#state-breakdown-table th,
+#state-breakdown-table td,
+#top-locations-table th,
+#top-locations-table td {
+  padding: 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+#state-breakdown-table th,
+#top-locations-table th {
+  background: var(--gray-50);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+@media (max-width: 768px) {
+  #tab-geography .panel-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #tab-geography .panel.half-width {
+    grid-column: 1 / -1;
+  }
+}
