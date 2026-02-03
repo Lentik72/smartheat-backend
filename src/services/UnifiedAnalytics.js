@@ -1427,7 +1427,7 @@ class UnifiedAnalytics {
         LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
         GROUP BY s.id, s.name, s.city, s.state, lp.price_per_gallon, ma.avg_price
         ORDER BY total_clicks DESC
-        LIMIT ${limit}
+        ${limit > 0 ? `LIMIT ${limit}` : ''}
       `, { type: this.sequelize.QueryTypes.SELECT });
 
       return results.map((r, index) => ({
@@ -1640,7 +1640,7 @@ class UnifiedAnalytics {
         this.getConfidenceScore(days),
         this.getTrendData(days),
         this.getOnboardingFunnel(days),
-        this.getTopSuppliers(days, 10)
+        this.getTopSuppliers(days, 0)  // 0 = no limit, show all suppliers with activity
       ]);
 
       // Determine data sources
