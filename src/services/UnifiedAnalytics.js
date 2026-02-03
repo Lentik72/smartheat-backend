@@ -1978,8 +1978,8 @@ class UnifiedAnalytics {
         this.getTopSuppliers(days, 0),  // 0 = no limit, show all suppliers with activity
         this.getPriceCorrelation(days),
         this.getWeatherCorrelation(days),
-        this.getCohortRetention(days).catch(e => { this.logger.error('[UnifiedAnalytics] Cohort retention failed:', e.message); return {}; }),
-        this.getGeographicHeatmap(days).catch(e => { this.logger.error('[UnifiedAnalytics] Geographic heatmap failed:', e.message); return {}; })
+        this.getCohortRetention(days).catch(e => { this.logger.error('[UnifiedAnalytics] Cohort retention failed:', e.message, e.stack); return { available: false, error: e.message }; }),
+        this.getGeographicHeatmap(days).catch(e => { this.logger.error('[UnifiedAnalytics] Geographic heatmap failed:', e.message, e.stack); return { available: false, error: e.message }; })
       ]);
 
       // Determine data sources
