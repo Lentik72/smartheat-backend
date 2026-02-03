@@ -118,10 +118,11 @@ class UnifiedAnalytics {
       // Decode credentials (trim whitespace that Railway might add)
       const trimmedCreds = credentialsJson.trim();
       let credentials;
-      try {
-        credentials = JSON.parse(Buffer.from(trimmedCreds, 'base64').toString('utf8'));
-      } catch {
+      // Try raw JSON first (Railway stores raw JSON, not base64)
+      if (trimmedCreds.startsWith('{')) {
         credentials = JSON.parse(trimmedCreds);
+      } else {
+        credentials = JSON.parse(Buffer.from(trimmedCreds, 'base64').toString('utf8'));
       }
 
       const admin = require('firebase-admin');
@@ -168,18 +169,25 @@ class UnifiedAnalytics {
       this.logger.info(`[UnifiedAnalytics] BigQuery creds length: ${trimmedCreds.length}, starts with: ${trimmedCreds.substring(0, 10)}`);
 
       let credentials;
-      try {
-        const decoded = Buffer.from(trimmedCreds, 'base64').toString('utf8');
-        this.logger.info(`[UnifiedAnalytics] Base64 decoded length: ${decoded.length}, starts with: ${decoded.substring(0, 20)}`);
-        credentials = JSON.parse(decoded);
-        this.logger.info('[UnifiedAnalytics] BigQuery credentials decoded from base64');
-      } catch (base64Err) {
-        this.logger.info('[UnifiedAnalytics] Base64 decode/parse failed:', base64Err.message || base64Err.toString());
+      // Try raw JSON first (Railway stores raw JSON, not base64)
+      if (trimmedCreds.startsWith('{')) {
         try {
           credentials = JSON.parse(trimmedCreds);
           this.logger.info('[UnifiedAnalytics] BigQuery credentials parsed as raw JSON');
-        } catch (parseErr) {
-          this.logger.error('[UnifiedAnalytics] Failed to parse credentials as JSON:', parseErr.message || parseErr.toString());
+        } catch (rawErr) {
+          this.logger.error('[UnifiedAnalytics] Raw JSON parse failed:', rawErr.message);
+          this.initialized.bigquery = true;
+          return false;
+        }
+      } else {
+        // Try base64 decode
+        try {
+          const decoded = Buffer.from(trimmedCreds, 'base64').toString('utf8');
+          this.logger.info(`[UnifiedAnalytics] Base64 decoded length: ${decoded.length}`);
+          credentials = JSON.parse(decoded);
+          this.logger.info('[UnifiedAnalytics] BigQuery credentials decoded from base64');
+        } catch (base64Err) {
+          this.logger.error('[UnifiedAnalytics] Base64/JSON parse failed:', base64Err.message);
           this.logger.error('[UnifiedAnalytics] Creds preview:', trimmedCreds.substring(0, 50));
           this.initialized.bigquery = true;
           return false;

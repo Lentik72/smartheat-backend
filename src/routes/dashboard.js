@@ -1838,23 +1838,31 @@ router.get('/unified', async (req, res) => {
     } else {
       const trimmed = fbCreds.trim();
       credsDiag.length = trimmed.length;
+      credsDiag.startsWithBrace = trimmed[0] === '{';
       credsDiag.startsWithEwog = trimmed.substring(0, 4) === 'ewog';
+
+      // Try raw JSON first (since that's what Railway has)
       try {
-        const decoded = Buffer.from(trimmed, 'base64').toString('utf8');
-        credsDiag.base64DecodedLength = decoded.length;
-        credsDiag.decodedStartsWithBrace = decoded[0] === '{';
-        try {
-          const parsed = JSON.parse(decoded);
-          credsDiag.jsonValid = true;
-          credsDiag.projectId = parsed.project_id;
-          credsDiag.hasPrivateKey = !!parsed.private_key;
-          credsDiag.privateKeyLength = parsed.private_key ? parsed.private_key.length : 0;
-        } catch (e) {
-          credsDiag.jsonValid = false;
-          credsDiag.jsonError = e.message;
-        }
+        const parsed = JSON.parse(trimmed);
+        credsDiag.rawJsonValid = true;
+        credsDiag.projectId = parsed.project_id;
+        credsDiag.hasPrivateKey = !!parsed.private_key;
+        credsDiag.hasClientEmail = !!parsed.client_email;
+        credsDiag.clientEmail = parsed.client_email;
       } catch (e) {
-        credsDiag.base64Error = e.message;
+        credsDiag.rawJsonValid = false;
+        credsDiag.rawJsonError = e.message;
+
+        // Try base64 decode
+        try {
+          const decoded = Buffer.from(trimmed, 'base64').toString('utf8');
+          const parsed = JSON.parse(decoded);
+          credsDiag.base64JsonValid = true;
+          credsDiag.projectId = parsed.project_id;
+        } catch (e2) {
+          credsDiag.base64JsonValid = false;
+          credsDiag.base64JsonError = e2.message;
+        }
       }
     }
     data.credentialsDiagnostic = credsDiag;
