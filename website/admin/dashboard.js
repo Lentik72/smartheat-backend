@@ -2494,25 +2494,29 @@ async function loadGrowth() {
     const android = unified?.android || {};
     const website = unified?.website || {};
 
-    document.getElementById('p-ios-users').textContent = ios.uniqueUsers || '--';
-    document.getElementById('p-ios-deliveries').textContent = ios.saves || '--';
+    // iOS users: check both BigQuery structure (summary.totalUsers) and database structure (uniqueUsers)
+    const iosUsers = ios.summary?.totalUsers || ios.uniqueUsers || 0;
+    const iosDeliveries = ios.deliveries?.total || ios.saves || 0;
+
+    document.getElementById('p-ios-users').textContent = iosUsers || '--';
+    document.getElementById('p-ios-deliveries').textContent = iosDeliveries || '--';
     document.getElementById('p-ios-retention').textContent = retention?.data?.summary?.week1RetentionRate
       ? `${retention.data.summary.week1RetentionRate}%`
       : '--%';
 
-    document.getElementById('p-android-status').textContent = android?.recommendation?.status || 'WAITLIST';
-    document.getElementById('p-android-waitlist').textContent = android?.waitlist?.total || '--';
-    document.getElementById('p-android-pwa').textContent = android?.pwa?.installs || '--';
-    document.getElementById('p-android-launches').textContent = android?.pwa?.launches || '--';
+    document.getElementById('p-android-status').textContent = android?.recommendation?.status || 'WAIT';
+    document.getElementById('p-android-waitlist').textContent = android?.waitlist?.total ?? '--';
+    document.getElementById('p-android-pwa').textContent = android?.pwa?.installs ?? '--';
+    document.getElementById('p-android-launches').textContent = android?.pwa?.launches ?? '--';
 
     document.getElementById('p-web-visitors').textContent = website.activeUsers || website.users || '--';
-    document.getElementById('p-web-clicks').textContent = website.totalClicks || '--';
-    document.getElementById('p-web-calls').textContent = website.callClicks || '--';
+    document.getElementById('p-web-clicks').textContent = website.totalClicks ?? '--';
+    document.getElementById('p-web-calls').textContent = website.callClicks ?? '--';
 
     // Platform insight
     const platformInsight = document.getElementById('platform-insight');
-    if (ios.uniqueUsers > 0 && website.activeUsers > 0) {
-      const iosRatio = ios.uniqueUsers / (ios.uniqueUsers + website.activeUsers) * 100;
+    if (iosUsers > 0 && website.activeUsers > 0) {
+      const iosRatio = iosUsers / (iosUsers + website.activeUsers) * 100;
       platformInsight.textContent = `💡 iOS represents ${iosRatio.toFixed(0)}% of active users`;
     } else {
       platformInsight.textContent = '💡 Track both platforms to compare engagement';
