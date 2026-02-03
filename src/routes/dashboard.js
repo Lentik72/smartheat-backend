@@ -1830,6 +1830,35 @@ router.get('/unified', async (req, res) => {
     const analytics = getUnifiedAnalytics(req);
     const data = await analytics.getUnifiedOverview(days);
 
+    // Add credentials diagnostic info for debugging
+    const fbCreds = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    const credsDiag = {};
+    if (!fbCreds) {
+      credsDiag.status = 'FIREBASE_SERVICE_ACCOUNT_JSON not set';
+    } else {
+      const trimmed = fbCreds.trim();
+      credsDiag.length = trimmed.length;
+      credsDiag.startsWithEwog = trimmed.substring(0, 4) === 'ewog';
+      try {
+        const decoded = Buffer.from(trimmed, 'base64').toString('utf8');
+        credsDiag.base64DecodedLength = decoded.length;
+        credsDiag.decodedStartsWithBrace = decoded[0] === '{';
+        try {
+          const parsed = JSON.parse(decoded);
+          credsDiag.jsonValid = true;
+          credsDiag.projectId = parsed.project_id;
+          credsDiag.hasPrivateKey = !!parsed.private_key;
+          credsDiag.privateKeyLength = parsed.private_key ? parsed.private_key.length : 0;
+        } catch (e) {
+          credsDiag.jsonValid = false;
+          credsDiag.jsonError = e.message;
+        }
+      } catch (e) {
+        credsDiag.base64Error = e.message;
+      }
+    }
+    data.credentialsDiagnostic = credsDiag;
+
     res.json(data);
   } catch (error) {
     logger.error('[Dashboard] Unified overview error:', error.message);
