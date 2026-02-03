@@ -2192,9 +2192,20 @@ function renderDAUChart(dau) {
   }
 
   // Sort by date and format labels
-  const sortedDAU = [...dau].sort((a, b) => new Date(a.date) - new Date(b.date));
+  // BigQuery returns dates as YYYYMMDD strings (e.g., "20260103")
+  const parseDate = (dateStr) => {
+    if (!dateStr) return new Date(NaN);
+    const str = String(dateStr);
+    if (str.length === 8 && /^\d{8}$/.test(str)) {
+      // YYYYMMDD format from BigQuery
+      return new Date(`${str.slice(0,4)}-${str.slice(4,6)}-${str.slice(6,8)}`);
+    }
+    return new Date(dateStr);
+  };
+
+  const sortedDAU = [...dau].sort((a, b) => parseDate(a.date) - parseDate(b.date));
   const labels = sortedDAU.map(d => {
-    const date = new Date(d.date);
+    const date = parseDate(d.date);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   });
   const data = sortedDAU.map(d => d.users);
