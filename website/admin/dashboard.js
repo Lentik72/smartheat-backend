@@ -2625,6 +2625,7 @@ function renderCorrelationChart(data) {
 
   const prices = data.map(d => d.avgPrice ? parseFloat(d.avgPrice) : null);
   const clicks = data.map(d => d.totalClicks || 0);
+  const users = data.map(d => d.uniqueUsers || 0);
   const temps = data.map(d => d.temperature || null);
   const hasWeatherData = temps.some(t => t !== null);
 
@@ -2646,6 +2647,16 @@ function renderCorrelationChart(data) {
       yAxisID: 'y-clicks',
       tension: 0.3,
       pointRadius: 2
+    },
+    {
+      label: 'Unique Users',
+      data: users,
+      borderColor: '#8b5cf6',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+      yAxisID: 'y-clicks',  // Share axis with clicks
+      tension: 0.3,
+      pointRadius: 2,
+      borderDash: [3, 3]
     }
   ];
 
@@ -2720,6 +2731,8 @@ function renderCorrelationChart(data) {
                 return `Price: $${ctx.raw?.toFixed(2) || '--'}`;
               } else if (ctx.dataset.label === 'Temperature (°F)') {
                 return `Temp: ${ctx.raw?.toFixed(0) || '--'}°F`;
+              } else if (ctx.dataset.label === 'Unique Users') {
+                return `Users: ${ctx.raw || 0}`;
               }
               return `Clicks: ${ctx.raw || 0}`;
             }
