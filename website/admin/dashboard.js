@@ -2082,7 +2082,7 @@ function formatThresholdKey(key) {
 // SCOPE 18: NEW TAB LOAD FUNCTIONS
 // ========================================
 
-// Load Leaderboard tab (default tab)
+// Load Leaderboard tab (default tab) - Consolidated from unified endpoint
 async function loadLeaderboard() {
   const loadingEl = document.getElementById('leaderboard-loading');
   const contentEl = document.getElementById('leaderboard-content');
@@ -2091,38 +2091,23 @@ async function loadLeaderboard() {
   contentEl.classList.add('hidden');
 
   try {
-    const data = await api(`/clicks?days=${currentDays}`);
-
-    // Merge bySupplier (has calls/websites) with bySupplierWithPrice (has price/signal)
-    const bySupplier = data.bySupplier || [];
-    const bySupplierWithPrice = data.bySupplierWithPrice || [];
-
-    // Create lookup for calls/websites from bySupplier
-    const clicksLookup = {};
-    bySupplier.forEach(s => {
-      clicksLookup[s.name] = { calls: s.calls || 0, websites: s.websites || 0 };
-    });
-
-    // Merge data - prefer bySupplierWithPrice for price info, add calls/websites from lookup
-    const suppliers = bySupplierWithPrice.map(s => ({
-      ...s,
-      calls: clicksLookup[s.name]?.calls || 0,
-      websites: clicksLookup[s.name]?.websites || 0
-    }));
+    // Use unified endpoint which combines web + app data
+    const data = await api(`/unified?days=${currentDays}`);
+    const suppliers = data.topSuppliers || [];
 
     // Summary stats
-    const totalCalls = suppliers.reduce((sum, s) => sum + s.calls, 0);
-    const totalWebsites = suppliers.reduce((sum, s) => sum + s.websites, 0);
-    const totalClicks = totalCalls + totalWebsites;
-    const marketAvg = suppliers.length > 0
-      ? suppliers.filter(s => s.currentPrice).reduce((sum, s) => sum + parseFloat(s.currentPrice), 0) /
-        suppliers.filter(s => s.currentPrice).length
+    const totalCalls = suppliers.reduce((sum, s) => sum + (s.calls || 0), 0);
+    const totalWeb = suppliers.reduce((sum, s) => sum + (s.webClicks || 0), 0);
+    const totalApp = suppliers.reduce((sum, s) => sum + (s.appClicks || 0), 0);
+    const totalClicks = suppliers.reduce((sum, s) => sum + (s.totalClicks || 0), 0);
+    const marketAvg = suppliers.length > 0 && suppliers[0].marketAvg
+      ? suppliers[0].marketAvg
       : 0;
-    const top3Clicks = suppliers.slice(0, 3).reduce((sum, s) => sum + s.calls + s.websites, 0);
+    const top3Clicks = suppliers.slice(0, 3).reduce((sum, s) => sum + (s.totalClicks || 0), 0);
     const top3Pct = totalClicks > 0 ? ((top3Clicks / totalClicks) * 100).toFixed(0) : 0;
 
     document.getElementById('lb-total-suppliers').textContent = suppliers.length;
-    document.getElementById('lb-total-clicks').textContent = `${totalClicks} (📞${totalCalls} / 🌐${totalWebsites})`;
+    document.getElementById('lb-total-clicks').textContent = `${totalClicks} (🌐${totalWeb} / 📱${totalApp})`;
     document.getElementById('lb-market-avg').textContent = marketAvg > 0 ? formatPrice(marketAvg) : '--';
     document.getElementById('lb-top3-pct').textContent = `${top3Pct}%`;
 
@@ -2143,42 +2128,46 @@ async function loadLeaderboard() {
       quickWinsList.innerHTML = '<div class="quick-win success">✅ No urgent issues detected</div>';
     }
 
-    // Leaderboard table
+    // Leaderboard table - consolidated with web + app data
     const tbody = document.getElementById('leaderboard-body');
     tbody.innerHTML = '';
 
-    suppliers.forEach((s, i) => {
-      const totalClicks = s.calls + s.websites;
-      const vsMarket = s.priceDelta ? (s.priceDelta > 0 ? '+' : '') + formatPrice(s.priceDelta) : '--';
-      const estValue = totalClicks > 0 ? '$' + Math.round(totalClicks * 0.03 * 7.50) : '--';
+    if (suppliers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--gray-500);padding:2rem;">No engagement data for this period</td></tr>';
+    } else {
+      suppliers.forEach((s) => {
+        const vsMarket = s.priceDelta != null ? (s.priceDelta > 0 ? '+' : '') + formatPrice(s.priceDelta) : '--';
 
-      const signalBadge = {
-        brand_strength: '<span class="signal brand">💪 Brand</span>',
-        visibility_issue: '<span class="signal visibility">👀 Hidden Gem</span>',
-        data_gap: '<span class="signal data-gap">⚠️ Needs Data</span>',
-        normal: '<span class="signal normal">—</span>'
-      };
+        const signalBadge = {
+          brand_strength: '<span class="signal brand">💪 Brand</span>',
+          visibility_issue: '<span class="signal visibility">👀 Hidden</span>',
+          data_gap: '<span class="signal data-gap">⚠️ No Price</span>',
+          normal: '<span class="signal normal">—</span>'
+        };
 
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td class="rank">${i + 1}</td>
-        <td>${s.name}</td>
-        <td class="calls-col">${s.calls > 0 ? '📞 ' + s.calls : '-'}</td>
-        <td class="web-col">${s.websites > 0 ? '🌐 ' + s.websites : '-'}</td>
-        <td>${formatPrice(s.currentPrice)}</td>
-        <td class="${s.priceDelta > 0 ? 'above-market' : s.priceDelta < 0 ? 'below-market' : ''}">${vsMarket}</td>
-        <td>${signalBadge[s.signal] || signalBadge.normal}</td>
-        <td>${estValue}</td>
-      `;
-      tbody.appendChild(row);
-    });
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="rank">${s.rank}</td>
+          <td>${s.name}</td>
+          <td>${s.location || '--'}</td>
+          <td class="users-col">${s.uniqueUsers ?? '--'}</td>
+          <td>${s.calls > 0 ? s.calls : '-'}</td>
+          <td class="web-col">${s.webClicks > 0 ? s.webClicks : '-'}</td>
+          <td class="app-col">${s.appClicks > 0 ? s.appClicks : '-'}</td>
+          <td class="total-col">${s.totalClicks}</td>
+          <td>${s.price ? formatPrice(s.price) : '--'}</td>
+          <td class="${s.priceDelta > 0 ? 'above-market' : s.priceDelta < 0 ? 'below-market' : ''}">${vsMarket}</td>
+          <td>${signalBadge[s.signal] || signalBadge.normal}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
 
     // Export CSV button
     document.getElementById('lb-export-csv').onclick = () => {
-      const csv = ['Rank,Supplier,Calls,Website Clicks,Total,Price,vs Market,Signal,Est Value'];
-      suppliers.forEach((s, i) => {
-        const total = s.calls + s.websites;
-        csv.push(`${i + 1},"${s.name}",${s.calls},${s.websites},${total},${s.currentPrice || ''},${s.priceDelta || ''},${s.signal || ''},${total * 0.03 * 7.50}`);
+      const csv = ['Rank,Supplier,Location,Unique Users,Calls,Web Clicks,App Clicks,Total,Price,vs Market,Signal'];
+      suppliers.forEach((s) => {
+        csv.push(`${s.rank},"${s.name}","${s.location || ''}",${s.uniqueUsers || 0},${s.calls || 0},${s.webClicks || 0},${s.appClicks || 0},${s.totalClicks || 0},${s.price || ''},${s.priceDelta || ''},${s.signal || ''}`);
       });
       const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
@@ -2188,49 +2177,12 @@ async function loadLeaderboard() {
       a.click();
     };
 
-    // Load Top Performers from unified endpoint
-    loadTopPerformers();
-
     contentEl.classList.remove('hidden');
   } catch (error) {
     console.error('Failed to load leaderboard:', error);
     loadingEl.textContent = 'Failed to load leaderboard';
   } finally {
     loadingEl.classList.add('hidden');
-  }
-}
-
-// Load Top Performers by Engagement
-async function loadTopPerformers() {
-  const tbody = document.getElementById('top-performers-body');
-
-  try {
-    const data = await api(`/unified?days=${currentDays}`);
-    const topSuppliers = data.topSuppliers || [];
-
-    if (topSuppliers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="loading-row">No engagement data available</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = '';
-    topSuppliers.forEach(s => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td class="rank">${s.rank}</td>
-        <td>${s.name}</td>
-        <td>${s.location}</td>
-        <td class="unique-users">${s.uniqueUsers ?? '--'}</td>
-        <td>${s.calls > 0 ? '📞 ' + s.calls : '-'}</td>
-        <td>${s.websiteClicks > 0 ? '🌐 ' + s.websiteClicks : '-'}</td>
-        <td class="total-col">${s.totalClicks}</td>
-        <td>${s.price ? formatPrice(s.price) : '--'}</td>
-      `;
-      tbody.appendChild(row);
-    });
-  } catch (error) {
-    console.error('Failed to load top performers:', error);
-    tbody.innerHTML = '<tr><td colspan="8" class="loading-row">Failed to load top performers</td></tr>';
   }
 }
 

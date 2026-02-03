@@ -1654,65 +1654,37 @@ legend {
 .signal.data-gap { background: #fee2e2; color: #991b1b; }
 .signal.normal { color: var(--gray-400); }
 
-/* Top Performers Table */
-#top-performers-panel {
-  margin-top: 1.5rem;
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.panel-subtitle {
-  font-size: 0.8rem;
-  color: var(--gray-500);
-  font-weight: normal;
-}
-
-.top-performers-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.top-performers-table th,
-.top-performers-table td {
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--gray-200);
-}
-
-.top-performers-table th {
-  background: var(--gray-50);
+.data-source-badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  background: linear-gradient(135deg, #dbeafe, #c7d2fe);
+  color: #4338ca;
+  border-radius: 4px;
   font-weight: 600;
-  font-size: 0.875rem;
-  color: var(--gray-600);
 }
 
-.top-performers-table tr:hover {
-  background: var(--gray-50);
-}
-
-.top-performers-table .rank {
-  font-weight: 700;
-  color: var(--gray-400);
-  width: 40px;
-}
-
-.top-performers-table tr:nth-child(1) .rank { color: #fbbf24; }
-.top-performers-table tr:nth-child(2) .rank { color: #9ca3af; }
-.top-performers-table tr:nth-child(3) .rank { color: #d97706; }
-
-.top-performers-table .unique-users {
+.leaderboard-table .users-col {
   font-weight: 600;
   color: var(--primary);
 }
 
-.top-performers-table .total-col {
+.leaderboard-table .total-col {
   font-weight: 700;
   background: var(--gray-50);
 }
 
-.loading-row {
-  text-align: center;
-  color: var(--gray-500);
-  font-style: italic;
-  padding: 2rem !important;
+.leaderboard-table .app-col {
+  color: #7c3aed;
+}
+
+.leaderboard-table .web-col {
+  color: #0891b2;
 }
 
 /* Quick Wins Panel */

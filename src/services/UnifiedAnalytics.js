@@ -1359,29 +1359,73 @@ class UnifiedAnalytics {
   }
 
   /**
-   * Get top suppliers by engagement (clicks, calls)
+   * Get top suppliers by engagement (clicks, calls) from BOTH web and app
    * @param {number} days - Number of days to look back
    * @param {number} limit - Max suppliers to return
    */
   async getTopSuppliers(days = 30, limit = 10) {
     try {
       const results = await this.sequelize.query(`
+        WITH all_engagements AS (
+          -- Website clicks
+          SELECT
+            supplier_id,
+            supplier_name,
+            action_type,
+            ip_address,
+            'web' as source
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          UNION ALL
+          -- iOS app engagements
+          SELECT
+            supplier_id,
+            supplier_name,
+            engagement_type as action_type,
+            ip_hash as ip_address,
+            'app' as source
+          FROM supplier_engagements
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        ),
+        latest_prices AS (
+          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon
+          FROM supplier_prices
+          WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        ),
+        market_avg AS (
+          SELECT COALESCE(AVG(price_per_gallon), 0) as avg_price
+          FROM latest_prices
+        )
         SELECT
           s.id,
           s.name,
           s.city,
           s.state,
           COUNT(*) as total_clicks,
-          COUNT(*) FILTER (WHERE sc.action_type = 'call') as calls,
-          COUNT(*) FILTER (WHERE sc.action_type = 'website') as website_clicks,
-          COUNT(DISTINCT sc.ip_address) as unique_users,
-          MIN(sp.price_per_gallon) as min_price
-        FROM supplier_clicks sc
-        JOIN suppliers s ON sc.supplier_id = s.id
-        LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id
-          AND sp.created_at > NOW() - INTERVAL '7 days'
-        WHERE sc.created_at > NOW() - INTERVAL '${days} days'
-        GROUP BY s.id, s.name, s.city, s.state
+          COUNT(*) FILTER (WHERE ae.action_type = 'call') as calls,
+          COUNT(*) FILTER (WHERE ae.action_type = 'website') as website_clicks,
+          COUNT(DISTINCT ae.ip_address) as unique_users,
+          COUNT(*) FILTER (WHERE ae.source = 'web') as web_clicks,
+          COUNT(*) FILTER (WHERE ae.source = 'app') as app_clicks,
+          lp.price_per_gallon as price,
+          ma.avg_price as market_avg,
+          CASE
+            WHEN lp.price_per_gallon IS NOT NULL
+            THEN ROUND((lp.price_per_gallon - ma.avg_price)::numeric, 2)
+            ELSE NULL
+          END as price_delta,
+          CASE
+            WHEN lp.price_per_gallon IS NULL THEN 'data_gap'
+            WHEN COUNT(*) >= 20 AND lp.price_per_gallon > ma.avg_price THEN 'brand_strength'
+            WHEN COUNT(*) < 10 AND lp.price_per_gallon < ma.avg_price THEN 'visibility_issue'
+            ELSE 'normal'
+          END as signal
+        FROM all_engagements ae
+        JOIN suppliers s ON ae.supplier_id = s.id
+        CROSS JOIN market_avg ma
+        LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
+        GROUP BY s.id, s.name, s.city, s.state, lp.price_per_gallon, ma.avg_price
         ORDER BY total_clicks DESC
         LIMIT ${limit}
       `, { type: this.sequelize.QueryTypes.SELECT });
@@ -1395,7 +1439,12 @@ class UnifiedAnalytics {
         calls: parseInt(r.calls) || 0,
         websiteClicks: parseInt(r.website_clicks) || 0,
         uniqueUsers: parseInt(r.unique_users) || 0,
-        price: r.min_price ? parseFloat(r.min_price).toFixed(2) : null
+        webClicks: parseInt(r.web_clicks) || 0,
+        appClicks: parseInt(r.app_clicks) || 0,
+        price: r.price ? parseFloat(r.price) : null,
+        marketAvg: r.market_avg ? parseFloat(r.market_avg) : null,
+        priceDelta: r.price_delta ? parseFloat(r.price_delta) : null,
+        signal: r.signal || 'normal'
       }));
     } catch (error) {
       this.logger.error('[UnifiedAnalytics] Top suppliers error:', error.message);
