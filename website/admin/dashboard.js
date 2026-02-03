@@ -2480,10 +2480,11 @@ async function loadAppAnalytics() {
       document.getElementById('top-screens-body').innerHTML = '<tr><td colspan="3" class="no-data">BigQuery not configured</td></tr>';
     }
 
-    const engagement = appData?.engagement || {};
+    // Use unified.app for these metrics (not appData from /ios-app)
+    const unifiedApp = unified?.app || {};
 
     // Delivery patterns
-    const deliveryData = appData?.deliveries || {};
+    const deliveryData = unifiedApp.deliveries || {};
     const deliveryTotal = deliveryData.total || 0;
     document.getElementById('dp-total').textContent = deliveryTotal || '0';
     document.getElementById('dp-value').textContent = deliveryTotal > 0 ? `~$${(deliveryTotal * 500).toLocaleString()}` : '$0';
@@ -2497,18 +2498,18 @@ async function loadAppAnalytics() {
       : '💡 Encourage first delivery logging to boost retention';
 
     // FVE (First Value Event)
-    const fve = appData?.fve || {};
+    const fve = unifiedApp.fve || {};
     document.getElementById('fve-rate').textContent = fve.completionRate || '--%';
     document.getElementById('fve-72h').textContent = fve.within72h || '--%';
     document.getElementById('fve-retention').textContent = fve.userRetention || '--%';
     document.getElementById('fve-non-retention').textContent = fve.nonUserRetention || '--%';
     document.getElementById('fve-multiplier').textContent = fve.multiplier || '--×';
-    document.getElementById('fve-insight').textContent = fve.completionRate
+    document.getElementById('fve-insight').textContent = fve.completionRate && fve.completionRate !== '--%'
       ? '💡 Users who complete FVE retain significantly better'
       : '💡 Track first value events to measure user activation';
 
     // Confidence score
-    const confidence = appData?.confidence || {};
+    const confidence = unifiedApp.confidence || {};
     document.getElementById('cs-avg').textContent = confidence.avg || '--';
     document.getElementById('cs-high-bar').style.width = `${confidence.highPct || 0}%`;
     document.getElementById('cs-med-bar').style.width = `${confidence.medPct || 0}%`;
@@ -2524,14 +2525,16 @@ async function loadAppAnalytics() {
         factorsEl.innerHTML += `<div class="factor"><span>${factor}</span><span>${score}</span></div>`;
       });
     }
-    document.getElementById('cs-insight').textContent = '💡 Higher confidence = more likely to order through app';
+    document.getElementById('cs-insight').textContent = confidence.avg && confidence.avg !== '--'
+      ? '💡 Higher confidence = more likely to order through app'
+      : '💡 Confidence builds as users engage more';
 
     // Fuel type breakdown
-    const fuel = appData?.fuelType || {};
-    document.getElementById('fuel-oil-users').textContent = `${fuel.oil?.users || '--'} users`;
-    document.getElementById('fuel-oil-pct').textContent = `${fuel.oil?.pct || '--'}%`;
-    document.getElementById('fuel-propane-users').textContent = `${fuel.propane?.users || '--'} users`;
-    document.getElementById('fuel-propane-pct').textContent = `${fuel.propane?.pct || '--'}%`;
+    const fuel = unifiedApp.fuelType || {};
+    document.getElementById('fuel-oil-users').textContent = `${fuel.oil?.users ?? '--'} users`;
+    document.getElementById('fuel-oil-pct').textContent = `${fuel.oil?.pct ?? '--'}%`;
+    document.getElementById('fuel-propane-users').textContent = `${fuel.propane?.users ?? '--'} users`;
+    document.getElementById('fuel-propane-pct').textContent = `${fuel.propane?.pct ?? '--'}%`;
 
     const propaneSignals = document.getElementById('propane-signal-list');
     propaneSignals.innerHTML = fuel.propane?.users > 0
