@@ -50909,5 +50909,26 @@
     "city": "219hh",
     "county": "Cecil",
     "state": "MD"
+  },
+  "19101": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA",
+    "lat": 39.9526,
+    "lng": -75.1652
+  },
+  "28405": {
+    "city": "Wilmington",
+    "county": "New Hanover",
+    "state": "NC",
+    "lat": 34.2257,
+    "lng": -77.9447
+  },
+  "44805": {
+    "city": "Ashland",
+    "county": "Ashland",
+    "state": "OH",
+    "lat": 40.8687,
+    "lng": -82.3182
   }
 }
