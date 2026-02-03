@@ -116,6 +116,71 @@ router.get('/meta', (req, res) => {
   });
 });
 
+// GET /api/dashboard/diag - Diagnostic endpoint for credentials debugging
+router.get('/diag', async (req, res) => {
+  const fbCreds = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  const gaCreds = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+
+  const diagnose = (name, value) => {
+    if (!value) return { present: false, reason: 'not set' };
+
+    const trimmed = value.trim();
+    const result = {
+      present: true,
+      length: trimmed.length,
+      startsWithBrace: trimmed.startsWith('{'),
+      startsWithEyJ: trimmed.startsWith('eyJ') || trimmed.startsWith('ewog'),
+      hasNewlines: trimmed.includes('\n'),
+      first20: trimmed.substring(0, 20),
+      last20: trimmed.substring(trimmed.length - 20)
+    };
+
+    // Try base64 decode
+    try {
+      const decoded = Buffer.from(trimmed, 'base64').toString('utf8');
+      result.base64DecodedLength = decoded.length;
+      result.base64DecodedStartsWithBrace = decoded.startsWith('{');
+      result.base64First30 = decoded.substring(0, 30);
+
+      // Try JSON parse
+      try {
+        const parsed = JSON.parse(decoded);
+        result.jsonValid = true;
+        result.hasProjectId = !!parsed.project_id;
+        result.projectId = parsed.project_id;
+        result.hasPrivateKey = !!parsed.private_key;
+        result.hasClientEmail = !!parsed.client_email;
+      } catch (jsonErr) {
+        result.jsonValid = false;
+        result.jsonError = jsonErr.message;
+      }
+    } catch (b64Err) {
+      result.base64Valid = false;
+      result.base64Error = b64Err.message;
+
+      // Try raw JSON parse
+      try {
+        const parsed = JSON.parse(trimmed);
+        result.rawJsonValid = true;
+        result.hasProjectId = !!parsed.project_id;
+        result.projectId = parsed.project_id;
+      } catch (rawErr) {
+        result.rawJsonValid = false;
+        result.rawJsonError = rawErr.message;
+      }
+    }
+
+    return result;
+  };
+
+  res.json({
+    FIREBASE_SERVICE_ACCOUNT_JSON: diagnose('firebase', fbCreds),
+    GOOGLE_APPLICATION_CREDENTIALS_JSON: diagnose('google', gaCreds),
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || 'not set',
+    BIGQUERY_DATASET: process.env.BIGQUERY_DATASET || 'not set (default: analytics_515155647)'
+  });
+});
+
 // GET /api/dashboard/overview - Key metrics summary
 // ?mode=summary returns compact format for email/Slack digests
 router.get('/overview', async (req, res) => {
