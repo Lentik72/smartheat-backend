@@ -2223,7 +2223,8 @@ class UnifiedAnalytics {
     try {
       // Get engagement counts by ZIP code from both sources
       // Note: supplier_clicks uses zip_code, supplier_engagements uses user_zip
-      const [zipData] = await this.sequelize.query(`
+      let zipData = [];
+      const [zipResults] = await this.sequelize.query(`
         WITH all_engagements AS (
           SELECT zip_code, COUNT(*) as engagements, COUNT(DISTINCT ip_address) as users
           FROM supplier_clicks
@@ -2250,20 +2251,28 @@ class UnifiedAnalytics {
         WHERE total_engagements > 0
         ORDER BY total_engagements DESC
       `, { type: this.sequelize.QueryTypes.SELECT });
+      zipData = zipResults || [];
 
-      // Also get user_locations data
-      const [locationData] = await this.sequelize.query(`
-        SELECT zip_code, COUNT(*) as searches
-        FROM user_locations
-        WHERE created_at > NOW() - INTERVAL '${days} days'
-          AND zip_code IS NOT NULL
-        GROUP BY zip_code
-        ORDER BY searches DESC
-      `, { type: this.sequelize.QueryTypes.SELECT });
+      // Also get user_locations data (table may not exist)
+      let locationData = [];
+      try {
+        const [locResults] = await this.sequelize.query(`
+          SELECT zip_code, COUNT(*) as searches
+          FROM user_locations
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND zip_code IS NOT NULL
+          GROUP BY zip_code
+          ORDER BY searches DESC
+        `, { type: this.sequelize.QueryTypes.SELECT });
+        locationData = locResults || [];
+      } catch (e) {
+        // user_locations table may not exist
+        this.logger.debug('[UnifiedAnalytics] user_locations query failed:', e.message);
+      }
 
       // If no ZIP data, fall back to supplier locations with their click counts
       let supplierLocationFallback = [];
-      if (zipData.length === 0 && locationData.length === 0) {
+      if ((zipData?.length || 0) === 0 && locationData.length === 0) {
         // First try: suppliers with clicks
         const [supplierData] = await this.sequelize.query(`
           WITH supplier_clicks_agg AS (
