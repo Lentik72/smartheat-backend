@@ -148,7 +148,8 @@ router.get('/overview', async (req, res) => {
       waitlistStats,
       pwaStats,
       coverageStats,
-      dataFreshness
+      dataFreshness,
+      userStats
     ] = await Promise.all([
       // Click stats (combine website clicks + iOS app engagements)
       safeQuery('clickStats', `
@@ -251,6 +252,18 @@ router.get('/overview', async (req, res) => {
           (SELECT MAX(scraped_at) FROM supplier_prices WHERE is_valid = true) as last_price,
           (SELECT MAX(created_at) FROM waitlist) as last_waitlist,
           (SELECT MAX(created_at) FROM pwa_events) as last_pwa
+      `),
+
+      // User stats (estimate unique users from database activity)
+      safeQuery('userStats', `
+        SELECT
+          (SELECT COUNT(DISTINCT COALESCE(ip_hash, session_id, id::text))
+           FROM user_locations
+           WHERE created_at > NOW() - INTERVAL '${days} days') as website_users,
+          (SELECT COUNT(DISTINCT ip_hash)
+           FROM supplier_engagements
+           WHERE created_at > NOW() - INTERVAL '${days} days'
+             AND ip_hash IS NOT NULL) as ios_users
       `)
     ]);
 
@@ -280,6 +293,7 @@ router.get('/overview', async (req, res) => {
     const pwa = pwaStats[0] || {};
     const coverage = coverageStats[0] || {};
     const freshness = dataFreshness[0] || {};
+    const users = userStats[0] || {};
 
     // Debug logging for coverage stats
     logger.info('[Dashboard] Coverage query result:', JSON.stringify(coverage));
@@ -323,6 +337,12 @@ router.get('/overview', async (req, res) => {
 
     res.json({
       period: `${days}d`,
+      users: {
+        website: parseInt(users.website_users) || 0,
+        ios: parseInt(users.ios_users) || 0,
+        total: (parseInt(users.website_users) || 0) + (parseInt(users.ios_users) || 0),
+        source: 'database' // Note: Use GA4/Firebase for accurate user counts
+      },
       website: {
         totalClicks: parseInt(click.total_clicks) || 0,
         callClicks: parseInt(click.call_clicks) || 0,
@@ -975,7 +995,7 @@ router.get('/suppliers', async (req, res) => {
   }
 
   try {
-    const { state, hasPrice, scrapeStatus, search, limit = 50, offset = 0, sort = 'name', order = 'asc' } = req.query;
+    const { state, hasPrice, scrapeStatus, search, active, limit = 50, offset = 0, sort = 'name', order = 'asc' } = req.query;
 
     // Build where clause with parameterized queries to prevent SQL injection
     let whereClause = 'WHERE 1=1';
@@ -990,8 +1010,10 @@ router.get('/suppliers', async (req, res) => {
     if (hasPrice === 'false') whereClause += ' AND lp.price_per_gallon IS NULL';
     if (scrapeStatus === 'stale') whereClause += " AND lp.scraped_at < NOW() - INTERVAL '48 hours'";
     if (scrapeStatus === 'fresh') whereClause += " AND lp.scraped_at >= NOW() - INTERVAL '48 hours'";
+    if (active === 'true') whereClause += ' AND s.active = true';
+    if (active === 'false') whereClause += ' AND s.active = false';
     if (search) {
-      whereClause += ` AND (s.name ILIKE $${paramIndex} OR s.website ILIKE $${paramIndex})`;
+      whereClause += ` AND (s.name ILIKE $${paramIndex} OR s.website ILIKE $${paramIndex} OR s.city ILIKE $${paramIndex})`;
       params.push(`%${search}%`);
       paramIndex++;
     }
@@ -1485,7 +1507,7 @@ router.get('/ios-app', async (req, res) => {
       sequelize.query(`
         SELECT
           COUNT(*) as total,
-          COUNT(DISTINCT user_id) as unique_users,
+          COUNT(DISTINCT ip_hash) as unique_users,
           COUNT(*) FILTER (WHERE engagement_type = 'call') as calls,
           COUNT(*) FILTER (WHERE engagement_type = 'view') as views,
           COUNT(*) FILTER (WHERE engagement_type = 'save') as saves
