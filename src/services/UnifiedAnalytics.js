@@ -2222,6 +2222,7 @@ class UnifiedAnalytics {
   async getGeographicHeatmap(days = 30) {
     try {
       // Get engagement counts by ZIP code from both sources
+      // Note: supplier_clicks uses zip_code, supplier_engagements uses user_zip
       const [zipData] = await this.sequelize.query(`
         WITH all_engagements AS (
           SELECT zip_code, COUNT(*) as engagements, COUNT(DISTINCT ip_address) as users
@@ -2230,11 +2231,11 @@ class UnifiedAnalytics {
             AND zip_code IS NOT NULL
           GROUP BY zip_code
           UNION ALL
-          SELECT zip_code, COUNT(*) as engagements, COUNT(DISTINCT ip_hash) as users
+          SELECT user_zip as zip_code, COUNT(*) as engagements, COUNT(DISTINCT ip_hash) as users
           FROM supplier_engagements
           WHERE created_at > NOW() - INTERVAL '${days} days'
-            AND zip_code IS NOT NULL
-          GROUP BY zip_code
+            AND user_zip IS NOT NULL
+          GROUP BY user_zip
         ),
         combined AS (
           SELECT
