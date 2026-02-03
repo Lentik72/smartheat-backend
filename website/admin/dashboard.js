@@ -2419,7 +2419,7 @@ async function loadAppAnalytics() {
     document.getElementById('dp-ontime').textContent = deliveryData.onTime || '0%';
     document.getElementById('dp-late').textContent = deliveryData.late || '0%';
     document.getElementById('dp-overdue').textContent = deliveryData.overdue || '0';
-    document.getElementById('dp-insight').textContent = deliveries > 0
+    document.getElementById('dp-insight').textContent = deliveryTotal > 0
       ? '💡 Users who log deliveries have higher retention'
       : '💡 Encourage first delivery logging to boost retention';
 
