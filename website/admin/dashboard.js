@@ -2235,9 +2235,13 @@ async function loadCoverage() {
       api(`/geographic?days=${currentDays}`)
     ]);
 
+    // Calculate unique states from demand data
+    const allPoints = [...(geographic.demandHeatmap || []), ...(geographic.coverageGaps || [])];
+    const uniqueStates = new Set(allPoints.map(p => p.state).filter(Boolean));
+
     // Summary cards
     document.getElementById('cov-suppliers').textContent = overview.scraping?.suppliersTotal || '--';
-    document.getElementById('cov-states').textContent = overview.coverage?.stateCount || '--';
+    document.getElementById('cov-states').textContent = uniqueStates.size || '--';
     document.getElementById('cov-gaps').textContent = overview.coverage?.trueCoverageGaps || '--';
 
     // Coverage gaps table
