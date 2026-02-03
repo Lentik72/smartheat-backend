@@ -2358,37 +2358,66 @@ async function loadAppAnalytics() {
         document.getElementById('dau-peak').textContent = peakDAU;
       }
 
-      // Onboarding Funnel
+      // Onboarding Funnel - use dedicated funnel data or calculate from topEvents
       const funnel = appData?.onboardingFunnel;
+      let funnelData;
+
       if (funnel && funnel.steps) {
-        const steps = funnel.steps;
+        funnelData = funnel;
+      } else if (topEvents.length > 0) {
+        // Calculate from topEvents as fallback
+        const getEventUsers = (name) => topEvents.find(e => e.name === name)?.uniqueUsers || 0;
+        const installs = getEventUsers('first_open');
+        const onboarding = getEventUsers('onboarding_step');
+        const directory = getEventUsers('directory_viewed');
+        const forecast = getEventUsers('forecast_viewed');
+        const tank = getEventUsers('tank_reading');
+        const fva = Math.max(directory, forecast, tank);
+
+        funnelData = {
+          steps: [
+            { name: 'Install', count: installs, percent: 100 },
+            { name: 'Start Onboarding', count: onboarding, percent: installs > 0 ? Math.round((onboarding / installs) * 100) : 0 },
+            { name: 'Complete Onboarding', count: onboarding, percent: installs > 0 ? Math.round((onboarding / installs) * 100) : 0 },
+            { name: 'First Value Action', count: fva, percent: installs > 0 ? Math.round((fva / installs) * 100) : 0 }
+          ],
+          summary: {
+            installs,
+            onboardingRate: installs > 0 ? ((onboarding / installs) * 100).toFixed(1) : 0,
+            activationRate: installs > 0 ? ((fva / installs) * 100).toFixed(1) : 0
+          }
+        };
+      }
+
+      if (funnelData && funnelData.steps) {
+        const steps = funnelData.steps;
         // Install
-        document.getElementById('funnel-install-count').textContent = steps[0]?.count ?? '--';
+        document.getElementById('funnel-install-count').textContent = steps[0]?.count ?? 0;
         document.getElementById('funnel-install-pct').textContent = '100%';
         document.getElementById('funnel-install').style.width = '100%';
         // Start Onboarding
-        document.getElementById('funnel-onboard-count').textContent = steps[1]?.count ?? '--';
+        document.getElementById('funnel-onboard-count').textContent = steps[1]?.count ?? 0;
         document.getElementById('funnel-onboard-pct').textContent = `${steps[1]?.percent ?? 0}%`;
-        document.getElementById('funnel-onboard').style.width = `${steps[1]?.percent ?? 0}%`;
+        document.getElementById('funnel-onboard').style.width = `${Math.max(steps[1]?.percent ?? 0, 5)}%`;
         // Complete Onboarding
-        document.getElementById('funnel-complete-count').textContent = steps[2]?.count ?? '--';
+        document.getElementById('funnel-complete-count').textContent = steps[2]?.count ?? 0;
         document.getElementById('funnel-complete-pct').textContent = `${steps[2]?.percent ?? 0}%`;
-        document.getElementById('funnel-complete').style.width = `${steps[2]?.percent ?? 0}%`;
+        document.getElementById('funnel-complete').style.width = `${Math.max(steps[2]?.percent ?? 0, 5)}%`;
         // First Value Action
-        document.getElementById('funnel-fva-count').textContent = steps[3]?.count ?? '--';
+        document.getElementById('funnel-fva-count').textContent = steps[3]?.count ?? 0;
         document.getElementById('funnel-fva-pct').textContent = `${steps[3]?.percent ?? 0}%`;
-        document.getElementById('funnel-fva').style.width = `${steps[3]?.percent ?? 0}%`;
+        document.getElementById('funnel-fva').style.width = `${Math.max(steps[3]?.percent ?? 0, 5)}%`;
 
         // Update insight
-        const onboardingRate = funnel.summary?.onboardingRate || 0;
-        const activationRate = funnel.summary?.activationRate || 0;
+        const onboardingRate = parseFloat(funnelData.summary?.onboardingRate) || 0;
+        const activationRate = parseFloat(funnelData.summary?.activationRate) || 0;
         const insight = document.getElementById('funnel-insight');
         if (onboardingRate < 20) {
-          insight.textContent = `💡 Only ${onboardingRate}% complete onboarding - simplify the flow`;
+          insight.textContent = `💡 Only ${onboardingRate}% complete onboarding - consider simplifying the flow`;
         } else if (activationRate < 30) {
-          insight.textContent = `💡 ${activationRate}% reach first value - improve time-to-value`;
+          insight.textContent = `💡 ${activationRate}% reach first value action - improve time-to-value`;
         } else {
-          insight.textContent = `💡 ${activationRate}% activation rate - healthy funnel!`;
+          insight.textContent = `💡 ${activationRate}% activation rate - healthy user funnel!`;
         }
       }
 

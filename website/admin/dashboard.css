@@ -2633,18 +2633,25 @@ legend {
 .funnel-container {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
   padding: 1rem 0;
 }
 
 .funnel-step {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  display: grid;
+  grid-template-columns: 140px 1fr 60px 50px;
+  align-items: center;
+  gap: 1rem;
+}
+
+.funnel-name {
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  font-weight: 500;
 }
 
 .funnel-bar-container {
-  height: 32px;
+  height: 28px;
   background: var(--gray-100);
   border-radius: 6px;
   overflow: hidden;
@@ -2655,39 +2662,33 @@ legend {
   background: linear-gradient(90deg, #3b82f6, #60a5fa);
   border-radius: 6px;
   transition: width 0.5s ease;
+  min-width: 4px;
 }
 
 .funnel-bar.activated {
   background: linear-gradient(90deg, #10b981, #34d399);
 }
 
-.funnel-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.funnel-name {
-  flex: 1;
-  color: var(--gray-700);
-}
-
 .funnel-count {
   font-weight: 600;
+  font-size: 1rem;
   color: var(--gray-900);
+  text-align: right;
 }
 
 .funnel-pct {
-  min-width: 45px;
-  text-align: right;
+  font-size: 0.85rem;
   color: var(--gray-500);
-  font-size: 0.8rem;
+  text-align: right;
+}
+
+.funnel-label {
+  display: none; /* Hide old label structure */
 }
 
 .funnel-insight {
   margin-top: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   background: var(--blue-50);
   border-radius: 6px;
   font-size: 0.85rem;
