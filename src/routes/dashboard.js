@@ -2604,4 +2604,939 @@ router.get('/app-analytics/propane', async (req, res) => {
   }
 });
 
+// ============================================================================
+// SCOPE 18: Dashboard Intelligence Enhancement Endpoints
+// ============================================================================
+
+/**
+ * GET /api/dashboard/leaderboard
+ * Supplier rankings with intelligence signals explaining WHY they rank
+ *
+ * Signals:
+ * - 🔥 brand_power: High clicks despite above-market price
+ * - 💰 price_leader: Lowest price drives volume
+ * - ⚠️ missing_price: Clicks but no price data (scrape priority)
+ * - 📍 local_favorite: 80%+ clicks from single ZIP
+ * - 📉 underperformer: Has price, clicks below expected
+ * - 🆕 rising_star: Week-over-week growth >50%
+ * - 🔄 directory_driven: High directory attribution
+ */
+router.get('/leaderboard', async (req, res) => {
+  const days = parseDays(req, 30);
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+
+  try {
+    // Get supplier clicks with price data
+    const [suppliers] = await sequelize.query(`
+      WITH click_data AS (
+        SELECT
+          sc.supplier_id,
+          s.name as supplier_name,
+          s.state,
+          s.city,
+          COUNT(*) as total_clicks,
+          COUNT(*) FILTER (WHERE sc.action_type = 'call') as calls,
+          COUNT(*) FILTER (WHERE sc.action_type = 'website') as websites,
+          COUNT(DISTINCT sc.zip_code) as unique_zips,
+          MODE() WITHIN GROUP (ORDER BY sc.zip_code) as top_zip,
+          COUNT(*) FILTER (WHERE sc.created_at > NOW() - INTERVAL '7 days') as clicks_7d,
+          COUNT(*) FILTER (WHERE sc.created_at > NOW() - INTERVAL '14 days'
+                          AND sc.created_at <= NOW() - INTERVAL '7 days') as clicks_prev_7d
+        FROM supplier_clicks sc
+        JOIN suppliers s ON sc.supplier_id = s.id
+        WHERE sc.created_at > NOW() - INTERVAL '${days} days'
+          AND s.active = true
+        GROUP BY sc.supplier_id, s.name, s.state, s.city
+      ),
+      price_data AS (
+        SELECT DISTINCT ON (supplier_id)
+          supplier_id,
+          price_per_gallon as current_price,
+          scraped_at as price_updated
+        FROM supplier_prices
+        WHERE is_valid = true
+        ORDER BY supplier_id, scraped_at DESC
+      ),
+      market_avg AS (
+        SELECT AVG(price_per_gallon) as avg_price
+        FROM supplier_prices sp
+        JOIN suppliers s ON sp.supplier_id = s.id
+        WHERE sp.is_valid = true
+          AND sp.scraped_at > NOW() - INTERVAL '7 days'
+          AND s.active = true
+      )
+      SELECT
+        cd.*,
+        pd.current_price,
+        pd.price_updated,
+        ma.avg_price as market_avg,
+        CASE WHEN pd.current_price IS NOT NULL
+          THEN pd.current_price - ma.avg_price
+          ELSE NULL
+        END as price_delta,
+        -- Revenue risk calculation: clicks * 3% conversion * $500 order * 5% fee
+        ROUND((cd.total_clicks * 0.03 * 500 * 0.05)::numeric, 0) as est_revenue,
+        -- Week-over-week growth
+        CASE WHEN cd.clicks_prev_7d > 0
+          THEN ROUND(((cd.clicks_7d - cd.clicks_prev_7d)::numeric / cd.clicks_prev_7d * 100), 1)
+          ELSE NULL
+        END as wow_growth
+      FROM click_data cd
+      LEFT JOIN price_data pd ON cd.supplier_id = pd.supplier_id
+      CROSS JOIN market_avg ma
+      ORDER BY cd.total_clicks DESC
+      LIMIT 50
+    `);
+
+    // Calculate signals for each supplier
+    const marketAvg = suppliers[0]?.market_avg || 3.29;
+
+    const leaderboard = suppliers.map((s, index) => {
+      const signals = [];
+      let primarySignal = null;
+
+      // Missing price (high priority if clicks > 10)
+      if (!s.current_price && s.total_clicks >= 10) {
+        signals.push({
+          type: 'missing_price',
+          icon: '⚠️',
+          label: 'Missing price',
+          description: 'High demand but no price data - SCRAPE PRIORITY',
+          priority: 1
+        });
+        primarySignal = 'missing_price';
+      }
+
+      // Brand power (above market but high clicks)
+      if (s.current_price && s.price_delta > 0.10 && s.total_clicks >= 20) {
+        signals.push({
+          type: 'brand_power',
+          icon: '🔥',
+          label: 'Brand power',
+          description: `High clicks despite +$${s.price_delta.toFixed(2)} above market`,
+          priority: 2
+        });
+        if (!primarySignal) primarySignal = 'brand_power';
+      }
+
+      // Price leader (below market and high clicks)
+      if (s.current_price && s.price_delta < -0.15 && s.total_clicks >= 15) {
+        signals.push({
+          type: 'price_leader',
+          icon: '💰',
+          label: 'Price leader',
+          description: `Lowest price (-$${Math.abs(s.price_delta).toFixed(2)}) drives volume`,
+          priority: 2
+        });
+        if (!primarySignal) primarySignal = 'price_leader';
+      }
+
+      // Rising star (>50% week-over-week growth)
+      if (s.wow_growth > 50 && s.clicks_7d >= 5) {
+        signals.push({
+          type: 'rising_star',
+          icon: '🆕',
+          label: 'Rising star',
+          description: `+${s.wow_growth}% growth this week`,
+          priority: 3
+        });
+        if (!primarySignal) primarySignal = 'rising_star';
+      }
+
+      // Local favorite (80%+ from one ZIP)
+      const topZipConcentration = s.unique_zips === 1 ? 100 : (s.total_clicks / s.unique_zips > 5 ? 80 : 50);
+      if (topZipConcentration >= 80 && s.total_clicks >= 10) {
+        signals.push({
+          type: 'local_favorite',
+          icon: '📍',
+          label: 'Local favorite',
+          description: `Strong in ${s.top_zip || 'local area'}`,
+          priority: 4
+        });
+        if (!primarySignal) primarySignal = 'local_favorite';
+      }
+
+      // Underperformer (has price but low clicks relative to expected)
+      if (s.current_price && s.total_clicks < 5 && s.price_delta <= 0) {
+        signals.push({
+          type: 'underperformer',
+          icon: '📉',
+          label: 'Underperformer',
+          description: 'Good price but low visibility - check SEO',
+          priority: 5
+        });
+        if (!primarySignal) primarySignal = 'underperformer';
+      }
+
+      // Default: standard performer
+      if (!primarySignal) {
+        primarySignal = 'standard';
+      }
+
+      // Revenue risk for missing price
+      const revenueRisk = !s.current_price ? s.est_revenue : null;
+
+      return {
+        rank: index + 1,
+        supplierId: s.supplier_id,
+        name: s.supplier_name,
+        state: s.state,
+        city: s.city,
+        clicks: {
+          total: parseInt(s.total_clicks),
+          calls: parseInt(s.calls),
+          websites: parseInt(s.websites),
+          last7Days: parseInt(s.clicks_7d),
+          wowGrowth: s.wow_growth ? parseFloat(s.wow_growth) : null
+        },
+        price: s.current_price ? {
+          current: parseFloat(s.current_price),
+          marketAvg: parseFloat(marketAvg),
+          delta: s.price_delta ? parseFloat(s.price_delta) : null,
+          updatedAt: s.price_updated
+        } : null,
+        signals,
+        primarySignal,
+        estRevenue: parseInt(s.est_revenue) || 0,
+        revenueRisk
+      };
+    });
+
+    // Generate quick wins insights
+    const quickWins = [];
+
+    // Missing price suppliers with high clicks
+    const missingPriceSuppliers = leaderboard.filter(s => s.primarySignal === 'missing_price');
+    if (missingPriceSuppliers.length > 0) {
+      const totalRisk = missingPriceSuppliers.reduce((sum, s) => sum + (s.revenueRisk || 0), 0);
+      quickWins.push({
+        priority: 'high',
+        title: `${missingPriceSuppliers.length} supplier(s) need price scraping`,
+        insight: `$${totalRisk}/month potential at risk`,
+        action: 'Fix scraping for these suppliers',
+        suppliers: missingPriceSuppliers.slice(0, 3).map(s => s.name)
+      });
+    }
+
+    // Brand power suppliers (upsell candidates)
+    const brandPowerSuppliers = leaderboard.filter(s => s.primarySignal === 'brand_power');
+    if (brandPowerSuppliers.length > 0) {
+      quickWins.push({
+        priority: 'medium',
+        title: `${brandPowerSuppliers.length} supplier(s) show brand power`,
+        insight: 'High clicks despite above-market prices',
+        action: 'Premium listing candidates',
+        suppliers: brandPowerSuppliers.slice(0, 3).map(s => s.name)
+      });
+    }
+
+    // Top 3 concentration
+    const top3Clicks = leaderboard.slice(0, 3).reduce((sum, s) => sum + s.clicks.total, 0);
+    const totalClicks = leaderboard.reduce((sum, s) => sum + s.clicks.total, 0);
+    const top3Percent = totalClicks > 0 ? Math.round((top3Clicks / totalClicks) * 100) : 0;
+
+    res.json({
+      period: `${days}d`,
+      summary: {
+        totalSuppliers: leaderboard.length,
+        totalClicks,
+        marketAvg: parseFloat(marketAvg),
+        top3Concentration: top3Percent
+      },
+      leaderboard,
+      quickWins,
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('[Dashboard] Leaderboard error:', error.message);
+    res.status(500).json({ error: 'Failed to generate leaderboard', details: error.message });
+  }
+});
+
+/**
+ * GET /api/dashboard/app-analytics/engagement
+ * Session engagement breakdown: power users vs casual vs browse-only
+ */
+router.get('/app-analytics/engagement', async (req, res) => {
+  const days = parseDays(req, 30);
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+
+  try {
+    // Check if app_events table exists
+    const [tableCheck] = await sequelize.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'app_events'
+      ) as exists
+    `);
+
+    if (!tableCheck[0]?.exists) {
+      return res.json({
+        period: `${days}d`,
+        engagement: { power: 0, engaged: 0, casual: 0, browseOnly: 0 },
+        note: 'app_events table not found'
+      });
+    }
+
+    // Get engagement level distribution from session_engagement events
+    const [engagement] = await sequelize.query(`
+      SELECT
+        event_data->>'engagement_level' as level,
+        COUNT(DISTINCT device_id_hash) as users,
+        COUNT(*) as sessions,
+        AVG((event_data->>'screen_count')::int) as avg_screens,
+        AVG((event_data->>'action_count')::int) as avg_actions
+      FROM app_events
+      WHERE event_name = 'session_engagement'
+        AND created_at > NOW() - INTERVAL '${days} days'
+        AND event_data->>'engagement_level' IS NOT NULL
+      GROUP BY event_data->>'engagement_level'
+      ORDER BY
+        CASE event_data->>'engagement_level'
+          WHEN 'power_user' THEN 1
+          WHEN 'engaged' THEN 2
+          WHEN 'casual' THEN 3
+          WHEN 'browse_only' THEN 4
+          ELSE 5
+        END
+    `);
+
+    // Get total unique users for percentage calculation
+    const [totalUsers] = await sequelize.query(`
+      SELECT COUNT(DISTINCT device_id_hash) as total
+      FROM app_events
+      WHERE event_name = 'session_engagement'
+        AND created_at > NOW() - INTERVAL '${days} days'
+    `);
+
+    const total = parseInt(totalUsers[0]?.total) || 1;
+
+    // Map engagement levels
+    const levels = {
+      power_user: { users: 0, sessions: 0, avgScreens: 0, avgActions: 0, percent: 0 },
+      engaged: { users: 0, sessions: 0, avgScreens: 0, avgActions: 0, percent: 0 },
+      casual: { users: 0, sessions: 0, avgScreens: 0, avgActions: 0, percent: 0 },
+      browse_only: { users: 0, sessions: 0, avgScreens: 0, avgActions: 0, percent: 0 }
+    };
+
+    engagement.forEach(row => {
+      const level = row.level;
+      if (levels[level]) {
+        levels[level] = {
+          users: parseInt(row.users) || 0,
+          sessions: parseInt(row.sessions) || 0,
+          avgScreens: parseFloat(row.avg_screens) || 0,
+          avgActions: parseFloat(row.avg_actions) || 0,
+          percent: Math.round((parseInt(row.users) / total) * 100)
+        };
+      }
+    });
+
+    // Get feature usage
+    const [features] = await sequelize.query(`
+      SELECT
+        event_data->>'feature' as feature,
+        COUNT(*) as usage_count,
+        COUNT(DISTINCT device_id_hash) as unique_users
+      FROM app_events
+      WHERE event_name = 'feature_used'
+        AND created_at > NOW() - INTERVAL '${days} days'
+        AND event_data->>'feature' IS NOT NULL
+      GROUP BY event_data->>'feature'
+      ORDER BY usage_count DESC
+      LIMIT 20
+    `);
+
+    // Get screen views
+    const [screens] = await sequelize.query(`
+      SELECT
+        event_data->>'screen' as screen,
+        COUNT(*) as views,
+        COUNT(DISTINCT device_id_hash) as unique_users
+      FROM app_events
+      WHERE event_name = 'screen_viewed'
+        AND created_at > NOW() - INTERVAL '${days} days'
+        AND event_data->>'screen' IS NOT NULL
+      GROUP BY event_data->>'screen'
+      ORDER BY views DESC
+      LIMIT 10
+    `);
+
+    res.json({
+      period: `${days}d`,
+      totalUsers: total,
+      engagement: levels,
+      features: features.map(f => ({
+        feature: f.feature,
+        usageCount: parseInt(f.usage_count),
+        uniqueUsers: parseInt(f.unique_users)
+      })),
+      screens: screens.map(s => ({
+        screen: s.screen,
+        views: parseInt(s.views),
+        uniqueUsers: parseInt(s.unique_users),
+        percent: Math.round((parseInt(s.unique_users) / total) * 100)
+      })),
+      insights: {
+        powerUserPercent: levels.power_user.percent,
+        engagedPercent: levels.engaged.percent,
+        atRiskPercent: levels.browse_only.percent,
+        recommendation: levels.browse_only.percent > 30
+          ? 'High browse-only rate - improve onboarding activation'
+          : levels.power_user.percent > 20
+            ? 'Strong power user base - consider premium features'
+            : 'Focus on moving casual users to engaged'
+      },
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('[Dashboard] Engagement analytics error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch engagement data', details: error.message });
+  }
+});
+
+/**
+ * GET /api/dashboard/app-analytics/deliveries
+ * Delivery patterns: repeat suppliers, directory attribution, order timing
+ */
+router.get('/app-analytics/deliveries', async (req, res) => {
+  const days = parseDays(req, 30);
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+
+  try {
+    // Check if app_events table exists
+    const [tableCheck] = await sequelize.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'app_events'
+      ) as exists
+    `);
+
+    if (!tableCheck[0]?.exists) {
+      return res.json({ period: `${days}d`, deliveries: [], note: 'app_events table not found' });
+    }
+
+    // Get delivery statistics
+    const [stats] = await sequelize.query(`
+      SELECT
+        COUNT(*) as total_deliveries,
+        COUNT(DISTINCT device_id_hash) as unique_users,
+        -- Repeat supplier analysis
+        COUNT(*) FILTER (WHERE (event_data->>'is_repeat_supplier')::boolean = true) as repeat_supplier,
+        COUNT(*) FILTER (WHERE (event_data->>'is_repeat_supplier')::boolean = false) as new_supplier,
+        -- Directory attribution
+        COUNT(*) FILTER (WHERE (event_data->>'from_directory')::boolean = true) as from_directory,
+        COUNT(*) FILTER (WHERE (event_data->>'from_directory')::boolean = false) as manual_entry,
+        -- Order timing
+        COUNT(*) FILTER (WHERE event_data->>'order_timing' = 'on_time') as on_time,
+        COUNT(*) FILTER (WHERE event_data->>'order_timing' = 'early') as early,
+        COUNT(*) FILTER (WHERE event_data->>'order_timing' = 'late') as late,
+        COUNT(*) FILTER (WHERE event_data->>'order_timing' = 'critical') as critical,
+        COUNT(*) FILTER (WHERE event_data->>'order_timing' = 'overdue') as overdue,
+        -- Delivery number (user lifecycle)
+        COUNT(*) FILTER (WHERE event_data->>'delivery_number' = 'first') as first_delivery,
+        COUNT(*) FILTER (WHERE event_data->>'delivery_number' = 'second') as second_delivery,
+        COUNT(*) FILTER (WHERE event_data->>'delivery_number' = 'regular') as regular_delivery,
+        COUNT(*) FILTER (WHERE event_data->>'delivery_number' = 'loyal') as loyal_delivery
+      FROM app_events
+      WHERE event_name = 'delivery_logged'
+        AND created_at > NOW() - INTERVAL '${days} days'
+    `);
+
+    const s = stats[0] || {};
+    const total = parseInt(s.total_deliveries) || 0;
+
+    // Get gallons distribution
+    const [gallons] = await sequelize.query(`
+      SELECT
+        event_data->>'gallons_bucket' as bucket,
+        COUNT(*) as count
+      FROM app_events
+      WHERE event_name = 'delivery_logged'
+        AND created_at > NOW() - INTERVAL '${days} days'
+        AND event_data->>'gallons_bucket' IS NOT NULL
+      GROUP BY event_data->>'gallons_bucket'
+      ORDER BY count DESC
+    `);
+
+    // Get top suppliers by deliveries
+    const [topSuppliers] = await sequelize.query(`
+      SELECT
+        event_data->>'supplier_name' as supplier,
+        COUNT(*) as deliveries,
+        COUNT(DISTINCT device_id_hash) as unique_users
+      FROM app_events
+      WHERE event_name = 'delivery_logged'
+        AND created_at > NOW() - INTERVAL '${days} days'
+        AND event_data->>'supplier_name' IS NOT NULL
+      GROUP BY event_data->>'supplier_name'
+      ORDER BY deliveries DESC
+      LIMIT 10
+    `);
+
+    const calcPercent = (val) => total > 0 ? Math.round((parseInt(val) / total) * 100) : 0;
+
+    res.json({
+      period: `${days}d`,
+      summary: {
+        totalDeliveries: total,
+        uniqueUsers: parseInt(s.unique_users) || 0,
+        estOrderValue: total * 500 // $500 avg order
+      },
+      repeatSupplier: {
+        repeat: parseInt(s.repeat_supplier) || 0,
+        new: parseInt(s.new_supplier) || 0,
+        repeatPercent: calcPercent(s.repeat_supplier),
+        insight: calcPercent(s.repeat_supplier) > 50
+          ? 'High loyalty - users stick with suppliers'
+          : 'Users shop around - price comparison value'
+      },
+      directoryAttribution: {
+        fromDirectory: parseInt(s.from_directory) || 0,
+        manualEntry: parseInt(s.manual_entry) || 0,
+        directoryPercent: calcPercent(s.from_directory),
+        insight: `${calcPercent(s.from_directory)}% of orders attributed to your directory`
+      },
+      orderTiming: {
+        onTime: { count: parseInt(s.on_time) || 0, percent: calcPercent(s.on_time) },
+        early: { count: parseInt(s.early) || 0, percent: calcPercent(s.early) },
+        late: { count: parseInt(s.late) || 0, percent: calcPercent(s.late) },
+        critical: { count: parseInt(s.critical) || 0, percent: calcPercent(s.critical) },
+        overdue: { count: parseInt(s.overdue) || 0, percent: calcPercent(s.overdue) },
+        insight: calcPercent(s.on_time) > 40
+          ? 'Predictions are working - users order on time'
+          : 'Users often order late - improve alert timing'
+      },
+      userLifecycle: {
+        first: parseInt(s.first_delivery) || 0,
+        second: parseInt(s.second_delivery) || 0,
+        regular: parseInt(s.regular_delivery) || 0,
+        loyal: parseInt(s.loyal_delivery) || 0
+      },
+      gallonsDistribution: gallons.map(g => ({
+        bucket: g.bucket,
+        count: parseInt(g.count),
+        percent: calcPercent(g.count)
+      })),
+      topSuppliers: topSuppliers.map(t => ({
+        name: t.supplier,
+        deliveries: parseInt(t.deliveries),
+        uniqueUsers: parseInt(t.unique_users)
+      })),
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('[Dashboard] Deliveries analytics error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch delivery data', details: error.message });
+  }
+});
+
+/**
+ * GET /api/dashboard/fve
+ * First Value Event tracking - measures when users first experience value
+ */
+router.get('/fve', async (req, res) => {
+  const days = parseDays(req, 30);
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+
+  try {
+    // Check if app_events table exists
+    const [tableCheck] = await sequelize.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'app_events'
+      ) as exists
+    `);
+
+    if (!tableCheck[0]?.exists) {
+      return res.json({ period: `${days}d`, fve: {}, note: 'app_events table not found' });
+    }
+
+    // Define First Value Events (FVE)
+    // FVE = first delivery_logged OR first prediction_viewed OR first supplier_contacted
+    const [fveStats] = await sequelize.query(`
+      WITH user_first_events AS (
+        SELECT
+          device_id_hash,
+          MIN(created_at) as first_app_open,
+          MIN(created_at) FILTER (WHERE event_name = 'delivery_logged') as first_delivery,
+          MIN(created_at) FILTER (WHERE event_name = 'prediction_viewed') as first_prediction,
+          MIN(created_at) FILTER (WHERE event_name = 'supplier_contacted') as first_contact,
+          MIN(created_at) FILTER (WHERE event_name = 'tank_reading_added') as first_reading
+        FROM app_events
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY device_id_hash
+      ),
+      fve_calculated AS (
+        SELECT
+          device_id_hash,
+          first_app_open,
+          LEAST(
+            COALESCE(first_delivery, '2099-01-01'),
+            COALESCE(first_prediction, '2099-01-01'),
+            COALESCE(first_contact, '2099-01-01'),
+            COALESCE(first_reading, '2099-01-01')
+          ) as first_value_event,
+          first_delivery IS NOT NULL as reached_delivery,
+          first_prediction IS NOT NULL as reached_prediction,
+          first_contact IS NOT NULL as reached_contact,
+          first_reading IS NOT NULL as reached_reading
+        FROM user_first_events
+      )
+      SELECT
+        COUNT(*) as total_users,
+        COUNT(*) FILTER (WHERE first_value_event < '2099-01-01') as reached_fve,
+        COUNT(*) FILTER (WHERE first_value_event < '2099-01-01'
+                         AND first_value_event - first_app_open < INTERVAL '72 hours') as fve_within_72h,
+        COUNT(*) FILTER (WHERE reached_delivery) as reached_delivery,
+        COUNT(*) FILTER (WHERE reached_prediction) as reached_prediction,
+        COUNT(*) FILTER (WHERE reached_contact) as reached_contact,
+        COUNT(*) FILTER (WHERE reached_reading) as reached_reading,
+        AVG(EXTRACT(EPOCH FROM (first_value_event - first_app_open)) / 3600)
+          FILTER (WHERE first_value_event < '2099-01-01') as avg_hours_to_fve
+      FROM fve_calculated
+    `);
+
+    const s = fveStats[0] || {};
+    const totalUsers = parseInt(s.total_users) || 1;
+
+    // Get retention comparison: FVE users vs non-FVE users
+    // Users who returned after 7 days
+    const [retention] = await sequelize.query(`
+      WITH user_cohort AS (
+        SELECT
+          device_id_hash,
+          MIN(created_at) as first_seen,
+          MAX(created_at) as last_seen,
+          COUNT(DISTINCT DATE(created_at)) as active_days,
+          BOOL_OR(event_name = 'delivery_logged') as logged_delivery,
+          BOOL_OR(event_name IN ('delivery_logged', 'prediction_viewed', 'supplier_contacted', 'tank_reading_added')) as reached_fve
+        FROM app_events
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY device_id_hash
+      )
+      SELECT
+        -- FVE users retention
+        COUNT(*) FILTER (WHERE reached_fve AND last_seen - first_seen > INTERVAL '7 days') as fve_retained,
+        COUNT(*) FILTER (WHERE reached_fve) as fve_total,
+        -- Non-FVE users retention
+        COUNT(*) FILTER (WHERE NOT reached_fve AND last_seen - first_seen > INTERVAL '7 days') as non_fve_retained,
+        COUNT(*) FILTER (WHERE NOT reached_fve) as non_fve_total,
+        -- Delivery loggers retention (strongest signal)
+        COUNT(*) FILTER (WHERE logged_delivery AND last_seen - first_seen > INTERVAL '7 days') as delivery_retained,
+        COUNT(*) FILTER (WHERE logged_delivery) as delivery_total
+      FROM user_cohort
+    `);
+
+    const r = retention[0] || {};
+
+    const fveRetention = parseInt(r.fve_total) > 0
+      ? Math.round((parseInt(r.fve_retained) / parseInt(r.fve_total)) * 100)
+      : 0;
+    const nonFveRetention = parseInt(r.non_fve_total) > 0
+      ? Math.round((parseInt(r.non_fve_retained) / parseInt(r.non_fve_total)) * 100)
+      : 0;
+    const deliveryRetention = parseInt(r.delivery_total) > 0
+      ? Math.round((parseInt(r.delivery_retained) / parseInt(r.delivery_total)) * 100)
+      : 0;
+
+    const retentionMultiplier = nonFveRetention > 0
+      ? (fveRetention / nonFveRetention).toFixed(1)
+      : 'N/A';
+
+    res.json({
+      period: `${days}d`,
+      summary: {
+        totalUsers,
+        reachedFVE: parseInt(s.reached_fve) || 0,
+        fveRate: Math.round((parseInt(s.reached_fve) / totalUsers) * 100),
+        fveWithin72h: parseInt(s.fve_within_72h) || 0,
+        fveWithin72hRate: Math.round((parseInt(s.fve_within_72h) / totalUsers) * 100),
+        avgHoursToFVE: s.avg_hours_to_fve ? parseFloat(s.avg_hours_to_fve).toFixed(1) : null
+      },
+      fveBreakdown: {
+        delivery: { count: parseInt(s.reached_delivery) || 0, percent: Math.round((parseInt(s.reached_delivery) / totalUsers) * 100) },
+        prediction: { count: parseInt(s.reached_prediction) || 0, percent: Math.round((parseInt(s.reached_prediction) / totalUsers) * 100) },
+        contact: { count: parseInt(s.reached_contact) || 0, percent: Math.round((parseInt(s.reached_contact) / totalUsers) * 100) },
+        reading: { count: parseInt(s.reached_reading) || 0, percent: Math.round((parseInt(s.reached_reading) / totalUsers) * 100) }
+      },
+      retention: {
+        fveUsers: { retained: parseInt(r.fve_retained) || 0, total: parseInt(r.fve_total) || 0, rate: fveRetention },
+        nonFveUsers: { retained: parseInt(r.non_fve_retained) || 0, total: parseInt(r.non_fve_total) || 0, rate: nonFveRetention },
+        deliveryLoggers: { retained: parseInt(r.delivery_retained) || 0, total: parseInt(r.delivery_total) || 0, rate: deliveryRetention },
+        multiplier: retentionMultiplier
+      },
+      insight: {
+        title: `Users who reach FVE retain ${retentionMultiplier}× better`,
+        recommendation: deliveryRetention > fveRetention
+          ? 'Push users to log first delivery - strongest retention signal'
+          : 'Any value event improves retention - focus on activation'
+      },
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('[Dashboard] FVE analytics error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch FVE data', details: error.message });
+  }
+});
+
+/**
+ * GET /api/dashboard/confidence-score
+ * User confidence score based on setup completeness
+ */
+router.get('/confidence-score', async (req, res) => {
+  const days = parseDays(req, 30);
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+
+  try {
+    // Check if app_events table exists
+    const [tableCheck] = await sequelize.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'app_events'
+      ) as exists
+    `);
+
+    if (!tableCheck[0]?.exists) {
+      return res.json({ period: `${days}d`, confidence: {}, note: 'app_events table not found' });
+    }
+
+    // Calculate confidence score per user
+    // Points: tank_size (20), notifications (20), delivery_logged (25), prediction_viewed (15), has_supplier_coverage (20)
+    const [scores] = await sequelize.query(`
+      WITH user_scores AS (
+        SELECT
+          device_id_hash,
+          -- Tank size: check if tank_reading_added with tank_size_bucket
+          CASE WHEN BOOL_OR(event_name = 'tank_reading_added' AND event_data->>'tank_size_bucket' IS NOT NULL)
+            THEN 20 ELSE 0 END as tank_score,
+          -- Notifications: check if notification_action exists
+          CASE WHEN BOOL_OR(event_name = 'notification_action')
+            THEN 20 ELSE 0 END as notification_score,
+          -- Delivery logged
+          CASE WHEN BOOL_OR(event_name = 'delivery_logged')
+            THEN 25 ELSE 0 END as delivery_score,
+          -- Prediction viewed (or forecast tab)
+          CASE WHEN BOOL_OR(event_name = 'prediction_viewed' OR
+                           (event_name = 'screen_viewed' AND event_data->>'screen' = 'forecast'))
+            THEN 15 ELSE 0 END as prediction_score,
+          -- Supplier coverage: check if directory_searched with results (not no_results)
+          CASE WHEN BOOL_OR(event_name = 'directory_searched' AND
+                           (event_data->>'result_count')::int > 0)
+            THEN 20 ELSE 0 END as coverage_score
+        FROM app_events
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY device_id_hash
+      ),
+      scored AS (
+        SELECT
+          device_id_hash,
+          tank_score + notification_score + delivery_score + prediction_score + coverage_score as total_score,
+          tank_score, notification_score, delivery_score, prediction_score, coverage_score
+        FROM user_scores
+      )
+      SELECT
+        COUNT(*) as total_users,
+        AVG(total_score) as avg_score,
+        COUNT(*) FILTER (WHERE total_score >= 80) as high_confidence,
+        COUNT(*) FILTER (WHERE total_score >= 50 AND total_score < 80) as medium_confidence,
+        COUNT(*) FILTER (WHERE total_score < 50) as low_confidence,
+        AVG(tank_score) as avg_tank,
+        AVG(notification_score) as avg_notification,
+        AVG(delivery_score) as avg_delivery,
+        AVG(prediction_score) as avg_prediction,
+        AVG(coverage_score) as avg_coverage
+      FROM scored
+    `);
+
+    const s = scores[0] || {};
+    const total = parseInt(s.total_users) || 1;
+
+    res.json({
+      period: `${days}d`,
+      summary: {
+        totalUsers: total,
+        averageScore: s.avg_score ? Math.round(parseFloat(s.avg_score)) : 0
+      },
+      distribution: {
+        high: { count: parseInt(s.high_confidence) || 0, percent: Math.round((parseInt(s.high_confidence) / total) * 100), label: 'High (80-100)' },
+        medium: { count: parseInt(s.medium_confidence) || 0, percent: Math.round((parseInt(s.medium_confidence) / total) * 100), label: 'Medium (50-79)' },
+        low: { count: parseInt(s.low_confidence) || 0, percent: Math.round((parseInt(s.low_confidence) / total) * 100), label: 'Low (0-49)' }
+      },
+      factors: {
+        tankSize: { maxPoints: 20, avgPoints: s.avg_tank ? Math.round(parseFloat(s.avg_tank)) : 0 },
+        notifications: { maxPoints: 20, avgPoints: s.avg_notification ? Math.round(parseFloat(s.avg_notification)) : 0 },
+        deliveryLogged: { maxPoints: 25, avgPoints: s.avg_delivery ? Math.round(parseFloat(s.avg_delivery)) : 0 },
+        predictionViewed: { maxPoints: 15, avgPoints: s.avg_prediction ? Math.round(parseFloat(s.avg_prediction)) : 0 },
+        supplierCoverage: { maxPoints: 20, avgPoints: s.avg_coverage ? Math.round(parseFloat(s.avg_coverage)) : 0 }
+      },
+      insight: {
+        atRiskPercent: Math.round((parseInt(s.low_confidence) / total) * 100),
+        recommendation: parseInt(s.low_confidence) / total > 0.3
+          ? 'Over 30% of users at high churn risk - push notification setup and first delivery'
+          : 'Confidence distribution is healthy - focus on converting medium to high'
+      },
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('[Dashboard] Confidence score error:', error.message);
+    res.status(500).json({ error: 'Failed to calculate confidence scores', details: error.message });
+  }
+});
+
+/**
+ * GET /api/dashboard/platforms
+ * Platform comparison: iOS vs Android vs Web
+ */
+router.get('/platforms', async (req, res) => {
+  const days = parseDays(req, 30);
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+
+  try {
+    // iOS data from app_events
+    const [iosData] = await sequelize.query(`
+      SELECT
+        COUNT(DISTINCT device_id_hash) as unique_users,
+        COUNT(*) as total_events,
+        COUNT(DISTINCT device_id_hash) FILTER (WHERE event_name = 'delivery_logged') as users_with_delivery,
+        COUNT(*) FILTER (WHERE event_name = 'delivery_logged') as total_deliveries,
+        COUNT(*) FILTER (WHERE event_name = 'supplier_contacted') as supplier_contacts
+      FROM app_events
+      WHERE created_at > NOW() - INTERVAL '${days} days'
+    `);
+
+    // Android waitlist
+    const [waitlistData] = await sequelize.query(`
+      SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '${days} days') as recent
+      FROM waitlist
+    `);
+
+    // PWA data
+    const [pwaData] = await sequelize.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE event_type = 'installed') as installs,
+        COUNT(*) FILTER (WHERE event_type = 'standalone_launch') as launches,
+        COUNT(*) FILTER (WHERE event_type = 'prompt_shown') as prompts
+      FROM pwa_events
+      WHERE created_at > NOW() - INTERVAL '${days} days'
+    `);
+
+    // Website data from supplier_clicks
+    const [webData] = await sequelize.query(`
+      SELECT
+        COUNT(DISTINCT ip_address) as unique_visitors,
+        COUNT(*) as total_clicks,
+        COUNT(*) FILTER (WHERE action_type = 'call') as calls,
+        COUNT(*) FILTER (WHERE action_type = 'website') as websites
+      FROM supplier_clicks
+      WHERE created_at > NOW() - INTERVAL '${days} days'
+    `);
+
+    // iOS retention (simplified)
+    const [iosRetention] = await sequelize.query(`
+      WITH cohort AS (
+        SELECT device_id_hash, MIN(DATE(created_at)) as first_day
+        FROM app_events
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY device_id_hash
+      ),
+      retained AS (
+        SELECT c.device_id_hash
+        FROM cohort c
+        JOIN app_events ae ON c.device_id_hash = ae.device_id_hash
+        WHERE DATE(ae.created_at) >= c.first_day + INTERVAL '7 days'
+          AND DATE(ae.created_at) < c.first_day + INTERVAL '14 days'
+      )
+      SELECT
+        COUNT(DISTINCT c.device_id_hash) as cohort_size,
+        COUNT(DISTINCT r.device_id_hash) as retained
+      FROM cohort c
+      LEFT JOIN retained r ON c.device_id_hash = r.device_id_hash
+    `);
+
+    const ios = iosData[0] || {};
+    const waitlist = waitlistData[0] || {};
+    const pwa = pwaData[0] || {};
+    const web = webData[0] || {};
+    const retention = iosRetention[0] || {};
+
+    const iosRetentionRate = parseInt(retention.cohort_size) > 0
+      ? Math.round((parseInt(retention.retained) / parseInt(retention.cohort_size)) * 100)
+      : 0;
+
+    // Android decision logic
+    const waitlistTotal = parseInt(waitlist.total) || 0;
+    const pwaInstalls = parseInt(pwa.installs) || 0;
+
+    let androidStatus = 'WAIT';
+    let androidMessage = '';
+
+    // NO-GO conditions
+    if (iosRetentionRate < 20) {
+      androidStatus = 'NO-GO';
+      androidMessage = `iOS retention at ${iosRetentionRate}% - fix core product first`;
+    } else if (waitlistTotal >= 200 && pwaInstalls >= 50) {
+      androidStatus = 'GO';
+      androidMessage = 'All conditions met - ready to build MVP';
+    } else {
+      const waitlistProgress = Math.round((waitlistTotal / 200) * 100);
+      const pwaProgress = Math.round((pwaInstalls / 50) * 100);
+      androidMessage = `Waitlist ${waitlistProgress}% (${waitlistTotal}/200), PWA ${pwaProgress}% (${pwaInstalls}/50)`;
+    }
+
+    res.json({
+      period: `${days}d`,
+      ios: {
+        status: 'live',
+        users: parseInt(ios.unique_users) || 0,
+        deliveries: parseInt(ios.total_deliveries) || 0,
+        supplierContacts: parseInt(ios.supplier_contacts) || 0,
+        retention: iosRetentionRate
+      },
+      android: {
+        status: androidStatus,
+        message: androidMessage,
+        waitlist: waitlistTotal,
+        pwaInstalls,
+        pwaLaunches: parseInt(pwa.launches) || 0,
+        conditions: {
+          waitlist: { current: waitlistTotal, target: 200, met: waitlistTotal >= 200 },
+          pwaInstalls: { current: pwaInstalls, target: 50, met: pwaInstalls >= 50 },
+          iosRetention: { current: iosRetentionRate, target: 20, met: iosRetentionRate >= 20 }
+        }
+      },
+      web: {
+        status: 'live',
+        visitors: parseInt(web.unique_visitors) || 0,
+        clicks: parseInt(web.total_clicks) || 0,
+        calls: parseInt(web.calls) || 0,
+        websites: parseInt(web.websites) || 0
+      },
+      comparison: {
+        insight: waitlistTotal > parseInt(ios.unique_users)
+          ? `Android waitlist (${waitlistTotal}) exceeds iOS users (${ios.unique_users}) - strong demand signal`
+          : 'iOS currently larger user base'
+      },
+      generatedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('[Dashboard] Platform comparison error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch platform data', details: error.message });
+  }
+});
+
 module.exports = router;
