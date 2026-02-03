@@ -2325,9 +2325,12 @@ function loadCoverageMap(data, overview = null) {
     .addTo(map);
   });
 
-  // Add coverage gaps (red circles)
+  // Add coverage gaps (red circles) - only if they have coordinates
   const gapData = data.coverageGaps || [];
-  gapData.forEach(c => {
+  const gapsWithCoords = gapData.filter(c => c.lat && c.lng);
+  const gapsWithoutCoords = gapData.filter(c => !c.lat || !c.lng);
+
+  gapsWithCoords.forEach(c => {
     const radius = 8 + (c.count / maxDemand) * 16;
     L.circleMarker([c.lat, c.lng], {
       radius: radius,
@@ -2341,11 +2344,16 @@ function loadCoverageMap(data, overview = null) {
     .addTo(map);
   });
 
-  // Fit bounds
-  const allPoints = [...demandData, ...gapData];
+  // Fit bounds (only use points with coordinates)
+  const allPoints = [...demandData, ...gapsWithCoords];
   if (allPoints.length > 0) {
     const bounds = allPoints.map(c => [c.lat, c.lng]);
     map.fitBounds(bounds, { padding: [20, 20] });
+  }
+
+  // Note: Some gaps may not show on map if coordinates are missing
+  if (gapsWithoutCoords.length > 0) {
+    console.log(`${gapsWithoutCoords.length} coverage gaps missing coordinates:`, gapsWithoutCoords.map(g => g.zip));
   }
 
   // Update stats - use overview.trueCoverageGaps for consistency with card

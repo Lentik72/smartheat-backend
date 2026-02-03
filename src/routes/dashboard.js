@@ -585,21 +585,24 @@ router.get('/geographic', async (req, res) => {
 
     demand.forEach(d => {
       const zipData = zipCoords[d.zip_code];
-      if (!zipData?.lat || !zipData?.lng) return; // Skip if no coordinates
+      const hasCoords = zipData?.lat && zipData?.lng;
 
       const entry = {
         zip: d.zip_code,
         count: parseInt(d.search_count),
-        lat: zipData.lat,
-        lng: zipData.lng,
-        city: zipData.city || null,
-        county: zipData.county || null,
-        state: zipData.state || null
+        lat: hasCoords ? zipData.lat : null,
+        lng: hasCoords ? zipData.lng : null,
+        city: zipData?.city || null,
+        county: zipData?.county || null,
+        state: zipData?.state || null
       };
 
-      demandHeatmap.push(entry);
+      // Only add to heatmap if we have coordinates
+      if (hasCoords) {
+        demandHeatmap.push(entry);
+      }
 
-      // If this ZIP has searches but no supplier coverage, it's a gap
+      // Add to gaps regardless of coordinates (still useful for table/count)
       if (!coveredZips.has(d.zip_code)) {
         coverageGaps.push(entry);
       }
