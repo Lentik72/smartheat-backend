@@ -3180,3 +3180,139 @@ legend {
     grid-column: 1 / -1;
   }
 }
+
+/* ============================================
+   User Journey Funnel Styles
+   ============================================ */
+
+.panel-subtitle {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+  margin-top: -0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.journey-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 900px) {
+  .journey-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.journey-section {
+  background: var(--gray-50);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.journey-section h4 {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  color: var(--gray-700);
+}
+
+.funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.funnel-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.funnel-bar {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 60%;
+  transition: width 0.5s ease;
+}
+
+.funnel-bar.delivery {
+  background: linear-gradient(135deg, var(--success), #16a34a);
+}
+
+.funnel-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.funnel-count {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.funnel-rate {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  min-width: 45px;
+  text-align: right;
+}
+
+.funnel-breakdown {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.funnel-dropoff {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0 0.35rem 1rem;
+  color: var(--gray-400);
+}
+
+.dropoff-arrow {
+  font-size: 1rem;
+}
+
+.dropoff-rate {
+  font-size: 0.75rem;
+  color: var(--danger);
+  opacity: 0.8;
+}
+
+.journey-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gray-200);
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+}
+
+.summary-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+#journey-insight {
+  margin-top: 1.5rem;
+}

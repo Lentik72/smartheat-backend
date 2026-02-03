@@ -122,7 +122,7 @@ async function api(endpoint, options = {}) {
   };
 
   try {
-    const response = await fetch(url, { ...options, headers });
+    const response = await fetch(url, { ...options, headers, cache: 'no-store' });
 
     if (response.status === 401) {
       // Token invalid, show login
@@ -235,12 +235,14 @@ document.querySelectorAll('.period-btn').forEach(btn => {
 // Load overview (top cards)
 async function loadOverview() {
   try {
+    console.log(`[Dashboard] Loading data for ${currentDays} days`);
     const data = await api(`/overview?days=${currentDays}`);
 
     // Get unified data for combined metrics
     let unified = null;
     try {
       unified = await api(`/unified?days=${currentDays}`);
+      console.log(`[Dashboard] Deliveries loaded: ${unified?.app?.deliveries?.total ?? 'N/A'}`);
     } catch (e) {
       console.log('Unified data not available');
     }
@@ -2915,6 +2917,16 @@ async function loadGrowth() {
     setRetentionBar('rba-search', retentionMap.searched_supplier, maxDays);
     setRetentionBar('rba-browse', retentionMap.browsed_only, maxDays);
 
+    // User Journey Funnel
+    const userJourney = unified?.userJourney || {};
+    if (userJourney.available && userJourney.hasData) {
+      renderUserJourney(userJourney);
+    } else {
+      // Show placeholder message
+      document.getElementById('journey-insight').textContent =
+        '💡 User journey data will appear once you have visitor and engagement activity.';
+    }
+
     // Top recommendation
     const topRec = recommendations.recommendations?.[0];
     if (topRec) {
@@ -2960,6 +2972,143 @@ function setRetentionBar(id, value, max) {
   } else {
     bar.style.width = '0%';
     valEl.textContent = '--';
+  }
+}
+
+// Render User Journey Funnel
+function renderUserJourney(journey) {
+  const web = journey.web || {};
+  const app = journey.app || {};
+
+  // Web Journey
+  if (web.steps && web.steps.length > 0) {
+    const webSteps = web.steps;
+    const maxUsers = Math.max(...webSteps.map(s => s.users || 0), 1);
+
+    // Step 1: Visits
+    document.getElementById('wj-visits').textContent = webSteps[0]?.users?.toLocaleString() || '--';
+
+    // Step 2: Views
+    document.getElementById('wj-views').textContent = webSteps[1]?.users?.toLocaleString() || '--';
+    document.getElementById('wj-views-rate').textContent = webSteps[1]?.rate || '--%';
+    const viewsBar = document.getElementById('wj-views-bar');
+    if (viewsBar) viewsBar.style.width = `${Math.max(20, (webSteps[1]?.users / maxUsers) * 100)}%`;
+
+    // Dropoff 1
+    const dropoff1 = document.getElementById('wj-dropoff-1');
+    if (dropoff1) dropoff1.querySelector('.dropoff-rate').textContent = webSteps[1]?.dropoff || '--%';
+
+    // Step 3: Clicks
+    document.getElementById('wj-clicks').textContent = webSteps[2]?.users?.toLocaleString() || '--';
+    document.getElementById('wj-clicks-rate').textContent = webSteps[2]?.rate || '--%';
+    document.getElementById('wj-calls').textContent = webSteps[2]?.breakdown?.call?.toLocaleString() || '0';
+    document.getElementById('wj-websites').textContent = webSteps[2]?.breakdown?.website?.toLocaleString() || '0';
+    const clicksBar = document.getElementById('wj-clicks-bar');
+    if (clicksBar) clicksBar.style.width = `${Math.max(15, (webSteps[2]?.users / maxUsers) * 100)}%`;
+
+    // Dropoff 2
+    const dropoff2 = document.getElementById('wj-dropoff-2');
+    if (dropoff2) dropoff2.querySelector('.dropoff-rate').textContent = webSteps[2]?.dropoff || '--%';
+
+    // Step 4: Deliveries
+    document.getElementById('wj-deliveries').textContent = webSteps[3]?.users?.toLocaleString() || '--';
+    document.getElementById('wj-deliveries-rate').textContent = webSteps[3]?.rate || '--%';
+    const deliveriesBar = document.getElementById('wj-deliveries-bar');
+    if (deliveriesBar) deliveriesBar.style.width = `${Math.max(10, (webSteps[3]?.users / maxUsers) * 100)}%`;
+
+    // Dropoff 3
+    const dropoff3 = document.getElementById('wj-dropoff-3');
+    if (dropoff3) dropoff3.querySelector('.dropoff-rate').textContent = webSteps[3]?.dropoff || '--%';
+
+    // Overall
+    document.getElementById('wj-overall').textContent = web.overallConversion || '--%';
+  }
+
+  // App Journey
+  if (app.steps && app.steps.length > 0) {
+    const appSteps = app.steps;
+    const maxUsers = Math.max(...appSteps.map(s => s.users || 0), 1);
+
+    // Step 1: Opens
+    document.getElementById('aj-opens').textContent = appSteps[0]?.users?.toLocaleString() || '--';
+
+    // Step 2: Searches
+    document.getElementById('aj-searches').textContent = appSteps[1]?.users?.toLocaleString() || '--';
+    document.getElementById('aj-searches-rate').textContent = appSteps[1]?.rate || '--%';
+    const searchesBar = document.getElementById('aj-searches-bar');
+    if (searchesBar) searchesBar.style.width = `${Math.max(20, (appSteps[1]?.users / maxUsers) * 100)}%`;
+
+    // Dropoff 1
+    const ajDropoff1 = document.getElementById('aj-dropoff-1');
+    if (ajDropoff1) ajDropoff1.querySelector('.dropoff-rate').textContent = appSteps[1]?.dropoff || '--%';
+
+    // Step 3: Saves
+    document.getElementById('aj-saves').textContent = appSteps[2]?.users?.toLocaleString() || '--';
+    document.getElementById('aj-saves-rate').textContent = appSteps[2]?.rate || '--%';
+    const savesBar = document.getElementById('aj-saves-bar');
+    if (savesBar) savesBar.style.width = `${Math.max(15, (appSteps[2]?.users / maxUsers) * 100)}%`;
+
+    // Dropoff 2
+    const ajDropoff2 = document.getElementById('aj-dropoff-2');
+    if (ajDropoff2) ajDropoff2.querySelector('.dropoff-rate').textContent = appSteps[2]?.dropoff || '--%';
+
+    // Step 4: Deliveries
+    document.getElementById('aj-deliveries').textContent = appSteps[3]?.users?.toLocaleString() || '--';
+    document.getElementById('aj-deliveries-rate').textContent = appSteps[3]?.rate || '--%';
+    const ajDeliveriesBar = document.getElementById('aj-deliveries-bar');
+    if (ajDeliveriesBar) ajDeliveriesBar.style.width = `${Math.max(10, (appSteps[3]?.users / maxUsers) * 100)}%`;
+
+    // Dropoff 3
+    const ajDropoff3 = document.getElementById('aj-dropoff-3');
+    if (ajDropoff3) ajDropoff3.querySelector('.dropoff-rate').textContent = appSteps[3]?.dropoff || '--%';
+
+    // Overall
+    document.getElementById('aj-overall').textContent = app.overallConversion || '--%';
+  }
+
+  // Generate insight
+  const insights = [];
+
+  // Find the biggest web dropoff
+  if (web.biggestDropoff && parseFloat(web.biggestDropoff.rate) > 50) {
+    const dropoffStep = web.biggestDropoff.to;
+    const dropoffName = {
+      'view': 'viewing suppliers',
+      'click': 'clicking to contact',
+      'delivery': 'logging deliveries'
+    }[dropoffStep] || dropoffStep;
+    insights.push(`Web: ${web.biggestDropoff.rate} drop-off before ${dropoffName}`);
+  }
+
+  // Find the biggest app dropoff
+  if (app.biggestDropoff && parseFloat(app.biggestDropoff.rate) > 50) {
+    const dropoffStep = app.biggestDropoff.to;
+    const dropoffName = {
+      'search': 'searching directory',
+      'save': 'saving a supplier',
+      'delivery': 'logging deliveries'
+    }[dropoffStep] || dropoffStep;
+    insights.push(`App: ${app.biggestDropoff.rate} drop-off before ${dropoffName}`);
+  }
+
+  // Overall insight
+  const webConv = parseFloat(web.overallConversion) || 0;
+  const appConv = parseFloat(app.overallConversion) || 0;
+
+  if (webConv > 0 || appConv > 0) {
+    if (webConv > appConv && webConv > 0.5) {
+      insights.push(`Website converts ${webConv.toFixed(2)}% - better than app`);
+    } else if (appConv > webConv && appConv > 0.5) {
+      insights.push(`App converts ${appConv.toFixed(2)}% - better than web`);
+    }
+  }
+
+  // Set insight text
+  const insightEl = document.getElementById('journey-insight');
+  if (insights.length > 0) {
+    insightEl.innerHTML = '💡 ' + insights.join(' | ');
+  } else {
+    insightEl.textContent = '💡 Track more user activity to see conversion insights.';
   }
 }
 

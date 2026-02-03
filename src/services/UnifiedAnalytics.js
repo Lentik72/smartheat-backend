@@ -1958,12 +1958,207 @@ class UnifiedAnalytics {
   }
 
   /**
+   * Get user journey funnel data showing conversion through each step
+   * @param {number} days - Number of days to look back
+   */
+  async getUserJourney(days = 30) {
+    try {
+      // Web journey: Visits → Supplier Views → Clicks → Deliveries
+      const webJourney = await this.sequelize.query(`
+        WITH web_visits AS (
+          -- Unique visitors from API activity (excludes dashboard endpoints)
+          SELECT COUNT(DISTINCT ip_hash) as users
+          FROM api_activity
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND endpoint NOT IN ('/pulse', '/unified', '/overview', '/clicks', '/conversion', '/recommendations', '/geographic', '/prices', '/summary', '/meta', '/version', '/ios-app', '/price-alerts', '/track-pwa')
+        ),
+        supplier_views AS (
+          -- Users who viewed supplier details (clicked through from search results)
+          SELECT COUNT(DISTINCT ip_address) as users
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        ),
+        supplier_clicks AS (
+          -- Users who clicked call or website
+          SELECT
+            COUNT(DISTINCT ip_address) as total_users,
+            COUNT(DISTINCT ip_address) FILTER (WHERE action_type = 'call') as call_users,
+            COUNT(DISTINCT ip_address) FILTER (WHERE action_type = 'website') as website_users
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        ),
+        deliveries AS (
+          -- Users who logged deliveries
+          SELECT COUNT(DISTINCT contributor_hash) as users
+          FROM community_deliveries
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        )
+        SELECT
+          (SELECT users FROM web_visits) as visits,
+          (SELECT users FROM supplier_views) as views,
+          (SELECT total_users FROM supplier_clicks) as clicks,
+          (SELECT call_users FROM supplier_clicks) as call_clicks,
+          (SELECT website_users FROM supplier_clicks) as website_clicks,
+          (SELECT users FROM deliveries) as deliveries
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      // App journey: Opens → Directory Search → Supplier Save → Delivery
+      const appJourney = await this.sequelize.query(`
+        WITH app_opens AS (
+          SELECT COUNT(DISTINCT device_id_hash) as users
+          FROM app_events
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND event_name IN ('app_opened', 'session_engagement')
+        ),
+        directory_searches AS (
+          SELECT COUNT(DISTINCT device_id_hash) as users
+          FROM app_events
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND event_name = 'directory_searched'
+        ),
+        supplier_saves AS (
+          SELECT COUNT(DISTINCT device_id_hash) as users
+          FROM app_events
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND event_name = 'supplier_saved'
+        ),
+        app_deliveries AS (
+          SELECT COUNT(DISTINCT device_id_hash) as users
+          FROM app_events
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND event_name = 'delivery_logged'
+        )
+        SELECT
+          (SELECT users FROM app_opens) as opens,
+          (SELECT users FROM directory_searches) as searches,
+          (SELECT users FROM supplier_saves) as saves,
+          (SELECT users FROM app_deliveries) as deliveries
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      const web = webJourney[0] || {};
+      const app = appJourney[0] || {};
+
+      // Calculate conversion rates
+      const webVisits = parseInt(web.visits) || 0;
+      const webViews = parseInt(web.views) || 0;
+      const webClicks = parseInt(web.clicks) || 0;
+      const webDeliveries = parseInt(web.deliveries) || 0;
+
+      const appOpens = parseInt(app.opens) || 0;
+      const appSearches = parseInt(app.searches) || 0;
+      const appSaves = parseInt(app.saves) || 0;
+      const appDeliveries = parseInt(app.deliveries) || 0;
+
+      // Build funnel steps with conversion rates
+      const webSteps = [
+        {
+          step: 'visit',
+          label: 'Site Visits',
+          users: webVisits,
+          rate: '100%',
+          dropoff: null
+        },
+        {
+          step: 'view',
+          label: 'View Suppliers',
+          users: webViews,
+          rate: webVisits > 0 ? ((webViews / webVisits) * 100).toFixed(1) + '%' : '0%',
+          dropoff: webVisits > 0 ? ((1 - webViews / webVisits) * 100).toFixed(1) + '%' : '0%'
+        },
+        {
+          step: 'click',
+          label: 'Click to Contact',
+          users: webClicks,
+          rate: webViews > 0 ? ((webClicks / webViews) * 100).toFixed(1) + '%' : '0%',
+          dropoff: webViews > 0 ? ((1 - webClicks / webViews) * 100).toFixed(1) + '%' : '0%',
+          breakdown: {
+            call: parseInt(web.call_clicks) || 0,
+            website: parseInt(web.website_clicks) || 0
+          }
+        },
+        {
+          step: 'delivery',
+          label: 'Log Delivery',
+          users: webDeliveries,
+          rate: webClicks > 0 ? ((webDeliveries / webClicks) * 100).toFixed(1) + '%' : '0%',
+          dropoff: webClicks > 0 ? ((1 - webDeliveries / webClicks) * 100).toFixed(1) + '%' : '0%'
+        }
+      ];
+
+      const appSteps = [
+        {
+          step: 'open',
+          label: 'App Opens',
+          users: appOpens,
+          rate: '100%',
+          dropoff: null
+        },
+        {
+          step: 'search',
+          label: 'Search Directory',
+          users: appSearches,
+          rate: appOpens > 0 ? ((appSearches / appOpens) * 100).toFixed(1) + '%' : '0%',
+          dropoff: appOpens > 0 ? ((1 - appSearches / appOpens) * 100).toFixed(1) + '%' : '0%'
+        },
+        {
+          step: 'save',
+          label: 'Save Supplier',
+          users: appSaves,
+          rate: appSearches > 0 ? ((appSaves / appSearches) * 100).toFixed(1) + '%' : '0%',
+          dropoff: appSearches > 0 ? ((1 - appSaves / appSearches) * 100).toFixed(1) + '%' : '0%'
+        },
+        {
+          step: 'delivery',
+          label: 'Log Delivery',
+          users: appDeliveries,
+          rate: appSaves > 0 ? ((appDeliveries / appSaves) * 100).toFixed(1) + '%' : '0%',
+          dropoff: appSaves > 0 ? ((1 - appDeliveries / appSaves) * 100).toFixed(1) + '%' : '0%'
+        }
+      ];
+
+      // Overall conversion (visit to delivery)
+      const webOverallConversion = webVisits > 0 ? ((webDeliveries / webVisits) * 100).toFixed(2) : '0';
+      const appOverallConversion = appOpens > 0 ? ((appDeliveries / appOpens) * 100).toFixed(2) : '0';
+
+      // Find biggest drop-off points
+      const webDropoffs = webSteps.filter(s => s.dropoff).sort((a, b) => parseFloat(b.dropoff) - parseFloat(a.dropoff));
+      const appDropoffs = appSteps.filter(s => s.dropoff).sort((a, b) => parseFloat(b.dropoff) - parseFloat(a.dropoff));
+
+      return {
+        available: true,
+        hasData: webVisits > 0 || appOpens > 0,
+        web: {
+          steps: webSteps,
+          overallConversion: webOverallConversion + '%',
+          biggestDropoff: webDropoffs[0] ? {
+            from: webDropoffs[0].step === 'view' ? 'visit' : webDropoffs[0].step === 'click' ? 'view' : 'click',
+            to: webDropoffs[0].step,
+            rate: webDropoffs[0].dropoff
+          } : null
+        },
+        app: {
+          steps: appSteps,
+          overallConversion: appOverallConversion + '%',
+          biggestDropoff: appDropoffs[0] ? {
+            from: appDropoffs[0].step === 'search' ? 'open' : appDropoffs[0].step === 'save' ? 'search' : 'save',
+            to: appDropoffs[0].step,
+            rate: appDropoffs[0].dropoff
+          } : null
+        }
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] User journey error:', error.message);
+      return { available: false, error: error.message };
+    }
+  }
+
+  /**
    * Get unified overview combining all data sources
    * @param {number} days - Number of days to look back
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends, onboardingFunnel, topSuppliers, priceCorrelation, weatherCorrelation, cohortRetention, geoHeatmap] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends, onboardingFunnel, topSuppliers, priceCorrelation, weatherCorrelation, cohortRetention, geoHeatmap, userJourney] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
@@ -1979,7 +2174,8 @@ class UnifiedAnalytics {
         this.getPriceCorrelation(days),
         this.getWeatherCorrelation(days),
         this.getCohortRetention(days).catch(e => { this.logger.error('[UnifiedAnalytics] Cohort retention failed:', e.message, e.stack); return { available: false, error: e.message }; }),
-        this.getGeographicHeatmap(days).catch(e => { this.logger.error('[UnifiedAnalytics] Geographic heatmap failed:', e.message, e.stack); return { available: false, error: e.message }; })
+        this.getGeographicHeatmap(days).catch(e => { this.logger.error('[UnifiedAnalytics] Geographic heatmap failed:', e.message, e.stack); return { available: false, error: e.message }; }),
+        this.getUserJourney(days).catch(e => { this.logger.error('[UnifiedAnalytics] User journey failed:', e.message, e.stack); return { available: false, error: e.message }; })
       ]);
 
       // Determine data sources
@@ -2074,6 +2270,7 @@ class UnifiedAnalytics {
         },
         cohortRetention,
         geoHeatmap,
+        userJourney,
         lastUpdated: new Date().toISOString()
       };
     } catch (error) {
