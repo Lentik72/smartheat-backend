@@ -2410,14 +2410,15 @@ async function loadAppAnalytics() {
     const engagement = appData?.engagement || {};
 
     // Delivery patterns
-    const deliveries = app.saves || appData?.deliveries?.total || 0;
-    document.getElementById('dp-total').textContent = deliveries || '--';
-    document.getElementById('dp-value').textContent = deliveries > 0 ? `~$${(deliveries * 500).toLocaleString()}` : '--';
-    document.getElementById('dp-repeat').textContent = appData?.deliveries?.repeatRate || '--%';
-    document.getElementById('dp-directory').textContent = appData?.deliveries?.fromDirectory || '--%';
-    document.getElementById('dp-ontime').textContent = appData?.deliveries?.onTime || '--%';
-    document.getElementById('dp-late').textContent = appData?.deliveries?.late || '--%';
-    document.getElementById('dp-overdue').textContent = appData?.deliveries?.overdue || '--';
+    const deliveryData = appData?.deliveries || {};
+    const deliveryTotal = deliveryData.total || 0;
+    document.getElementById('dp-total').textContent = deliveryTotal || '0';
+    document.getElementById('dp-value').textContent = deliveryTotal > 0 ? `~$${(deliveryTotal * 500).toLocaleString()}` : '$0';
+    document.getElementById('dp-repeat').textContent = deliveryData.repeatRate || '0%';
+    document.getElementById('dp-directory').textContent = deliveryData.fromDirectory || '0%';
+    document.getElementById('dp-ontime').textContent = deliveryData.onTime || '0%';
+    document.getElementById('dp-late').textContent = deliveryData.late || '0%';
+    document.getElementById('dp-overdue').textContent = deliveryData.overdue || '0';
     document.getElementById('dp-insight').textContent = deliveries > 0
       ? '💡 Users who log deliveries have higher retention'
       : '💡 Encourage first delivery logging to boost retention';

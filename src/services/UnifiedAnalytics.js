@@ -1124,6 +1124,43 @@ class UnifiedAnalytics {
   }
 
   /**
+   * Get delivery patterns from community_deliveries
+   * @param {number} days - Number of days to look back
+   */
+  async getDeliveryPatterns(days = 30) {
+    try {
+      const [stats] = await Promise.all([
+        this.sequelize.query(`
+          SELECT
+            COUNT(*) as total,
+            COUNT(DISTINCT contributor_hash) as unique_users,
+            COUNT(*) FILTER (WHERE is_directory_supplier = true) as from_directory,
+            AVG(price_per_gallon::numeric) as avg_price
+          FROM community_deliveries
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+        `, { type: this.sequelize.QueryTypes.SELECT })
+      ]);
+
+      const total = parseInt(stats[0]?.total || 0);
+      const fromDirectory = parseInt(stats[0]?.from_directory || 0);
+
+      return {
+        total,
+        uniqueUsers: parseInt(stats[0]?.unique_users || 0),
+        avgPrice: parseFloat(stats[0]?.avg_price || 0).toFixed(2),
+        fromDirectory: total > 0 ? ((fromDirectory / total) * 100).toFixed(0) + '%' : '0%',
+        repeatRate: '0%', // Would need to track repeat orders per user
+        onTime: '0%',     // Would need delivery timing data
+        late: '0%',
+        overdue: 0
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Delivery patterns error:', error.message);
+      return { total: 0, uniqueUsers: 0, fromDirectory: '0%', repeatRate: '0%', onTime: '0%', late: '0%', overdue: 0 };
+    }
+  }
+
+  /**
    * Get fuel type breakdown from API activity
    * @param {number} days - Number of days to look back
    */
@@ -1168,22 +1205,24 @@ class UnifiedAnalytics {
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android, fuelType] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType, deliveries] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
         this.getRetentionAnalysis(6),
         this.getAndroidDecisionSignals(),
-        this.getFuelTypeBreakdown(days)
+        this.getFuelTypeBreakdown(days),
+        this.getDeliveryPatterns(days)
       ]);
 
       // Determine data sources
       const isBigQuery = app.source === 'bigquery';
       const isFirebaseDb = app.available && app.source === 'database';
 
-      // Add fuel type data to app section
+      // Add fuel type and delivery data to app section
       const appData = app.data || {};
       appData.fuelType = fuelType;
+      appData.deliveries = deliveries;
 
       return {
         period: `${days}d`,
