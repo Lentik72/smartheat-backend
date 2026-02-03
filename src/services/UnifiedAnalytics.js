@@ -1359,6 +1359,51 @@ class UnifiedAnalytics {
   }
 
   /**
+   * Get top suppliers by engagement (clicks, calls)
+   * @param {number} days - Number of days to look back
+   * @param {number} limit - Max suppliers to return
+   */
+  async getTopSuppliers(days = 30, limit = 10) {
+    try {
+      const results = await this.sequelize.query(`
+        SELECT
+          s.id,
+          s.name,
+          s.city,
+          s.state,
+          COUNT(*) as total_clicks,
+          COUNT(*) FILTER (WHERE sc.action_type = 'call') as calls,
+          COUNT(*) FILTER (WHERE sc.action_type = 'website') as website_clicks,
+          COUNT(DISTINCT sc.ip_address) as unique_users,
+          MIN(sp.price_per_gallon) as min_price
+        FROM supplier_clicks sc
+        JOIN suppliers s ON sc.supplier_id = s.id
+        LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id
+          AND sp.created_at > NOW() - INTERVAL '7 days'
+        WHERE sc.created_at > NOW() - INTERVAL '${days} days'
+        GROUP BY s.id, s.name, s.city, s.state
+        ORDER BY total_clicks DESC
+        LIMIT ${limit}
+      `, { type: this.sequelize.QueryTypes.SELECT });
+
+      return results.map((r, index) => ({
+        rank: index + 1,
+        id: r.id,
+        name: r.name,
+        location: r.city && r.state ? `${r.city}, ${r.state}` : r.state || '--',
+        totalClicks: parseInt(r.total_clicks) || 0,
+        calls: parseInt(r.calls) || 0,
+        websiteClicks: parseInt(r.website_clicks) || 0,
+        uniqueUsers: parseInt(r.unique_users) || 0,
+        price: r.min_price ? parseFloat(r.min_price).toFixed(2) : null
+      }));
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Top suppliers error:', error.message);
+      return [];
+    }
+  }
+
+  /**
    * Calculate trend (% change) between two values
    */
   calculateTrend(current, previous) {
@@ -1534,7 +1579,7 @@ class UnifiedAnalytics {
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends, onboardingFunnel] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends, onboardingFunnel, topSuppliers] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
@@ -1545,7 +1590,8 @@ class UnifiedAnalytics {
         this.getFVEMetrics(days),
         this.getConfidenceScore(days),
         this.getTrendData(days),
-        this.getOnboardingFunnel(days)
+        this.getOnboardingFunnel(days),
+        this.getTopSuppliers(days, 10)
       ]);
 
       // Determine data sources
@@ -1633,6 +1679,7 @@ class UnifiedAnalytics {
         retention: retentionData,
         android: android.data,
         trends: allTrends,
+        topSuppliers,
         lastUpdated: new Date().toISOString()
       };
     } catch (error) {

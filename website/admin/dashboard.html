@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1770139000">
+  <link rel="stylesheet" href="dashboard.css?v=1770140000">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -158,6 +158,31 @@
                   </tr>
                 </thead>
                 <tbody id="leaderboard-body"></tbody>
+              </table>
+            </div>
+
+            <!-- Top Performers by Engagement -->
+            <div class="panel full-width" id="top-performers-panel">
+              <div class="panel-header">
+                <h3>🔥 Top Performers by Engagement</h3>
+                <span class="panel-subtitle">Unique users, repeat engagement</span>
+              </div>
+              <table id="top-performers-table" class="top-performers-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Supplier</th>
+                    <th>Location</th>
+                    <th>👥 Unique Users</th>
+                    <th>📞 Calls</th>
+                    <th>🌐 Clicks</th>
+                    <th>Total</th>
+                    <th>Price</th>
+                  </tr>
+                </thead>
+                <tbody id="top-performers-body">
+                  <tr><td colspan="8" class="loading-row">Loading top performers...</td></tr>
+                </tbody>
               </table>
             </div>
           </div>
@@ -1653,6 +1678,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1770139000"></script>
+  <script src="dashboard.js?v=1770140000"></script>
 </body>
 </html>

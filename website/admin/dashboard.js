@@ -2188,12 +2188,49 @@ async function loadLeaderboard() {
       a.click();
     };
 
+    // Load Top Performers from unified endpoint
+    loadTopPerformers();
+
     contentEl.classList.remove('hidden');
   } catch (error) {
     console.error('Failed to load leaderboard:', error);
     loadingEl.textContent = 'Failed to load leaderboard';
   } finally {
     loadingEl.classList.add('hidden');
+  }
+}
+
+// Load Top Performers by Engagement
+async function loadTopPerformers() {
+  const tbody = document.getElementById('top-performers-body');
+
+  try {
+    const data = await api(`/unified?days=${currentDays}`);
+    const topSuppliers = data.topSuppliers || [];
+
+    if (topSuppliers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="loading-row">No engagement data available</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+    topSuppliers.forEach(s => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td class="rank">${s.rank}</td>
+        <td>${s.name}</td>
+        <td>${s.location}</td>
+        <td class="unique-users">${s.uniqueUsers ?? '--'}</td>
+        <td>${s.calls > 0 ? '📞 ' + s.calls : '-'}</td>
+        <td>${s.websiteClicks > 0 ? '🌐 ' + s.websiteClicks : '-'}</td>
+        <td class="total-col">${s.totalClicks}</td>
+        <td>${s.price ? formatPrice(s.price) : '--'}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (error) {
+    console.error('Failed to load top performers:', error);
+    tbody.innerHTML = '<tr><td colspan="8" class="loading-row">Failed to load top performers</td></tr>';
   }
 }
 
