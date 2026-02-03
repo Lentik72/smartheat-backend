@@ -117,6 +117,13 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById(`tab-${target}`).classList.add('active');
 
     // Load tab-specific data
+    // Scope 18 tabs (new primary navigation)
+    if (target === 'leaderboard') loadLeaderboard();
+    if (target === 'app-analytics') loadAppAnalytics();
+    if (target === 'growth') loadGrowth();
+    if (target === 'coverage') loadCoverage();
+    if (target === 'settings') loadSettings();
+    // Legacy tabs (kept for backward compatibility)
     if (target === 'recommendations') loadRecommendations();
     if (target === 'website') loadWebsite();
     if (target === 'ios-app') loadIOSApp();
@@ -138,6 +145,9 @@ function showTab(tabName) {
   const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
   if (tab) tab.click();
 }
+
+// Make showTab globally accessible for onclick handlers
+window.showTab = showTab;
 
 // Priority alert view details button
 document.getElementById('priority-view-details')?.addEventListener('click', () => {
@@ -1875,14 +1885,502 @@ function formatThresholdKey(key) {
   return names[key] || key;
 }
 
+// ========================================
+// SCOPE 18: NEW TAB LOAD FUNCTIONS
+// ========================================
+
+// Load Leaderboard tab (default tab)
+async function loadLeaderboard() {
+  const loadingEl = document.getElementById('leaderboard-loading');
+  const contentEl = document.getElementById('leaderboard-content');
+
+  loadingEl.classList.remove('hidden');
+  contentEl.classList.add('hidden');
+
+  try {
+    const data = await api(`/clicks?days=${currentDays}`);
+
+    // Summary stats
+    const suppliers = data.bySupplierWithPrice || data.bySupplier || [];
+    const totalClicks = suppliers.reduce((sum, s) => sum + (s.clicks || s.calls + s.websites || 0), 0);
+    const marketAvg = suppliers.length > 0
+      ? suppliers.filter(s => s.currentPrice).reduce((sum, s) => sum + parseFloat(s.currentPrice), 0) /
+        suppliers.filter(s => s.currentPrice).length
+      : 0;
+    const top3Clicks = suppliers.slice(0, 3).reduce((sum, s) => sum + (s.clicks || s.calls + s.websites || 0), 0);
+    const top3Pct = totalClicks > 0 ? ((top3Clicks / totalClicks) * 100).toFixed(0) : 0;
+
+    document.getElementById('lb-total-suppliers').textContent = suppliers.length;
+    document.getElementById('lb-total-clicks').textContent = totalClicks;
+    document.getElementById('lb-market-avg').textContent = marketAvg > 0 ? formatPrice(marketAvg) : '--';
+    document.getElementById('lb-top3-pct').textContent = `${top3Pct}%`;
+
+    // Quick wins
+    const quickWinsList = document.getElementById('quick-wins-list');
+    quickWinsList.innerHTML = '';
+
+    const dataGaps = suppliers.filter(s => s.signal === 'data_gap').slice(0, 3);
+    const visibilityIssues = suppliers.filter(s => s.signal === 'visibility_issue').slice(0, 3);
+
+    if (dataGaps.length > 0) {
+      quickWinsList.innerHTML += `<div class="quick-win">⚠️ <strong>${dataGaps.length} suppliers</strong> getting clicks but no price data - add scraping</div>`;
+    }
+    if (visibilityIssues.length > 0) {
+      quickWinsList.innerHTML += `<div class="quick-win">👀 <strong>${visibilityIssues.length} suppliers</strong> have competitive prices but low visibility</div>`;
+    }
+    if (dataGaps.length === 0 && visibilityIssues.length === 0) {
+      quickWinsList.innerHTML = '<div class="quick-win success">✅ No urgent issues detected</div>';
+    }
+
+    // Leaderboard table
+    const tbody = document.getElementById('leaderboard-body');
+    tbody.innerHTML = '';
+
+    suppliers.forEach((s, i) => {
+      const clicks = s.clicks || (s.calls + s.websites) || 0;
+      const vsMarket = s.priceDelta ? (s.priceDelta > 0 ? '+' : '') + formatPrice(s.priceDelta) : '--';
+      const estValue = clicks > 0 ? '$' + Math.round(clicks * 0.03 * 7.50) : '--';
+
+      const signalBadge = {
+        brand_strength: '<span class="signal brand">💪 Brand</span>',
+        visibility_issue: '<span class="signal visibility">👀 Hidden Gem</span>',
+        data_gap: '<span class="signal data-gap">⚠️ Needs Data</span>',
+        normal: '<span class="signal normal">—</span>'
+      };
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td class="rank">${i + 1}</td>
+        <td>${s.name}</td>
+        <td>${clicks}</td>
+        <td>${formatPrice(s.currentPrice)}</td>
+        <td class="${s.priceDelta > 0 ? 'above-market' : s.priceDelta < 0 ? 'below-market' : ''}">${vsMarket}</td>
+        <td>${signalBadge[s.signal] || signalBadge.normal}</td>
+        <td>${estValue}</td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    // Export CSV button
+    document.getElementById('lb-export-csv').onclick = () => {
+      const csv = ['Rank,Supplier,Clicks,Price,vs Market,Signal,Est Value'];
+      suppliers.forEach((s, i) => {
+        const clicks = s.clicks || (s.calls + s.websites) || 0;
+        csv.push(`${i + 1},"${s.name}",${clicks},${s.currentPrice || ''},${s.priceDelta || ''},${s.signal || ''},${clicks * 0.03 * 7.50}`);
+      });
+      const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `leaderboard-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    };
+
+    contentEl.classList.remove('hidden');
+  } catch (error) {
+    console.error('Failed to load leaderboard:', error);
+    loadingEl.textContent = 'Failed to load leaderboard';
+  } finally {
+    loadingEl.classList.add('hidden');
+  }
+}
+
+// Load App Analytics tab
+async function loadAppAnalytics() {
+  const loadingEl = document.getElementById('app-analytics-loading');
+  const contentEl = document.getElementById('app-analytics-content');
+
+  loadingEl.classList.remove('hidden');
+  contentEl.classList.add('hidden');
+
+  try {
+    // Fetch unified data and app-specific data
+    const [unified, appData] = await Promise.all([
+      api(`/unified?days=${currentDays}`).catch(() => null),
+      api(`/ios-app?days=${currentDays}`).catch(() => null)
+    ]);
+
+    const app = unified?.app || {};
+    const engagement = appData?.engagement || {};
+
+    // Session stats
+    const sessions = app.sessions || engagement.totalSessions || 0;
+    document.getElementById('aa-sessions').textContent = sessions || '--';
+    document.getElementById('aa-sessions-sub').textContent = sessions > 0 ? `${currentDays}d period` : 'No data';
+
+    // Engagement tiers (simulate from available data)
+    const powerPct = engagement.powerUsers || 0;
+    const engagedPct = engagement.engaged || 0;
+    const casualPct = engagement.casual || 0;
+    const browsePct = engagement.browseOnly || 100 - powerPct - engagedPct - casualPct;
+
+    document.getElementById('aa-power').textContent = `${powerPct}%`;
+    document.getElementById('aa-engaged').textContent = `${engagedPct}%`;
+    document.getElementById('aa-browse').textContent = `${browsePct}%`;
+
+    // Engagement bars
+    document.getElementById('bar-power').style.width = `${powerPct}%`;
+    document.getElementById('bar-power-val').textContent = `${powerPct}%`;
+    document.getElementById('bar-engaged').style.width = `${engagedPct}%`;
+    document.getElementById('bar-engaged-val').textContent = `${engagedPct}%`;
+    document.getElementById('bar-casual').style.width = `${casualPct}%`;
+    document.getElementById('bar-casual-val').textContent = `${casualPct}%`;
+    document.getElementById('bar-browse').style.width = `${browsePct}%`;
+    document.getElementById('bar-browse-val').textContent = `${browsePct}%`;
+
+    // Delivery patterns
+    const deliveries = app.saves || appData?.deliveries?.total || 0;
+    document.getElementById('dp-total').textContent = deliveries || '--';
+    document.getElementById('dp-value').textContent = deliveries > 0 ? `~$${(deliveries * 500).toLocaleString()}` : '--';
+    document.getElementById('dp-repeat').textContent = appData?.deliveries?.repeatRate || '--%';
+    document.getElementById('dp-directory').textContent = appData?.deliveries?.fromDirectory || '--%';
+    document.getElementById('dp-ontime').textContent = appData?.deliveries?.onTime || '--%';
+    document.getElementById('dp-late').textContent = appData?.deliveries?.late || '--%';
+    document.getElementById('dp-overdue').textContent = appData?.deliveries?.overdue || '--';
+    document.getElementById('dp-insight').textContent = deliveries > 0
+      ? '💡 Users who log deliveries have higher retention'
+      : '💡 Encourage first delivery logging to boost retention';
+
+    // FVE (First Value Event)
+    const fve = appData?.fve || {};
+    document.getElementById('fve-rate').textContent = fve.completionRate || '--%';
+    document.getElementById('fve-72h').textContent = fve.within72h || '--%';
+    document.getElementById('fve-retention').textContent = fve.userRetention || '--%';
+    document.getElementById('fve-non-retention').textContent = fve.nonUserRetention || '--%';
+    document.getElementById('fve-multiplier').textContent = fve.multiplier || '--×';
+    document.getElementById('fve-insight').textContent = fve.completionRate
+      ? '💡 Users who complete FVE retain significantly better'
+      : '💡 Track first value events to measure user activation';
+
+    // Confidence score
+    const confidence = appData?.confidence || {};
+    document.getElementById('cs-avg').textContent = confidence.avg || '--';
+    document.getElementById('cs-high-bar').style.width = `${confidence.highPct || 0}%`;
+    document.getElementById('cs-med-bar').style.width = `${confidence.medPct || 0}%`;
+    document.getElementById('cs-low-bar').style.width = `${confidence.lowPct || 0}%`;
+    document.getElementById('cs-high-pct').textContent = `${confidence.highPct || 0}%`;
+    document.getElementById('cs-med-pct').textContent = `${confidence.medPct || 0}%`;
+    document.getElementById('cs-low-pct').textContent = `${confidence.lowPct || 0}%`;
+
+    const factorsEl = document.getElementById('confidence-factors');
+    factorsEl.innerHTML = '';
+    if (confidence.factors) {
+      Object.entries(confidence.factors).forEach(([factor, score]) => {
+        factorsEl.innerHTML += `<div class="factor"><span>${factor}</span><span>${score}</span></div>`;
+      });
+    }
+    document.getElementById('cs-insight').textContent = '💡 Higher confidence = more likely to order through app';
+
+    // Fuel type breakdown
+    const fuel = appData?.fuelType || {};
+    document.getElementById('fuel-oil-users').textContent = `${fuel.oil?.users || '--'} users`;
+    document.getElementById('fuel-oil-pct').textContent = `${fuel.oil?.pct || '--'}%`;
+    document.getElementById('fuel-propane-users').textContent = `${fuel.propane?.users || '--'} users`;
+    document.getElementById('fuel-propane-pct').textContent = `${fuel.propane?.pct || '--'}%`;
+
+    const propaneSignals = document.getElementById('propane-signal-list');
+    propaneSignals.innerHTML = fuel.propane?.users > 0
+      ? `<div class="signal-item">📊 ${fuel.propane.users} propane users tracked - expansion opportunity</div>`
+      : '<div class="signal-item hint">No propane demand signals yet</div>';
+
+    contentEl.classList.remove('hidden');
+  } catch (error) {
+    console.error('Failed to load app analytics:', error);
+    loadingEl.textContent = 'Failed to load app analytics';
+  } finally {
+    loadingEl.classList.add('hidden');
+  }
+}
+
+// Load Growth tab
+async function loadGrowth() {
+  const loadingEl = document.getElementById('growth-loading');
+  const contentEl = document.getElementById('growth-content');
+
+  loadingEl.classList.remove('hidden');
+  contentEl.classList.add('hidden');
+
+  try {
+    const [unified, retention, recommendations] = await Promise.all([
+      api(`/unified?days=${currentDays}`),
+      api('/retention').catch(() => ({ available: false })),
+      api(`/recommendations?days=${currentDays}`).catch(() => ({ recommendations: [] }))
+    ]);
+
+    // Platform comparison
+    const ios = unified?.app || {};
+    const android = unified?.android || {};
+    const website = unified?.website || {};
+
+    document.getElementById('p-ios-users').textContent = ios.uniqueUsers || '--';
+    document.getElementById('p-ios-deliveries').textContent = ios.saves || '--';
+    document.getElementById('p-ios-retention').textContent = retention?.data?.summary?.week1RetentionRate
+      ? `${retention.data.summary.week1RetentionRate}%`
+      : '--%';
+
+    document.getElementById('p-android-status').textContent = android?.recommendation?.status || 'WAITLIST';
+    document.getElementById('p-android-waitlist').textContent = android?.waitlist?.total || '--';
+    document.getElementById('p-android-pwa').textContent = android?.pwa?.installs || '--';
+    document.getElementById('p-android-launches').textContent = android?.pwa?.launches || '--';
+
+    document.getElementById('p-web-visitors').textContent = website.activeUsers || website.users || '--';
+    document.getElementById('p-web-clicks').textContent = website.totalClicks || '--';
+    document.getElementById('p-web-calls').textContent = website.callClicks || '--';
+
+    // Platform insight
+    const platformInsight = document.getElementById('platform-insight');
+    if (ios.uniqueUsers > 0 && website.activeUsers > 0) {
+      const iosRatio = ios.uniqueUsers / (ios.uniqueUsers + website.activeUsers) * 100;
+      platformInsight.textContent = `💡 iOS represents ${iosRatio.toFixed(0)}% of active users`;
+    } else {
+      platformInsight.textContent = '💡 Track both platforms to compare engagement';
+    }
+
+    // Android Decision Matrix
+    const waitlistTotal = android?.waitlist?.total || 0;
+    const pwaInstalls = android?.pwa?.installs || 0;
+    const week1Retention = parseFloat(retention?.data?.summary?.week1RetentionRate) || 0;
+
+    const badge = document.getElementById('android-badge');
+    const message = document.getElementById('android-message');
+
+    const goConditions = waitlistTotal >= 200 && pwaInstalls >= 50 && week1Retention >= 20;
+    const nogoConditions = week1Retention < 20 && week1Retention > 0;
+
+    if (goConditions) {
+      badge.textContent = 'GO';
+      badge.className = 'decision-badge go';
+      message.textContent = 'All conditions met - Android development recommended';
+    } else if (nogoConditions) {
+      badge.textContent = 'NO-GO';
+      badge.className = 'decision-badge nogo';
+      message.textContent = 'Fix iOS retention first - don\'t scale a leaky bucket';
+    } else {
+      badge.textContent = 'WAIT';
+      badge.className = 'decision-badge wait';
+      message.textContent = 'Monitor thresholds - continue with PWA';
+    }
+
+    // Conditions
+    updateCondition('cond-waitlist', waitlistTotal >= 200, `${waitlistTotal}/200`);
+    updateCondition('cond-pwa', pwaInstalls >= 50, `${pwaInstalls}/50`);
+    updateCondition('cond-retention', week1Retention >= 20, `${week1Retention}%`);
+
+    // Retention by action
+    const behaviors = retention?.data?.behaviorRetention || [];
+    const retentionMap = {};
+    behaviors.forEach(b => {
+      retentionMap[b.behavior] = b.avgActiveDays;
+    });
+
+    const maxDays = Math.max(...Object.values(retentionMap), 1);
+    setRetentionBar('rba-delivery', retentionMap.logged_delivery, maxDays);
+    setRetentionBar('rba-tank', retentionMap.set_up_tank, maxDays);
+    setRetentionBar('rba-search', retentionMap.searched_supplier, maxDays);
+    setRetentionBar('rba-browse', retentionMap.browsed_only, maxDays);
+
+    // Top recommendation
+    const topRec = recommendations.recommendations?.[0];
+    if (topRec) {
+      document.getElementById('rec-title').textContent = topRec.title;
+      document.getElementById('rec-insight').textContent = topRec.insight || '';
+
+      const secondaryList = document.getElementById('rec-secondary-list');
+      secondaryList.innerHTML = '';
+      recommendations.recommendations.slice(1, 4).forEach(r => {
+        secondaryList.innerHTML += `<li>${r.title}</li>`;
+      });
+    } else {
+      document.getElementById('rec-title').textContent = 'All systems healthy';
+      document.getElementById('rec-insight').textContent = 'No urgent recommendations';
+    }
+
+    contentEl.classList.remove('hidden');
+  } catch (error) {
+    console.error('Failed to load growth:', error);
+    loadingEl.textContent = 'Failed to load growth data';
+  } finally {
+    loadingEl.classList.add('hidden');
+  }
+}
+
+function updateCondition(id, met, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.querySelector('.cond-check').textContent = met ? '✅' : '⏳';
+  el.querySelector('.cond-value').textContent = value;
+  el.classList.toggle('met', met);
+}
+
+function setRetentionBar(id, value, max) {
+  const bar = document.getElementById(id);
+  const valEl = document.getElementById(id + '-val');
+  if (!bar || !valEl) return;
+
+  if (value !== undefined) {
+    const pct = (value / max) * 100;
+    bar.style.width = `${pct}%`;
+    valEl.textContent = `${value.toFixed(1)} days`;
+  } else {
+    bar.style.width = '0%';
+    valEl.textContent = '--';
+  }
+}
+
+// Load Coverage tab
+async function loadCoverage() {
+  try {
+    const [overview, geographic] = await Promise.all([
+      api(`/overview?days=${currentDays}`),
+      api(`/geographic?days=${currentDays}`)
+    ]);
+
+    // Summary cards
+    document.getElementById('cov-suppliers').textContent = overview.scraping?.suppliersTotal || '--';
+    document.getElementById('cov-states').textContent = overview.coverage?.stateCount || '--';
+    document.getElementById('cov-gaps').textContent = overview.coverage?.trueCoverageGaps || '--';
+
+    // Coverage gaps table
+    const gapsBody = document.getElementById('coverage-gaps-body');
+    gapsBody.innerHTML = '';
+
+    const gaps = geographic.coverageGaps || [];
+    if (gaps.length === 0) {
+      gapsBody.innerHTML = '<tr><td colspan="4" class="no-data">No coverage gaps detected</td></tr>';
+    } else {
+      gaps.slice(0, 20).forEach(g => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${g.zip}</td>
+          <td>${g.city || '--'}, ${g.state || '--'}</td>
+          <td>${g.count}</td>
+          <td><button class="btn-small" onclick="showTab('settings')">Add Supplier</button></td>
+        `;
+        gapsBody.appendChild(row);
+      });
+    }
+
+    // Map - reuse existing loadMap logic
+    loadCoverageMap(geographic);
+
+  } catch (error) {
+    console.error('Failed to load coverage:', error);
+  }
+}
+
+// Map for coverage tab
+function loadCoverageMap(data) {
+  // Initialize map if needed
+  if (!map) {
+    map = L.map('map-container').setView([40.7, -74.0], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+  }
+
+  // Clear existing markers
+  map.eachLayer(layer => {
+    if (layer instanceof L.CircleMarker) {
+      map.removeLayer(layer);
+    }
+  });
+
+  // Add demand heatmap (blue circles)
+  const demandData = data.demandHeatmap || [];
+  const maxDemand = Math.max(...demandData.map(c => c.count), 1);
+  demandData.forEach(c => {
+    const radius = 6 + (c.count / maxDemand) * 18;
+    L.circleMarker([c.lat, c.lng], {
+      radius: radius,
+      fillColor: '#2563eb',
+      color: '#1d4ed8',
+      weight: 1,
+      opacity: 0.8,
+      fillOpacity: 0.4
+    })
+    .bindPopup(`<b>${c.city || 'Unknown'}, ${c.state || ''}</b><br>ZIP: ${c.zip}<br>Searches: ${c.count}`)
+    .addTo(map);
+  });
+
+  // Add coverage gaps (red circles)
+  const gapData = data.coverageGaps || [];
+  gapData.forEach(c => {
+    const radius = 8 + (c.count / maxDemand) * 16;
+    L.circleMarker([c.lat, c.lng], {
+      radius: radius,
+      fillColor: '#ef4444',
+      color: '#dc2626',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.6
+    })
+    .bindPopup(`<b>⚠️ COVERAGE GAP</b><br>${c.city || 'Unknown'}, ${c.state || ''}<br>ZIP: ${c.zip}<br>Searches: ${c.count}`)
+    .addTo(map);
+  });
+
+  // Fit bounds
+  const allPoints = [...demandData, ...gapData];
+  if (allPoints.length > 0) {
+    const bounds = allPoints.map(c => [c.lat, c.lng]);
+    map.fitBounds(bounds, { padding: [20, 20] });
+  }
+
+  // Update stats
+  const stats = data.stats || {};
+  document.getElementById('map-stats').innerHTML = `
+    <span class="stat-item"><span class="dot blue"></span> Demand: ${stats.totalDemandZips || demandData.length} ZIPs</span>
+    <span class="stat-item"><span class="dot red"></span> Gaps: ${stats.totalGapZips || gapData.length} ZIPs</span>
+  `;
+}
+
+// Load Settings tab
+async function loadSettings() {
+  try {
+    const [scraperHealth, suppliers] = await Promise.all([
+      api('/scraper-health'),
+      api(`/suppliers?limit=50&offset=0`)
+    ]);
+
+    // Data health summary
+    document.getElementById('health-last-scrape').textContent = timeAgo(scraperHealth.lastRun);
+    document.getElementById('health-prices').textContent = `${scraperHealth.withPrices}/${scraperHealth.totalSuppliers}`;
+    document.getElementById('health-stale').textContent = scraperHealth.stale?.length || 0;
+
+    // Stale suppliers table
+    const staleBody = document.getElementById('stale-body');
+    staleBody.innerHTML = '';
+
+    if (!scraperHealth.stale || scraperHealth.stale.length === 0) {
+      staleBody.innerHTML = '<tr><td colspan="4" class="no-data">No stale suppliers</td></tr>';
+    } else {
+      scraperHealth.stale.forEach(s => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${s.name}</td>
+          <td>${formatPrice(s.lastPrice)}</td>
+          <td>${timeAgo(s.lastUpdated)}</td>
+          <td><button class="btn-small" onclick="editSupplier('${s.id}')">Fix</button></td>
+        `;
+        staleBody.appendChild(row);
+      });
+    }
+
+    // Load suppliers (uses existing loadSuppliers function)
+    loadSuppliers();
+
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+  }
+}
+
 // Load dashboard
 async function loadDashboard() {
   await Promise.all([
     loadOverview(),
+    loadLeaderboard(),  // Load default tab
     loadSupplierSignals(),
     loadConversion(),
-    loadPriceAlerts(),
-    loadRecommendations()
+    loadPriceAlerts()
   ]);
 }
 

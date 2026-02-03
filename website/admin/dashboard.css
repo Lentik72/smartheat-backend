@@ -1555,13 +1555,683 @@ legend {
   .activity-summary {
     justify-content: space-around;
   }
-  
+
   .activity-filters {
     flex-direction: column;
   }
-  
+
   .filter-select,
   .filter-input {
     width: 100%;
+  }
+}
+
+/* ========================================
+   SCOPE 18: NEW TAB STYLES
+   ======================================== */
+
+/* Leaderboard Tab */
+.leaderboard-container {
+  padding: 0;
+}
+
+.leaderboard-summary {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.leaderboard-summary .summary-stat {
+  background: var(--gray-50);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.leaderboard-table th {
+  background: var(--gray-50);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.leaderboard-table tr:hover {
+  background: var(--gray-50);
+}
+
+.leaderboard-table .rank {
+  font-weight: 700;
+  color: var(--gray-400);
+  width: 40px;
+}
+
+.leaderboard-table tr:nth-child(1) .rank { color: #fbbf24; }
+.leaderboard-table tr:nth-child(2) .rank { color: #9ca3af; }
+.leaderboard-table tr:nth-child(3) .rank { color: #d97706; }
+
+.above-market { color: var(--danger); }
+.below-market { color: var(--success); }
+
+.signal {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.signal.brand { background: #dbeafe; color: #1e40af; }
+.signal.visibility { background: #fef3c7; color: #92400e; }
+.signal.data-gap { background: #fee2e2; color: #991b1b; }
+.signal.normal { color: var(--gray-400); }
+
+/* Quick Wins Panel */
+.quick-wins-panel {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.quick-wins-panel h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.quick-win {
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.quick-win.success {
+  color: var(--success);
+}
+
+/* App Analytics Tab */
+.app-analytics-container {
+  padding: 0;
+}
+
+.engagement-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.engagement-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bar-label {
+  width: 100px;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.bar-container {
+  flex: 1;
+  height: 24px;
+  background: var(--gray-200);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.bar.power { background: var(--success); }
+.bar.engaged { background: var(--primary); }
+.bar.casual { background: var(--warning); }
+.bar.browse { background: var(--gray-400); }
+
+.bar-value {
+  width: 50px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Stat Row Variants */
+.stat-row.highlight {
+  background: var(--gray-50);
+  margin: 0 -1rem;
+  padding: 0.75rem 1rem;
+}
+
+.stat-row.warning .stat-value {
+  color: var(--danger);
+}
+
+.stat-row hr {
+  display: none;
+}
+
+/* Insight Box */
+.insight-box {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #eff6ff;
+  border-left: 3px solid var(--primary);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+}
+
+/* Confidence Score */
+.confidence-container {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.confidence-summary {
+  flex: 1;
+  min-width: 200px;
+}
+
+.confidence-score-display {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.score-value {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.score-label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+.confidence-distribution {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.dist-bar {
+  transition: width 0.3s ease;
+}
+
+.dist-bar.high { background: var(--success); }
+.dist-bar.medium { background: var(--warning); }
+.dist-bar.low { background: var(--danger); }
+
+.confidence-legend {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--gray-600);
+}
+
+.confidence-legend .dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.confidence-legend .dot.high { background: var(--success); }
+.confidence-legend .dot.medium { background: var(--warning); }
+.confidence-legend .dot.low { background: var(--danger); }
+
+.confidence-factors {
+  flex: 1;
+  min-width: 200px;
+}
+
+.factor {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+/* Fuel Type */
+.fuel-comparison {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.fuel-card {
+  flex: 1;
+  min-width: 200px;
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.fuel-card.oil {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
+  color: white;
+}
+
+.fuel-card.propane {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.fuel-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.fuel-name {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.fuel-users {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.fuel-pct {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.fuel-status {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.propane-signals {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--gray-50);
+  border-radius: 8px;
+}
+
+.propane-signals h4 {
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.signal-item {
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
+}
+
+.signal-item.hint {
+  color: var(--gray-500);
+}
+
+/* Growth Tab */
+.growth-container {
+  padding: 0;
+}
+
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.platform-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 2px solid transparent;
+}
+
+.platform-card.ios { border-color: #000; }
+.platform-card.android { border-color: #3ddc84; }
+.platform-card.web { border-color: var(--primary); }
+
+.platform-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.platform-icon {
+  font-size: 1.5rem;
+}
+
+.platform-name {
+  font-weight: 600;
+  flex: 1;
+}
+
+.platform-status {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: var(--gray-200);
+  color: var(--gray-600);
+}
+
+.platform-status.live {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.platform-stats {
+  display: flex;
+  justify-content: space-between;
+}
+
+.p-stat {
+  text-align: center;
+}
+
+.p-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: block;
+}
+
+.p-label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+/* Android Decision */
+.android-decision {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.android-decision > div {
+  padding: 1rem;
+  background: var(--gray-50);
+  border-radius: 8px;
+}
+
+.decision-badge {
+  display: inline-block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.decision-badge.go { background: #dcfce7; color: #166534; }
+.decision-badge.wait { background: #fef3c7; color: #92400e; }
+.decision-badge.nogo { background: #fee2e2; color: #991b1b; }
+
+.decision-conditions h4,
+.decision-nogo h4 {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin-bottom: 0.75rem;
+}
+
+.condition {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  align-items: center;
+}
+
+.condition.met {
+  color: var(--success);
+}
+
+.cond-check {
+  font-size: 1rem;
+}
+
+.cond-name {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.cond-value {
+  font-weight: 600;
+}
+
+.nogo-text {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+/* Retention by Action */
+.retention-by-action {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.retention-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.rba-label {
+  width: 140px;
+  font-size: 0.875rem;
+}
+
+.rba-bar-container {
+  flex: 1;
+  height: 20px;
+  background: var(--gray-200);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rba-bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.rba-bar.browse {
+  background: var(--gray-400);
+}
+
+.rba-value {
+  width: 80px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Top Recommendation */
+.top-recommendation {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+}
+
+.rec-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.rec-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.rec-primary .rec-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.rec-primary .rec-insight {
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+.rec-secondary {
+  padding: 1rem;
+  background: var(--gray-50);
+  border-radius: 8px;
+}
+
+.rec-secondary-label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.rec-secondary ul {
+  list-style: none;
+  padding: 0;
+}
+
+.rec-secondary li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--gray-200);
+  font-size: 0.875rem;
+}
+
+.rec-secondary li:last-child {
+  border-bottom: none;
+}
+
+/* Coverage Tab */
+.coverage-container {
+  padding: 0;
+}
+
+/* Settings Tab */
+.settings-container {
+  padding: 0;
+}
+
+.health-summary {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.health-stat {
+  text-align: center;
+  min-width: 120px;
+}
+
+.health-stat.warning .health-value {
+  color: var(--danger);
+}
+
+.health-value {
+  font-size: 2rem;
+  font-weight: 700;
+  display: block;
+}
+
+.health-label {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+.external-links {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ext-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: var(--gray-50);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--gray-700);
+  transition: background 0.2s;
+}
+
+.ext-link:hover {
+  background: var(--gray-200);
+}
+
+.ext-icon {
+  font-size: 1.5rem;
+}
+
+.ext-name {
+  font-weight: 500;
+}
+
+/* Responsive for Scope 18 */
+@media (max-width: 768px) {
+  .android-decision {
+    grid-template-columns: 1fr;
+  }
+
+  .top-recommendation {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fuel-comparison {
+    flex-direction: column;
+  }
+
+  .confidence-container {
+    flex-direction: column;
+  }
+
+  .leaderboard-summary {
+    flex-direction: column;
+  }
+
+  .health-summary {
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .health-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .health-value {
+    font-size: 1.5rem;
   }
 }

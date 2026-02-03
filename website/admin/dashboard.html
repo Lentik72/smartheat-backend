@@ -82,23 +82,570 @@
       <a href="#" id="alert-action">View</a>
     </div>
 
-    <!-- Tabs -->
+    <!-- Tabs (Scope 18: Restructured from 9 to 5 tabs) -->
     <nav class="tabs">
-      <button class="tab active" data-tab="recommendations">Recommendations</button>
-      <button class="tab" data-tab="website">Website</button>
-      <button class="tab" data-tab="ios-app">iOS App</button>
-      <button class="tab" data-tab="android">Android</button>
-      <button class="tab" data-tab="overview">Overview</button>
-      <button class="tab" data-tab="map">Map</button>
-      <button class="tab" data-tab="scrapers">Data Health</button>
-      <button class="tab" data-tab="suppliers">Suppliers</button>
-      <button class="tab" data-tab="external">External</button>
+      <button class="tab active" data-tab="leaderboard">🏆 Leaderboard</button>
+      <button class="tab" data-tab="app-analytics">📊 App Analytics</button>
+      <button class="tab" data-tab="growth">📈 Growth</button>
+      <button class="tab" data-tab="coverage">🗺️ Coverage</button>
+      <button class="tab" data-tab="settings">⚙️ Settings</button>
     </nav>
 
     <!-- Tab Content -->
     <main class="tab-content">
-      <!-- Recommendations Tab (Default View) -->
-      <section id="tab-recommendations" class="tab-panel active">
+
+      <!-- ============================================================ -->
+      <!-- LEADERBOARD TAB (Default) - Scope 18 -->
+      <!-- ============================================================ -->
+      <section id="tab-leaderboard" class="tab-panel active">
+        <div class="leaderboard-container">
+          <div id="leaderboard-loading" class="loading">Loading supplier rankings...</div>
+
+          <div id="leaderboard-content" class="hidden">
+            <!-- Quick Wins Panel -->
+            <div class="quick-wins-panel" id="quick-wins-panel">
+              <h3>💡 Quick Wins</h3>
+              <div id="quick-wins-list"></div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="leaderboard-summary">
+              <div class="summary-stat">
+                <span class="summary-value" id="lb-total-suppliers">--</span>
+                <span class="summary-label">Suppliers</span>
+              </div>
+              <div class="summary-stat">
+                <span class="summary-value" id="lb-total-clicks">--</span>
+                <span class="summary-label">Total Clicks</span>
+              </div>
+              <div class="summary-stat">
+                <span class="summary-value" id="lb-market-avg">--</span>
+                <span class="summary-label">Market Avg</span>
+              </div>
+              <div class="summary-stat">
+                <span class="summary-value" id="lb-top3-pct">--</span>
+                <span class="summary-label">Top 3 Share</span>
+              </div>
+            </div>
+
+            <!-- Leaderboard Table -->
+            <div class="panel full-width">
+              <div class="panel-header">
+                <h3>🏆 Supplier Leaderboard</h3>
+                <button id="lb-export-csv" class="btn-small">Export CSV</button>
+              </div>
+              <table id="leaderboard-table" class="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Supplier</th>
+                    <th>Clicks</th>
+                    <th>Price</th>
+                    <th>vs Market</th>
+                    <th>Signal</th>
+                    <th>Est. Value</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboard-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- APP ANALYTICS TAB - Scope 18 -->
+      <!-- ============================================================ -->
+      <section id="tab-app-analytics" class="tab-panel">
+        <div class="app-analytics-container">
+          <div id="app-analytics-loading" class="loading">Loading app analytics...</div>
+
+          <div id="app-analytics-content" class="hidden">
+            <!-- Engagement Summary Cards -->
+            <div class="cards">
+              <div class="card">
+                <div class="card-label">Total Sessions</div>
+                <div class="card-value" id="aa-sessions">--</div>
+                <div class="card-sub" id="aa-sessions-sub">--</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Power Users</div>
+                <div class="card-value" id="aa-power">--%</div>
+                <div class="card-sub">6+ actions/session</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Engaged</div>
+                <div class="card-value" id="aa-engaged">--%</div>
+                <div class="card-sub">3-5 actions/session</div>
+              </div>
+              <div class="card">
+                <div class="card-label">At Risk</div>
+                <div class="card-value" id="aa-browse">--%</div>
+                <div class="card-sub">Browse only</div>
+              </div>
+            </div>
+
+            <!-- Engagement Breakdown -->
+            <div class="panel full-width">
+              <h3>Engagement Breakdown</h3>
+              <div class="engagement-bars" id="engagement-bars">
+                <div class="engagement-bar-row">
+                  <span class="bar-label">Power Users</span>
+                  <div class="bar-container"><div class="bar power" id="bar-power"></div></div>
+                  <span class="bar-value" id="bar-power-val">--%</span>
+                </div>
+                <div class="engagement-bar-row">
+                  <span class="bar-label">Engaged</span>
+                  <div class="bar-container"><div class="bar engaged" id="bar-engaged"></div></div>
+                  <span class="bar-value" id="bar-engaged-val">--%</span>
+                </div>
+                <div class="engagement-bar-row">
+                  <span class="bar-label">Casual</span>
+                  <div class="bar-container"><div class="bar casual" id="bar-casual"></div></div>
+                  <span class="bar-value" id="bar-casual-val">--%</span>
+                </div>
+                <div class="engagement-bar-row">
+                  <span class="bar-label">Browse Only</span>
+                  <div class="bar-container"><div class="bar browse" id="bar-browse"></div></div>
+                  <span class="bar-value" id="bar-browse-val">--%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="panel-grid two-col">
+              <!-- Delivery Patterns -->
+              <div class="panel">
+                <h3>📦 Delivery Patterns</h3>
+                <div id="delivery-patterns">
+                  <div class="stat-row">
+                    <span>Total Deliveries</span>
+                    <span class="stat-value" id="dp-total">--</span>
+                  </div>
+                  <div class="stat-row">
+                    <span>Est. Order Value</span>
+                    <span class="stat-value" id="dp-value">--</span>
+                  </div>
+                  <div class="stat-row highlight">
+                    <span>Repeat Supplier Rate</span>
+                    <span class="stat-value" id="dp-repeat">--%</span>
+                  </div>
+                  <div class="stat-row highlight">
+                    <span>From Directory</span>
+                    <span class="stat-value" id="dp-directory">--%</span>
+                  </div>
+                  <hr>
+                  <div class="stat-row">
+                    <span>Ordered On-Time</span>
+                    <span class="stat-value" id="dp-ontime">--%</span>
+                  </div>
+                  <div class="stat-row">
+                    <span>Ordered Late</span>
+                    <span class="stat-value" id="dp-late">--%</span>
+                  </div>
+                  <div class="stat-row warning">
+                    <span>Overdue (ran out?)</span>
+                    <span class="stat-value" id="dp-overdue">--</span>
+                  </div>
+                </div>
+                <div class="insight-box" id="dp-insight"></div>
+              </div>
+
+              <!-- FVE (First Value Event) -->
+              <div class="panel">
+                <h3>🎯 First Value Event</h3>
+                <div id="fve-stats">
+                  <div class="stat-row">
+                    <span>FVE Completion Rate</span>
+                    <span class="stat-value" id="fve-rate">--%</span>
+                  </div>
+                  <div class="stat-row">
+                    <span>Within 72 Hours</span>
+                    <span class="stat-value" id="fve-72h">--%</span>
+                  </div>
+                  <hr>
+                  <div class="stat-row highlight">
+                    <span>FVE User Retention</span>
+                    <span class="stat-value" id="fve-retention">--%</span>
+                  </div>
+                  <div class="stat-row">
+                    <span>Non-FVE Retention</span>
+                    <span class="stat-value" id="fve-non-retention">--%</span>
+                  </div>
+                  <div class="stat-row highlight">
+                    <span>Retention Multiplier</span>
+                    <span class="stat-value" id="fve-multiplier">--×</span>
+                  </div>
+                </div>
+                <div class="insight-box" id="fve-insight"></div>
+              </div>
+            </div>
+
+            <!-- Confidence Score -->
+            <div class="panel full-width">
+              <h3>🛡️ User Confidence Score</h3>
+              <div class="confidence-container">
+                <div class="confidence-summary">
+                  <div class="confidence-score-display">
+                    <span class="score-value" id="cs-avg">--</span>
+                    <span class="score-label">Avg Score</span>
+                  </div>
+                  <div class="confidence-distribution">
+                    <div class="dist-bar high" id="cs-high-bar"></div>
+                    <div class="dist-bar medium" id="cs-med-bar"></div>
+                    <div class="dist-bar low" id="cs-low-bar"></div>
+                  </div>
+                  <div class="confidence-legend">
+                    <span><span class="dot high"></span> High (<span id="cs-high-pct">--%</span>)</span>
+                    <span><span class="dot medium"></span> Medium (<span id="cs-med-pct">--%</span>)</span>
+                    <span><span class="dot low"></span> Low (<span id="cs-low-pct">--%</span>)</span>
+                  </div>
+                </div>
+                <div class="confidence-factors" id="confidence-factors">
+                  <!-- Filled by JS -->
+                </div>
+              </div>
+              <div class="insight-box" id="cs-insight"></div>
+            </div>
+
+            <!-- Fuel Type Breakdown -->
+            <div class="panel full-width">
+              <h3>⛽ Fuel Type Breakdown</h3>
+              <div class="fuel-comparison">
+                <div class="fuel-card oil">
+                  <div class="fuel-icon">🛢️</div>
+                  <div class="fuel-name">Heating Oil</div>
+                  <div class="fuel-users" id="fuel-oil-users">-- users</div>
+                  <div class="fuel-pct" id="fuel-oil-pct">--%</div>
+                  <div class="fuel-status">✅ Served</div>
+                </div>
+                <div class="fuel-card propane">
+                  <div class="fuel-icon">🔥</div>
+                  <div class="fuel-name">Propane</div>
+                  <div class="fuel-users" id="fuel-propane-users">-- users</div>
+                  <div class="fuel-pct" id="fuel-propane-pct">--%</div>
+                  <div class="fuel-status" id="fuel-propane-status">⚠️ Underserved</div>
+                </div>
+              </div>
+              <div class="propane-signals" id="propane-signals">
+                <h4>Propane Demand Signals</h4>
+                <div id="propane-signal-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- GROWTH TAB - Scope 18 (Merged iOS + Android + Website) -->
+      <!-- ============================================================ -->
+      <section id="tab-growth" class="tab-panel">
+        <div class="growth-container">
+          <div id="growth-loading" class="loading">Loading growth metrics...</div>
+
+          <div id="growth-content" class="hidden">
+            <!-- Platform Comparison -->
+            <div class="panel full-width">
+              <h3>📱 Platform Comparison</h3>
+              <div class="platform-grid">
+                <div class="platform-card ios">
+                  <div class="platform-header">
+                    <span class="platform-icon">🍎</span>
+                    <span class="platform-name">iOS App</span>
+                    <span class="platform-status live">LIVE</span>
+                  </div>
+                  <div class="platform-stats">
+                    <div class="p-stat">
+                      <span class="p-value" id="p-ios-users">--</span>
+                      <span class="p-label">Users</span>
+                    </div>
+                    <div class="p-stat">
+                      <span class="p-value" id="p-ios-deliveries">--</span>
+                      <span class="p-label">Deliveries</span>
+                    </div>
+                    <div class="p-stat">
+                      <span class="p-value" id="p-ios-retention">--%</span>
+                      <span class="p-label">Week-1 Retention</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="platform-card android">
+                  <div class="platform-header">
+                    <span class="platform-icon">🤖</span>
+                    <span class="platform-name">Android</span>
+                    <span class="platform-status" id="p-android-status">WAITLIST</span>
+                  </div>
+                  <div class="platform-stats">
+                    <div class="p-stat">
+                      <span class="p-value" id="p-android-waitlist">--</span>
+                      <span class="p-label">Waitlist</span>
+                    </div>
+                    <div class="p-stat">
+                      <span class="p-value" id="p-android-pwa">--</span>
+                      <span class="p-label">PWA Installs</span>
+                    </div>
+                    <div class="p-stat">
+                      <span class="p-value" id="p-android-launches">--</span>
+                      <span class="p-label">PWA Launches</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="platform-card web">
+                  <div class="platform-header">
+                    <span class="platform-icon">🌐</span>
+                    <span class="platform-name">Website</span>
+                    <span class="platform-status live">LIVE</span>
+                  </div>
+                  <div class="platform-stats">
+                    <div class="p-stat">
+                      <span class="p-value" id="p-web-visitors">--</span>
+                      <span class="p-label">Visitors</span>
+                    </div>
+                    <div class="p-stat">
+                      <span class="p-value" id="p-web-clicks">--</span>
+                      <span class="p-label">Clicks</span>
+                    </div>
+                    <div class="p-stat">
+                      <span class="p-value" id="p-web-calls">--</span>
+                      <span class="p-label">Calls</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="insight-box" id="platform-insight"></div>
+            </div>
+
+            <!-- Android Decision Matrix -->
+            <div class="panel full-width">
+              <h3>🤖 Android Decision Matrix</h3>
+              <div class="android-decision">
+                <div class="decision-status" id="android-decision-status">
+                  <span class="decision-badge" id="android-badge">WAIT</span>
+                  <span class="decision-message" id="android-message">Loading...</span>
+                </div>
+                <div class="decision-conditions">
+                  <h4>GO Conditions</h4>
+                  <div class="condition" id="cond-waitlist">
+                    <span class="cond-check">❓</span>
+                    <span class="cond-name">Waitlist ≥ 200</span>
+                    <span class="cond-value">--/200</span>
+                  </div>
+                  <div class="condition" id="cond-pwa">
+                    <span class="cond-check">❓</span>
+                    <span class="cond-name">PWA Installs ≥ 50</span>
+                    <span class="cond-value">--/50</span>
+                  </div>
+                  <div class="condition" id="cond-retention">
+                    <span class="cond-check">❓</span>
+                    <span class="cond-name">iOS Retention ≥ 20%</span>
+                    <span class="cond-value">--%</span>
+                  </div>
+                </div>
+                <div class="decision-nogo">
+                  <h4>NO-GO Conditions</h4>
+                  <p class="nogo-text">If iOS retention &lt;20%, fix core product first. Don't scale a leaky bucket.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Retention by Action -->
+            <div class="panel full-width">
+              <h3>📊 Retention by User Action</h3>
+              <div class="retention-by-action" id="retention-by-action">
+                <div class="retention-bar-row">
+                  <span class="rba-label">Logged Delivery</span>
+                  <div class="rba-bar-container"><div class="rba-bar" id="rba-delivery"></div></div>
+                  <span class="rba-value" id="rba-delivery-val">--%</span>
+                </div>
+                <div class="retention-bar-row">
+                  <span class="rba-label">Set Up Tank</span>
+                  <div class="rba-bar-container"><div class="rba-bar" id="rba-tank"></div></div>
+                  <span class="rba-value" id="rba-tank-val">--%</span>
+                </div>
+                <div class="retention-bar-row">
+                  <span class="rba-label">Searched Supplier</span>
+                  <div class="rba-bar-container"><div class="rba-bar" id="rba-search"></div></div>
+                  <span class="rba-value" id="rba-search-val">--%</span>
+                </div>
+                <div class="retention-bar-row">
+                  <span class="rba-label">Just Browsed</span>
+                  <div class="rba-bar-container"><div class="rba-bar browse" id="rba-browse"></div></div>
+                  <span class="rba-value" id="rba-browse-val">--%</span>
+                </div>
+              </div>
+              <div class="insight-box" id="retention-insight">
+                💡 Users who log a delivery retain significantly better. Your #1 goal: Get users to log one delivery.
+              </div>
+            </div>
+
+            <!-- Recommendations (Moved from old tab) -->
+            <div class="panel full-width">
+              <h3>🎯 Top Recommendation</h3>
+              <div class="top-recommendation" id="top-recommendation">
+                <div class="rec-primary" id="rec-primary">
+                  <div class="rec-badge">PRIMARY ACTION</div>
+                  <div class="rec-title" id="rec-title">Loading...</div>
+                  <div class="rec-insight" id="rec-insight"></div>
+                </div>
+                <div class="rec-secondary" id="rec-secondary">
+                  <span class="rec-secondary-label">Also consider:</span>
+                  <ul id="rec-secondary-list"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- COVERAGE TAB - Scope 18 (Merged Map + Overview gaps) -->
+      <!-- ============================================================ -->
+      <section id="tab-coverage" class="tab-panel">
+        <div class="coverage-container">
+          <!-- Coverage Summary -->
+          <div class="cards">
+            <div class="card">
+              <div class="card-label">Suppliers</div>
+              <div class="card-value" id="cov-suppliers">--</div>
+            </div>
+            <div class="card">
+              <div class="card-label">States</div>
+              <div class="card-value" id="cov-states">--</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Coverage Gaps</div>
+              <div class="card-value" id="cov-gaps">--</div>
+              <div class="card-sub">ZIPs with demand, no suppliers</div>
+            </div>
+          </div>
+
+          <!-- Coverage Gaps Table -->
+          <div class="panel full-width">
+            <h3>⚠️ Coverage Gaps (High Demand, No Suppliers)</h3>
+            <table id="coverage-gaps-table">
+              <thead>
+                <tr>
+                  <th>ZIP</th>
+                  <th>Location</th>
+                  <th>Searches</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="coverage-gaps-body"></tbody>
+            </table>
+          </div>
+
+          <!-- Map -->
+          <div class="panel full-width">
+            <h3>🗺️ Demand Heatmap</h3>
+            <div id="map-stats" class="map-legend"></div>
+            <div id="map-container"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SETTINGS TAB - Scope 18 (Merged Suppliers + Data Health + External) -->
+      <!-- ============================================================ -->
+      <section id="tab-settings" class="tab-panel">
+        <div class="settings-container">
+          <!-- Data Health Summary -->
+          <div class="panel full-width">
+            <h3>🔧 Data Health</h3>
+            <div class="health-summary">
+              <div class="health-stat">
+                <span class="health-value" id="health-last-scrape">--</span>
+                <span class="health-label">Last Scrape</span>
+              </div>
+              <div class="health-stat">
+                <span class="health-value" id="health-prices">--</span>
+                <span class="health-label">Live Prices</span>
+              </div>
+              <div class="health-stat warning">
+                <span class="health-value" id="health-stale">--</span>
+                <span class="health-label">Stale</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stale Suppliers -->
+          <div class="panel full-width" id="stale-panel">
+            <h3>⚠️ Stale Prices (Need Attention)</h3>
+            <table id="stale-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Last Price</th>
+                  <th>Last Updated</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="stale-body"></tbody>
+            </table>
+          </div>
+
+          <!-- Supplier Management -->
+          <div class="panel full-width">
+            <h3>📋 Supplier Management</h3>
+            <div class="filters">
+              <select id="filter-state">
+                <option value="">All States</option>
+              </select>
+              <select id="filter-price">
+                <option value="">All Price Status</option>
+                <option value="true">Has Price</option>
+                <option value="false">No Price</option>
+              </select>
+              <input type="text" id="filter-search" placeholder="Search...">
+              <button id="filter-apply">Apply</button>
+            </div>
+            <table id="suppliers-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>State</th>
+                  <th>Price</th>
+                  <th>Updated</th>
+                  <th>Clicks</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="suppliers-body"></tbody>
+            </table>
+            <div class="pagination">
+              <button id="prev-page" disabled>Previous</button>
+              <span id="page-info">Page 1</span>
+              <button id="next-page">Next</button>
+            </div>
+          </div>
+
+          <!-- External Links -->
+          <div class="panel full-width">
+            <h3>🔗 External Tools</h3>
+            <div class="external-links">
+              <a href="https://console.firebase.google.com/project/smartheat-e0729/analytics" target="_blank" class="ext-link">
+                <span class="ext-icon">🔥</span>
+                <span class="ext-name">Firebase Console</span>
+              </a>
+              <a href="https://analytics.google.com/" target="_blank" class="ext-link">
+                <span class="ext-icon">📊</span>
+                <span class="ext-name">Google Analytics</span>
+              </a>
+              <a href="https://search.google.com/search-console" target="_blank" class="ext-link">
+                <span class="ext-icon">🔍</span>
+                <span class="ext-name">Search Console</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- LEGACY TABS (Hidden, kept for backward compatibility) -->
+      <!-- ============================================================ -->
+      <section id="tab-recommendations" class="tab-panel hidden-legacy">
         <div class="recommendations-container">
           <div id="recommendations-loading" class="loading">Generating recommendations...</div>
 
