@@ -3,7 +3,7 @@
  *
  * Unified data layer that combines:
  * - Google Analytics 4 (website traffic, sessions, pages)
- * - Firebase Analytics (iOS app events, retention, installs)
+ * - Firebase Analytics via BigQuery (iOS app events, retention, installs)
  * - PostgreSQL (clicks, searches, prices, waitlist)
  *
  * Gracefully degrades if external APIs are not configured.
@@ -11,6 +11,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const { BigQuery } = require('@google-cloud/bigquery');
 
 class UnifiedAnalytics {
   constructor(sequelize, logger) {
@@ -24,16 +25,24 @@ class UnifiedAnalytics {
     // Firebase client (lazy initialized)
     this.firebaseApp = null;
 
+    // BigQuery client (lazy initialized)
+    this.bigQueryClient = null;
+    this.bigQueryDataset = process.env.BIGQUERY_DATASET || 'analytics_515155647';
+    this.bigQueryProject = process.env.FIREBASE_PROJECT_ID || 'smartheat-e0729';
+
     // Track initialization status
     this.initialized = {
       ga4: false,
-      firebase: false
+      firebase: false,
+      bigquery: false
     };
 
     // Cache for GA4 data (survives transient API failures)
     this.cache = {
       websiteMetrics: null,
       websiteMetricsCachedAt: null,
+      bigQueryMetrics: null,
+      bigQueryMetricsCachedAt: null,
       cacheMaxAge: 30 * 60 * 1000 // 30 minutes
     };
   }
@@ -133,6 +142,284 @@ class UnifiedAnalytics {
       this.logger.error('[UnifiedAnalytics] Firebase init error:', error.message);
       this.initialized.firebase = true;
       return false;
+    }
+  }
+
+  /**
+   * Initialize BigQuery client using Firebase service account
+   */
+  async initBigQuery() {
+    if (this.initialized.bigquery) return this.bigQueryClient !== null;
+
+    try {
+      // Use Firebase service account for BigQuery (same project)
+      const credentialsJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
+        process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+
+      if (!credentialsJson) {
+        this.logger.info('[UnifiedAnalytics] No credentials for BigQuery, skipping init');
+        this.initialized.bigquery = true;
+        return false;
+      }
+
+      // Decode credentials
+      let credentials;
+      try {
+        credentials = JSON.parse(Buffer.from(credentialsJson, 'base64').toString('utf8'));
+      } catch {
+        credentials = JSON.parse(credentialsJson);
+      }
+
+      this.bigQueryClient = new BigQuery({
+        projectId: this.bigQueryProject,
+        credentials: credentials
+      });
+
+      this.initialized.bigquery = true;
+      this.logger.info(`[UnifiedAnalytics] BigQuery client initialized for project ${this.bigQueryProject}`);
+      return true;
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] BigQuery init error:', error.message);
+      this.initialized.bigquery = true;
+      return false;
+    }
+  }
+
+  /**
+   * Get iOS app metrics from BigQuery (Firebase Analytics export)
+   * @param {number} days - Number of days to look back
+   */
+  async getAppMetricsFromBigQuery(days = 7) {
+    await this.initBigQuery();
+
+    if (!this.bigQueryClient) {
+      return {
+        available: false,
+        reason: 'BigQuery not configured',
+        data: null
+      };
+    }
+
+    // Check cache
+    if (this.cache.bigQueryMetrics &&
+        (Date.now() - this.cache.bigQueryMetricsCachedAt) < this.cache.cacheMaxAge) {
+      return {
+        ...this.cache.bigQueryMetrics,
+        cached: true
+      };
+    }
+
+    try {
+      const dataset = this.bigQueryDataset;
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const startDateStr = startDate.toISOString().split('T')[0].replace(/-/g, '');
+      const endDateStr = endDate.toISOString().split('T')[0].replace(/-/g, '');
+
+      // First, check if any events tables exist
+      const tablesCheckQuery = `
+        SELECT table_id
+        FROM \`${this.bigQueryProject}.${dataset}.__TABLES__\`
+        WHERE table_id LIKE 'events_%'
+        LIMIT 1
+      `;
+
+      const [tablesResult] = await Promise.race([
+        this.bigQueryClient.query({ query: tablesCheckQuery }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('BigQuery table check timeout')), 15000)
+        )
+      ]);
+
+      if (!tablesResult || tablesResult.length === 0) {
+        this.logger.info('[UnifiedAnalytics] No events tables found in BigQuery - Firebase export may not be active yet');
+        return {
+          available: false,
+          reason: 'No analytics data exported yet. Firebase BigQuery export can take 24-48 hours to start.',
+          data: null
+        };
+      }
+
+      // Helper to run query with timeout
+      const queryWithTimeout = (query, timeoutMs = 30000) => {
+        return Promise.race([
+          this.bigQueryClient.query({ query }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+          )
+        ]);
+      };
+
+      // Run queries in parallel with timeouts
+      const [dauResult, sessionsResult, eventsResult, retentionResult, screenResult] = await Promise.all([
+        // Daily Active Users
+        queryWithTimeout(`
+          SELECT
+            event_date,
+            COUNT(DISTINCT user_pseudo_id) as users
+          FROM \`${this.bigQueryProject}.${dataset}.events_*\`
+          WHERE _TABLE_SUFFIX BETWEEN '${startDateStr}' AND '${endDateStr}'
+          GROUP BY event_date
+          ORDER BY event_date DESC
+        `),
+
+        // Sessions (session_start events)
+        queryWithTimeout(`
+          SELECT
+            COUNT(*) as total_sessions,
+            COUNT(DISTINCT user_pseudo_id) as unique_users,
+            AVG((SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'engagement_time_msec')) / 1000 as avg_session_seconds
+          FROM \`${this.bigQueryProject}.${dataset}.events_*\`
+          WHERE _TABLE_SUFFIX BETWEEN '${startDateStr}' AND '${endDateStr}'
+            AND event_name = 'session_start'
+        `),
+
+        // Top Events
+        queryWithTimeout(`
+          SELECT
+            event_name,
+            COUNT(*) as count,
+            COUNT(DISTINCT user_pseudo_id) as unique_users
+          FROM \`${this.bigQueryProject}.${dataset}.events_*\`
+          WHERE _TABLE_SUFFIX BETWEEN '${startDateStr}' AND '${endDateStr}'
+          GROUP BY event_name
+          ORDER BY count DESC
+          LIMIT 15
+        `),
+
+        // Day 1 and Day 7 Retention
+        queryWithTimeout(`
+          WITH first_open AS (
+            SELECT
+              user_pseudo_id,
+              MIN(event_date) as first_date
+            FROM \`${this.bigQueryProject}.${dataset}.events_*\`
+            WHERE _TABLE_SUFFIX BETWEEN '${startDateStr}' AND '${endDateStr}'
+              AND event_name = 'first_open'
+            GROUP BY user_pseudo_id
+          ),
+          user_activity AS (
+            SELECT DISTINCT
+              user_pseudo_id,
+              event_date
+            FROM \`${this.bigQueryProject}.${dataset}.events_*\`
+            WHERE _TABLE_SUFFIX BETWEEN '${startDateStr}' AND '${endDateStr}'
+          )
+          SELECT
+            COUNT(DISTINCT f.user_pseudo_id) as new_users,
+            COUNT(DISTINCT CASE
+              WHEN ua.event_date = FORMAT_DATE('%Y%m%d', DATE_ADD(PARSE_DATE('%Y%m%d', f.first_date), INTERVAL 1 DAY))
+              THEN f.user_pseudo_id END) as day1_retained,
+            COUNT(DISTINCT CASE
+              WHEN ua.event_date = FORMAT_DATE('%Y%m%d', DATE_ADD(PARSE_DATE('%Y%m%d', f.first_date), INTERVAL 7 DAY))
+              THEN f.user_pseudo_id END) as day7_retained
+          FROM first_open f
+          LEFT JOIN user_activity ua ON f.user_pseudo_id = ua.user_pseudo_id
+        `, 45000),
+
+        // Top Screens
+        queryWithTimeout(`
+          SELECT
+            (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'firebase_screen') as screen_name,
+            COUNT(*) as views,
+            COUNT(DISTINCT user_pseudo_id) as unique_users
+          FROM \`${this.bigQueryProject}.${dataset}.events_*\`
+          WHERE _TABLE_SUFFIX BETWEEN '${startDateStr}' AND '${endDateStr}'
+            AND event_name = 'screen_view'
+          GROUP BY screen_name
+          HAVING screen_name IS NOT NULL
+          ORDER BY views DESC
+          LIMIT 10
+        `)
+      ]);
+
+      // Process results
+      const dau = dauResult[0] || [];
+      const sessions = sessionsResult[0]?.[0] || {};
+      const events = eventsResult[0] || [];
+      const retention = retentionResult[0]?.[0] || {};
+      const screens = screenResult[0] || [];
+
+      // Calculate totals
+      const totalUsers = dau.length > 0
+        ? Math.max(...dau.map(d => parseInt(d.users) || 0))
+        : 0;
+      const avgDailyUsers = dau.length > 0
+        ? Math.round(dau.reduce((sum, d) => sum + (parseInt(d.users) || 0), 0) / dau.length)
+        : 0;
+
+      const result = {
+        available: true,
+        source: 'bigquery',
+        data: {
+          summary: {
+            totalUsers: parseInt(sessions.unique_users) || 0,
+            totalSessions: parseInt(sessions.total_sessions) || 0,
+            avgSessionDuration: Math.round(parseFloat(sessions.avg_session_seconds) || 0),
+            avgDailyUsers: avgDailyUsers
+          },
+          dailyActiveUsers: dau.map(d => ({
+            date: d.event_date,
+            users: parseInt(d.users) || 0
+          })),
+          retention: {
+            newUsers: parseInt(retention.new_users) || 0,
+            day1: parseInt(retention.day1_retained) || 0,
+            day7: parseInt(retention.day7_retained) || 0,
+            day1Rate: retention.new_users > 0
+              ? ((retention.day1_retained / retention.new_users) * 100).toFixed(1)
+              : 0,
+            day7Rate: retention.new_users > 0
+              ? ((retention.day7_retained / retention.new_users) * 100).toFixed(1)
+              : 0
+          },
+          topEvents: events.map(e => ({
+            name: e.event_name,
+            count: parseInt(e.count) || 0,
+            uniqueUsers: parseInt(e.unique_users) || 0
+          })),
+          topScreens: screens.map(s => ({
+            name: s.screen_name,
+            views: parseInt(s.views) || 0,
+            uniqueUsers: parseInt(s.unique_users) || 0
+          }))
+        }
+      };
+
+      // Cache result
+      this.cache.bigQueryMetrics = result;
+      this.cache.bigQueryMetricsCachedAt = Date.now();
+
+      return result;
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] BigQuery query error:', error.message);
+
+      // Provide user-friendly error messages
+      let reason = error.message;
+      if (error.message.includes('timeout')) {
+        reason = 'Query timed out - BigQuery may be slow or dataset is very large';
+      } else if (error.message.includes('Not found') || error.message.includes('does not exist')) {
+        reason = 'No analytics data exported yet. Firebase BigQuery export can take 24-48 hours to start.';
+      } else if (error.message.includes('Permission denied') || error.message.includes('403')) {
+        reason = 'Permission denied - check BigQuery IAM roles for service account';
+      }
+
+      // Return cached data if available
+      if (this.cache.bigQueryMetrics) {
+        return {
+          ...this.cache.bigQueryMetrics,
+          cached: true,
+          error: reason
+        };
+      }
+
+      return {
+        available: false,
+        reason: reason,
+        data: null
+      };
     }
   }
 
@@ -297,26 +584,18 @@ class UnifiedAnalytics {
   }
 
   /**
-   * Get iOS app metrics from Firebase
-   * Note: Firebase Analytics API is limited - most detailed data requires BigQuery export
-   * This provides what's available via Admin SDK
+   * Get iOS app metrics - tries BigQuery first, falls back to database
    * @param {number} days - Number of days to look back
    */
   async getAppMetrics(days = 7) {
-    await this.initFirebase();
-
-    if (!this.firebaseApp) {
-      return {
-        available: false,
-        reason: 'Firebase not configured',
-        data: null
-      };
+    // Try BigQuery first (has full Firebase Analytics data)
+    const bigQueryData = await this.getAppMetricsFromBigQuery(days);
+    if (bigQueryData.available && bigQueryData.data) {
+      return bigQueryData;
     }
 
-    // Firebase Analytics data is not directly accessible via Admin SDK
-    // It requires BigQuery export or using the Google Analytics Data API
-    // For now, we'll pull what we can from our own supplier_engagements table
-    // and note that full Firebase data requires manual CSV export or BigQuery setup
+    // Fall back to database (supplier_engagements table)
+    await this.initFirebase();
 
     try {
       // Get app engagement data from our database
@@ -324,7 +603,7 @@ class UnifiedAnalytics {
         this.sequelize.query(`
           SELECT
             COUNT(*) as total_engagements,
-            COUNT(DISTINCT user_id) as unique_users,
+            COUNT(DISTINCT ip_hash) as unique_users,
             COUNT(*) FILTER (WHERE engagement_type = 'call') as calls,
             COUNT(*) FILTER (WHERE engagement_type = 'view') as views,
             COUNT(*) FILTER (WHERE engagement_type = 'save') as saves
@@ -333,7 +612,7 @@ class UnifiedAnalytics {
         `, { type: this.sequelize.QueryTypes.SELECT }),
 
         this.sequelize.query(`
-          SELECT DATE(created_at) as date, COUNT(DISTINCT user_id) as users
+          SELECT DATE(created_at) as date, COUNT(DISTINCT ip_hash) as users
           FROM supplier_engagements
           WHERE created_at > NOW() - INTERVAL '${days} days'
           GROUP BY DATE(created_at)
@@ -345,8 +624,8 @@ class UnifiedAnalytics {
 
       return {
         available: true,
-        source: 'database', // Indicating this is from our DB, not Firebase directly
-        note: 'For full Firebase Analytics (installs, retention), configure GA4 Data API or BigQuery export',
+        source: 'database',
+        note: 'BigQuery not available, using database fallback',
         data: {
           totalEngagements: parseInt(stats.total_engagements) || 0,
           uniqueUsers: parseInt(stats.unique_users) || 0,
@@ -465,15 +744,15 @@ class UnifiedAnalytics {
       // Get weekly cohort retention from our engagement data
       const cohorts = await this.sequelize.query(`
         WITH first_engagement AS (
-          SELECT user_id, MIN(DATE(created_at)) as first_date
+          SELECT ip_hash, MIN(DATE(created_at)) as first_date
           FROM supplier_engagements
-          WHERE user_id IS NOT NULL
-          GROUP BY user_id
+          WHERE ip_hash IS NOT NULL
+          GROUP BY ip_hash
         ),
         weekly_cohorts AS (
           SELECT
             DATE_TRUNC('week', fe.first_date) as cohort_week,
-            COUNT(DISTINCT fe.user_id) as cohort_size
+            COUNT(DISTINCT fe.ip_hash) as cohort_size
           FROM first_engagement fe
           GROUP BY DATE_TRUNC('week', fe.first_date)
         ),
@@ -481,9 +760,9 @@ class UnifiedAnalytics {
           SELECT
             DATE_TRUNC('week', fe.first_date) as cohort_week,
             FLOOR(EXTRACT(EPOCH FROM (DATE_TRUNC('week', se.created_at) - DATE_TRUNC('week', fe.first_date))) / 604800) as week_number,
-            COUNT(DISTINCT se.user_id) as active_users
+            COUNT(DISTINCT se.ip_hash) as active_users
           FROM first_engagement fe
-          JOIN supplier_engagements se ON fe.user_id = se.user_id
+          JOIN supplier_engagements se ON fe.ip_hash = se.ip_hash
           WHERE fe.first_date >= NOW() - INTERVAL '${weeks} weeks'
           GROUP BY DATE_TRUNC('week', fe.first_date), week_number
         )
@@ -503,16 +782,16 @@ class UnifiedAnalytics {
       const behaviorRetention = await this.sequelize.query(`
         WITH user_behaviors AS (
           SELECT
-            user_id,
+            ip_hash,
             MIN(created_at) as first_engagement,
             MAX(created_at) as last_engagement,
             COUNT(*) FILTER (WHERE engagement_type = 'call') as calls,
             COUNT(*) FILTER (WHERE engagement_type = 'view') as views,
             COUNT(*) FILTER (WHERE engagement_type = 'save') as saves
           FROM supplier_engagements
-          WHERE user_id IS NOT NULL
+          WHERE ip_hash IS NOT NULL
             AND created_at > NOW() - INTERVAL '30 days'
-          GROUP BY user_id
+          GROUP BY ip_hash
         )
         SELECT
           CASE
@@ -542,7 +821,7 @@ class UnifiedAnalytics {
       return {
         available: true,
         hasData,
-        reason: hasData ? null : 'No user engagement data tracked yet. Retention requires user_id in supplier_engagements.',
+        reason: hasData ? null : 'No user engagement data tracked yet. Retention requires ip_hash in supplier_engagements.',
         data: {
           cohorts,
           behaviorRetention: behaviorRetention.map(b => ({
@@ -831,15 +1110,21 @@ class UnifiedAnalytics {
         this.getAndroidDecisionSignals()
       ]);
 
+      // Determine data sources
+      const isBigQuery = app.source === 'bigquery';
+      const isFirebaseDb = app.available && app.source === 'database';
+
       return {
         period: `${days}d`,
         dataSources: {
           ga4: website.available,
-          firebase: app.available && app.source !== 'database',
+          firebase: app.available,
+          bigquery: isBigQuery,
           database: backend.available
         },
         website: website.data,
         app: app.data,
+        appSource: app.source || 'none',
         backend: backend.data,
         retention: retention.data,
         android: android.data,

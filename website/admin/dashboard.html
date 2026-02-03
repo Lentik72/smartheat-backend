@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1770093309">
+  <link rel="stylesheet" href="dashboard.css?v=1770094700">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -46,6 +46,16 @@
       <div class="priority-actions">
         <button class="btn-outline" id="priority-view-details">View Details</button>
       </div>
+    </div>
+
+    <!-- Data Source Status Banner -->
+    <div id="data-source-warnings" class="data-source-banner hidden">
+      <div class="banner-content">
+        <span class="banner-icon">⚠️</span>
+        <span class="banner-text" id="data-source-text">Analytics services not connected</span>
+        <div class="banner-details" id="data-source-details"></div>
+      </div>
+      <button class="banner-dismiss" id="dismiss-banner">×</button>
     </div>
 
     <!-- Summary Cards (Combined Business Metrics) -->
@@ -161,14 +171,83 @@
         <div class="app-analytics-container">
           <div id="app-analytics-loading" class="loading">Loading app analytics...</div>
 
+          <!-- Data Source Indicator -->
+          <div id="app-data-source" class="data-source-indicator hidden">
+            <span class="source-badge bigquery">📊 BigQuery</span>
+            <span class="source-text">Real-time Firebase Analytics data</span>
+          </div>
+
           <div id="app-analytics-content" class="hidden">
-            <!-- Engagement Summary Cards -->
+            <!-- iOS App Summary Cards -->
             <div class="cards">
+              <div class="card">
+                <div class="card-label">Unique Users</div>
+                <div class="card-value" id="aa-users">--</div>
+                <div class="card-sub" id="aa-users-sub">--</div>
+              </div>
               <div class="card">
                 <div class="card-label">Total Sessions</div>
                 <div class="card-value" id="aa-sessions">--</div>
                 <div class="card-sub" id="aa-sessions-sub">--</div>
               </div>
+              <div class="card">
+                <div class="card-label">Day 1 Retention</div>
+                <div class="card-value" id="aa-day1">--%</div>
+                <div class="card-sub" id="aa-day1-sub">-- retained</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Day 7 Retention</div>
+                <div class="card-value" id="aa-day7">--%</div>
+                <div class="card-sub" id="aa-day7-sub">-- retained</div>
+              </div>
+            </div>
+
+            <!-- Daily Active Users Chart -->
+            <div class="panel full-width">
+              <h3>📈 Daily Active Users</h3>
+              <div class="dau-chart-container">
+                <canvas id="dau-chart"></canvas>
+              </div>
+              <div class="chart-stats">
+                <span>Avg Daily: <strong id="dau-avg">--</strong></span>
+                <span>Peak: <strong id="dau-peak">--</strong></span>
+              </div>
+            </div>
+
+            <!-- Two Column: Top Events & Top Screens -->
+            <div class="panel-grid two-col">
+              <div class="panel">
+                <h3>🎯 Top Events</h3>
+                <table class="mini-table" id="top-events-table">
+                  <thead>
+                    <tr>
+                      <th>Event</th>
+                      <th>Count</th>
+                      <th>Users</th>
+                    </tr>
+                  </thead>
+                  <tbody id="top-events-body"></tbody>
+                </table>
+              </div>
+              <div class="panel">
+                <h3>📱 Top Screens</h3>
+                <table class="mini-table" id="top-screens-table">
+                  <thead>
+                    <tr>
+                      <th>Screen</th>
+                      <th>Views</th>
+                      <th>Users</th>
+                    </tr>
+                  </thead>
+                  <tbody id="top-screens-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Legacy Engagement Section (hidden when BigQuery available) -->
+            <div id="legacy-engagement" class="hidden">
+            <!-- Engagement Summary Cards -->
+            <div class="cards">
               <div class="card">
                 <div class="card-label">Power Users</div>
                 <div class="card-value" id="aa-power">--%</div>
@@ -212,6 +291,7 @@
                 </div>
               </div>
             </div>
+            </div><!-- End legacy-engagement -->
 
             <!-- Two Column Layout -->
             <div class="panel-grid two-col">
@@ -588,37 +668,59 @@
           </div>
 
           <!-- Supplier Management -->
-          <div class="panel full-width">
+          <div class="panel full-width" id="supplier-management-panel">
             <h3>📋 Supplier Management</h3>
-            <div class="filters">
-              <select id="filter-state">
-                <option value="">All States</option>
-              </select>
-              <select id="filter-price">
-                <option value="">All Price Status</option>
-                <option value="true">Has Price</option>
-                <option value="false">No Price</option>
-              </select>
-              <input type="text" id="filter-search" placeholder="Search...">
-              <button id="filter-apply">Apply</button>
+            <div class="supplier-filters">
+              <div class="filter-row">
+                <input type="text" id="filter-search" placeholder="🔍 Search by name, city, or website..." class="search-input">
+                <button id="filter-apply" class="btn-primary">Search</button>
+                <button id="filter-clear" class="btn-secondary">Clear</button>
+              </div>
+              <div class="filter-row">
+                <select id="filter-state">
+                  <option value="">All States</option>
+                </select>
+                <select id="filter-price">
+                  <option value="">All Price Status</option>
+                  <option value="true">Has Price</option>
+                  <option value="false">No Price</option>
+                </select>
+                <select id="filter-scrape">
+                  <option value="">All Scrape Status</option>
+                  <option value="fresh">Fresh (< 48h)</option>
+                  <option value="stale">Stale (> 48h)</option>
+                </select>
+                <select id="filter-active">
+                  <option value="">All Status</option>
+                  <option value="true">Active Only</option>
+                  <option value="false">Inactive Only</option>
+                </select>
+              </div>
             </div>
-            <table id="suppliers-table">
+            <div class="table-info">
+              <span id="results-count">Loading...</span>
+              <div class="bulk-actions hidden" id="bulk-actions">
+                <button class="btn-small" id="export-csv">📥 Export CSV</button>
+              </div>
+            </div>
+            <table id="suppliers-table" class="enhanced-table">
               <thead>
                 <tr>
-                  <th>Supplier</th>
-                  <th>State</th>
-                  <th>Price</th>
-                  <th>Updated</th>
-                  <th>Clicks</th>
-                  <th>Action</th>
+                  <th class="sortable" data-sort="name">Supplier <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="state">State <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="price">Price <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="updated">Updated <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="clicks">Clicks <span class="sort-icon">↕</span></th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="suppliers-body"></tbody>
             </table>
             <div class="pagination">
-              <button id="prev-page" disabled>Previous</button>
+              <button id="prev-page" disabled>← Previous</button>
               <span id="page-info">Page 1</span>
-              <button id="next-page">Next</button>
+              <button id="next-page">Next →</button>
             </div>
           </div>
 
@@ -1509,6 +1611,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1770093309"></script>
+  <script src="dashboard.js?v=1770094700"></script>
 </body>
 </html>

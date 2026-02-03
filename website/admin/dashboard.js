@@ -45,6 +45,64 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+// Data source connection status banner
+function updateDataSourceBanner(unified) {
+  const banner = document.getElementById('data-source-warnings');
+  const textEl = document.getElementById('data-source-text');
+  const detailsEl = document.getElementById('data-source-details');
+
+  if (!banner) return;
+
+  const ga4Connected = unified?.dataSources?.ga4 === true;
+  const firebaseConnected = unified?.dataSources?.firebase === true;
+  const dbConnected = unified?.dataSources?.database !== false;
+
+  // Check if banner was dismissed this session
+  const dismissed = sessionStorage.getItem('dataSourceBannerDismissed');
+
+  // Show banner if any service is not connected
+  if (!ga4Connected || !firebaseConnected) {
+    if (dismissed) {
+      banner.classList.add('hidden');
+      return;
+    }
+
+    const disconnected = [];
+    if (!ga4Connected) disconnected.push('GA4');
+    if (!firebaseConnected) disconnected.push('Firebase');
+
+    const allDisconnected = !ga4Connected && !firebaseConnected;
+
+    textEl.textContent = allDisconnected
+      ? 'Analytics services not connected'
+      : `${disconnected.join(' & ')} not connected`;
+
+    // Build details tags
+    let tags = '';
+    tags += `<span class="banner-tag ${ga4Connected ? 'connected' : 'disconnected'}">
+      ${ga4Connected ? '✓' : '✗'} GA4 (Website)
+    </span>`;
+    tags += `<span class="banner-tag ${firebaseConnected ? 'connected' : 'disconnected'}">
+      ${firebaseConnected ? '✓' : '✗'} Firebase (iOS)
+    </span>`;
+    tags += `<span class="banner-tag ${dbConnected ? 'connected' : 'disconnected'}">
+      ${dbConnected ? '✓' : '✗'} Database
+    </span>`;
+
+    detailsEl.innerHTML = tags;
+    banner.classList.remove('hidden');
+    banner.classList.toggle('error', allDisconnected);
+  } else {
+    banner.classList.add('hidden');
+  }
+}
+
+// Dismiss banner handler
+document.getElementById('dismiss-banner')?.addEventListener('click', () => {
+  document.getElementById('data-source-warnings')?.classList.add('hidden');
+  sessionStorage.setItem('dataSourceBannerDismissed', 'true');
+});
+
 // API wrapper
 async function api(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
@@ -177,13 +235,26 @@ async function loadOverview() {
       console.log('Unified data not available');
     }
 
+    // Show data source connection warnings
+    updateDataSourceBanner(unified);
+
     // Card 1: Total Users (iOS MAU + Website unique visitors)
-    const iosUsers = unified?.app?.uniqueUsers || 0;
-    const webUsers = unified?.website?.users || data.website?.uniqueUsers || 0;
+    // Try unified data first (GA4/Firebase), fallback to database estimates
+    const ga4Available = unified?.dataSources?.ga4;
+    const iosUsers = unified?.app?.uniqueUsers || data.users?.ios || 0;
+    const webUsers = ga4Available
+      ? (unified?.website?.activeUsers || 0)
+      : (data.users?.website || 0);
     const totalUsers = iosUsers + webUsers;
+
     document.getElementById('total-users').textContent = totalUsers || '--';
     document.getElementById('users-breakdown').textContent = `${iosUsers} iOS / ${webUsers} website`;
-    document.getElementById('users-freshness').textContent = '';
+    // Show data source
+    if (totalUsers > 0) {
+      document.getElementById('users-freshness').textContent = ga4Available ? 'via GA4' : 'unique searches';
+    } else {
+      document.getElementById('users-freshness').textContent = 'No activity yet';
+    }
 
     // Card 2: Deliveries Logged (using saves from app data as proxy)
     const deliveries = unified?.app?.saves || 0;
@@ -916,16 +987,24 @@ let suppliersOrder = 'desc';
 // Load suppliers tab
 async function loadSuppliers() {
   try {
-    const state = document.getElementById('filter-state').value;
-    const hasPrice = document.getElementById('filter-price').value;
-    const scrape = document.getElementById('filter-scrape').value;
-    const search = document.getElementById('filter-search').value;
+    const stateEl = document.getElementById('filter-state');
+    const priceEl = document.getElementById('filter-price');
+    const scrapeEl = document.getElementById('filter-scrape');
+    const activeEl = document.getElementById('filter-active');
+    const searchEl = document.getElementById('filter-search');
+
+    const state = stateEl?.value || '';
+    const hasPrice = priceEl?.value || '';
+    const scrape = scrapeEl?.value || '';
+    const active = activeEl?.value || '';
+    const search = searchEl?.value || '';
 
     let url = `/suppliers?limit=${suppliersLimit}&offset=${suppliersPage * suppliersLimit}`;
     url += `&sort=${suppliersSort}&order=${suppliersOrder}`;
     if (state) url += `&state=${state}`;
     if (hasPrice) url += `&hasPrice=${hasPrice}`;
     if (scrape) url += `&scrapeStatus=${scrape}`;
+    if (active) url += `&active=${active}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
 
     const data = await api(url);
@@ -943,54 +1022,98 @@ async function loadSuppliers() {
     });
 
     // Populate state filter if empty
-    const stateSelect = document.getElementById('filter-state');
-    if (stateSelect.options.length === 1) {
-      const states = new Set(data.suppliers.map(s => s.state).filter(Boolean));
-      states.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s;
-        opt.textContent = s;
-        stateSelect.appendChild(opt);
-      });
+    if (stateEl && stateEl.options.length === 1) {
+      // Fetch all states from a separate request
+      try {
+        const allData = await api('/suppliers?limit=500&offset=0');
+        const states = [...new Set(allData.suppliers.map(s => s.state).filter(Boolean))].sort();
+        states.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          stateEl.appendChild(opt);
+        });
+      } catch (e) {
+        console.warn('Could not load all states:', e);
+      }
+    }
+
+    // Update results count
+    const resultsCount = document.getElementById('results-count');
+    if (resultsCount) {
+      resultsCount.textContent = `Showing ${data.suppliers.length} of ${data.pagination.total} suppliers`;
+    }
+
+    // Show bulk actions if results
+    const bulkActions = document.getElementById('bulk-actions');
+    if (bulkActions) {
+      bulkActions.classList.toggle('hidden', data.suppliers.length === 0);
     }
 
     // Table
     const tbody = document.getElementById('suppliers-body');
     tbody.innerHTML = '';
 
-    data.suppliers.forEach(s => {
-      const status = [];
-      if (s.isActive) status.push('<span class="status-ok">Active</span>');
-      else status.push('<span class="status-error">Inactive</span>');
-      if (s.scrapingEnabled) status.push('<span class="status-ok">Scrape</span>');
+    if (data.suppliers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="no-data">No suppliers found matching your criteria</td></tr>';
+    } else {
+      data.suppliers.forEach(s => {
+        // Status badges
+        const statusBadges = [];
+        if (s.isActive) {
+          statusBadges.push('<span class="badge badge-success">Active</span>');
+        } else {
+          statusBadges.push('<span class="badge badge-error">Inactive</span>');
+        }
+        if (s.scrapingEnabled) {
+          statusBadges.push('<span class="badge badge-info">Fresh</span>');
+        } else if (s.currentPrice) {
+          statusBadges.push('<span class="badge badge-warning">Stale</span>');
+        } else {
+          statusBadges.push('<span class="badge badge-muted">No Price</span>');
+        }
 
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${s.name}</td>
-        <td>${s.state || '--'}</td>
-        <td>${formatPrice(s.currentPrice)}</td>
-        <td>${timeAgo(s.priceUpdatedAt)}</td>
-        <td>${s.recentClicks}</td>
-        <td>${status.join(' ')}</td>
-        <td><button class="edit-supplier-btn" data-id="${s.id}">Edit</button></td>
-      `;
-      tbody.appendChild(row);
-    });
+        // Click indicator
+        const clickIndicator = s.recentClicks > 10 ? '🔥' : s.recentClicks > 0 ? '📊' : '—';
 
-    // Attach event listeners for edit buttons
-    tbody.querySelectorAll('.edit-supplier-btn').forEach(btn => {
-      btn.addEventListener('click', () => editSupplier(btn.dataset.id));
-    });
+        const row = document.createElement('tr');
+        row.className = !s.isActive ? 'row-inactive' : (s.scrapingEnabled ? '' : 'row-stale');
+        row.innerHTML = `
+          <td>
+            <div class="supplier-name">${s.name}</div>
+            <div class="supplier-meta">${s.city || ''}</div>
+          </td>
+          <td>${s.state || '--'}</td>
+          <td class="${s.currentPrice ? 'price-value' : 'no-price'}">${formatPrice(s.currentPrice)}</td>
+          <td class="${s.scrapingEnabled ? '' : 'stale-date'}">${timeAgo(s.priceUpdatedAt)}</td>
+          <td class="clicks-cell">${clickIndicator} ${s.recentClicks}</td>
+          <td class="status-badges">${statusBadges.join('')}</td>
+          <td class="actions-cell">
+            <button class="btn-small btn-edit edit-supplier-btn" data-id="${s.id}">Edit</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // Attach event listeners for edit buttons
+      tbody.querySelectorAll('.edit-supplier-btn').forEach(btn => {
+        btn.addEventListener('click', () => editSupplier(btn.dataset.id));
+      });
+    }
 
     // Pagination
     const totalPages = Math.ceil(data.pagination.total / suppliersLimit);
     document.getElementById('page-info').textContent =
-      `Page ${suppliersPage + 1} of ${totalPages} (${data.pagination.total} total)`;
+      `Page ${suppliersPage + 1} of ${totalPages}`;
     document.getElementById('prev-page').disabled = suppliersPage === 0;
     document.getElementById('next-page').disabled = suppliersPage >= totalPages - 1;
 
   } catch (error) {
     console.error('Failed to load suppliers:', error);
+    const tbody = document.getElementById('suppliers-body');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="7" class="error-message">Failed to load suppliers. Please try again.</td></tr>';
+    }
   }
 }
 
@@ -1010,6 +1133,57 @@ document.getElementById('next-page').addEventListener('click', () => {
 document.getElementById('filter-apply').addEventListener('click', () => {
   suppliersPage = 0;
   loadSuppliers();
+});
+
+// Clear filters
+document.getElementById('filter-clear')?.addEventListener('click', () => {
+  document.getElementById('filter-search').value = '';
+  document.getElementById('filter-state').value = '';
+  document.getElementById('filter-price').value = '';
+  document.getElementById('filter-scrape').value = '';
+  const activeFilter = document.getElementById('filter-active');
+  if (activeFilter) activeFilter.value = '';
+  suppliersPage = 0;
+  loadSuppliers();
+});
+
+// Search on Enter key
+document.getElementById('filter-search')?.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    suppliersPage = 0;
+    loadSuppliers();
+  }
+});
+
+// Export CSV
+document.getElementById('export-csv')?.addEventListener('click', async () => {
+  try {
+    const state = document.getElementById('filter-state')?.value || '';
+    const hasPrice = document.getElementById('filter-price')?.value || '';
+    const search = document.getElementById('filter-search')?.value || '';
+
+    let url = '/suppliers?limit=1000&offset=0&format=csv';
+    if (state) url += `&state=${state}`;
+    if (hasPrice) url += `&hasPrice=${hasPrice}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+
+    const response = await fetch(`/api/dashboard${url}`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `suppliers-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(downloadUrl);
+  } catch (error) {
+    console.error('Failed to export CSV:', error);
+    alert('Failed to export CSV');
+  }
 });
 
 // Sortable column headers
@@ -2004,13 +2178,98 @@ async function loadLeaderboard() {
   }
 }
 
+// DAU Chart instance
+let dauChart = null;
+
+// Render Daily Active Users chart
+function renderDAUChart(dau) {
+  const canvas = document.getElementById('dau-chart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (dauChart) {
+    dauChart.destroy();
+  }
+
+  // Sort by date and format labels
+  const sortedDAU = [...dau].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const labels = sortedDAU.map(d => {
+    const date = new Date(d.date);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  });
+  const data = sortedDAU.map(d => d.users);
+
+  dauChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Daily Active Users',
+        data: data,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+        pointBackgroundColor: '#3b82f6',
+        pointHoverRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: function(context) {
+              return `${context.parsed.y} users`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+            callback: function(value) {
+              if (Number.isInteger(value)) {
+                return value;
+              }
+            }
+          }
+        }
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      }
+    }
+  });
+}
+
 // Load App Analytics tab
 async function loadAppAnalytics() {
   const loadingEl = document.getElementById('app-analytics-loading');
   const contentEl = document.getElementById('app-analytics-content');
+  const dataSourceEl = document.getElementById('app-data-source');
+  const legacyEl = document.getElementById('legacy-engagement');
 
   loadingEl.classList.remove('hidden');
   contentEl.classList.add('hidden');
+  dataSourceEl?.classList.add('hidden');
 
   try {
     // Fetch unified data and app-specific data
@@ -2020,32 +2279,124 @@ async function loadAppAnalytics() {
     ]);
 
     const app = unified?.app || {};
+    const appSource = unified?.appSource || 'none';
+    const isBigQuery = appSource === 'bigquery';
+
+    // Show data source indicator
+    if (dataSourceEl && isBigQuery) {
+      dataSourceEl.classList.remove('hidden');
+    }
+
+    // Toggle legacy engagement section
+    if (legacyEl) {
+      legacyEl.classList.toggle('hidden', isBigQuery);
+    }
+
+    if (isBigQuery && app.summary) {
+      // BigQuery data available - show real iOS metrics
+      const summary = app.summary;
+      const retention = app.retention || {};
+      const dau = app.dailyActiveUsers || [];
+      const topEvents = app.topEvents || [];
+      const topScreens = app.topScreens || [];
+
+      // Summary cards
+      document.getElementById('aa-users').textContent = summary.totalUsers || '--';
+      document.getElementById('aa-users-sub').textContent = `${currentDays}d period`;
+
+      document.getElementById('aa-sessions').textContent = summary.totalSessions || '--';
+      document.getElementById('aa-sessions-sub').textContent = summary.avgSessionDuration
+        ? `Avg ${summary.avgSessionDuration}s`
+        : '--';
+
+      document.getElementById('aa-day1').textContent = retention.day1Rate ? `${retention.day1Rate}%` : '--%';
+      document.getElementById('aa-day1-sub').textContent = retention.day1
+        ? `${retention.day1} of ${retention.newUsers} retained`
+        : '--';
+
+      document.getElementById('aa-day7').textContent = retention.day7Rate ? `${retention.day7Rate}%` : '--%';
+      document.getElementById('aa-day7-sub').textContent = retention.day7
+        ? `${retention.day7} of ${retention.newUsers} retained`
+        : '--';
+
+      // DAU Chart
+      if (dau.length > 0) {
+        renderDAUChart(dau);
+        const avgDAU = Math.round(dau.reduce((sum, d) => sum + d.users, 0) / dau.length);
+        const peakDAU = Math.max(...dau.map(d => d.users));
+        document.getElementById('dau-avg').textContent = avgDAU;
+        document.getElementById('dau-peak').textContent = peakDAU;
+      }
+
+      // Top Events table
+      const eventsBody = document.getElementById('top-events-body');
+      if (eventsBody) {
+        eventsBody.innerHTML = topEvents.length > 0
+          ? topEvents.slice(0, 10).map(e => `
+              <tr>
+                <td><span class="event-name">${e.name}</span></td>
+                <td class="count-cell">${e.count.toLocaleString()}</td>
+                <td>${e.uniqueUsers}</td>
+              </tr>
+            `).join('')
+          : '<tr><td colspan="3" class="no-data">No events recorded</td></tr>';
+      }
+
+      // Top Screens table
+      const screensBody = document.getElementById('top-screens-body');
+      if (screensBody) {
+        screensBody.innerHTML = topScreens.length > 0
+          ? topScreens.slice(0, 10).map(s => `
+              <tr>
+                <td>${s.name || 'Unknown'}</td>
+                <td class="count-cell">${s.views.toLocaleString()}</td>
+                <td>${s.uniqueUsers}</td>
+              </tr>
+            `).join('')
+          : '<tr><td colspan="3" class="no-data">No screen views recorded</td></tr>';
+      }
+
+    } else {
+      // Fallback to legacy engagement data
+      const engagement = appData?.engagement || {};
+
+      const sessions = app.sessions || app.totalEngagements || engagement.totalSessions || 0;
+      document.getElementById('aa-sessions').textContent = sessions || '--';
+      document.getElementById('aa-sessions-sub').textContent = sessions > 0 ? `${currentDays}d period` : 'No data';
+
+      document.getElementById('aa-users').textContent = app.uniqueUsers || '--';
+      document.getElementById('aa-users-sub').textContent = 'From database';
+
+      document.getElementById('aa-day1').textContent = '--%';
+      document.getElementById('aa-day1-sub').textContent = 'BigQuery required';
+      document.getElementById('aa-day7').textContent = '--%';
+      document.getElementById('aa-day7-sub').textContent = 'BigQuery required';
+
+      // Legacy engagement tiers
+      const powerPct = engagement.powerUsers || 0;
+      const engagedPct = engagement.engaged || 0;
+      const casualPct = engagement.casual || 0;
+      const browsePct = engagement.browseOnly || 100 - powerPct - engagedPct - casualPct;
+
+      document.getElementById('aa-power').textContent = `${powerPct}%`;
+      document.getElementById('aa-engaged').textContent = `${engagedPct}%`;
+      document.getElementById('aa-browse').textContent = `${browsePct}%`;
+
+      document.getElementById('bar-power').style.width = `${powerPct}%`;
+      document.getElementById('bar-power-val').textContent = `${powerPct}%`;
+      document.getElementById('bar-engaged').style.width = `${engagedPct}%`;
+      document.getElementById('bar-engaged-val').textContent = `${engagedPct}%`;
+      document.getElementById('bar-casual').style.width = `${casualPct}%`;
+      document.getElementById('bar-casual-val').textContent = `${casualPct}%`;
+      document.getElementById('bar-browse').style.width = `${browsePct}%`;
+      document.getElementById('bar-browse-val').textContent = `${browsePct}%`;
+
+      // Clear BigQuery sections
+      document.getElementById('top-events-body').innerHTML = '<tr><td colspan="3" class="no-data">BigQuery not configured</td></tr>';
+      document.getElementById('top-screens-body').innerHTML = '<tr><td colspan="3" class="no-data">BigQuery not configured</td></tr>';
+    }
+
     const engagement = appData?.engagement || {};
-
-    // Session stats
-    const sessions = app.sessions || engagement.totalSessions || 0;
-    document.getElementById('aa-sessions').textContent = sessions || '--';
-    document.getElementById('aa-sessions-sub').textContent = sessions > 0 ? `${currentDays}d period` : 'No data';
-
-    // Engagement tiers (simulate from available data)
-    const powerPct = engagement.powerUsers || 0;
-    const engagedPct = engagement.engaged || 0;
-    const casualPct = engagement.casual || 0;
-    const browsePct = engagement.browseOnly || 100 - powerPct - engagedPct - casualPct;
-
-    document.getElementById('aa-power').textContent = `${powerPct}%`;
-    document.getElementById('aa-engaged').textContent = `${engagedPct}%`;
-    document.getElementById('aa-browse').textContent = `${browsePct}%`;
-
-    // Engagement bars
-    document.getElementById('bar-power').style.width = `${powerPct}%`;
-    document.getElementById('bar-power-val').textContent = `${powerPct}%`;
-    document.getElementById('bar-engaged').style.width = `${engagedPct}%`;
-    document.getElementById('bar-engaged-val').textContent = `${engagedPct}%`;
-    document.getElementById('bar-casual').style.width = `${casualPct}%`;
-    document.getElementById('bar-casual-val').textContent = `${casualPct}%`;
-    document.getElementById('bar-browse').style.width = `${browsePct}%`;
-    document.getElementById('bar-browse-val').textContent = `${browsePct}%`;
 
     // Delivery patterns
     const deliveries = app.saves || appData?.deliveries?.total || 0;
@@ -2383,17 +2734,32 @@ async function loadSettings() {
     staleBody.innerHTML = '';
 
     if (!scraperHealth.stale || scraperHealth.stale.length === 0) {
-      staleBody.innerHTML = '<tr><td colspan="4" class="no-data">No stale suppliers</td></tr>';
+      staleBody.innerHTML = '<tr><td colspan="4" class="no-data">All suppliers have fresh prices!</td></tr>';
     } else {
       scraperHealth.stale.forEach(s => {
         const row = document.createElement('tr');
+        row.className = 'row-stale';
         row.innerHTML = `
-          <td>${s.name}</td>
-          <td>${formatPrice(s.lastPrice)}</td>
-          <td>${timeAgo(s.lastUpdated)}</td>
-          <td><button class="btn-small" onclick="editSupplier('${s.id}')">Fix</button></td>
+          <td>
+            <div class="supplier-name">${s.name}</div>
+            <div class="supplier-meta">${s.website ? new URL(s.website).hostname : '--'}</div>
+          </td>
+          <td class="price-value">${formatPrice(s.lastPrice)}</td>
+          <td class="stale-date">${timeAgo(s.lastUpdated)}</td>
+          <td>
+            <button class="btn-small btn-warning stale-fix-btn" data-id="${s.id}">Fix</button>
+          </td>
         `;
         staleBody.appendChild(row);
+      });
+
+      // Attach event listeners for Fix buttons
+      staleBody.querySelectorAll('.stale-fix-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          console.log('[Dashboard] Stale Fix button clicked, id:', id);
+          editSupplier(id);
+        });
       });
     }
 
