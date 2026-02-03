@@ -2097,8 +2097,9 @@ async function loadLeaderboard() {
 
     // Summary stats
     const totalCalls = suppliers.reduce((sum, s) => sum + (s.calls || 0), 0);
-    const totalWeb = suppliers.reduce((sum, s) => sum + (s.webClicks || 0), 0);
-    const totalApp = suppliers.reduce((sum, s) => sum + (s.appClicks || 0), 0);
+    const totalSiteClicks = suppliers.reduce((sum, s) => sum + (s.websiteClicks || 0), 0);
+    const totalFromWeb = suppliers.reduce((sum, s) => sum + (s.fromWeb || 0), 0);
+    const totalFromApp = suppliers.reduce((sum, s) => sum + (s.fromApp || 0), 0);
     const totalClicks = suppliers.reduce((sum, s) => sum + (s.totalClicks || 0), 0);
     const marketAvg = suppliers.length > 0 && suppliers[0].marketAvg
       ? suppliers[0].marketAvg
@@ -2107,7 +2108,7 @@ async function loadLeaderboard() {
     const top3Pct = totalClicks > 0 ? ((top3Clicks / totalClicks) * 100).toFixed(0) : 0;
 
     document.getElementById('lb-total-suppliers').textContent = suppliers.length;
-    document.getElementById('lb-total-clicks').textContent = `${totalClicks} (🌐${totalWeb} / 📱${totalApp})`;
+    document.getElementById('lb-total-clicks').textContent = `${totalClicks} (📞${totalCalls} + 🔗${totalSiteClicks})`;
     document.getElementById('lb-market-avg').textContent = marketAvg > 0 ? formatPrice(marketAvg) : '--';
     document.getElementById('lb-top3-pct').textContent = `${top3Pct}%`;
 
@@ -2133,7 +2134,7 @@ async function loadLeaderboard() {
     tbody.innerHTML = '';
 
     if (suppliers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--gray-500);padding:2rem;">No engagement data for this period</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--gray-500);padding:2rem;">No engagement data for this period</td></tr>';
     } else {
       suppliers.forEach((s) => {
         const vsMarket = s.priceDelta != null ? (s.priceDelta > 0 ? '+' : '') + formatPrice(s.priceDelta) : '--';
@@ -2152,9 +2153,10 @@ async function loadLeaderboard() {
           <td>${s.location || '--'}</td>
           <td class="users-col">${s.uniqueUsers ?? '--'}</td>
           <td>${s.calls > 0 ? s.calls : '-'}</td>
-          <td class="web-col">${s.webClicks > 0 ? s.webClicks : '-'}</td>
-          <td class="app-col">${s.appClicks > 0 ? s.appClicks : '-'}</td>
+          <td>${s.websiteClicks > 0 ? s.websiteClicks : '-'}</td>
           <td class="total-col">${s.totalClicks}</td>
+          <td class="web-col">${s.fromWeb > 0 ? s.fromWeb : '-'}</td>
+          <td class="app-col">${s.fromApp > 0 ? s.fromApp : '-'}</td>
           <td>${s.price ? formatPrice(s.price) : '--'}</td>
           <td class="${s.priceDelta > 0 ? 'above-market' : s.priceDelta < 0 ? 'below-market' : ''}">${vsMarket}</td>
           <td>${signalBadge[s.signal] || signalBadge.normal}</td>
@@ -2165,9 +2167,9 @@ async function loadLeaderboard() {
 
     // Export CSV button
     document.getElementById('lb-export-csv').onclick = () => {
-      const csv = ['Rank,Supplier,Location,Unique Users,Calls,Web Clicks,App Clicks,Total,Price,vs Market,Signal'];
+      const csv = ['Rank,Supplier,Location,Unique Users,Calls,Site Clicks,Total,From Web,From App,Price,vs Market,Signal'];
       suppliers.forEach((s) => {
-        csv.push(`${s.rank},"${s.name}","${s.location || ''}",${s.uniqueUsers || 0},${s.calls || 0},${s.webClicks || 0},${s.appClicks || 0},${s.totalClicks || 0},${s.price || ''},${s.priceDelta || ''},${s.signal || ''}`);
+        csv.push(`${s.rank},"${s.name}","${s.location || ''}",${s.uniqueUsers || 0},${s.calls || 0},${s.websiteClicks || 0},${s.totalClicks || 0},${s.fromWeb || 0},${s.fromApp || 0},${s.price || ''},${s.priceDelta || ''},${s.signal || ''}`);
       });
       const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);

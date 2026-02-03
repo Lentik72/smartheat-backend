@@ -1403,11 +1403,14 @@ class UnifiedAnalytics {
           s.city,
           s.state,
           COUNT(*) as total_clicks,
+          -- Action type breakdown (what the user did)
           COUNT(*) FILTER (WHERE ae.action_type = 'call') as calls,
           COUNT(*) FILTER (WHERE ae.action_type = 'website') as website_clicks,
+          COUNT(*) FILTER (WHERE ae.action_type NOT IN ('call', 'website')) as other_clicks,
           COUNT(DISTINCT ae.ip_address) as unique_users,
-          COUNT(*) FILTER (WHERE ae.source = 'web') as web_clicks,
-          COUNT(*) FILTER (WHERE ae.source = 'app') as app_clicks,
+          -- Source breakdown (where it came from)
+          COUNT(*) FILTER (WHERE ae.source = 'web') as from_web,
+          COUNT(*) FILTER (WHERE ae.source = 'app') as from_app,
           lp.price_per_gallon as price,
           ma.avg_price as market_avg,
           CASE
@@ -1436,11 +1439,14 @@ class UnifiedAnalytics {
         name: r.name,
         location: r.city && r.state ? `${r.city}, ${r.state}` : r.state || '--',
         totalClicks: parseInt(r.total_clicks) || 0,
-        calls: parseInt(r.calls) || 0,
-        websiteClicks: parseInt(r.website_clicks) || 0,
+        // Action breakdown (what user did) - these should add up to total
+        calls: parseInt(r.calls) || 0,           // clicked call button
+        websiteClicks: parseInt(r.website_clicks) || 0,  // clicked website link
+        otherClicks: parseInt(r.other_clicks) || 0,      // view, save, etc.
         uniqueUsers: parseInt(r.unique_users) || 0,
-        webClicks: parseInt(r.web_clicks) || 0,
-        appClicks: parseInt(r.app_clicks) || 0,
+        // Source breakdown (where it came from)
+        fromWeb: parseInt(r.from_web) || 0,      // from website
+        fromApp: parseInt(r.from_app) || 0,      // from iOS app
         price: r.price ? parseFloat(r.price) : null,
         marketAvg: r.market_avg ? parseFloat(r.market_avg) : null,
         priceDelta: r.price_delta ? parseFloat(r.price_delta) : null,
