@@ -272,11 +272,11 @@ async function loadOverview() {
     }
 
     // Card 2: Deliveries Logged (using saves from app data as proxy)
-    const deliveries = unified?.app?.deliveries?.total || unified?.app?.saves || 0;
-    document.getElementById('total-deliveries').textContent = deliveries || '--';
+    const deliveries = unified?.app?.deliveries?.total ?? unified?.app?.saves ?? 0;
+    document.getElementById('total-deliveries').textContent = deliveries;
     document.getElementById('deliveries-breakdown').textContent = deliveries > 0
       ? `~$${(deliveries * 500).toLocaleString()} in orders`
-      : 'Real orders tracked';
+      : 'No deliveries logged yet';
     document.getElementById('deliveries-freshness').textContent = '';
 
     // Card 3: Est. Revenue (from supplier clicks)
