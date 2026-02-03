@@ -2582,9 +2582,18 @@ async function loadAppAnalytics() {
       weatherInsight.textContent = weatherCorr.message || 'Set OPENWEATHER_API_KEY to enable weather correlation';
     }
 
-    // Render correlation chart (Price + Clicks over time)
+    // Render correlation chart (Price + Clicks + Weather over time)
     if (priceCorr.dailyData && priceCorr.dailyData.length > 0) {
-      renderCorrelationChart(priceCorr.dailyData);
+      // Merge weather data into price data
+      const weatherData = weatherCorr.dailyData || [];
+      const mergedData = priceCorr.dailyData.map(p => {
+        const weather = weatherData.find(w => w.date === p.date);
+        return {
+          ...p,
+          temperature: weather?.temperature || null
+        };
+      });
+      renderCorrelationChart(mergedData);
     }
 
     contentEl.classList.remove('hidden');
@@ -2599,7 +2608,7 @@ async function loadAppAnalytics() {
 // Correlation chart instance
 let correlationChart = null;
 
-// Render Price & Clicks correlation chart
+// Render Price, Clicks & Weather correlation chart
 function renderCorrelationChart(data) {
   const canvas = document.getElementById('correlation-chart');
   if (!canvas) return;
@@ -2616,32 +2625,77 @@ function renderCorrelationChart(data) {
 
   const prices = data.map(d => d.avgPrice ? parseFloat(d.avgPrice) : null);
   const clicks = data.map(d => d.totalClicks || 0);
+  const temps = data.map(d => d.temperature || null);
+  const hasWeatherData = temps.some(t => t !== null);
+
+  const datasets = [
+    {
+      label: 'Avg Price ($)',
+      data: prices,
+      borderColor: '#22c55e',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      yAxisID: 'y-price',
+      tension: 0.3,
+      pointRadius: 2
+    },
+    {
+      label: 'Daily Clicks',
+      data: clicks,
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      yAxisID: 'y-clicks',
+      tension: 0.3,
+      pointRadius: 2
+    }
+  ];
+
+  // Add temperature line if we have weather data
+  if (hasWeatherData) {
+    datasets.push({
+      label: 'Temperature (°F)',
+      data: temps,
+      borderColor: '#f97316',
+      backgroundColor: 'rgba(249, 115, 22, 0.1)',
+      yAxisID: 'y-temp',
+      tension: 0.3,
+      pointRadius: 2,
+      borderDash: [5, 5]
+    });
+  }
+
+  const scales = {
+    'y-price': {
+      type: 'linear',
+      position: 'left',
+      title: { display: true, text: 'Price ($)', color: '#22c55e' },
+      grid: { display: false },
+      ticks: { color: '#22c55e' }
+    },
+    'y-clicks': {
+      type: 'linear',
+      position: 'right',
+      title: { display: true, text: 'Clicks', color: '#3b82f6' },
+      grid: { drawOnChartArea: false },
+      ticks: { color: '#3b82f6' }
+    }
+  };
+
+  // Add temperature axis if we have weather data
+  if (hasWeatherData) {
+    scales['y-temp'] = {
+      type: 'linear',
+      position: 'right',
+      title: { display: true, text: 'Temp (°F)', color: '#f97316' },
+      grid: { display: false },
+      ticks: { color: '#f97316' },
+      // Offset from clicks axis
+      offset: true
+    };
+  }
 
   correlationChart = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Avg Price ($)',
-          data: prices,
-          borderColor: '#22c55e',
-          backgroundColor: 'rgba(34, 197, 94, 0.1)',
-          yAxisID: 'y-price',
-          tension: 0.3,
-          pointRadius: 2
-        },
-        {
-          label: 'Daily Clicks',
-          data: clicks,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          yAxisID: 'y-clicks',
-          tension: 0.3,
-          pointRadius: 2
-        }
-      ]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -2649,27 +2703,23 @@ function renderCorrelationChart(data) {
         mode: 'index',
         intersect: false
       },
-      scales: {
-        'y-price': {
-          type: 'linear',
-          position: 'left',
-          title: { display: true, text: 'Price ($)' },
-          grid: { display: false }
-        },
-        'y-clicks': {
-          type: 'linear',
-          position: 'right',
-          title: { display: true, text: 'Clicks' },
-          grid: { drawOnChartArea: false }
-        }
-      },
+      scales,
       plugins: {
-        legend: { display: false },
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            usePointStyle: true,
+            padding: 20
+          }
+        },
         tooltip: {
           callbacks: {
             label: (ctx) => {
               if (ctx.dataset.label === 'Avg Price ($)') {
                 return `Price: $${ctx.raw?.toFixed(2) || '--'}`;
+              } else if (ctx.dataset.label === 'Temperature (°F)') {
+                return `Temp: ${ctx.raw?.toFixed(0) || '--'}°F`;
               }
               return `Clicks: ${ctx.raw || 0}`;
             }

@@ -1590,100 +1590,154 @@ class UnifiedAnalytics {
 
   /**
    * Get weather vs clicks correlation analysis
-   * Uses OpenWeatherMap API for historical temperature data
+   * Stores daily temps for historical tracking
    * @param {number} days - Number of days to analyze
    */
   async getWeatherCorrelation(days = 30) {
     try {
-      // Get daily click data first
-      const clickData = await this.sequelize.query(`
+      // Ensure weather_history table exists
+      await this.sequelize.query(`
+        CREATE TABLE IF NOT EXISTS weather_history (
+          id SERIAL PRIMARY KEY,
+          date DATE UNIQUE NOT NULL,
+          temp_high NUMERIC(5,2),
+          temp_low NUMERIC(5,2),
+          temp_avg NUMERIC(5,2),
+          conditions VARCHAR(50),
+          location VARCHAR(100) DEFAULT 'Hartford, CT',
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `).catch(() => {}); // Ignore if exists
+
+      const weatherApiKey = process.env.OPENWEATHER_API_KEY;
+      let currentTemp = null;
+      let conditions = null;
+
+      // Fetch and store current weather
+      if (weatherApiKey) {
+        try {
+          const axios = require('axios');
+          // Hartford, CT coordinates (center of Northeast coverage area)
+          const lat = 41.7658;
+          const lon = -72.6734;
+
+          const currentWeather = await axios.get(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${weatherApiKey}`
+          );
+
+          currentTemp = currentWeather.data.main.temp;
+          const tempHigh = currentWeather.data.main.temp_max;
+          const tempLow = currentWeather.data.main.temp_min;
+          conditions = currentWeather.data.weather[0].main;
+
+          // Store today's weather (upsert)
+          await this.sequelize.query(`
+            INSERT INTO weather_history (date, temp_high, temp_low, temp_avg, conditions)
+            VALUES (CURRENT_DATE, $1, $2, $3, $4)
+            ON CONFLICT (date) DO UPDATE SET
+              temp_high = GREATEST(weather_history.temp_high, $1),
+              temp_low = LEAST(weather_history.temp_low, $2),
+              temp_avg = $3,
+              conditions = $4
+          `, { bind: [tempHigh, tempLow, currentTemp, conditions] });
+        } catch (apiError) {
+          this.logger.error('[UnifiedAnalytics] Weather API error:', apiError.message);
+        }
+      }
+
+      // Get daily data with weather history
+      const dailyData = await this.sequelize.query(`
+        WITH click_data AS (
+          SELECT
+            DATE(created_at) as date,
+            COUNT(*) as total_clicks,
+            COUNT(DISTINCT ip_address) as unique_users
+          FROM supplier_clicks
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          GROUP BY DATE(created_at)
+        ),
+        date_series AS (
+          SELECT generate_series(
+            CURRENT_DATE - INTERVAL '${days} days',
+            CURRENT_DATE,
+            '1 day'::interval
+          )::date as date
+        )
         SELECT
-          DATE(created_at) as date,
-          COUNT(*) as total_clicks,
-          COUNT(DISTINCT ip_address) as unique_users
-        FROM supplier_clicks
-        WHERE created_at > NOW() - INTERVAL '${days} days'
-        GROUP BY DATE(created_at)
-        ORDER BY date ASC
+          ds.date,
+          COALESCE(cd.total_clicks, 0) as total_clicks,
+          COALESCE(cd.unique_users, 0) as unique_users,
+          wh.temp_avg as temperature,
+          wh.temp_high,
+          wh.temp_low,
+          wh.conditions
+        FROM date_series ds
+        LEFT JOIN click_data cd ON ds.date = cd.date
+        LEFT JOIN weather_history wh ON ds.date = wh.date
+        ORDER BY ds.date ASC
       `, { type: this.sequelize.QueryTypes.SELECT });
 
-      // Try to get weather data from OpenWeatherMap (if API key available)
-      const weatherApiKey = process.env.OPENWEATHER_API_KEY;
+      // Calculate correlation if we have enough weather data
+      const dataWithWeather = dailyData.filter(d => d.temperature && d.total_clicks > 0);
+      let correlation = null;
 
-      if (!weatherApiKey) {
-        // Return click data without weather correlation
-        return {
-          available: false,
-          message: 'Weather API not configured. Set OPENWEATHER_API_KEY to enable.',
-          dailyData: clickData.map(r => ({
-            date: r.date,
-            totalClicks: parseInt(r.total_clicks) || 0,
-            uniqueUsers: parseInt(r.unique_users) || 0,
-            temperature: null,
-            conditions: null
-          }))
-        };
+      if (dataWithWeather.length >= 5) {
+        const temps = dataWithWeather.map(d => parseFloat(d.temperature));
+        const clicks = dataWithWeather.map(d => parseInt(d.total_clicks));
+
+        const n = temps.length;
+        const sumX = temps.reduce((a, b) => a + b, 0);
+        const sumY = clicks.reduce((a, b) => a + b, 0);
+        const sumXY = temps.reduce((sum, x, i) => sum + x * clicks[i], 0);
+        const sumX2 = temps.reduce((sum, x) => sum + x * x, 0);
+        const sumY2 = clicks.reduce((sum, y) => sum + y * y, 0);
+
+        const numerator = (n * sumXY) - (sumX * sumY);
+        const denominator = Math.sqrt(((n * sumX2) - (sumX * sumX)) * ((n * sumY2) - (sumY * sumY)));
+        correlation = denominator !== 0 ? numerator / denominator : 0;
       }
 
-      // Hartford, CT coordinates (center of Northeast coverage area)
-      const lat = 41.7658;
-      const lon = -72.6734;
-
-      // OpenWeatherMap One Call API for historical data
-      // Note: Historical data requires paid subscription, using current + forecast as proxy
-      const axios = require('axios');
-
-      try {
-        // Get current weather as baseline
-        const currentWeather = await axios.get(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${weatherApiKey}`
-        );
-
-        const currentTemp = currentWeather.data.main.temp;
-        const conditions = currentWeather.data.weather[0].main;
-
-        // For now, return click data with current temp as reference
-        // In production, would use historical API or store daily temps
-        const avgClicks = clickData.length > 0
-          ? clickData.reduce((sum, d) => sum + parseInt(d.total_clicks), 0) / clickData.length
-          : 0;
-
-        // Generate insight based on current conditions
-        let insight = '';
+      // Generate insight
+      let insight = '';
+      if (currentTemp !== null) {
         if (currentTemp < 40) {
-          insight = `🥶 Current temp: ${currentTemp.toFixed(0)}°F - Cold weather typically drives heating oil demand up.`;
+          insight = `🥶 Current: ${currentTemp.toFixed(0)}°F - Cold weather drives heating oil demand.`;
         } else if (currentTemp < 55) {
-          insight = `🍂 Current temp: ${currentTemp.toFixed(0)}°F - Moderate temps, expect steady engagement.`;
+          insight = `🍂 Current: ${currentTemp.toFixed(0)}°F - Moderate temps, steady engagement.`;
         } else {
-          insight = `☀️ Current temp: ${currentTemp.toFixed(0)}°F - Warm weather, lower heating oil demand expected.`;
+          insight = `☀️ Current: ${currentTemp.toFixed(0)}°F - Warm weather, lower demand expected.`;
         }
 
-        return {
-          available: true,
-          currentTemp: currentTemp.toFixed(0),
-          conditions,
-          insight,
-          correlation: null, // Would calculate with historical data
-          dailyData: clickData.map(r => ({
-            date: r.date,
-            totalClicks: parseInt(r.total_clicks) || 0,
-            uniqueUsers: parseInt(r.unique_users) || 0,
-            temperature: null, // Would fill with historical
-            conditions: null
-          }))
-        };
-      } catch (apiError) {
-        this.logger.error('[UnifiedAnalytics] Weather API error:', apiError.message);
-        return {
-          available: false,
-          message: 'Weather API error: ' + apiError.message,
-          dailyData: clickData.map(r => ({
-            date: r.date,
-            totalClicks: parseInt(r.total_clicks) || 0,
-            uniqueUsers: parseInt(r.unique_users) || 0
-          }))
-        };
+        if (correlation !== null) {
+          if (correlation < -0.3) {
+            insight += ` 📊 Correlation: ${correlation.toFixed(2)} (colder = more clicks)`;
+          } else if (correlation > 0.3) {
+            insight += ` 📊 Correlation: ${correlation.toFixed(2)} (warmer = more clicks?)`;
+          }
+        } else if (dataWithWeather.length < 5) {
+          insight += ` (${dataWithWeather.length}/5 days of weather data - building history...)`;
+        }
+      } else if (!weatherApiKey) {
+        insight = 'Set OPENWEATHER_API_KEY to enable weather tracking.';
       }
+
+      return {
+        available: currentTemp !== null,
+        currentTemp: currentTemp?.toFixed(0) || null,
+        conditions,
+        correlation: correlation ? parseFloat(correlation.toFixed(3)) : null,
+        insight,
+        daysWithWeather: dataWithWeather.length,
+        dailyData: dailyData.map(r => ({
+          date: r.date,
+          totalClicks: parseInt(r.total_clicks) || 0,
+          uniqueUsers: parseInt(r.unique_users) || 0,
+          temperature: r.temperature ? parseFloat(r.temperature) : null,
+          tempHigh: r.temp_high ? parseFloat(r.temp_high) : null,
+          tempLow: r.temp_low ? parseFloat(r.temp_low) : null,
+          conditions: r.conditions
+        }))
+      };
     } catch (error) {
       this.logger.error('[UnifiedAnalytics] Weather correlation error:', error.message);
       return { available: false, message: 'Error fetching data', dailyData: [] };

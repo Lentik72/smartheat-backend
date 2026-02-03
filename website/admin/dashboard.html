@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1770143000">
+  <link rel="stylesheet" href="dashboard.css?v=1770144000">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -500,15 +500,12 @@
               </div>
             </div>
 
-            <!-- Price & Clicks Chart -->
+            <!-- Price, Clicks & Weather Chart -->
             <div class="panel full-width">
-              <h3>📊 Price & Engagement Trends</h3>
+              <h3>📊 Price, Weather & Engagement Trends</h3>
+              <p class="panel-hint">Visualize how price and temperature affect user engagement over time</p>
               <div class="correlation-chart-container">
                 <canvas id="correlation-chart"></canvas>
-              </div>
-              <div class="chart-legend">
-                <span><span class="legend-dot price"></span> Avg Price</span>
-                <span><span class="legend-dot clicks"></span> Daily Clicks</span>
               </div>
             </div>
           </div>
@@ -1709,6 +1706,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1770143000"></script>
+  <script src="dashboard.js?v=1770144000"></script>
 </body>
 </html>

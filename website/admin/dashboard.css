@@ -1869,6 +1869,12 @@ legend {
   position: relative;
 }
 
+.panel-hint {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin: -0.5rem 0 1rem 0;
+}
+
 .chart-legend {
   display: flex;
   justify-content: center;
