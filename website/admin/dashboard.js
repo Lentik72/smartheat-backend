@@ -2264,8 +2264,8 @@ async function loadCoverage() {
       });
     }
 
-    // Map - reuse existing loadMap logic
-    loadCoverageMap(geographic);
+    // Map - pass overview for consistent gap count
+    loadCoverageMap(geographic, overview);
 
   } catch (error) {
     console.error('Failed to load coverage:', error);
@@ -2273,7 +2273,7 @@ async function loadCoverage() {
 }
 
 // Map for coverage tab
-function loadCoverageMap(data) {
+function loadCoverageMap(data, overview = null) {
   // Initialize map if needed
   if (!map) {
     map = L.map('map-container').setView([40.7, -74.0], 7);
@@ -2329,11 +2329,12 @@ function loadCoverageMap(data) {
     map.fitBounds(bounds, { padding: [20, 20] });
   }
 
-  // Update stats
+  // Update stats - use overview.trueCoverageGaps for consistency with card
   const stats = data.stats || {};
+  const gapCount = overview?.coverage?.trueCoverageGaps ?? stats.totalGapZips ?? gapData.length;
   document.getElementById('map-stats').innerHTML = `
     <span class="stat-item"><span class="dot blue"></span> Demand: ${stats.totalDemandZips || demandData.length} ZIPs</span>
-    <span class="stat-item"><span class="dot red"></span> Gaps: ${stats.totalGapZips || gapData.length} ZIPs</span>
+    <span class="stat-item"><span class="dot red"></span> Gaps: ${gapCount} ZIPs</span>
   `;
 }
 
