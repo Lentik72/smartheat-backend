@@ -228,6 +228,23 @@ if (API_KEYS.DATABASE_URL) {
       .then(async () => {
         logger.info('✅ Connected to PostgreSQL database');
 
+        // Run pending migrations
+        try {
+          logger.info('🔧 Running database migrations...');
+          // Add ip_hash column to supplier_engagements if missing
+          await sequelize.query(`
+            ALTER TABLE supplier_engagements
+            ADD COLUMN IF NOT EXISTS ip_hash VARCHAR(64);
+          `).catch(() => {}); // Ignore if column exists or table doesn't exist
+          await sequelize.query(`
+            CREATE INDEX IF NOT EXISTS idx_supplier_engagements_ip_hash
+            ON supplier_engagements(ip_hash);
+          `).catch(() => {}); // Ignore if index exists
+          logger.info('✅ Database migrations complete');
+        } catch (migrationError) {
+          logger.warn('⚠️ Migration warning:', migrationError.message);
+        }
+
         // V1.3.0: Initialize Supplier model and sync table
         const Supplier = initSupplierModel(sequelize);
         if (Supplier) {
