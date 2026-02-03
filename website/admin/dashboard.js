@@ -1900,18 +1900,36 @@ async function loadLeaderboard() {
   try {
     const data = await api(`/clicks?days=${currentDays}`);
 
+    // Merge bySupplier (has calls/websites) with bySupplierWithPrice (has price/signal)
+    const bySupplier = data.bySupplier || [];
+    const bySupplierWithPrice = data.bySupplierWithPrice || [];
+
+    // Create lookup for calls/websites from bySupplier
+    const clicksLookup = {};
+    bySupplier.forEach(s => {
+      clicksLookup[s.name] = { calls: s.calls || 0, websites: s.websites || 0 };
+    });
+
+    // Merge data - prefer bySupplierWithPrice for price info, add calls/websites from lookup
+    const suppliers = bySupplierWithPrice.map(s => ({
+      ...s,
+      calls: clicksLookup[s.name]?.calls || 0,
+      websites: clicksLookup[s.name]?.websites || 0
+    }));
+
     // Summary stats
-    const suppliers = data.bySupplierWithPrice || data.bySupplier || [];
-    const totalClicks = suppliers.reduce((sum, s) => sum + (s.clicks || s.calls + s.websites || 0), 0);
+    const totalCalls = suppliers.reduce((sum, s) => sum + s.calls, 0);
+    const totalWebsites = suppliers.reduce((sum, s) => sum + s.websites, 0);
+    const totalClicks = totalCalls + totalWebsites;
     const marketAvg = suppliers.length > 0
       ? suppliers.filter(s => s.currentPrice).reduce((sum, s) => sum + parseFloat(s.currentPrice), 0) /
         suppliers.filter(s => s.currentPrice).length
       : 0;
-    const top3Clicks = suppliers.slice(0, 3).reduce((sum, s) => sum + (s.clicks || s.calls + s.websites || 0), 0);
+    const top3Clicks = suppliers.slice(0, 3).reduce((sum, s) => sum + s.calls + s.websites, 0);
     const top3Pct = totalClicks > 0 ? ((top3Clicks / totalClicks) * 100).toFixed(0) : 0;
 
     document.getElementById('lb-total-suppliers').textContent = suppliers.length;
-    document.getElementById('lb-total-clicks').textContent = totalClicks;
+    document.getElementById('lb-total-clicks').textContent = `${totalClicks} (📞${totalCalls} / 🌐${totalWebsites})`;
     document.getElementById('lb-market-avg').textContent = marketAvg > 0 ? formatPrice(marketAvg) : '--';
     document.getElementById('lb-top3-pct').textContent = `${top3Pct}%`;
 
@@ -1937,9 +1955,9 @@ async function loadLeaderboard() {
     tbody.innerHTML = '';
 
     suppliers.forEach((s, i) => {
-      const clicks = s.clicks || (s.calls + s.websites) || 0;
+      const totalClicks = s.calls + s.websites;
       const vsMarket = s.priceDelta ? (s.priceDelta > 0 ? '+' : '') + formatPrice(s.priceDelta) : '--';
-      const estValue = clicks > 0 ? '$' + Math.round(clicks * 0.03 * 7.50) : '--';
+      const estValue = totalClicks > 0 ? '$' + Math.round(totalClicks * 0.03 * 7.50) : '--';
 
       const signalBadge = {
         brand_strength: '<span class="signal brand">💪 Brand</span>',
@@ -1952,7 +1970,8 @@ async function loadLeaderboard() {
       row.innerHTML = `
         <td class="rank">${i + 1}</td>
         <td>${s.name}</td>
-        <td>${clicks}</td>
+        <td class="calls-col">${s.calls > 0 ? '📞 ' + s.calls : '-'}</td>
+        <td class="web-col">${s.websites > 0 ? '🌐 ' + s.websites : '-'}</td>
         <td>${formatPrice(s.currentPrice)}</td>
         <td class="${s.priceDelta > 0 ? 'above-market' : s.priceDelta < 0 ? 'below-market' : ''}">${vsMarket}</td>
         <td>${signalBadge[s.signal] || signalBadge.normal}</td>
@@ -1963,10 +1982,10 @@ async function loadLeaderboard() {
 
     // Export CSV button
     document.getElementById('lb-export-csv').onclick = () => {
-      const csv = ['Rank,Supplier,Clicks,Price,vs Market,Signal,Est Value'];
+      const csv = ['Rank,Supplier,Calls,Website Clicks,Total,Price,vs Market,Signal,Est Value'];
       suppliers.forEach((s, i) => {
-        const clicks = s.clicks || (s.calls + s.websites) || 0;
-        csv.push(`${i + 1},"${s.name}",${clicks},${s.currentPrice || ''},${s.priceDelta || ''},${s.signal || ''},${clicks * 0.03 * 7.50}`);
+        const total = s.calls + s.websites;
+        csv.push(`${i + 1},"${s.name}",${s.calls},${s.websites},${total},${s.currentPrice || ''},${s.priceDelta || ''},${s.signal || ''},${total * 0.03 * 7.50}`);
       });
       const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
