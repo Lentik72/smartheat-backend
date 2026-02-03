@@ -2281,13 +2281,18 @@ class UnifiedAnalytics {
             s.name,
             s.city,
             s.state,
-            s.zip_code,
+            -- Get first ZIP from postal_codes_served array
+            CASE
+              WHEN jsonb_array_length(s.postal_codes_served) > 0
+              THEN s.postal_codes_served->>0
+              ELSE NULL
+            END as zip_code,
             COALESCE(sc.clicks, 0) + COALESCE(se.engagements, 0) as total_activity
           FROM suppliers s
-          LEFT JOIN supplier_clicks_agg sc ON s.id = sc.supplier_id
-          LEFT JOIN supplier_engagements_agg se ON s.id = se.supplier_id
+          LEFT JOIN supplier_clicks_agg sc ON s.id::text = sc.supplier_id::text
+          LEFT JOIN supplier_engagements_agg se ON s.id::text = se.supplier_id::text
           WHERE s.active = true
-            AND s.zip_code IS NOT NULL
+            AND jsonb_array_length(s.postal_codes_served) > 0
             AND (COALESCE(sc.clicks, 0) + COALESCE(se.engagements, 0)) > 0
           ORDER BY total_activity DESC
           LIMIT 100
