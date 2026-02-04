@@ -1460,8 +1460,8 @@ router.put('/suppliers/:id', async (req, res) => {
     // Handle manual price update
     if (updates.manual_price !== undefined && updates.manual_price !== null) {
       const price = parseFloat(updates.manual_price);
-      // Database constraint: price_per_gallon >= 2.00 AND <= 5.00
-      if (!isNaN(price) && price >= 2.00 && price <= 5.00) {
+      // Database constraint: price_per_gallon >= 1.50 AND <= 8.00
+      if (!isNaN(price) && price >= 1.50 && price <= 8.00) {
         // Insert manual price into supplier_prices (expires in 7 days)
         await sequelize.query(`
           INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, is_valid, expires_at)
@@ -1469,7 +1469,7 @@ router.put('/suppliers/:id', async (req, res) => {
         `, { replacements: { id, price } });
         logger.info(`[Dashboard] Manual price set for supplier ${id}: $${price.toFixed(2)}`);
       } else if (!isNaN(price)) {
-        logger.warn(`[Dashboard] Invalid price ${price} for supplier ${id} - must be between $2.00 and $5.00`);
+        logger.warn(`[Dashboard] Invalid price ${price} for supplier ${id} - must be between $1.50 and $8.00`);
       }
     }
 
