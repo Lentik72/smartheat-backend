@@ -235,14 +235,12 @@ document.querySelectorAll('.period-btn').forEach(btn => {
 // Load overview (top cards)
 async function loadOverview() {
   try {
-    console.log(`[Dashboard] Loading data for ${currentDays} days`);
     const data = await api(`/overview?days=${currentDays}`);
 
     // Get unified data for combined metrics
     let unified = null;
     try {
       unified = await api(`/unified?days=${currentDays}`);
-      console.log(`[Dashboard] Deliveries loaded: ${unified?.app?.deliveries?.total ?? 'N/A'}`);
     } catch (e) {
       console.log('Unified data not available');
     }
@@ -2919,13 +2917,9 @@ async function loadGrowth() {
 
     // User Journey Funnel
     const userJourney = unified?.userJourney || {};
-    console.log('[Dashboard] userJourney:', userJourney);
     if (userJourney.available && userJourney.hasData) {
-      console.log('[Dashboard] Rendering user journey...');
       renderUserJourney(userJourney);
     } else {
-      console.log('[Dashboard] No user journey data:', { available: userJourney.available, hasData: userJourney.hasData });
-      // Show placeholder message
       document.getElementById('journey-insight').textContent =
         '💡 User journey data will appear once you have visitor and engagement activity.';
     }
