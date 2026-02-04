@@ -1157,6 +1157,109 @@ router.get('/suppliers', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/suppliers/map - Supplier locations for map display
+router.get('/suppliers/map', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    // Get suppliers with location data
+    const [suppliers] = await sequelize.query(`
+      WITH latest_prices AS (
+        SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
+        FROM supplier_prices
+        WHERE is_valid = true
+        ORDER BY supplier_id, scraped_at DESC
+      )
+      SELECT
+        s.id,
+        s.name,
+        s.address_line1,
+        s.city,
+        s.state,
+        s.lat,
+        s.lng,
+        s.active,
+        lp.price_per_gallon as price
+      FROM suppliers s
+      LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
+      WHERE s.city IS NOT NULL AND s.state IS NOT NULL
+      ORDER BY s.name
+    `);
+
+    // Geocode suppliers without coordinates (batch, with rate limiting)
+    const needsGeocoding = suppliers.filter(s => !s.lat && s.city && s.state);
+
+    if (needsGeocoding.length > 0) {
+      logger.info(`[Dashboard] Geocoding ${needsGeocoding.length} suppliers`);
+
+      // Geocode up to 10 suppliers per request to avoid rate limits
+      const toGeocode = needsGeocoding.slice(0, 10);
+
+      for (const supplier of toGeocode) {
+        try {
+          const address = supplier.address_line1
+            ? `${supplier.address_line1}, ${supplier.city}, ${supplier.state}`
+            : `${supplier.city}, ${supplier.state}`;
+
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+            { headers: { 'User-Agent': 'HomeHeat-Dashboard/1.0' } }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.length > 0) {
+              const { lat, lon } = data[0];
+
+              // Update database with coordinates
+              await sequelize.query(
+                `UPDATE suppliers SET lat = $1, lng = $2 WHERE id = $3`,
+                { bind: [parseFloat(lat), parseFloat(lon), supplier.id] }
+              );
+
+              // Update local object
+              supplier.lat = parseFloat(lat);
+              supplier.lng = parseFloat(lon);
+            }
+          }
+
+          // Rate limit: 1 request per second for Nominatim
+          await new Promise(resolve => setTimeout(resolve, 1100));
+        } catch (geoError) {
+          logger.warn(`[Dashboard] Geocoding failed for ${supplier.name}:`, geoError.message);
+        }
+      }
+    }
+
+    // Return suppliers with coordinates
+    const mappableSuppliers = suppliers.filter(s => s.lat && s.lng).map(s => ({
+      id: s.id,
+      name: s.name,
+      city: s.city,
+      state: s.state,
+      lat: parseFloat(s.lat),
+      lng: parseFloat(s.lng),
+      price: s.price ? parseFloat(s.price) : null,
+      active: s.active
+    }));
+
+    res.json({
+      suppliers: mappableSuppliers,
+      total: suppliers.length,
+      mapped: mappableSuppliers.length,
+      needsGeocoding: needsGeocoding.length - Math.min(10, needsGeocoding.length)
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Suppliers map error:', error.message);
+    res.status(500).json({ error: 'Failed to load supplier map data', details: error.message });
+  }
+});
+
 // GET /api/dashboard/suppliers/:id - Single supplier details
 router.get('/suppliers/:id', async (req, res) => {
   const logger = req.app.locals.logger;

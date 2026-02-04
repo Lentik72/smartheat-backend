@@ -204,7 +204,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (target === 'prices') loadPrices();
     if (target === 'map') loadMap();
     if (target === 'scrapers') loadScrapers();
-    if (target === 'suppliers') loadSuppliers();
+    if (target === 'suppliers') { loadSuppliers(); loadSupplierMap(); }
   });
 });
 
@@ -1133,6 +1133,76 @@ async function loadSuppliers() {
     if (tbody) {
       tbody.innerHTML = '<tr><td colspan="7" class="error-message">Failed to load suppliers. Please try again.</td></tr>';
     }
+  }
+}
+
+// Supplier map
+let supplierMap = null;
+let supplierMarkers = [];
+
+async function loadSupplierMap() {
+  const mapContainer = document.getElementById('supplier-map');
+  if (!mapContainer) return;
+
+  try {
+    // Initialize map if not already done
+    if (!supplierMap) {
+      supplierMap = L.map('supplier-map').setView([41.2, -73.7], 8); // Center on Westchester
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18
+      }).addTo(supplierMap);
+    }
+
+    // Clear existing markers
+    supplierMarkers.forEach(m => supplierMap.removeLayer(m));
+    supplierMarkers = [];
+
+    // Fetch supplier locations
+    const data = await api('/suppliers/map');
+
+    if (!data.suppliers || data.suppliers.length === 0) {
+      console.log('No supplier locations available');
+      return;
+    }
+
+    // Add markers
+    data.suppliers.forEach(supplier => {
+      const color = !supplier.active ? '#9ca3af' : supplier.price ? '#22c55e' : '#f59e0b';
+
+      const marker = L.circleMarker([supplier.lat, supplier.lng], {
+        radius: 8,
+        fillColor: color,
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+      });
+
+      const priceHtml = supplier.price
+        ? `<span class="supplier-price">$${supplier.price.toFixed(2)}/gal</span>`
+        : '<span class="supplier-no-price">No price</span>';
+
+      marker.bindPopup(`
+        <strong>${supplier.name}</strong><br>
+        ${supplier.city}, ${supplier.state}<br>
+        ${priceHtml}
+      `);
+
+      marker.addTo(supplierMap);
+      supplierMarkers.push(marker);
+    });
+
+    // Fit bounds to show all markers
+    if (supplierMarkers.length > 0) {
+      const group = L.featureGroup(supplierMarkers);
+      supplierMap.fitBounds(group.getBounds().pad(0.1));
+    }
+
+    console.log(`Loaded ${data.mapped} suppliers on map (${data.needsGeocoding} pending geocoding)`);
+  } catch (error) {
+    console.error('Failed to load supplier map:', error);
   }
 }
 

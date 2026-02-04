@@ -3384,3 +3384,65 @@ legend {
 #journey-insight {
   margin-top: 1.5rem;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUPPLIER MAP
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#supplier-map {
+  background: var(--gray-100);
+}
+
+.map-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--gray-600);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.green {
+  background: #22c55e;
+}
+
+.legend-dot.orange {
+  background: #f59e0b;
+}
+
+.legend-dot.gray {
+  background: #9ca3af;
+}
+
+.leaflet-popup-content {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.leaflet-popup-content strong {
+  font-size: 1rem;
+  color: var(--text-dark);
+}
+
+.leaflet-popup-content .supplier-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #22c55e;
+}
+
+.leaflet-popup-content .supplier-no-price {
+  color: var(--gray-400);
+  font-style: italic;
+}
