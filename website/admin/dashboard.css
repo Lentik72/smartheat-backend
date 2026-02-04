@@ -91,18 +91,19 @@ body {
 }
 
 /* Sidebar */
+#sidebar,
 .sidebar {
-  background: var(--sidebar-bg);
-  color: var(--sidebar-text);
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 220px;
-  height: 100vh;
+  background: #1a1f2e !important;
+  color: #94a3b8 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 220px !important;
+  height: 100vh !important;
   overflow-y: auto;
   z-index: 100;
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .sidebar-header {
@@ -142,33 +143,41 @@ body {
   margin-top: 0.5rem;
 }
 
-.nav-item {
-  display: flex;
+.sidebar .nav-item,
+#sidebar .nav-item,
+button.nav-item {
+  display: flex !important;
   align-items: center;
   gap: 0.625rem;
-  padding: 0.5rem 1rem;
-  color: var(--sidebar-text);
+  padding: 0.5rem 1rem !important;
+  color: #94a3b8 !important;
   text-decoration: none;
-  font-size: 0.8125rem;
+  font-size: 0.8125rem !important;
   font-weight: 500;
-  border: none;
-  background: none;
-  width: 100%;
+  border: none !important;
+  background: transparent !important;
+  width: 100% !important;
   text-align: left;
   cursor: pointer;
   transition: all 0.15s ease;
-  border-left: 3px solid transparent;
+  border-left: 3px solid transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
-.nav-item:hover {
-  background: var(--sidebar-hover);
-  color: var(--sidebar-text-active);
+.sidebar .nav-item:hover,
+#sidebar .nav-item:hover,
+button.nav-item:hover {
+  background: #252b3d !important;
+  color: #ffffff !important;
 }
 
-.nav-item.active {
-  background: var(--sidebar-active);
-  color: var(--sidebar-text-active);
-  border-left-color: var(--primary);
+.sidebar .nav-item.active,
+#sidebar .nav-item.active,
+button.nav-item.active {
+  background: #2d3548 !important;
+  color: #ffffff !important;
+  border-left-color: #3b82f6 !important;
 }
 
 .nav-item-icon {
@@ -432,8 +441,13 @@ body {
 }
 
 /* Legacy header - hidden when using sidebar */
+.app-layout header,
+#dashboard.app-layout header {
+  display: none !important;
+}
+
 header {
-  display: none;
+  display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
@@ -581,8 +595,13 @@ header h1 {
 }
 
 /* Tabs - Hidden when using sidebar navigation */
+.app-layout .tabs,
+#dashboard.app-layout .tabs {
+  display: none !important;
+}
+
 .tabs {
-  display: none;
+  display: flex;
   gap: 0.125rem;
   background: white;
   padding: 0.25rem;
