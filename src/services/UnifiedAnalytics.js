@@ -1966,7 +1966,7 @@ class UnifiedAnalytics {
       // Get GA4 website metrics for accurate visitor/bounce data
       const websiteMetrics = await this.getWebsiteMetrics(days);
 
-      // Web journey: Get supplier contacts and deliveries from DB
+      // Web journey: Get supplier contacts and app store clicks from DB
       const webJourney = await this.sequelize.query(`
         WITH supplier_contacts AS (
           -- Users who clicked call or website on a supplier
@@ -1978,18 +1978,19 @@ class UnifiedAnalytics {
           FROM supplier_clicks
           WHERE created_at > NOW() - INTERVAL '${days} days'
         ),
-        deliveries AS (
-          -- Users who logged deliveries
-          SELECT COUNT(DISTINCT contributor_hash) as users
-          FROM community_deliveries
+        app_store_clicks AS (
+          -- Users who clicked to download the iOS app
+          SELECT COUNT(DISTINCT ip_hash) as users
+          FROM api_activity
           WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND endpoint = '/ios-app'
         )
         SELECT
           (SELECT total_clicks FROM supplier_contacts) as total_clicks,
           (SELECT call_clicks FROM supplier_contacts) as call_clicks,
           (SELECT website_clicks FROM supplier_contacts) as website_clicks,
           (SELECT unique_users FROM supplier_contacts) as contact_users,
-          (SELECT users FROM deliveries) as deliveries
+          (SELECT users FROM app_store_clicks) as app_downloads
       `, { type: this.sequelize.QueryTypes.SELECT });
 
       // App journey: Opens → Directory Search → Supplier Save → Delivery
@@ -2040,7 +2041,7 @@ class UnifiedAnalytics {
       // Web metrics from DB
       const contactClicks = parseInt(web.total_clicks) || 0;
       const contactUsers = parseInt(web.contact_users) || 0;
-      const webDeliveries = parseInt(web.deliveries) || 0;
+      const appDownloads = parseInt(web.app_downloads) || 0;
 
       const appOpens = parseInt(app.opens) || 0;
       const appSearches = parseInt(app.searches) || 0;
@@ -2048,7 +2049,7 @@ class UnifiedAnalytics {
       const appDeliveries = parseInt(app.deliveries) || 0;
 
       // Build funnel steps with conversion rates
-      // Web: Visitors → Engaged → Contact Supplier → Log Delivery
+      // Web: Visitors → Engaged → Contact Supplier → Download App
       const webSteps = [
         {
           step: 'visit',
@@ -2081,11 +2082,11 @@ class UnifiedAnalytics {
           source: 'DB'
         },
         {
-          step: 'delivery',
-          label: 'Log Delivery',
-          users: webDeliveries,
-          rate: contactClicks > 0 ? ((webDeliveries / contactClicks) * 100).toFixed(1) + '%' : '0%',
-          dropoff: contactClicks > 0 ? ((1 - webDeliveries / contactClicks) * 100).toFixed(1) + '%' : '0%',
+          step: 'download',
+          label: 'Download App',
+          users: appDownloads,
+          rate: engagedUsers > 0 ? ((appDownloads / engagedUsers) * 100).toFixed(1) + '%' : '0%',
+          dropoff: engagedUsers > 0 ? ((1 - appDownloads / engagedUsers) * 100).toFixed(1) + '%' : '0%',
           source: 'DB'
         }
       ];
@@ -2121,8 +2122,8 @@ class UnifiedAnalytics {
         }
       ];
 
-      // Overall conversion (visit to delivery)
-      const webOverallConversion = webVisitors > 0 ? ((webDeliveries / webVisitors) * 100).toFixed(2) : '0';
+      // Overall conversion (visit to app download)
+      const webOverallConversion = webVisitors > 0 ? ((appDownloads / webVisitors) * 100).toFixed(2) : '0';
       const appOverallConversion = appOpens > 0 ? ((appDeliveries / appOpens) * 100).toFixed(2) : '0';
 
       // Find biggest drop-off points
@@ -2138,7 +2139,7 @@ class UnifiedAnalytics {
           steps: webSteps,
           overallConversion: webOverallConversion + '%',
           biggestDropoff: webDropoffs[0] ? {
-            from: webDropoffs[0].step === 'engaged' ? 'visit' : webDropoffs[0].step === 'contact' ? 'engaged' : 'contact',
+            from: webDropoffs[0].step === 'engaged' ? 'visit' : webDropoffs[0].step === 'contact' ? 'engaged' : webDropoffs[0].step === 'download' ? 'contact' : 'engaged',
             to: webDropoffs[0].step,
             rate: webDropoffs[0].dropoff
           } : null

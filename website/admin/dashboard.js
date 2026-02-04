@@ -3074,7 +3074,7 @@ function renderUserJourney(journey) {
     const dropoffName = {
       'engaged': 'engaging (bounce rate)',
       'contact': 'contacting supplier',
-      'delivery': 'logging deliveries'
+      'download': 'downloading app'
     }[dropoffStep] || dropoffStep;
     insights.push(`Web: ${web.biggestDropoff.rate} drop-off before ${dropoffName}`);
   }
