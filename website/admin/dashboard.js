@@ -2977,90 +2977,92 @@ function renderUserJourney(journey) {
   const web = journey.web || {};
   const app = journey.app || {};
 
+  // Helper to set element text safely
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+
+  // Helper to set bar width
+  const setBarWidth = (id, users, maxUsers) => {
+    const el = document.getElementById(id);
+    if (el) el.style.width = `${Math.max(8, (users / maxUsers) * 100)}%`;
+  };
+
   // Web Journey
   if (web.steps && web.steps.length > 0) {
-    const webSteps = web.steps;
-    const maxUsers = Math.max(...webSteps.map(s => s.users || 0), 1);
+    const s = web.steps;
+    const maxUsers = Math.max(...s.map(x => x.users || 0), 1);
 
     // Step 1: Visits
-    document.getElementById('wj-visits').textContent = webSteps[0]?.users?.toLocaleString() || '--';
-
-    // Step 2: Views
-    document.getElementById('wj-views').textContent = webSteps[1]?.users?.toLocaleString() || '--';
-    document.getElementById('wj-views-rate').textContent = webSteps[1]?.rate || '--%';
-    const viewsBar = document.getElementById('wj-views-bar');
-    if (viewsBar) viewsBar.style.width = `${Math.max(20, (webSteps[1]?.users / maxUsers) * 100)}%`;
+    setText('wj-visits', s[0]?.users?.toLocaleString() || '--');
+    setBarWidth('wj-visits-bar', s[0]?.users || 0, maxUsers);
 
     // Dropoff 1
-    const dropoff1 = document.getElementById('wj-dropoff-1');
-    if (dropoff1) dropoff1.querySelector('.dropoff-rate').textContent = webSteps[1]?.dropoff || '--%';
+    setText('wj-drop-1', s[1]?.dropoff || '--%');
 
-    // Step 3: Clicks
-    document.getElementById('wj-clicks').textContent = webSteps[2]?.users?.toLocaleString() || '--';
-    document.getElementById('wj-clicks-rate').textContent = webSteps[2]?.rate || '--%';
-    document.getElementById('wj-calls').textContent = webSteps[2]?.breakdown?.call?.toLocaleString() || '0';
-    document.getElementById('wj-websites').textContent = webSteps[2]?.breakdown?.website?.toLocaleString() || '0';
-    const clicksBar = document.getElementById('wj-clicks-bar');
-    if (clicksBar) clicksBar.style.width = `${Math.max(15, (webSteps[2]?.users / maxUsers) * 100)}%`;
+    // Step 2: Views
+    setText('wj-views', s[1]?.users?.toLocaleString() || '--');
+    setText('wj-views-rate', s[1]?.rate || '--%');
+    setBarWidth('wj-views-bar', s[1]?.users || 0, maxUsers);
 
     // Dropoff 2
-    const dropoff2 = document.getElementById('wj-dropoff-2');
-    if (dropoff2) dropoff2.querySelector('.dropoff-rate').textContent = webSteps[2]?.dropoff || '--%';
+    setText('wj-drop-2', s[2]?.dropoff || '--%');
 
-    // Step 4: Deliveries
-    document.getElementById('wj-deliveries').textContent = webSteps[3]?.users?.toLocaleString() || '--';
-    document.getElementById('wj-deliveries-rate').textContent = webSteps[3]?.rate || '--%';
-    const deliveriesBar = document.getElementById('wj-deliveries-bar');
-    if (deliveriesBar) deliveriesBar.style.width = `${Math.max(10, (webSteps[3]?.users / maxUsers) * 100)}%`;
+    // Step 3: Clicks
+    setText('wj-clicks', s[2]?.users?.toLocaleString() || '--');
+    setText('wj-clicks-rate', s[2]?.rate || '--%');
+    setText('wj-calls', s[2]?.breakdown?.call?.toLocaleString() || '0');
+    setText('wj-websites', s[2]?.breakdown?.website?.toLocaleString() || '0');
+    setBarWidth('wj-clicks-bar', s[2]?.users || 0, maxUsers);
 
     // Dropoff 3
-    const dropoff3 = document.getElementById('wj-dropoff-3');
-    if (dropoff3) dropoff3.querySelector('.dropoff-rate').textContent = webSteps[3]?.dropoff || '--%';
+    setText('wj-drop-3', s[3]?.dropoff || '--%');
+
+    // Step 4: Deliveries
+    setText('wj-deliveries', s[3]?.users?.toLocaleString() || '--');
+    setText('wj-deliveries-rate', s[3]?.rate || '--%');
+    setBarWidth('wj-deliveries-bar', s[3]?.users || 0, maxUsers);
 
     // Overall
-    document.getElementById('wj-overall').textContent = web.overallConversion || '--%';
+    setText('wj-overall', web.overallConversion || '--%');
   }
 
   // App Journey
   if (app.steps && app.steps.length > 0) {
-    const appSteps = app.steps;
-    const maxUsers = Math.max(...appSteps.map(s => s.users || 0), 1);
+    const s = app.steps;
+    const maxUsers = Math.max(...s.map(x => x.users || 0), 1);
 
     // Step 1: Opens
-    document.getElementById('aj-opens').textContent = appSteps[0]?.users?.toLocaleString() || '--';
-
-    // Step 2: Searches
-    document.getElementById('aj-searches').textContent = appSteps[1]?.users?.toLocaleString() || '--';
-    document.getElementById('aj-searches-rate').textContent = appSteps[1]?.rate || '--%';
-    const searchesBar = document.getElementById('aj-searches-bar');
-    if (searchesBar) searchesBar.style.width = `${Math.max(20, (appSteps[1]?.users / maxUsers) * 100)}%`;
+    setText('aj-opens', s[0]?.users?.toLocaleString() || '--');
+    setBarWidth('aj-opens-bar', s[0]?.users || 0, maxUsers);
 
     // Dropoff 1
-    const ajDropoff1 = document.getElementById('aj-dropoff-1');
-    if (ajDropoff1) ajDropoff1.querySelector('.dropoff-rate').textContent = appSteps[1]?.dropoff || '--%';
+    setText('aj-drop-1', s[1]?.dropoff || '--%');
 
-    // Step 3: Saves
-    document.getElementById('aj-saves').textContent = appSteps[2]?.users?.toLocaleString() || '--';
-    document.getElementById('aj-saves-rate').textContent = appSteps[2]?.rate || '--%';
-    const savesBar = document.getElementById('aj-saves-bar');
-    if (savesBar) savesBar.style.width = `${Math.max(15, (appSteps[2]?.users / maxUsers) * 100)}%`;
+    // Step 2: Searches
+    setText('aj-searches', s[1]?.users?.toLocaleString() || '--');
+    setText('aj-searches-rate', s[1]?.rate || '--%');
+    setBarWidth('aj-searches-bar', s[1]?.users || 0, maxUsers);
 
     // Dropoff 2
-    const ajDropoff2 = document.getElementById('aj-dropoff-2');
-    if (ajDropoff2) ajDropoff2.querySelector('.dropoff-rate').textContent = appSteps[2]?.dropoff || '--%';
+    setText('aj-drop-2', s[2]?.dropoff || '--%');
 
-    // Step 4: Deliveries
-    document.getElementById('aj-deliveries').textContent = appSteps[3]?.users?.toLocaleString() || '--';
-    document.getElementById('aj-deliveries-rate').textContent = appSteps[3]?.rate || '--%';
-    const ajDeliveriesBar = document.getElementById('aj-deliveries-bar');
-    if (ajDeliveriesBar) ajDeliveriesBar.style.width = `${Math.max(10, (appSteps[3]?.users / maxUsers) * 100)}%`;
+    // Step 3: Saves
+    setText('aj-saves', s[2]?.users?.toLocaleString() || '--');
+    setText('aj-saves-rate', s[2]?.rate || '--%');
+    setBarWidth('aj-saves-bar', s[2]?.users || 0, maxUsers);
 
     // Dropoff 3
-    const ajDropoff3 = document.getElementById('aj-dropoff-3');
-    if (ajDropoff3) ajDropoff3.querySelector('.dropoff-rate').textContent = appSteps[3]?.dropoff || '--%';
+    setText('aj-drop-3', s[3]?.dropoff || '--%');
+
+    // Step 4: Deliveries
+    setText('aj-deliveries', s[3]?.users?.toLocaleString() || '--');
+    setText('aj-deliveries-rate', s[3]?.rate || '--%');
+    setBarWidth('aj-deliveries-bar', s[3]?.users || 0, maxUsers);
 
     // Overall
-    document.getElementById('aj-overall').textContent = app.overallConversion || '--%';
+    setText('aj-overall', app.overallConversion || '--%');
   }
 
   // Generate insight

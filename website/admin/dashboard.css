@@ -3216,103 +3216,124 @@ legend {
   color: var(--gray-700);
 }
 
-.funnel {
+/* Funnel V2 - Cleaner design with labels */
+.funnel-v2 {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 0.25rem;
 }
 
-.funnel-step {
-  display: flex;
+.funnel-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 50px;
   align-items: center;
   gap: 0.75rem;
 }
 
-.funnel-bar {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  color: white;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-width: 60%;
-  transition: width 0.5s ease;
+.funnel-step-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  white-space: nowrap;
 }
 
-.funnel-bar.delivery {
+.funnel-bar-wrap {
+  width: 100%;
+  background: var(--gray-200);
+  border-radius: 6px;
+  height: 32px;
+  overflow: hidden;
+}
+
+.funnel-bar-v2 {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  height: 100%;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  transition: width 0.4s ease;
+}
+
+.funnel-bar-v2.success {
   background: linear-gradient(135deg, var(--success), #16a34a);
 }
 
-.funnel-label {
-  font-size: 0.85rem;
+.funnel-bar-v2 .funnel-count {
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.funnel-pct {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  text-align: right;
   font-weight: 500;
 }
 
-.funnel-count {
-  font-weight: 700;
-  font-size: 1rem;
+.funnel-arrow-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 0.75rem;
+  padding: 0.15rem 0;
 }
 
-.funnel-rate {
-  font-size: 0.8rem;
-  color: var(--gray-500);
-  min-width: 45px;
-  text-align: right;
+.funnel-arrow-spacer {
+  /* Empty spacer to align with labels */
 }
 
-.funnel-breakdown {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.25rem;
+.funnel-arrow {
   font-size: 0.75rem;
-  color: var(--gray-500);
-}
-
-.breakdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.funnel-dropoff {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0 0.35rem 1rem;
   color: var(--gray-400);
+  padding-left: 0.5rem;
 }
 
-.dropoff-arrow {
-  font-size: 1rem;
-}
-
-.dropoff-rate {
-  font-size: 0.75rem;
+.funnel-arrow .drop-pct {
   color: var(--danger);
-  opacity: 0.8;
+  font-weight: 500;
 }
 
-.journey-summary {
+.funnel-breakdown-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 0.75rem;
+  padding: 0.1rem 0;
+}
+
+.funnel-breakdown-v2 {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  padding-left: 0.5rem;
+}
+
+.journey-summary-v2 {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 1rem;
-  padding-top: 1rem;
+  padding-top: 0.75rem;
   border-top: 1px solid var(--gray-200);
-}
-
-.summary-label {
   font-size: 0.85rem;
-  color: var(--gray-500);
+  color: var(--gray-600);
 }
 
-.summary-value {
-  font-size: 1.25rem;
+.journey-summary-v2 .summary-value {
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--primary);
 }
 
 #journey-insight {
   margin-top: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .funnel-row {
+    grid-template-columns: 100px 1fr 45px;
+  }
+  .funnel-step-label {
+    font-size: 0.7rem;
+  }
 }
