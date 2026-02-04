@@ -1080,7 +1080,7 @@ async function loadSuppliers() {
     tbody.innerHTML = '';
 
     if (data.suppliers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="no-data">No suppliers found matching your criteria</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">No suppliers found matching your criteria</td></tr>';
     } else {
       data.suppliers.forEach(s => {
         // Status badges
@@ -1147,7 +1147,7 @@ async function loadSuppliers() {
     console.error('Failed to load suppliers:', error);
     const tbody = document.getElementById('suppliers-body');
     if (tbody) {
-      tbody.innerHTML = '<tr><td colspan="7" class="error-message">Failed to load suppliers. Please try again.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="error-message">Failed to load suppliers. Please try again.</td></tr>';
     }
   }
 }
