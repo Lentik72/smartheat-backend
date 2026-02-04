@@ -1040,17 +1040,21 @@ async function loadMap() {
   }
 }
 
-// Load scrapers tab
+// Load scrapers tab (legacy - elements may not exist)
 async function loadScrapers() {
   try {
     const data = await api('/scraper-health');
 
-    document.getElementById('last-scrape').textContent = timeAgo(data.lastRun);
-    document.getElementById('suppliers-scraped').textContent =
+    const lastScrapeEl = document.getElementById('last-scrape');
+    const suppliersScrapedEl = document.getElementById('suppliers-scraped');
+    if (lastScrapeEl) lastScrapeEl.textContent = timeAgo(data.lastRun);
+    if (suppliersScrapedEl) suppliersScrapedEl.textContent =
       `${data.withPrices}/${data.totalSuppliers} (${data.suppliersScrapedToday} today)`;
 
-    // Stale suppliers table
+    // Stale suppliers table (may not exist)
     const tbody = document.getElementById('stale-body');
+    if (!tbody) return;
+
     tbody.innerHTML = '';
 
     if (data.stale.length === 0) {

@@ -1461,10 +1461,10 @@ router.put('/suppliers/:id', async (req, res) => {
     if (updates.manual_price !== undefined && updates.manual_price !== null) {
       const price = parseFloat(updates.manual_price);
       if (!isNaN(price) && price > 0 && price < 10) {
-        // Insert manual price into supplier_prices
+        // Insert manual price into supplier_prices (expires in 7 days)
         await sequelize.query(`
-          INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, is_valid)
-          VALUES (:id, :price, 100, NOW(), true)
+          INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, is_valid, expires_at)
+          VALUES (:id, :price, 100, NOW(), true, NOW() + INTERVAL '7 days')
         `, { replacements: { id, price } });
         logger.info(`[Dashboard] Manual price set for supplier ${id}: $${price.toFixed(2)}`);
       }
