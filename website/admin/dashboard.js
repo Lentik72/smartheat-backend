@@ -3019,9 +3019,11 @@ function renderUserJourney(journey) {
     // Dropoff 3
     setText('wj-drop-3', s[3]?.dropoff || '--%');
 
-    // Step 4: Deliveries
+    // Step 4: Install App
     setText('wj-deliveries', s[3]?.users?.toLocaleString() || '--');
     setText('wj-deliveries-rate', s[3]?.rate || '--%');
+    setText('wj-ios', s[3]?.breakdown?.ios?.toLocaleString() || '0');
+    setText('wj-pwa', s[3]?.breakdown?.pwa?.toLocaleString() || '0');
     setBarWidth('wj-deliveries-bar', s[3]?.users || 0, maxUsers);
 
     // Overall
@@ -3074,7 +3076,7 @@ function renderUserJourney(journey) {
     const dropoffName = {
       'engaged': 'engaging (bounce rate)',
       'contact': 'contacting supplier',
-      'download': 'downloading app'
+      'install': 'installing app'
     }[dropoffStep] || dropoffStep;
     insights.push(`Web: ${web.biggestDropoff.rate} drop-off before ${dropoffName}`);
   }
