@@ -874,6 +874,8 @@ router.get('/scraper-health', async (req, res) => {
         SELECT
           s.id,
           s.name,
+          s.city,
+          s.state,
           lp.price_per_gallon as "lastPrice",
           lp.scraped_at as "lastUpdated",
           s.website
@@ -906,6 +908,8 @@ router.get('/scraper-health', async (req, res) => {
       stale: staleSuppliers.map(s => ({
         id: s.id,
         name: s.name,
+        city: s.city,
+        state: s.state,
         lastPrice: s.lastPrice ? parseFloat(s.lastPrice) : null,
         lastUpdated: s.lastUpdated,
         website: s.website

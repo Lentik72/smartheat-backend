@@ -979,11 +979,14 @@ async function loadScrapers() {
     } else {
       data.stale.forEach(s => {
         const row = document.createElement('tr');
+        const websiteLink = s.website
+          ? `<a href="${s.website}" target="_blank" class="website-link">${s.website.replace(/^https?:\/\//, '')}</a>`
+          : '--';
         row.innerHTML = `
-          <td>${s.name}</td>
+          <td><strong>${s.name}</strong><br><span class="supplier-location">${s.city || ''}${s.city && s.state ? ', ' : ''}${s.state || ''}</span></td>
           <td>${formatPrice(s.lastPrice)}</td>
           <td>${timeAgo(s.lastUpdated)}</td>
-          <td><a href="${s.website}" target="_blank">${s.website || '--'}</a></td>
+          <td>${websiteLink}</td>
           <td><button class="btn edit-supplier-btn" data-id="${s.id}">Edit</button></td>
         `;
         tbody.appendChild(row);
@@ -1097,10 +1100,15 @@ async function loadSuppliers() {
 
         const row = document.createElement('tr');
         row.className = !s.isActive ? 'row-inactive' : (s.scrapingEnabled ? '' : 'row-stale');
+        const websiteLink = s.website
+          ? `<a href="${s.website}" target="_blank" class="website-link" title="${s.website}">${s.website.replace(/^https?:\/\//, '').substring(0, 25)}${s.website.length > 30 ? '...' : ''}</a>`
+          : '';
+        const location = [s.city, s.state].filter(Boolean).join(', ') || '--';
         row.innerHTML = `
           <td>
             <div class="supplier-name">${s.name}</div>
-            <div class="supplier-meta">${s.city || ''}</div>
+            <div class="supplier-meta">${location}</div>
+            ${websiteLink ? `<div class="supplier-website">${websiteLink}</div>` : ''}
           </td>
           <td>${s.state || '--'}</td>
           <td class="${s.currentPrice ? 'price-value' : 'no-price'}">${formatPrice(s.currentPrice)}</td>

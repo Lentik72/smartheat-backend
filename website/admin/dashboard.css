@@ -3446,3 +3446,28 @@ legend {
   color: var(--gray-400);
   font-style: italic;
 }
+
+/* Website links in tables */
+.website-link {
+  color: var(--primary-orange);
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.website-link:hover {
+  text-decoration: underline;
+}
+
+.supplier-website {
+  margin-top: 2px;
+}
+
+.supplier-location {
+  color: var(--gray-500);
+  font-size: 0.85rem;
+}
+
+#stale-table .supplier-location {
+  font-size: 0.8rem;
+  color: var(--gray-400);
+}
