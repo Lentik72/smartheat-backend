@@ -979,9 +979,12 @@ async function loadScrapers() {
     } else {
       data.stale.forEach(s => {
         const row = document.createElement('tr');
-        const websiteLink = s.website
-          ? `<a href="${s.website}" target="_blank" class="website-link">${s.website.replace(/^https?:\/\//, '')}</a>`
-          : '--';
+        let websiteLink = '--';
+        if (s.website && typeof s.website === 'string') {
+          const safeUrl = s.website.startsWith('http') ? s.website : `https://${s.website}`;
+          const displayUrl = s.website.replace(/^https?:\/\//, '');
+          websiteLink = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="website-link">${displayUrl}</a>`;
+        }
         row.innerHTML = `
           <td><strong>${s.name}</strong><br><span class="supplier-location">${s.city || ''}${s.city && s.state ? ', ' : ''}${s.state || ''}</span></td>
           <td>${formatPrice(s.lastPrice)}</td>
@@ -1100,15 +1103,21 @@ async function loadSuppliers() {
 
         const row = document.createElement('tr');
         row.className = !s.isActive ? 'row-inactive' : (s.scrapingEnabled ? '' : 'row-stale');
-        const websiteLink = s.website
-          ? `<a href="${s.website}" target="_blank" class="website-link" title="${s.website}">${s.website.replace(/^https?:\/\//, '').substring(0, 25)}${s.website.length > 30 ? '...' : ''}</a>`
-          : '';
         const location = [s.city, s.state].filter(Boolean).join(', ') || '--';
+
+        // Build website display text
+        let websiteHtml = '';
+        if (s.website && typeof s.website === 'string') {
+          const displayUrl = s.website.replace(/^https?:\/\//, '').substring(0, 30);
+          const safeUrl = s.website.startsWith('http') ? s.website : `https://${s.website}`;
+          websiteHtml = `<div class="supplier-website"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="website-link">${displayUrl}</a></div>`;
+        }
+
         row.innerHTML = `
           <td>
             <div class="supplier-name">${s.name}</div>
             <div class="supplier-meta">${location}</div>
-            ${websiteLink ? `<div class="supplier-website">${websiteLink}</div>` : ''}
+            ${websiteHtml}
           </td>
           <td>${s.state || '--'}</td>
           <td class="${s.currentPrice ? 'price-value' : 'no-price'}">${formatPrice(s.currentPrice)}</td>
