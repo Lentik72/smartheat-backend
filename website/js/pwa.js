@@ -32,18 +32,22 @@
     // Don't show if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) return;
 
-    // Create banner
+    // Create banner - card style, more prominent
     const banner = document.createElement('div');
     banner.id = 'pwa-install-banner';
     banner.innerHTML = `
-      <div class="pwa-banner-content">
-        <div class="pwa-banner-icon">🏠</div>
-        <div class="pwa-banner-text">
-          <strong>Add HomeHeat to your home screen</strong>
-          <span>Quick access to prices anytime</span>
+      <div class="pwa-banner-card">
+        <button id="pwa-dismiss-btn" class="pwa-dismiss-btn" aria-label="Close">&times;</button>
+        <div class="pwa-banner-header">
+          <img src="/images/app-icon-small.png" alt="HomeHeat" class="pwa-app-icon">
+          <div>
+            <strong>Get the HomeHeat App</strong>
+            <span class="pwa-free-badge">FREE</span>
+          </div>
         </div>
-        <button id="pwa-install-btn" class="pwa-install-btn">Install</button>
-        <button id="pwa-dismiss-btn" class="pwa-dismiss-btn">&times;</button>
+        <p class="pwa-banner-desc">Track oil prices, get alerts when prices drop, and never run out of fuel.</p>
+        <button id="pwa-install-btn" class="pwa-install-btn">Install App — It's Free</button>
+        <p class="pwa-banner-hint">No app store needed. Installs instantly.</p>
       </div>
     `;
     document.body.appendChild(banner);
