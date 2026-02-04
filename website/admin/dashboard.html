@@ -662,126 +662,151 @@
               <h3>🚀 User Journey</h3>
               <p class="panel-subtitle">Conversion funnel from first visit to delivery</p>
 
-              <div class="journey-container">
+              <div class="uj-container">
                 <!-- Web Journey -->
-                <div class="journey-section">
-                  <h4>🌐 Website Journey</h4>
-                  <div class="funnel-v2" id="web-funnel">
-                    <div class="funnel-row">
-                      <div class="funnel-step-label">1. Site Visits</div>
-                      <div class="funnel-bar-wrap">
-                        <div class="funnel-bar-v2" id="wj-visits-bar" style="width: 100%">
-                          <span class="funnel-count" id="wj-visits">--</span>
-                        </div>
-                      </div>
-                      <div class="funnel-pct">100%</div>
-                    </div>
-                    <div class="funnel-arrow-row">
-                      <div class="funnel-arrow-spacer"></div>
-                      <div class="funnel-arrow">↓ <span class="drop-pct" id="wj-drop-1">--%</span> drop</div>
-                    </div>
-                    <div class="funnel-row">
-                      <div class="funnel-step-label">2. View Suppliers</div>
-                      <div class="funnel-bar-wrap">
-                        <div class="funnel-bar-v2" id="wj-views-bar" style="width: 50%">
-                          <span class="funnel-count" id="wj-views">--</span>
-                        </div>
-                      </div>
-                      <div class="funnel-pct" id="wj-views-rate">--%</div>
-                    </div>
-                    <div class="funnel-arrow-row">
-                      <div class="funnel-arrow-spacer"></div>
-                      <div class="funnel-arrow">↓ <span class="drop-pct" id="wj-drop-2">--%</span> drop</div>
-                    </div>
-                    <div class="funnel-row">
-                      <div class="funnel-step-label">3. Click Contact</div>
-                      <div class="funnel-bar-wrap">
-                        <div class="funnel-bar-v2" id="wj-clicks-bar" style="width: 30%">
-                          <span class="funnel-count" id="wj-clicks">--</span>
-                        </div>
-                      </div>
-                      <div class="funnel-pct" id="wj-clicks-rate">--%</div>
-                    </div>
-                    <div class="funnel-breakdown-row">
-                      <div class="funnel-arrow-spacer"></div>
-                      <div class="funnel-breakdown-v2">📞 <span id="wj-calls">--</span> calls · 🔗 <span id="wj-websites">--</span> websites</div>
-                    </div>
-                    <div class="funnel-arrow-row">
-                      <div class="funnel-arrow-spacer"></div>
-                      <div class="funnel-arrow">↓ <span class="drop-pct" id="wj-drop-3">--%</span> drop</div>
-                    </div>
-                    <div class="funnel-row">
-                      <div class="funnel-step-label">4. Log Delivery</div>
-                      <div class="funnel-bar-wrap">
-                        <div class="funnel-bar-v2 success" id="wj-deliveries-bar" style="width: 10%">
-                          <span class="funnel-count" id="wj-deliveries">--</span>
-                        </div>
-                      </div>
-                      <div class="funnel-pct" id="wj-deliveries-rate">--%</div>
-                    </div>
+                <div class="uj-section">
+                  <div class="uj-header">
+                    <span class="uj-icon">🌐</span>
+                    <span class="uj-title">Website</span>
+                    <span class="uj-conversion" id="wj-overall">--%</span>
                   </div>
-                  <div class="journey-summary-v2">
-                    <span>Visit → Delivery:</span>
-                    <span class="summary-value" id="wj-overall">--%</span>
+
+                  <div class="uj-steps">
+                    <div class="uj-step">
+                      <div class="uj-step-num">1</div>
+                      <div class="uj-step-content">
+                        <div class="uj-step-label">Site Visits</div>
+                        <div class="uj-step-bar-bg">
+                          <div class="uj-step-bar" id="wj-visits-bar" style="width: 100%"></div>
+                        </div>
+                      </div>
+                      <div class="uj-step-stats">
+                        <span class="uj-step-count" id="wj-visits">--</span>
+                        <span class="uj-step-pct">100%</span>
+                      </div>
+                    </div>
+
+                    <div class="uj-drop"><span class="uj-drop-pct" id="wj-drop-1">--%</span> left</div>
+
+                    <div class="uj-step">
+                      <div class="uj-step-num">2</div>
+                      <div class="uj-step-content">
+                        <div class="uj-step-label">View Suppliers</div>
+                        <div class="uj-step-bar-bg">
+                          <div class="uj-step-bar" id="wj-views-bar" style="width: 50%"></div>
+                        </div>
+                      </div>
+                      <div class="uj-step-stats">
+                        <span class="uj-step-count" id="wj-views">--</span>
+                        <span class="uj-step-pct" id="wj-views-rate">--%</span>
+                      </div>
+                    </div>
+
+                    <div class="uj-drop"><span class="uj-drop-pct" id="wj-drop-2">--%</span> left</div>
+
+                    <div class="uj-step">
+                      <div class="uj-step-num">3</div>
+                      <div class="uj-step-content">
+                        <div class="uj-step-label">Click Contact</div>
+                        <div class="uj-step-bar-bg">
+                          <div class="uj-step-bar" id="wj-clicks-bar" style="width: 30%"></div>
+                        </div>
+                        <div class="uj-step-detail">📞 <span id="wj-calls">--</span> · 🔗 <span id="wj-websites">--</span></div>
+                      </div>
+                      <div class="uj-step-stats">
+                        <span class="uj-step-count" id="wj-clicks">--</span>
+                        <span class="uj-step-pct" id="wj-clicks-rate">--%</span>
+                      </div>
+                    </div>
+
+                    <div class="uj-drop"><span class="uj-drop-pct" id="wj-drop-3">--%</span> left</div>
+
+                    <div class="uj-step uj-step-goal">
+                      <div class="uj-step-num">✓</div>
+                      <div class="uj-step-content">
+                        <div class="uj-step-label">Log Delivery</div>
+                        <div class="uj-step-bar-bg">
+                          <div class="uj-step-bar uj-bar-success" id="wj-deliveries-bar" style="width: 10%"></div>
+                        </div>
+                      </div>
+                      <div class="uj-step-stats">
+                        <span class="uj-step-count" id="wj-deliveries">--</span>
+                        <span class="uj-step-pct" id="wj-deliveries-rate">--%</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 <!-- App Journey -->
-                <div class="journey-section">
-                  <h4>📱 App Journey</h4>
-                  <div class="funnel-v2" id="app-funnel">
-                    <div class="funnel-row">
-                      <div class="funnel-step-label">1. App Opens</div>
-                      <div class="funnel-bar-wrap">
-                        <div class="funnel-bar-v2" id="aj-opens-bar" style="width: 100%">
-                          <span class="funnel-count" id="aj-opens">--</span>
-                        </div>
-                      </div>
-                      <div class="funnel-pct">100%</div>
-                    </div>
-                    <div class="funnel-arrow-row">
-                      <div class="funnel-arrow-spacer"></div>
-                      <div class="funnel-arrow">↓ <span class="drop-pct" id="aj-drop-1">--%</span> drop</div>
-                    </div>
-                    <div class="funnel-row">
-                      <div class="funnel-step-label">2. Search Directory</div>
-                      <div class="funnel-bar-wrap">
-                        <div class="funnel-bar-v2" id="aj-searches-bar" style="width: 50%">
-                          <span class="funnel-count" id="aj-searches">--</span>
-                        </div>
-                      </div>
-                      <div class="funnel-pct" id="aj-searches-rate">--%</div>
-                    </div>
-                    <div class="funnel-arrow-row">
-                      <div class="funnel-arrow-spacer"></div>
-                      <div class="funnel-arrow">↓ <span class="drop-pct" id="aj-drop-2">--%</span> drop</div>
-                    </div>
-                    <div class="funnel-row">
-                      <div class="funnel-step-label">3. Save Supplier</div>
-                      <div class="funnel-bar-wrap">
-                        <div class="funnel-bar-v2" id="aj-saves-bar" style="width: 30%">
-                          <span class="funnel-count" id="aj-saves">--</span>
-                        </div>
-                      </div>
-                      <div class="funnel-pct" id="aj-saves-rate">--%</div>
-                    </div>
-                    <div class="funnel-arrow-row">
-                      <div class="funnel-arrow-spacer"></div>
-                      <div class="funnel-arrow">↓ <span class="drop-pct" id="aj-drop-3">--%</span> drop</div>
-                    </div>
-                    <div class="funnel-row">
-                      <div class="funnel-step-label">4. Log Delivery</div>
-                      <div class="funnel-bar-wrap">
-                        <div class="funnel-bar-v2 success" id="aj-deliveries-bar" style="width: 10%">
-                          <span class="funnel-count" id="aj-deliveries">--</span>
-                        </div>
-                      </div>
-                      <div class="funnel-pct" id="aj-deliveries-rate">--%</div>
-                    </div>
+                <div class="uj-section">
+                  <div class="uj-header">
+                    <span class="uj-icon">📱</span>
+                    <span class="uj-title">iOS App</span>
+                    <span class="uj-conversion uj-conv-good" id="aj-overall">--%</span>
                   </div>
-                  <div class="journey-summary-v2">
-                    <span>Open → Delivery:</span>
-                    <span class="summary-value" id="aj-overall">--%</span>
+
+                  <div class="uj-steps">
+                    <div class="uj-step">
+                      <div class="uj-step-num">1</div>
+                      <div class="uj-step-content">
+                        <div class="uj-step-label">App Opens</div>
+                        <div class="uj-step-bar-bg">
+                          <div class="uj-step-bar uj-bar-app" id="aj-opens-bar" style="width: 100%"></div>
+                        </div>
+                      </div>
+                      <div class="uj-step-stats">
+                        <span class="uj-step-count" id="aj-opens">--</span>
+                        <span class="uj-step-pct">100%</span>
+                      </div>
+                    </div>
+
+                    <div class="uj-drop"><span class="uj-drop-pct" id="aj-drop-1">--%</span> left</div>
+
+                    <div class="uj-step">
+                      <div class="uj-step-num">2</div>
+                      <div class="uj-step-content">
+                        <div class="uj-step-label">Search Directory</div>
+                        <div class="uj-step-bar-bg">
+                          <div class="uj-step-bar uj-bar-app" id="aj-searches-bar" style="width: 50%"></div>
+                        </div>
+                      </div>
+                      <div class="uj-step-stats">
+                        <span class="uj-step-count" id="aj-searches">--</span>
+                        <span class="uj-step-pct" id="aj-searches-rate">--%</span>
+                      </div>
+                    </div>
+
+                    <div class="uj-drop"><span class="uj-drop-pct" id="aj-drop-2">--%</span> left</div>
+
+                    <div class="uj-step">
+                      <div class="uj-step-num">3</div>
+                      <div class="uj-step-content">
+                        <div class="uj-step-label">Save Supplier</div>
+                        <div class="uj-step-bar-bg">
+                          <div class="uj-step-bar uj-bar-app" id="aj-saves-bar" style="width: 30%"></div>
+                        </div>
+                      </div>
+                      <div class="uj-step-stats">
+                        <span class="uj-step-count" id="aj-saves">--</span>
+                        <span class="uj-step-pct" id="aj-saves-rate">--%</span>
+                      </div>
+                    </div>
+
+                    <div class="uj-drop"><span class="uj-drop-pct" id="aj-drop-3">--%</span> left</div>
+
+                    <div class="uj-step uj-step-goal">
+                      <div class="uj-step-num">✓</div>
+                      <div class="uj-step-content">
+                        <div class="uj-step-label">Log Delivery</div>
+                        <div class="uj-step-bar-bg">
+                          <div class="uj-step-bar uj-bar-success" id="aj-deliveries-bar" style="width: 10%"></div>
+                        </div>
+                      </div>
+                      <div class="uj-step-stats">
+                        <span class="uj-step-count" id="aj-deliveries">--</span>
+                        <span class="uj-step-pct" id="aj-deliveries-rate">--%</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
