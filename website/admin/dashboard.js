@@ -1503,7 +1503,6 @@ document.getElementById('supplier-form').addEventListener('submit', async (e) =>
 
     document.getElementById('supplier-modal').classList.add('hidden');
     loadSuppliers();
-    loadScrapers();
     alert('Supplier updated successfully');
   } catch (error) {
     console.error('Failed to update supplier:', error);
