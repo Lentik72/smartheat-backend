@@ -2919,9 +2919,12 @@ async function loadGrowth() {
 
     // User Journey Funnel
     const userJourney = unified?.userJourney || {};
+    console.log('[Dashboard] userJourney:', userJourney);
     if (userJourney.available && userJourney.hasData) {
+      console.log('[Dashboard] Rendering user journey...');
       renderUserJourney(userJourney);
     } else {
+      console.log('[Dashboard] No user journey data:', { available: userJourney.available, hasData: userJourney.hasData });
       // Show placeholder message
       document.getElementById('journey-insight').textContent =
         '💡 User journey data will appear once you have visitor and engagement activity.';
