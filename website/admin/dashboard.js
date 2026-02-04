@@ -218,7 +218,7 @@ function handleTabSwitch(target) {
   if (target === 'prices') loadPrices();
   if (target === 'map') loadMap();
   if (target === 'scrapers') loadScrapers();
-  if (target === 'suppliers') { loadSuppliers(); loadSupplierMap(); }
+  if (target === 'suppliers') loadSuppliers();
 }
 
 // Tab navigation (legacy)
@@ -3577,60 +3577,12 @@ function loadCoverageMapWithView(view) {
 // Load Settings tab
 async function loadSettings() {
   try {
-    const [scraperHealth, suppliers] = await Promise.all([
-      api('/scraper-health'),
-      api(`/suppliers?limit=50&offset=0`)
-    ]);
+    const scraperHealth = await api('/scraper-health');
 
     // Data health summary
     document.getElementById('health-last-scrape').textContent = timeAgo(scraperHealth.lastRun);
     document.getElementById('health-prices').textContent = `${scraperHealth.withPrices}/${scraperHealth.totalSuppliers}`;
     document.getElementById('health-stale').textContent = scraperHealth.stale?.length || 0;
-
-    // Stale suppliers table
-    const staleBody = document.getElementById('stale-body');
-    staleBody.innerHTML = '';
-
-    if (!scraperHealth.stale || scraperHealth.stale.length === 0) {
-      staleBody.innerHTML = '<tr><td colspan="5" class="no-data">All suppliers have fresh prices!</td></tr>';
-    } else {
-      scraperHealth.stale.forEach(s => {
-        const row = document.createElement('tr');
-        row.className = 'row-stale';
-        const location = [s.city, s.state].filter(Boolean).join(', ') || '';
-        let websiteLink = '--';
-        if (s.website && typeof s.website === 'string') {
-          const safeUrl = s.website.startsWith('http') ? s.website : `https://${s.website}`;
-          const displayUrl = s.website.replace(/^https?:\/\//, '');
-          websiteLink = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="website-link">${displayUrl}</a>`;
-        }
-        row.innerHTML = `
-          <td>
-            <div class="supplier-name">${s.name}</div>
-            ${location ? `<div class="supplier-meta">${location}</div>` : ''}
-          </td>
-          <td class="price-value">${formatPrice(s.lastPrice)}</td>
-          <td class="stale-date">${timeAgo(s.lastUpdated)}</td>
-          <td>${websiteLink}</td>
-          <td>
-            <button class="btn-small btn-warning stale-fix-btn" data-id="${s.id}">Fix</button>
-          </td>
-        `;
-        staleBody.appendChild(row);
-      });
-
-      // Attach event listeners for Fix buttons
-      staleBody.querySelectorAll('.stale-fix-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.id;
-          console.log('[Dashboard] Stale Fix button clicked, id:', id);
-          editSupplier(id);
-        });
-      });
-    }
-
-    // Load suppliers (uses existing loadSuppliers function)
-    loadSuppliers();
 
   } catch (error) {
     console.error('Failed to load settings:', error);
