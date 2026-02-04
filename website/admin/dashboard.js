@@ -1119,7 +1119,6 @@ async function loadSuppliers() {
             <div class="supplier-meta">${location}</div>
             ${websiteHtml}
           </td>
-          <td>${s.state || '--'}</td>
           <td class="${s.currentPrice ? 'price-value' : 'no-price'}">${formatPrice(s.currentPrice)}</td>
           <td class="${s.scrapingEnabled ? '' : 'stale-date'}">${timeAgo(s.priceUpdatedAt)}</td>
           <td class="clicks-cell">${clickIndicator} ${s.recentClicks}</td>
@@ -3446,18 +3445,26 @@ async function loadSettings() {
     staleBody.innerHTML = '';
 
     if (!scraperHealth.stale || scraperHealth.stale.length === 0) {
-      staleBody.innerHTML = '<tr><td colspan="4" class="no-data">All suppliers have fresh prices!</td></tr>';
+      staleBody.innerHTML = '<tr><td colspan="5" class="no-data">All suppliers have fresh prices!</td></tr>';
     } else {
       scraperHealth.stale.forEach(s => {
         const row = document.createElement('tr');
         row.className = 'row-stale';
+        const location = [s.city, s.state].filter(Boolean).join(', ') || '';
+        let websiteLink = '--';
+        if (s.website && typeof s.website === 'string') {
+          const safeUrl = s.website.startsWith('http') ? s.website : `https://${s.website}`;
+          const displayUrl = s.website.replace(/^https?:\/\//, '');
+          websiteLink = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="website-link">${displayUrl}</a>`;
+        }
         row.innerHTML = `
           <td>
             <div class="supplier-name">${s.name}</div>
-            <div class="supplier-meta">${s.website ? new URL(s.website).hostname : '--'}</div>
+            ${location ? `<div class="supplier-meta">${location}</div>` : ''}
           </td>
           <td class="price-value">${formatPrice(s.lastPrice)}</td>
           <td class="stale-date">${timeAgo(s.lastUpdated)}</td>
+          <td>${websiteLink}</td>
           <td>
             <button class="btn-small btn-warning stale-fix-btn" data-id="${s.id}">Fix</button>
           </td>
