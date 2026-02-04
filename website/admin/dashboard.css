@@ -3345,6 +3345,12 @@ legend {
   color: var(--gray-500);
 }
 
+.uj-step-source {
+  font-size: 0.65rem;
+  color: var(--gray-400);
+  font-style: italic;
+}
+
 .uj-step-stats {
   text-align: right;
 }

@@ -1963,27 +1963,18 @@ class UnifiedAnalytics {
    */
   async getUserJourney(days = 30) {
     try {
-      // Web journey: Visits → Supplier Views → Clicks → Deliveries
+      // Get GA4 website metrics for accurate visitor/bounce data
+      const websiteMetrics = await this.getWebsiteMetrics(days);
+
+      // Web journey: Get supplier contacts and deliveries from DB
       const webJourney = await this.sequelize.query(`
-        WITH web_visits AS (
-          -- Unique visitors from API activity (excludes dashboard endpoints)
-          SELECT COUNT(DISTINCT ip_hash) as users
-          FROM api_activity
-          WHERE created_at > NOW() - INTERVAL '${days} days'
-            AND endpoint NOT IN ('/pulse', '/unified', '/overview', '/clicks', '/conversion', '/recommendations', '/geographic', '/prices', '/summary', '/meta', '/version', '/ios-app', '/price-alerts', '/track-pwa')
-        ),
-        supplier_views AS (
-          -- Users who viewed supplier details (clicked through from search results)
-          SELECT COUNT(DISTINCT ip_address) as users
-          FROM supplier_clicks
-          WHERE created_at > NOW() - INTERVAL '${days} days'
-        ),
-        supplier_clicks AS (
-          -- Users who clicked call or website
+        WITH supplier_contacts AS (
+          -- Users who clicked call or website on a supplier
           SELECT
-            COUNT(DISTINCT ip_address) as total_users,
-            COUNT(DISTINCT ip_address) FILTER (WHERE action_type = 'call') as call_users,
-            COUNT(DISTINCT ip_address) FILTER (WHERE action_type = 'website') as website_users
+            COUNT(*) as total_clicks,
+            COUNT(*) FILTER (WHERE action_type = 'call') as call_clicks,
+            COUNT(*) FILTER (WHERE action_type = 'website') as website_clicks,
+            COUNT(DISTINCT ip_address) as unique_users
           FROM supplier_clicks
           WHERE created_at > NOW() - INTERVAL '${days} days'
         ),
@@ -1994,11 +1985,10 @@ class UnifiedAnalytics {
           WHERE created_at > NOW() - INTERVAL '${days} days'
         )
         SELECT
-          (SELECT users FROM web_visits) as visits,
-          (SELECT users FROM supplier_views) as views,
-          (SELECT total_users FROM supplier_clicks) as clicks,
-          (SELECT call_users FROM supplier_clicks) as call_clicks,
-          (SELECT website_users FROM supplier_clicks) as website_clicks,
+          (SELECT total_clicks FROM supplier_contacts) as total_clicks,
+          (SELECT call_clicks FROM supplier_contacts) as call_clicks,
+          (SELECT website_clicks FROM supplier_contacts) as website_clicks,
+          (SELECT unique_users FROM supplier_contacts) as contact_users,
           (SELECT users FROM deliveries) as deliveries
       `, { type: this.sequelize.QueryTypes.SELECT });
 
@@ -2038,10 +2028,18 @@ class UnifiedAnalytics {
       const web = webJourney[0] || {};
       const app = appJourney[0] || {};
 
-      // Calculate conversion rates
-      const webVisits = parseInt(web.visits) || 0;
-      const webViews = parseInt(web.views) || 0;
-      const webClicks = parseInt(web.clicks) || 0;
+      // Use GA4 data for accurate web metrics
+      const ga4Available = websiteMetrics.available && websiteMetrics.data;
+      const ga4Data = ga4Available ? websiteMetrics.data : {};
+
+      // Web metrics from GA4
+      const webVisitors = ga4Data.activeUsers || 0;
+      const bounceRate = parseFloat(ga4Data.bounceRate) || 0; // Already in percentage
+      const engagedUsers = Math.round(webVisitors * (1 - bounceRate / 100));
+
+      // Web metrics from DB
+      const contactClicks = parseInt(web.total_clicks) || 0;
+      const contactUsers = parseInt(web.contact_users) || 0;
       const webDeliveries = parseInt(web.deliveries) || 0;
 
       const appOpens = parseInt(app.opens) || 0;
@@ -2050,38 +2048,45 @@ class UnifiedAnalytics {
       const appDeliveries = parseInt(app.deliveries) || 0;
 
       // Build funnel steps with conversion rates
+      // Web: Visitors → Engaged → Contact Supplier → Log Delivery
       const webSteps = [
         {
           step: 'visit',
-          label: 'Site Visits',
-          users: webVisits,
+          label: 'Site Visitors',
+          users: webVisitors,
           rate: '100%',
-          dropoff: null
+          dropoff: null,
+          source: 'GA4'
         },
         {
-          step: 'view',
-          label: 'View Suppliers',
-          users: webViews,
-          rate: webVisits > 0 ? ((webViews / webVisits) * 100).toFixed(1) + '%' : '0%',
-          dropoff: webVisits > 0 ? ((1 - webViews / webVisits) * 100).toFixed(1) + '%' : '0%'
+          step: 'engaged',
+          label: 'Engaged Users',
+          sublabel: 'Didn\'t bounce',
+          users: engagedUsers,
+          rate: webVisitors > 0 ? ((100 - bounceRate).toFixed(1)) + '%' : '0%',
+          dropoff: bounceRate.toFixed(1) + '%',
+          source: 'GA4'
         },
         {
-          step: 'click',
-          label: 'Click to Contact',
-          users: webClicks,
-          rate: webViews > 0 ? ((webClicks / webViews) * 100).toFixed(1) + '%' : '0%',
-          dropoff: webViews > 0 ? ((1 - webClicks / webViews) * 100).toFixed(1) + '%' : '0%',
+          step: 'contact',
+          label: 'Contact Supplier',
+          sublabel: `${parseInt(web.call_clicks) || 0} calls, ${parseInt(web.website_clicks) || 0} websites`,
+          users: contactClicks,
+          rate: engagedUsers > 0 ? ((contactClicks / engagedUsers) * 100).toFixed(1) + '%' : '0%',
+          dropoff: engagedUsers > 0 ? ((1 - contactClicks / engagedUsers) * 100).toFixed(1) + '%' : '0%',
           breakdown: {
             call: parseInt(web.call_clicks) || 0,
             website: parseInt(web.website_clicks) || 0
-          }
+          },
+          source: 'DB'
         },
         {
           step: 'delivery',
           label: 'Log Delivery',
           users: webDeliveries,
-          rate: webClicks > 0 ? ((webDeliveries / webClicks) * 100).toFixed(1) + '%' : '0%',
-          dropoff: webClicks > 0 ? ((1 - webDeliveries / webClicks) * 100).toFixed(1) + '%' : '0%'
+          rate: contactClicks > 0 ? ((webDeliveries / contactClicks) * 100).toFixed(1) + '%' : '0%',
+          dropoff: contactClicks > 0 ? ((1 - webDeliveries / contactClicks) * 100).toFixed(1) + '%' : '0%',
+          source: 'DB'
         }
       ];
 
@@ -2117,7 +2122,7 @@ class UnifiedAnalytics {
       ];
 
       // Overall conversion (visit to delivery)
-      const webOverallConversion = webVisits > 0 ? ((webDeliveries / webVisits) * 100).toFixed(2) : '0';
+      const webOverallConversion = webVisitors > 0 ? ((webDeliveries / webVisitors) * 100).toFixed(2) : '0';
       const appOverallConversion = appOpens > 0 ? ((appDeliveries / appOpens) * 100).toFixed(2) : '0';
 
       // Find biggest drop-off points
@@ -2126,12 +2131,14 @@ class UnifiedAnalytics {
 
       return {
         available: true,
-        hasData: webVisits > 0 || appOpens > 0,
+        hasData: webVisitors > 0 || appOpens > 0,
+        ga4Available,
+        bounceRate: bounceRate.toFixed(1) + '%',
         web: {
           steps: webSteps,
           overallConversion: webOverallConversion + '%',
           biggestDropoff: webDropoffs[0] ? {
-            from: webDropoffs[0].step === 'view' ? 'visit' : webDropoffs[0].step === 'click' ? 'view' : 'click',
+            from: webDropoffs[0].step === 'engaged' ? 'visit' : webDropoffs[0].step === 'contact' ? 'engaged' : 'contact',
             to: webDropoffs[0].step,
             rate: webDropoffs[0].dropoff
           } : null

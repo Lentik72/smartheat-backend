@@ -3072,8 +3072,8 @@ function renderUserJourney(journey) {
   if (web.biggestDropoff && parseFloat(web.biggestDropoff.rate) > 50) {
     const dropoffStep = web.biggestDropoff.to;
     const dropoffName = {
-      'view': 'viewing suppliers',
-      'click': 'clicking to contact',
+      'engaged': 'engaging (bounce rate)',
+      'contact': 'contacting supplier',
       'delivery': 'logging deliveries'
     }[dropoffStep] || dropoffStep;
     insights.push(`Web: ${web.biggestDropoff.rate} drop-off before ${dropoffName}`);
