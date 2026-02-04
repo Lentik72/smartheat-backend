@@ -1091,24 +1091,17 @@ let suppliersOrder = 'desc';
 // Load suppliers tab
 async function loadSuppliers() {
   try {
-    // Check both Settings tab filters and Legacy Suppliers tab filters
     const stateEl = document.getElementById('filter-state');
     const priceEl = document.getElementById('filter-price');
     const scrapeEl = document.getElementById('filter-scrape');
     const activeEl = document.getElementById('filter-active');
     const searchEl = document.getElementById('filter-search');
 
-    const legacyStateEl = document.getElementById('legacy-filter-state');
-    const legacyPriceEl = document.getElementById('legacy-filter-price');
-    const legacyScrapeEl = document.getElementById('legacy-filter-scrape');
-    const legacySearchEl = document.getElementById('legacy-filter-search');
-
-    // Use values from either filter set (prefer non-empty values)
-    const state = stateEl?.value || legacyStateEl?.value || '';
-    const hasPrice = priceEl?.value || legacyPriceEl?.value || '';
-    const scrape = scrapeEl?.value || legacyScrapeEl?.value || '';
+    const state = stateEl?.value || '';
+    const hasPrice = priceEl?.value || '';
+    const scrape = scrapeEl?.value || '';
     const active = activeEl?.value || '';
-    const search = searchEl?.value || legacySearchEl?.value || '';
+    const search = searchEl?.value || '';
 
     let url = `/suppliers?limit=${suppliersLimit}&offset=${suppliersPage * suppliersLimit}`;
     url += `&sort=${suppliersSort}&order=${suppliersOrder}`;
@@ -1132,26 +1125,16 @@ async function loadSuppliers() {
       }
     });
 
-    // Populate state filters if empty (both Settings and Legacy tabs)
-    const needsStatePopulation = (stateEl && stateEl.options.length === 1) ||
-                                  (legacyStateEl && legacyStateEl.options.length === 1);
-    if (needsStatePopulation) {
+    // Populate state filter if empty
+    if (stateEl && stateEl.options.length === 1) {
       try {
         const allData = await api('/suppliers?limit=500&offset=0');
         const states = [...new Set(allData.suppliers.map(s => s.state).filter(Boolean))].sort();
         states.forEach(s => {
-          if (stateEl && stateEl.options.length <= states.length) {
-            const opt = document.createElement('option');
-            opt.value = s;
-            opt.textContent = s;
-            stateEl.appendChild(opt);
-          }
-          if (legacyStateEl && legacyStateEl.options.length <= states.length) {
-            const opt2 = document.createElement('option');
-            opt2.value = s;
-            opt2.textContent = s;
-            legacyStateEl.appendChild(opt2);
-          }
+          const opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          stateEl.appendChild(opt);
         });
       } catch (e) {
         console.warn('Could not load all states:', e);
@@ -1170,16 +1153,12 @@ async function loadSuppliers() {
       bulkActions.classList.toggle('hidden', data.suppliers.length === 0);
     }
 
-    // Table - populate both Settings table and Legacy Suppliers tab table
+    // Table
     const tbody = document.getElementById('suppliers-body');
-    const legacyTbody = document.getElementById('legacy-suppliers-body');
-    if (tbody) tbody.innerHTML = '';
-    if (legacyTbody) legacyTbody.innerHTML = '';
+    tbody.innerHTML = '';
 
     if (data.suppliers.length === 0) {
-      const emptyRow = '<tr><td colspan="7" class="no-data">No suppliers found matching your criteria</td></tr>';
-      if (tbody) tbody.innerHTML = emptyRow;
-      if (legacyTbody) legacyTbody.innerHTML = emptyRow;
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">No suppliers found matching your criteria</td></tr>';
     } else {
       data.suppliers.forEach(s => {
         // Status badges
@@ -1200,6 +1179,8 @@ async function loadSuppliers() {
         // Click indicator
         const clickIndicator = s.recentClicks > 10 ? '🔥' : s.recentClicks > 0 ? '📊' : '—';
 
+        const row = document.createElement('tr');
+        row.className = !s.isActive ? 'row-inactive' : (s.scrapingEnabled ? '' : 'row-stale');
         const location = [s.city, s.state].filter(Boolean).join(', ') || '--';
 
         // Build website display text
@@ -1210,74 +1191,34 @@ async function loadSuppliers() {
           websiteHtml = `<div class="supplier-website"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="website-link">${displayUrl}</a></div>`;
         }
 
-        // Settings tab row (6 columns)
-        if (tbody) {
-          const row = document.createElement('tr');
-          row.className = !s.isActive ? 'row-inactive' : (s.scrapingEnabled ? '' : 'row-stale');
-          row.innerHTML = `
-            <td>
-              <div class="supplier-name">${s.name}</div>
-              <div class="supplier-meta">${location}</div>
-              ${websiteHtml}
-            </td>
-            <td class="${s.currentPrice ? 'price-value' : 'no-price'}">${formatPrice(s.currentPrice)}</td>
-            <td class="${s.scrapingEnabled ? '' : 'stale-date'}">${timeAgo(s.priceUpdatedAt)}</td>
-            <td class="clicks-cell">${clickIndicator} ${s.recentClicks}</td>
-            <td class="status-badges">${statusBadges.join('')}</td>
-            <td class="actions-cell">
-              <button class="btn-small btn-edit edit-supplier-btn" data-id="${s.id}">Edit</button>
-            </td>
-          `;
-          tbody.appendChild(row);
-        }
-
-        // Legacy Suppliers tab row (7 columns: Supplier, State, Price, Updated, Clicks, Status, Action)
-        if (legacyTbody) {
-          const legacyRow = document.createElement('tr');
-          legacyRow.className = !s.isActive ? 'row-inactive' : (s.scrapingEnabled ? '' : 'row-stale');
-          legacyRow.innerHTML = `
-            <td>
-              <div class="supplier-name">${s.name}</div>
-              <div class="supplier-meta">${s.city || '--'}</div>
-              ${websiteHtml}
-            </td>
-            <td>${s.state || '--'}</td>
-            <td class="${s.currentPrice ? 'price-value' : 'no-price'}">${formatPrice(s.currentPrice)}</td>
-            <td class="${s.scrapingEnabled ? '' : 'stale-date'}">${timeAgo(s.priceUpdatedAt)}</td>
-            <td class="clicks-cell">${clickIndicator} ${s.recentClicks}</td>
-            <td class="status-badges">${statusBadges.join('')}</td>
-            <td class="actions-cell">
-              <button class="btn-small btn-edit edit-supplier-btn" data-id="${s.id}">Edit</button>
-            </td>
-          `;
-          legacyTbody.appendChild(legacyRow);
-        }
+        row.innerHTML = `
+          <td>
+            <div class="supplier-name">${s.name}</div>
+            <div class="supplier-meta">${location}</div>
+            ${websiteHtml}
+          </td>
+          <td class="${s.currentPrice ? 'price-value' : 'no-price'}">${formatPrice(s.currentPrice)}</td>
+          <td class="${s.scrapingEnabled ? '' : 'stale-date'}">${timeAgo(s.priceUpdatedAt)}</td>
+          <td class="clicks-cell">${clickIndicator} ${s.recentClicks}</td>
+          <td class="status-badges">${statusBadges.join('')}</td>
+          <td class="actions-cell">
+            <button class="btn-small btn-edit edit-supplier-btn" data-id="${s.id}">Edit</button>
+          </td>
+        `;
+        tbody.appendChild(row);
       });
 
-      // Attach event listeners for edit buttons in both tables
-      document.querySelectorAll('.edit-supplier-btn').forEach(btn => {
-        btn.removeEventListener('click', btn._editHandler);
-        btn._editHandler = () => editSupplier(btn.dataset.id);
-        btn.addEventListener('click', btn._editHandler);
+      // Attach event listeners for edit buttons
+      tbody.querySelectorAll('.edit-supplier-btn').forEach(btn => {
+        btn.addEventListener('click', () => editSupplier(btn.dataset.id));
       });
     }
 
-    // Pagination - update both sets of controls
+    // Pagination
     const totalPages = Math.ceil(data.pagination.total / suppliersLimit);
-    const pageInfo = document.getElementById('page-info');
-    const legacyPageInfo = document.getElementById('legacy-page-info');
-    if (pageInfo) pageInfo.textContent = `Page ${suppliersPage + 1} of ${totalPages}`;
-    if (legacyPageInfo) legacyPageInfo.textContent = `Page ${suppliersPage + 1} of ${totalPages}`;
-
-    const prevBtn = document.getElementById('prev-page');
-    const nextBtn = document.getElementById('next-page');
-    const legacyPrevBtn = document.getElementById('legacy-prev-page');
-    const legacyNextBtn = document.getElementById('legacy-next-page');
-
-    if (prevBtn) prevBtn.disabled = suppliersPage === 0;
-    if (nextBtn) nextBtn.disabled = suppliersPage >= totalPages - 1;
-    if (legacyPrevBtn) legacyPrevBtn.disabled = suppliersPage === 0;
-    if (legacyNextBtn) legacyNextBtn.disabled = suppliersPage >= totalPages - 1;
+    document.getElementById('page-info').textContent = `Page ${suppliersPage + 1} of ${totalPages}`;
+    document.getElementById('prev-page').disabled = suppliersPage === 0;
+    document.getElementById('next-page').disabled = suppliersPage >= totalPages - 1;
 
   } catch (error) {
     console.error('Failed to load suppliers:', error);
@@ -1370,25 +1311,6 @@ document.getElementById('prev-page').addEventListener('click', () => {
 
 document.getElementById('next-page').addEventListener('click', () => {
   suppliersPage++;
-  loadSuppliers();
-});
-
-// Legacy Suppliers tab pagination
-document.getElementById('legacy-prev-page')?.addEventListener('click', () => {
-  if (suppliersPage > 0) {
-    suppliersPage--;
-    loadSuppliers();
-  }
-});
-
-document.getElementById('legacy-next-page')?.addEventListener('click', () => {
-  suppliersPage++;
-  loadSuppliers();
-});
-
-// Legacy Suppliers tab filters
-document.getElementById('legacy-filter-apply')?.addEventListener('click', () => {
-  suppliersPage = 0;
   loadSuppliers();
 });
 

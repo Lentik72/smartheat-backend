@@ -62,6 +62,10 @@
             <span class="nav-item-icon">🗺️</span>
             <span class="nav-item-label">Coverage</span>
           </button>
+          <button class="nav-item" data-tab="suppliers">
+            <span class="nav-item-icon">🏢</span>
+            <span class="nav-item-label">Suppliers</span>
+          </button>
           <button class="nav-item" data-tab="settings">
             <span class="nav-item-icon">⚙️</span>
             <span class="nav-item-label">Settings</span>
@@ -98,10 +102,6 @@
             <button class="nav-item" data-tab="ios-app">
               <span class="nav-item-icon">📱</span>
               <span class="nav-item-label">iOS App</span>
-            </button>
-            <button class="nav-item" data-tab="suppliers">
-              <span class="nav-item-icon">🏢</span>
-              <span class="nav-item-label">Suppliers</span>
             </button>
             <button class="nav-item" data-tab="map">
               <span class="nav-item-icon">📍</span>
@@ -1055,7 +1055,7 @@
       </section>
 
       <!-- ============================================================ -->
-      <!-- SETTINGS TAB - Scope 18 (Merged Suppliers + Data Health + External) -->
+      <!-- SETTINGS TAB - Data Health + External Links -->
       <!-- ============================================================ -->
       <section id="tab-settings" class="tab-panel">
         <div class="settings-container">
@@ -1075,79 +1075,6 @@
                 <span class="health-value" id="health-stale">--</span>
                 <span class="health-label">Stale</span>
               </div>
-            </div>
-          </div>
-
-          <!-- Stale Suppliers -->
-          <div class="panel full-width" id="stale-panel">
-            <h3>⚠️ Stale Prices (Need Attention)</h3>
-            <table id="stale-table">
-              <thead>
-                <tr>
-                  <th>Supplier</th>
-                  <th>Last Price</th>
-                  <th>Last Updated</th>
-                  <th>Website</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="stale-body"></tbody>
-            </table>
-          </div>
-
-          <!-- Supplier Management -->
-          <div class="panel full-width" id="supplier-management-panel">
-            <h3>📋 Supplier Management</h3>
-            <div class="supplier-filters">
-              <div class="filter-row">
-                <input type="text" id="filter-search" placeholder="🔍 Search by name, city, or website..." class="search-input">
-                <button id="filter-apply" class="btn-primary">Search</button>
-                <button id="filter-clear" class="btn-secondary">Clear</button>
-              </div>
-              <div class="filter-row">
-                <select id="filter-state">
-                  <option value="">All States</option>
-                </select>
-                <select id="filter-price">
-                  <option value="">All Price Status</option>
-                  <option value="true">Has Price</option>
-                  <option value="false">No Price</option>
-                </select>
-                <select id="filter-scrape">
-                  <option value="">All Scrape Status</option>
-                  <option value="fresh">Fresh (< 48h)</option>
-                  <option value="stale">Stale (> 48h)</option>
-                </select>
-                <select id="filter-active">
-                  <option value="">All Status</option>
-                  <option value="true">Active Only</option>
-                  <option value="false">Inactive Only</option>
-                </select>
-              </div>
-            </div>
-            <div class="table-info">
-              <span id="results-count">Loading...</span>
-              <div class="bulk-actions hidden" id="bulk-actions">
-                <button class="btn-small" id="export-csv">📥 Export CSV</button>
-              </div>
-            </div>
-            <table id="suppliers-table" class="enhanced-table">
-              <thead>
-                <tr>
-                  <th class="sortable" data-sort="name">Supplier <span class="sort-icon">↕</span></th>
-                  <th class="sortable" data-sort="price">Price <span class="sort-icon">↕</span></th>
-                  <th class="sortable" data-sort="updated">Updated <span class="sort-icon">↕</span></th>
-                  <th class="sortable" data-sort="clicks">Clicks <span class="sort-icon">↕</span></th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="suppliers-body"></tbody>
-            </table>
-            <div class="pagination">
-              <button id="prev-page" disabled>← Previous</button>
-              <span id="page-info">Page 1</span>
-              <button id="next-page">Next →</button>
             </div>
           </div>
 
@@ -1924,56 +1851,63 @@
         </div>
       </section>
 
-      <!-- Suppliers Tab (Legacy) -->
+      <!-- Suppliers Tab -->
       <section id="tab-suppliers" class="tab-panel">
-        <!-- Supplier Map -->
-        <div class="panel full-width">
-          <h3>📍 Supplier Coverage Map</h3>
-          <div id="supplier-map" style="height: 400px; border-radius: 8px;"></div>
-          <div class="map-legend">
-            <span class="legend-item"><span class="legend-dot green"></span> Has Price</span>
-            <span class="legend-item"><span class="legend-dot orange"></span> No Price</span>
-            <span class="legend-item"><span class="legend-dot gray"></span> Inactive</span>
-          </div>
-        </div>
-
-        <div class="panel full-width">
-          <div class="filters">
-            <select id="legacy-filter-state">
-              <option value="">All States</option>
-            </select>
-            <select id="legacy-filter-price">
-              <option value="">All Price Status</option>
-              <option value="true">Has Price</option>
-              <option value="false">No Price</option>
-            </select>
-            <select id="legacy-filter-scrape">
-              <option value="">All Scrape Status</option>
-              <option value="enabled">Enabled</option>
-              <option value="disabled">Disabled</option>
-              <option value="stale">Stale</option>
-            </select>
-            <input type="text" id="legacy-filter-search" placeholder="Search...">
-            <button id="legacy-filter-apply">Apply</button>
-          </div>
-          <table id="legacy-suppliers-table">
-            <thead>
-              <tr>
-                <th class="sortable" data-sort="name">Supplier <span class="sort-icon">↕</span></th>
-                <th class="sortable" data-sort="state">State <span class="sort-icon">↕</span></th>
-                <th class="sortable" data-sort="price">Price <span class="sort-icon">↕</span></th>
-                <th class="sortable" data-sort="updated">Updated <span class="sort-icon">↕</span></th>
-                <th class="sortable" data-sort="clicks">Clicks (7d) <span class="sort-icon">↕</span></th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="legacy-suppliers-body"></tbody>
-          </table>
-          <div class="pagination">
-            <button id="legacy-prev-page" disabled>Previous</button>
-            <span id="legacy-page-info">Page 1</span>
-            <button id="legacy-next-page">Next</button>
+        <div class="suppliers-container">
+          <!-- Supplier Management -->
+          <div class="panel full-width">
+            <h3>🏢 Supplier Management</h3>
+            <div class="supplier-filters">
+              <div class="filter-row">
+                <input type="text" id="filter-search" placeholder="🔍 Search by name, city, or website..." class="search-input">
+                <button id="filter-apply" class="btn-primary">Search</button>
+                <button id="filter-clear" class="btn-secondary">Clear</button>
+              </div>
+              <div class="filter-row">
+                <select id="filter-state">
+                  <option value="">All States</option>
+                </select>
+                <select id="filter-price">
+                  <option value="">All Price Status</option>
+                  <option value="true">Has Price</option>
+                  <option value="false">No Price</option>
+                </select>
+                <select id="filter-scrape">
+                  <option value="">All Scrape Status</option>
+                  <option value="fresh">Fresh (&lt; 48h)</option>
+                  <option value="stale">Stale (&gt; 48h)</option>
+                </select>
+                <select id="filter-active">
+                  <option value="">All Status</option>
+                  <option value="true">Active Only</option>
+                  <option value="false">Inactive Only</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-info">
+              <span id="results-count">Loading...</span>
+              <div class="bulk-actions hidden" id="bulk-actions">
+                <button class="btn-small" id="export-csv">📥 Export CSV</button>
+              </div>
+            </div>
+            <table id="suppliers-table" class="enhanced-table">
+              <thead>
+                <tr>
+                  <th class="sortable" data-sort="name">Supplier <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="price">Price <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="updated">Updated <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-sort="clicks">Clicks <span class="sort-icon">↕</span></th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="suppliers-body"></tbody>
+            </table>
+            <div class="pagination">
+              <button id="prev-page" disabled>← Previous</button>
+              <span id="page-info">Page 1</span>
+              <button id="next-page">Next →</button>
+            </div>
           </div>
         </div>
       </section>
