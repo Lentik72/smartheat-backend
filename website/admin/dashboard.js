@@ -3424,6 +3424,55 @@ function loadCoverageMapWithView(view) {
       const bounds = L.latLngBounds(gapsWithCoords.map(c => [c.lat, c.lng]));
       map.fitBounds(bounds, { padding: [30, 30] });
     }
+
+  } else if (view === 'suppliers') {
+    // Show supplier locations
+    statsEl.innerHTML = `<span style="color: #22c55e">●</span> Has Price &nbsp; <span style="color: #f59e0b">●</span> No Price &nbsp; <span style="color: #9ca3af">●</span> Inactive`;
+
+    // Fetch supplier locations
+    api('/suppliers/map').then(data => {
+      if (!data.suppliers || data.suppliers.length === 0) {
+        statsEl.innerHTML += ' &nbsp; (No geocoded suppliers yet)';
+        return;
+      }
+
+      data.suppliers.forEach(supplier => {
+        const color = !supplier.active ? '#9ca3af' : supplier.price ? '#22c55e' : '#f59e0b';
+
+        const marker = L.circleMarker([supplier.lat, supplier.lng], {
+          radius: 8,
+          fillColor: color,
+          color: '#fff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.8
+        });
+
+        const priceHtml = supplier.price
+          ? `$${supplier.price.toFixed(2)}/gal`
+          : 'No price';
+
+        marker.bindPopup(`
+          <strong>${supplier.name}</strong><br>
+          ${supplier.city}, ${supplier.state}<br>
+          ${priceHtml}
+        `);
+
+        marker.addTo(map);
+      });
+
+      // Fit bounds to show all suppliers
+      const validSuppliers = data.suppliers.filter(s => s.lat && s.lng);
+      if (validSuppliers.length > 0) {
+        const bounds = L.latLngBounds(validSuppliers.map(s => [s.lat, s.lng]));
+        map.fitBounds(bounds, { padding: [30, 30] });
+      }
+
+      statsEl.innerHTML = `<span style="color: #22c55e">●</span> Has Price &nbsp; <span style="color: #f59e0b">●</span> No Price &nbsp; <span style="color: #9ca3af">●</span> Inactive &nbsp; (${data.mapped} suppliers mapped)`;
+    }).catch(err => {
+      console.error('Failed to load supplier locations:', err);
+      statsEl.innerHTML += ' &nbsp; (Error loading suppliers)';
+    });
   }
 }
 
