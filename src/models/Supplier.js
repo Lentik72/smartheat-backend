@@ -101,6 +101,45 @@ const initSupplierModel = (sequelize) => {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
         comment: 'If false, supplier has opted out of price display'
+      },
+      // V1.6.0: Hours & Availability
+      hoursWeekday: {
+        type: DataTypes.STRING(50),
+        field: 'hours_weekday'
+      },
+      hoursSaturday: {
+        type: DataTypes.STRING(50),
+        field: 'hours_saturday'
+      },
+      hoursSunday: {
+        type: DataTypes.STRING(50),
+        field: 'hours_sunday'
+      },
+      weekendDelivery: {
+        type: DataTypes.STRING(10),
+        field: 'weekend_delivery',
+        defaultValue: 'unknown'
+      },
+      emergencyDelivery: {
+        type: DataTypes.STRING(10),
+        field: 'emergency_delivery',
+        defaultValue: 'unknown'
+      },
+      emergencyPhone: {
+        type: DataTypes.STRING(20),
+        field: 'emergency_phone'
+      },
+      hoursSource: {
+        type: DataTypes.STRING(20),
+        field: 'hours_source'
+      },
+      hoursVerifiedAt: {
+        type: DataTypes.DATE,
+        field: 'hours_verified_at'
+      },
+      hoursNotes: {
+        type: DataTypes.TEXT,
+        field: 'hours_notes'
       }
     }, {
       tableName: 'suppliers',

@@ -316,7 +316,11 @@ router.get('/', async (req, res) => {
         'addressLine1', 'city', 'state',
         'postalCodesServed', 'serviceCities', 'serviceCounties',
         'serviceAreaRadius', 'lat', 'lng', 'verified',
-        'claimed_at', 'claimed_by_email'  // V2.5.0: Track claimed/verified suppliers
+        'claimed_at', 'claimed_by_email',  // V2.5.0: Track claimed/verified suppliers
+        // V2.14.0: Hours & Availability (only exposed when verified)
+        'hoursWeekday', 'hoursSaturday', 'hoursSunday',
+        'weekendDelivery', 'emergencyDelivery', 'emergencyPhone',
+        'hoursVerifiedAt'
       ]
     });
 
@@ -343,7 +347,7 @@ router.get('/', async (req, res) => {
       // Build response with prices
       const responseData = limitedSuppliers.map(s => {
         const price = priceMap[s.id];
-        return {
+        const result = {
           id: s.id,
           name: s.name,
           phone: s.phone,
@@ -366,6 +370,18 @@ router.get('/', async (req, res) => {
           // V2.5.0: Claimed supplier info
           claimedAt: s.claimed_at || null
         };
+        // V2.14.0: Only include hours if verified
+        if (s.hoursVerifiedAt) {
+          result.hours = {
+            weekday: s.hoursWeekday,
+            saturday: s.hoursSaturday,
+            sunday: s.hoursSunday,
+            weekendDelivery: s.weekendDelivery,
+            emergencyDelivery: s.emergencyDelivery,
+            emergencyPhone: s.emergencyPhone
+          };
+        }
+        return result;
       });
 
       const meta = {
@@ -531,7 +547,7 @@ router.get('/', async (req, res) => {
       const price = priceMap[s.id];
       const priceStatus = getPriceStatus(price);
       const sortGroup = (priceStatus === 'fresh' || priceStatus === 'recent') ? 'priced' : 'unpriced';
-      return {
+      const result = {
         id: s.id,
         name: s.name,
         phone: s.phone,
@@ -558,6 +574,18 @@ router.get('/', async (req, res) => {
         // V2.5.0: Claimed supplier info (for verified badge)
         claimedAt: s.claimed_at || null
       };
+      // V2.14.0: Only include hours if verified
+      if (s.hoursVerifiedAt) {
+        result.hours = {
+          weekday: s.hoursWeekday,
+          saturday: s.hoursSaturday,
+          sunday: s.hoursSunday,
+          weekendDelivery: s.weekendDelivery,
+          emergencyDelivery: s.emergencyDelivery,
+          emergencyPhone: s.emergencyPhone
+        };
+      }
+      return result;
     });
 
     // V2.4.0: Count suppliers with prices for iOS display logic

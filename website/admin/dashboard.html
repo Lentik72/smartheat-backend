@@ -2062,6 +2062,62 @@
             </div>
           </fieldset>
 
+          <!-- Hours & Availability -->
+          <fieldset>
+            <legend>Hours & Availability</legend>
+
+            <div class="form-row">
+              <label>Weekday Hours</label>
+              <input type="text" id="edit-hours-weekday" placeholder="e.g., 7am-5pm">
+            </div>
+
+            <div class="form-row">
+              <label>Saturday Hours</label>
+              <input type="text" id="edit-hours-saturday" placeholder="e.g., 8am-12pm or Closed">
+            </div>
+
+            <div class="form-row">
+              <label>Sunday Hours</label>
+              <input type="text" id="edit-hours-sunday" placeholder="e.g., Closed">
+            </div>
+
+            <div class="form-row">
+              <label>Weekend Delivery</label>
+              <select id="edit-weekend-delivery">
+                <option value="unknown">Unknown</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label>Emergency Delivery</label>
+              <select id="edit-emergency-delivery">
+                <option value="unknown">Unknown</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label>Emergency Phone</label>
+              <input type="tel" id="edit-emergency-phone" placeholder="Optional separate number">
+            </div>
+
+            <div class="form-row">
+              <label>Notes (internal)</label>
+              <textarea id="edit-hours-notes" rows="2" placeholder="e.g., Emergency for existing customers only"></textarea>
+            </div>
+
+            <div class="form-row checkbox">
+              <label>
+                <input type="checkbox" id="edit-hours-verified">
+                Mark as Verified
+                <small class="hint">(Shows badges to users when checked)</small>
+              </label>
+            </div>
+          </fieldset>
+
           <fieldset>
             <legend>Click Stats (7 days)</legend>
             <div id="edit-click-stats" class="stats-grid"></div>

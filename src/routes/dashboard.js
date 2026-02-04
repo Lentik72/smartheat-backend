@@ -1363,7 +1363,16 @@ router.get('/suppliers/:id', async (req, res) => {
         scraping_enabled: supplier.scraping_enabled ?? (
           supplier.price_updated_at &&
           (new Date() - new Date(supplier.price_updated_at)) < 48 * 60 * 60 * 1000
-        )
+        ),
+        // Hours & Availability (snake_case for frontend consistency)
+        hours_weekday: supplier.hours_weekday,
+        hours_saturday: supplier.hours_saturday,
+        hours_sunday: supplier.hours_sunday,
+        weekend_delivery: supplier.weekend_delivery || 'unknown',
+        emergency_delivery: supplier.emergency_delivery || 'unknown',
+        emergency_phone: supplier.emergency_phone,
+        hours_notes: supplier.hours_notes,
+        hours_verified_at: supplier.hours_verified_at
       },
       priceHistory: priceHistory.map(p => ({
         price: parseFloat(p.price_per_gallon),
@@ -1405,8 +1414,23 @@ router.put('/suppliers/:id', async (req, res) => {
     // Note: scraping_enabled is not a real column - it's computed from price freshness
     const allowedFields = [
       'name', 'phone', 'website', 'state', 'city',
-      'active', 'allow_price_display'
+      'active', 'allow_price_display',
+      // Hours & Availability
+      'hours_weekday', 'hours_saturday', 'hours_sunday',
+      'weekend_delivery', 'emergency_delivery', 'emergency_phone',
+      'hours_source', 'hours_verified_at', 'hours_notes'
     ];
+
+    // Handle hours_verified checkbox (sets timestamp)
+    if (updates.hours_verified !== undefined) {
+      if (updates.hours_verified) {
+        updates.hours_verified_at = new Date();
+        updates.hours_source = updates.hours_source || 'manual';
+      } else {
+        updates.hours_verified_at = null;
+      }
+      delete updates.hours_verified;
+    }
 
     const setClause = [];
     const replacements = { id };
