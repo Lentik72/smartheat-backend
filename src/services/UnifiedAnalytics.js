@@ -1987,7 +1987,7 @@ class UnifiedAnalytics {
         ),
         pwa_installs AS (
           -- Users who installed the PWA (standalone launch = actual install)
-          SELECT COUNT(DISTINCT visitor_id) as users
+          SELECT COUNT(DISTINCT ip_address) as users
           FROM pwa_events
           WHERE created_at > NOW() - INTERVAL '${days} days'
             AND event_type = 'standalone_launch'
