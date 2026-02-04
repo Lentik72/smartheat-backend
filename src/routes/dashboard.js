@@ -1196,7 +1196,12 @@ router.get('/suppliers/map', async (req, res) => {
     `);
 
     // Geocode suppliers without coordinates (batch, with rate limiting)
-    const needsGeocoding = suppliers.filter(s => !s.lat && s.city && s.state);
+    // Skip invalid city names that can't be geocoded properly
+    const invalidCities = ['various', 'multiple', 'many', 'several', 'n/a', 'na', 'unknown', 'tbd'];
+    const needsGeocoding = suppliers.filter(s =>
+      !s.lat && s.city && s.state &&
+      !invalidCities.includes(s.city.toLowerCase().trim())
+    );
 
     if (needsGeocoding.length > 0) {
       logger.info(`[Dashboard] Geocoding ${needsGeocoding.length} suppliers`);
@@ -1210,8 +1215,9 @@ router.get('/suppliers/map', async (req, res) => {
             ? `${supplier.address_line1}, ${supplier.city}, ${supplier.state}`
             : `${supplier.city}, ${supplier.state}`;
 
+          // Add USA to query to improve accuracy
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', USA')}&limit=1&countrycodes=us`,
             { headers: { 'User-Agent': 'HomeHeat-Dashboard/1.0' } }
           );
 
@@ -1219,16 +1225,26 @@ router.get('/suppliers/map', async (req, res) => {
             const data = await response.json();
             if (data.length > 0) {
               const { lat, lon } = data[0];
+              const parsedLat = parseFloat(lat);
+              const parsedLng = parseFloat(lon);
 
-              // Update database with coordinates
-              await sequelize.query(
-                `UPDATE suppliers SET lat = $1, lng = $2 WHERE id = $3`,
-                { bind: [parseFloat(lat), parseFloat(lon), supplier.id] }
-              );
+              // Validate coordinates are within continental US bounds
+              const isValidUS = parsedLat >= 24 && parsedLat <= 50 &&
+                               parsedLng >= -125 && parsedLng <= -66;
 
-              // Update local object
-              supplier.lat = parseFloat(lat);
-              supplier.lng = parseFloat(lon);
+              if (isValidUS) {
+                // Update database with coordinates
+                await sequelize.query(
+                  `UPDATE suppliers SET lat = $1, lng = $2 WHERE id = $3`,
+                  { bind: [parsedLat, parsedLng, supplier.id] }
+                );
+
+                // Update local object
+                supplier.lat = parsedLat;
+                supplier.lng = parsedLng;
+              } else {
+                logger.warn(`[Dashboard] Geocoding returned non-US coordinates for ${supplier.name}: ${parsedLat}, ${parsedLng}`);
+              }
             }
           }
 
@@ -1240,17 +1256,25 @@ router.get('/suppliers/map', async (req, res) => {
       }
     }
 
-    // Return suppliers with coordinates
-    const mappableSuppliers = suppliers.filter(s => s.lat && s.lng).map(s => ({
-      id: s.id,
-      name: s.name,
-      city: s.city,
-      state: s.state,
-      lat: parseFloat(s.lat),
-      lng: parseFloat(s.lng),
-      price: s.price ? parseFloat(s.price) : null,
-      active: s.active
-    }));
+    // Return suppliers with valid US coordinates only
+    const mappableSuppliers = suppliers
+      .filter(s => {
+        if (!s.lat || !s.lng) return false;
+        const lat = parseFloat(s.lat);
+        const lng = parseFloat(s.lng);
+        // Continental US bounds
+        return lat >= 24 && lat <= 50 && lng >= -125 && lng <= -66;
+      })
+      .map(s => ({
+        id: s.id,
+        name: s.name,
+        city: s.city,
+        state: s.state,
+        lat: parseFloat(s.lat),
+        lng: parseFloat(s.lng),
+        price: s.price ? parseFloat(s.price) : null,
+        active: s.active
+      }));
 
     res.json({
       suppliers: mappableSuppliers,
