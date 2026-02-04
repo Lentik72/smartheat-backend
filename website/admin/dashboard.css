@@ -71,14 +71,22 @@ body {
    ======================================== */
 
 .app-layout {
-  display: grid;
-  grid-template-columns: 220px 1fr;
   min-height: 100vh;
 }
 
+/* Main content area */
+.main-content {
+  margin-left: 220px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--spacing-xl) var(--spacing-xl);
+}
+
 @media (max-width: 1024px) {
-  .app-layout {
-    grid-template-columns: 1fr;
+  .main-content {
+    margin-left: 0;
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
   }
 }
 
@@ -235,20 +243,6 @@ body {
   .sidebar-overlay.visible {
     opacity: 1;
     visibility: visible;
-  }
-}
-
-/* Main content area */
-.main-content {
-  margin-left: 220px;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-@media (max-width: 1024px) {
-  .main-content {
-    margin-left: 0;
   }
 }
 
@@ -421,6 +415,17 @@ body {
 
 /* Dashboard Layout */
 #dashboard {
+  /* When using app-layout, dashboard is the grid container */
+}
+
+#dashboard.app-layout {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Content wrapper inside main-content */
+.dashboard-content {
   max-width: var(--container-max);
   margin: 0 auto;
   padding: var(--spacing-xl);
@@ -475,13 +480,24 @@ header h1 {
   color: white;
 }
 
-/* Cards - Compact, constrained width */
+/* Cards - 4-column grid on desktop, responsive */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 240px));
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
-  justify-content: start;
+}
+
+@media (max-width: 1024px) {
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 .card {
