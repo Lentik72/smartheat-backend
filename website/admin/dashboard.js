@@ -171,42 +171,112 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   }
 });
 
-// Tab navigation
+// Tab navigation handler (shared between tabs and sidebar)
+function handleTabSwitch(target) {
+  // Update active tab (legacy tabs)
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const legacyTab = document.querySelector(`.tab[data-tab="${target}"]`);
+  if (legacyTab) legacyTab.classList.add('active');
+
+  // Update active sidebar nav item
+  document.querySelectorAll('.sidebar .nav-item').forEach(n => n.classList.remove('active'));
+  const sidebarNav = document.querySelector(`.sidebar .nav-item[data-tab="${target}"]`);
+  if (sidebarNav) sidebarNav.classList.add('active');
+
+  // Update page title in sticky header
+  const pageTitle = document.getElementById('page-title');
+  if (pageTitle && sidebarNav) {
+    const label = sidebarNav.querySelector('.nav-item-label');
+    pageTitle.textContent = label ? label.textContent : target;
+  }
+
+  // Show target panel
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById(`tab-${target}`);
+  if (panel) panel.classList.add('active');
+
+  // Close mobile sidebar after selection
+  closeMobileSidebar();
+
+  // Load tab-specific data
+  // Scope 18 tabs (new primary navigation)
+  if (target === 'leaderboard') loadLeaderboard();
+  if (target === 'app-analytics') loadAppAnalytics();
+  if (target === 'growth') loadGrowth();
+  if (target === 'coverage') loadCoverage();
+  if (target === 'settings') loadSettings();
+  // Legacy tabs (kept for backward compatibility)
+  if (target === 'recommendations') loadRecommendations();
+  if (target === 'website') loadWebsite();
+  if (target === 'ios-app') loadIOSApp();
+  if (target === 'android') loadAndroidSignals();
+  if (target === 'retention') loadRetention();
+  if (target === 'acquisition') loadAcquisition();
+  if (target === 'overview') loadOverviewTab();
+  if (target === 'searches') loadSearches();
+  if (target === 'clicks') loadClicks();
+  if (target === 'prices') loadPrices();
+  if (target === 'map') loadMap();
+  if (target === 'scrapers') loadScrapers();
+  if (target === 'suppliers') { loadSuppliers(); loadSupplierMap(); }
+}
+
+// Tab navigation (legacy)
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    const target = tab.dataset.tab;
-
-    // Update active tab
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-
-    // Show target panel
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById(`tab-${target}`).classList.add('active');
-
-    // Load tab-specific data
-    // Scope 18 tabs (new primary navigation)
-    if (target === 'leaderboard') loadLeaderboard();
-    if (target === 'app-analytics') loadAppAnalytics();
-    if (target === 'growth') loadGrowth();
-    if (target === 'coverage') loadCoverage();
-    if (target === 'settings') loadSettings();
-    // Legacy tabs (kept for backward compatibility)
-    if (target === 'recommendations') loadRecommendations();
-    if (target === 'website') loadWebsite();
-    if (target === 'ios-app') loadIOSApp();
-    if (target === 'android') loadAndroidSignals();
-    if (target === 'retention') loadRetention();
-    if (target === 'acquisition') loadAcquisition();
-    if (target === 'overview') loadOverviewTab();
-    if (target === 'searches') loadSearches();
-    if (target === 'clicks') loadClicks();
-    if (target === 'prices') loadPrices();
-    if (target === 'map') loadMap();
-    if (target === 'scrapers') loadScrapers();
-    if (target === 'suppliers') { loadSuppliers(); loadSupplierMap(); }
+    handleTabSwitch(tab.dataset.tab);
   });
 });
+
+// Sidebar navigation
+document.querySelectorAll('.sidebar .nav-item').forEach(navItem => {
+  navItem.addEventListener('click', () => {
+    const target = navItem.dataset.tab;
+    if (target) handleTabSwitch(target);
+  });
+});
+
+// Mobile sidebar toggle
+function openMobileSidebar() {
+  document.getElementById('sidebar')?.classList.add('open');
+  document.getElementById('sidebar-overlay')?.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileSidebar() {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sidebar-overlay')?.classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// Mobile menu button
+document.getElementById('mobile-menu-btn')?.addEventListener('click', openMobileSidebar);
+
+// Overlay click to close
+document.getElementById('sidebar-overlay')?.addEventListener('click', closeMobileSidebar);
+
+// Legacy section collapse toggle
+document.getElementById('legacy-toggle')?.addEventListener('click', () => {
+  const section = document.getElementById('legacy-nav-section');
+  section?.classList.toggle('collapsed');
+});
+
+// Update header metrics when data loads
+function updateHeaderMetrics(unified) {
+  const headerUsers = document.getElementById('header-users');
+  const headerRevenue = document.getElementById('header-revenue');
+  const headerDeliveries = document.getElementById('header-deliveries');
+
+  if (headerUsers && unified?.totalUsers !== undefined) {
+    headerUsers.textContent = unified.totalUsers.toLocaleString();
+  }
+  if (headerRevenue && unified?.revenue?.current !== undefined) {
+    headerRevenue.textContent = '$' + unified.revenue.current.toLocaleString();
+  }
+  if (headerDeliveries && unified?.deliveries?.total !== undefined) {
+    headerDeliveries.textContent = unified.deliveries.total.toLocaleString();
+  }
+}
 
 // Show tab function
 function showTab(tabName) {
@@ -247,6 +317,15 @@ async function loadOverview() {
 
     // Show data source connection warnings
     updateDataSourceBanner(unified);
+
+    // Update header metrics for sticky header
+    if (unified) {
+      updateHeaderMetrics({
+        totalUsers: (unified?.app?.summary?.totalUsers || 0) + (unified?.website?.activeUsers || 0),
+        revenue: { current: Math.round((data.website?.totalClicks || 0) * 0.03 * 7.50) },
+        deliveries: { total: unified?.app?.deliveries?.total ?? unified?.app?.saves ?? 0 }
+      });
+    }
 
     // Get trend data
     const trends = unified?.trends || {};

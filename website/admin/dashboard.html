@@ -25,82 +25,202 @@
     </div>
   </div>
 
-  <!-- Main Dashboard -->
-  <div id="dashboard" class="hidden">
-    <header>
-      <h1>SmartHeat Intelligence</h1>
-      <div class="period-selector">
-        <button class="period-btn" data-days="7">7d</button>
-        <button class="period-btn active" data-days="30">30d</button>
-        <button class="period-btn" data-days="90">90d</button>
-      </div>
-    </header>
+  <!-- Mobile sidebar overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-    <!-- Top Priority Alert -->
-    <div id="top-priority-alert" class="top-priority hidden">
-      <div class="priority-badge">TOP PRIORITY</div>
-      <div class="priority-content">
-        <div class="priority-title" id="priority-title">Loading...</div>
-        <div class="priority-insight" id="priority-insight"></div>
+  <!-- Main Dashboard with App Layout -->
+  <div id="dashboard" class="hidden app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <span class="sidebar-logo-icon">🔥</span>
+          <span>SmartHeat</span>
+        </div>
       </div>
-      <div class="priority-actions">
-        <button class="btn-outline" id="priority-view-details">View Details</button>
-      </div>
-    </div>
 
-    <!-- Data Source Status Banner -->
-    <div id="data-source-warnings" class="data-source-banner hidden">
-      <div class="banner-content">
-        <span class="banner-icon">⚠️</span>
-        <span class="banner-text" id="data-source-text">Analytics services not connected</span>
-        <div class="banner-details" id="data-source-details"></div>
-      </div>
-      <button class="banner-dismiss" id="dismiss-banner">×</button>
-    </div>
+      <nav class="sidebar-nav">
+        <!-- Main Navigation -->
+        <div class="nav-section">
+          <button class="nav-item active" data-tab="leaderboard">
+            <span class="nav-item-icon">🏆</span>
+            <span class="nav-item-label">Leaderboard</span>
+          </button>
+          <button class="nav-item" data-tab="app-analytics">
+            <span class="nav-item-icon">📊</span>
+            <span class="nav-item-label">App Analytics</span>
+          </button>
+          <button class="nav-item" data-tab="retention">
+            <span class="nav-item-icon">🔄</span>
+            <span class="nav-item-label">Retention</span>
+          </button>
+          <button class="nav-item" data-tab="growth">
+            <span class="nav-item-icon">📈</span>
+            <span class="nav-item-label">Growth</span>
+          </button>
+          <button class="nav-item" data-tab="coverage">
+            <span class="nav-item-icon">🗺️</span>
+            <span class="nav-item-label">Coverage</span>
+          </button>
+          <button class="nav-item" data-tab="settings">
+            <span class="nav-item-icon">⚙️</span>
+            <span class="nav-item-label">Settings</span>
+          </button>
+        </div>
 
-    <!-- Summary Cards (Combined Business Metrics) -->
-    <div class="cards">
-      <div class="card" id="card-users">
-        <div class="card-label">Total Users</div>
-        <div class="card-value" id="total-users">--</div>
-        <div class="card-sub" id="users-breakdown">-- iOS / -- website</div>
-        <div class="card-freshness" id="users-freshness">--</div>
-      </div>
-      <div class="card" id="card-deliveries">
-        <div class="card-label">Deliveries Logged</div>
-        <div class="card-value" id="total-deliveries">--</div>
-        <div class="card-sub" id="deliveries-breakdown">Real orders tracked</div>
-        <div class="card-freshness" id="deliveries-freshness">--</div>
-      </div>
-      <div class="card" id="card-revenue">
-        <div class="card-label">Est. Revenue</div>
-        <div class="card-value" id="est-revenue">--</div>
-        <div class="card-sub" id="revenue-breakdown">From supplier clicks</div>
-        <div class="card-freshness" id="revenue-freshness">--</div>
-      </div>
-      <div class="card" id="card-android">
-        <div class="card-label">Android Waitlist</div>
-        <div class="card-value" id="waitlist-total">--</div>
-        <div class="card-sub" id="waitlist-recent">+-- this week</div>
-        <div class="card-freshness" id="waitlist-freshness">--</div>
-      </div>
-    </div>
+        <!-- Legacy Section (Collapsed by default) -->
+        <div class="nav-section collapsed" id="legacy-nav-section">
+          <div class="nav-section-header" id="legacy-toggle">
+            <span class="nav-section-title">Legacy Views</span>
+            <span class="nav-section-toggle">▼</span>
+          </div>
+          <div class="nav-items">
+            <button class="nav-item" data-tab="overview">
+              <span class="nav-item-icon">📋</span>
+              <span class="nav-item-label">Overview</span>
+            </button>
+            <button class="nav-item" data-tab="website">
+              <span class="nav-item-icon">🌐</span>
+              <span class="nav-item-label">Website</span>
+            </button>
+            <button class="nav-item" data-tab="searches">
+              <span class="nav-item-icon">🔍</span>
+              <span class="nav-item-label">Searches</span>
+            </button>
+            <button class="nav-item" data-tab="clicks">
+              <span class="nav-item-icon">👆</span>
+              <span class="nav-item-label">Clicks</span>
+            </button>
+            <button class="nav-item" data-tab="prices">
+              <span class="nav-item-icon">💰</span>
+              <span class="nav-item-label">Prices</span>
+            </button>
+            <button class="nav-item" data-tab="ios-app">
+              <span class="nav-item-icon">📱</span>
+              <span class="nav-item-label">iOS App</span>
+            </button>
+            <button class="nav-item" data-tab="suppliers">
+              <span class="nav-item-icon">🏢</span>
+              <span class="nav-item-label">Suppliers</span>
+            </button>
+            <button class="nav-item" data-tab="map">
+              <span class="nav-item-icon">📍</span>
+              <span class="nav-item-label">Map</span>
+            </button>
+          </div>
+        </div>
+      </nav>
 
-    <!-- Alert Banner -->
-    <div id="alert-banner" class="alert hidden">
-      <span id="alert-text"></span>
-      <a href="#" id="alert-action">View</a>
-    </div>
+      <div class="sidebar-footer">
+        <div class="period-selector">
+          <button class="period-btn" data-days="7">7d</button>
+          <button class="period-btn active" data-days="30">30d</button>
+          <button class="period-btn" data-days="90">90d</button>
+        </div>
+      </div>
+    </aside>
 
-    <!-- Tabs (Scope 18: Restructured from 9 to 5 tabs) -->
-    <nav class="tabs">
-      <button class="tab active" data-tab="leaderboard">🏆 Leaderboard</button>
-      <button class="tab" data-tab="app-analytics">📊 App Analytics</button>
-      <button class="tab" data-tab="retention">🔄 Retention</button>
-      <button class="tab" data-tab="growth">📈 Growth</button>
-      <button class="tab" data-tab="coverage">🗺️ Coverage</button>
-      <button class="tab" data-tab="settings">⚙️ Settings</button>
-    </nav>
+    <!-- Main Content Area -->
+    <div class="main-content">
+      <!-- Sticky Header -->
+      <div class="sticky-header">
+        <div class="sticky-header-content">
+          <div class="sticky-header-left">
+            <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+            <h1 class="page-title" id="page-title">Leaderboard</h1>
+          </div>
+          <div class="header-metrics">
+            <div class="header-metric">
+              <span class="header-metric-value" id="header-users">--</span>
+              <span class="header-metric-label">Users</span>
+            </div>
+            <div class="header-metric">
+              <span class="header-metric-value" id="header-revenue">--</span>
+              <span class="header-metric-label">Revenue</span>
+            </div>
+            <div class="header-metric">
+              <span class="header-metric-value" id="header-deliveries">--</span>
+              <span class="header-metric-label">Deliveries</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legacy header (hidden with sidebar) -->
+      <header>
+        <h1>SmartHeat Intelligence</h1>
+        <div class="period-selector">
+          <button class="period-btn" data-days="7">7d</button>
+          <button class="period-btn active" data-days="30">30d</button>
+          <button class="period-btn" data-days="90">90d</button>
+        </div>
+      </header>
+
+      <!-- Top Priority Alert -->
+      <div id="top-priority-alert" class="top-priority hidden">
+        <div class="priority-badge">TOP PRIORITY</div>
+        <div class="priority-content">
+          <div class="priority-title" id="priority-title">Loading...</div>
+          <div class="priority-insight" id="priority-insight"></div>
+        </div>
+        <div class="priority-actions">
+          <button class="btn-outline" id="priority-view-details">View Details</button>
+        </div>
+      </div>
+
+      <!-- Data Source Status Banner -->
+      <div id="data-source-warnings" class="data-source-banner hidden">
+        <div class="banner-content">
+          <span class="banner-icon">⚠️</span>
+          <span class="banner-text" id="data-source-text">Analytics services not connected</span>
+          <div class="banner-details" id="data-source-details"></div>
+        </div>
+        <button class="banner-dismiss" id="dismiss-banner">×</button>
+      </div>
+
+      <!-- Summary Cards (Combined Business Metrics) -->
+      <div class="cards">
+        <div class="card" id="card-users">
+          <div class="card-label">Total Users</div>
+          <div class="card-value" id="total-users">--</div>
+          <div class="card-sub" id="users-breakdown">-- iOS / -- website</div>
+          <div class="card-freshness" id="users-freshness">--</div>
+        </div>
+        <div class="card" id="card-deliveries">
+          <div class="card-label">Deliveries Logged</div>
+          <div class="card-value" id="total-deliveries">--</div>
+          <div class="card-sub" id="deliveries-breakdown">Real orders tracked</div>
+          <div class="card-freshness" id="deliveries-freshness">--</div>
+        </div>
+        <div class="card" id="card-revenue">
+          <div class="card-label">Est. Revenue</div>
+          <div class="card-value" id="est-revenue">--</div>
+          <div class="card-sub" id="revenue-breakdown">From supplier clicks</div>
+          <div class="card-freshness" id="revenue-freshness">--</div>
+        </div>
+        <div class="card" id="card-android">
+          <div class="card-label">Android Waitlist</div>
+          <div class="card-value" id="waitlist-total">--</div>
+          <div class="card-sub" id="waitlist-recent">+-- this week</div>
+          <div class="card-freshness" id="waitlist-freshness">--</div>
+        </div>
+      </div>
+
+      <!-- Alert Banner -->
+      <div id="alert-banner" class="alert hidden">
+        <span id="alert-text"></span>
+        <a href="#" id="alert-action">View</a>
+      </div>
+
+      <!-- Legacy Tabs (hidden with sidebar nav) -->
+      <nav class="tabs">
+        <button class="tab active" data-tab="leaderboard">🏆 Leaderboard</button>
+        <button class="tab" data-tab="app-analytics">📊 App Analytics</button>
+        <button class="tab" data-tab="retention">🔄 Retention</button>
+        <button class="tab" data-tab="growth">📈 Growth</button>
+        <button class="tab" data-tab="coverage">🗺️ Coverage</button>
+        <button class="tab" data-tab="settings">⚙️ Settings</button>
+      </nav>
 
     <!-- Tab Content -->
     <main class="tab-content">
@@ -1879,6 +1999,7 @@
         </div>
       </section>
     </main>
+    </div><!-- End main-content -->
 
     <!-- Supplier Edit Modal -->
     <div id="supplier-modal" class="modal hidden">
