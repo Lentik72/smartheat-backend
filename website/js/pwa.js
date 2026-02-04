@@ -44,7 +44,7 @@
             <strong>Add to Home Screen</strong>
           </div>
         </div>
-        <p class="pwa-banner-desc">Check local heating oil prices with one tap — no typing, no searching.</p>
+        <p class="pwa-banner-desc">One tap to check today's prices</p>
         <button id="pwa-install-btn" class="pwa-install-btn">Add to Home Screen</button>
       </div>
     `;
