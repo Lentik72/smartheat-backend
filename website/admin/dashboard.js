@@ -3022,8 +3022,10 @@ function renderUserJourney(journey) {
     // Step 4: Install App
     setText('wj-deliveries', s[3]?.users?.toLocaleString() || '--');
     setText('wj-deliveries-rate', s[3]?.rate || '--%');
-    setText('wj-ios', s[3]?.breakdown?.ios?.toLocaleString() || '0');
-    setText('wj-pwa', s[3]?.breakdown?.pwa?.toLocaleString() || '0');
+    const iosCount = s[3]?.breakdown?.ios ?? 0;
+    const pwaCount = s[3]?.breakdown?.pwa ?? 0;
+    setText('wj-ios', iosCount.toLocaleString());
+    setText('wj-pwa', pwaCount.toLocaleString());
     setBarWidth('wj-deliveries-bar', s[3]?.users || 0, maxUsers);
 
     // Overall
