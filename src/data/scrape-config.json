@@ -965,35 +965,35 @@
   "ondemandfueloil.com": {
     "enabled": false,
     "pattern": "direct",
-    "notes": "CT Uncasville/New London County - Eastern CT. Serves Yantic. NEEDS TESTING.",
+    "notes": "DISABLED: CT Uncasville - Price loaded via JavaScript (displays 'Loading prices...').",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "ivesbrosoil.com": {
     "enabled": false,
     "pattern": "direct",
-    "notes": "CT Willimantic/Windham County - Eastern CT since 1947. NEEDS TESTING.",
+    "notes": "DISABLED: CT Willimantic - Returns HTTP 403 (blocks bots).",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "townandcountrydiscountoilllc.com": {
     "enabled": false,
     "pattern": "direct",
-    "notes": "CT Voluntown - Eastern CT discount oil. NEEDS TESTING.",
+    "notes": "DISABLED: CT Voluntown - SSL/TLS connection issues.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "yankeeoil.com": {
     "enabled": false,
     "pattern": "direct",
-    "notes": "CT Mansfield/Tolland County - Since 1980. Senior discount. NEEDS TESTING.",
+    "notes": "DISABLED: CT Mansfield - Price loaded via JavaScript, not in static HTML.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "maydayoil.com": {
-    "enabled": false,
-    "pattern": "direct",
-    "notes": "CT North Franklin/New London County - Close to Yantic. NEEDS TESTING.",
+    "enabled": true,
+    "pattern": "table",
+    "notes": "CT North Franklin/New London County - Tiered pricing (50/100/125/200/300 gal). Serves Yantic area.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
