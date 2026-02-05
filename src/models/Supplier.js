@@ -149,6 +149,30 @@ const initSupplierModel = (sequelize) => {
       claimedAt: {
         type: DataTypes.DATE,
         field: 'claimed_at'
+      },
+      // V1.8.0: Supplier detail fields (only displayed if claimed)
+      minimumGallons: {
+        type: DataTypes.INTEGER,
+        field: 'minimum_gallons',
+        comment: 'Minimum delivery amount in gallons'
+      },
+      paymentMethods: {
+        type: DataTypes.JSONB,
+        field: 'payment_methods',
+        defaultValue: [],
+        comment: 'Accepted: cash, check, credit_card, debit_card'
+      },
+      fuelTypes: {
+        type: DataTypes.JSONB,
+        field: 'fuel_types',
+        defaultValue: ['oil'],
+        comment: 'Offered: oil, kerosene, diesel, propane'
+      },
+      seniorDiscount: {
+        type: DataTypes.STRING(10),
+        field: 'senior_discount',
+        defaultValue: 'unknown',
+        comment: 'yes, no, unknown'
       }
     }, {
       tableName: 'suppliers',
