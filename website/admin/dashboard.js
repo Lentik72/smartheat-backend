@@ -3506,6 +3506,7 @@ function loadCoverageMapWithView(view) {
     // Show coverage gaps (red) and limited coverage (yellow)
     const gapData = geographic.coverageGaps || [];
     const limitedData = geographic.limitedCoverage || [];
+    console.log('[Map] Gaps view - gaps:', gapData.length, 'limited:', limitedData.length);
     const gapsWithCoords = gapData.filter(c => c.lat && c.lng);
     const limitedWithCoords = limitedData.filter(c => c.lat && c.lng);
 
