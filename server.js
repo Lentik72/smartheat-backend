@@ -333,6 +333,24 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Delaware suppliers migration:', err.message);
         });
 
+        // V2.17.0: Fix ABC Fuel Oil location
+        const { up: runAbcFuelMigration } = require('./src/migrations/024-fix-abc-fuel-location');
+        runAbcFuelMigration(sequelize).catch(err => {
+          logger.warn('⚠️  ABC Fuel location migration:', err.message);
+        });
+
+        // V2.17.0: Add Sherman CT area COD suppliers
+        const { up: runShermanMigration } = require('./src/migrations/025-add-sherman-ct-suppliers');
+        runShermanMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Sherman CT suppliers migration:', err.message);
+        });
+
+        // V2.17.0: Add Hometown Fuel and Reliable Fuel
+        const { up: runHometownMigration } = require('./src/migrations/026-add-hometown-reliable-fuel');
+        runHometownMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Hometown/Reliable migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
