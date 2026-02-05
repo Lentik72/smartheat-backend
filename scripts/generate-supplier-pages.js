@@ -153,6 +153,8 @@ function generateSupplierPage(supplier, latestPrice) {
         <li><a href="/">Home</a></li>
         <li><a href="/prices.html">Prices</a></li>
         <li><a href="/for-suppliers.html">For Suppliers</a></li>
+        <li><a href="/learn/">Learn</a></li>
+        <li><a href="/support.html">Support</a></li>
       </ul>
     </div>
   </nav>
@@ -519,6 +521,59 @@ function generateSupplierCSS() {
 
   .contact-btn {
     justify-content: center;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .supplier-header h1 {
+    color: #f5f5f4;
+  }
+
+  .supplier-location {
+    color: #a8a29e;
+  }
+
+  .supplier-section {
+    background: #1c1917;
+  }
+
+  .supplier-section h2 {
+    color: #d6d3d1;
+  }
+
+  .supplier-section p {
+    color: #a8a29e;
+  }
+
+  .contact-website {
+    background: #292524;
+    color: #e7e5e4;
+  }
+
+  .contact-website:hover {
+    background: #44403c;
+  }
+
+  .hours-list li {
+    color: #d6d3d1;
+  }
+
+  .supplier-claim {
+    background: #292211;
+    border-color: #854d0e;
+  }
+
+  .supplier-claim h2 {
+    color: #fef3c7;
+  }
+
+  .supplier-claim p {
+    color: #fcd34d;
+  }
+
+  .supplier-price-cta p {
+    color: #a8a29e;
   }
 }
 `;
