@@ -351,6 +351,18 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Hometown/Reliable migration:', err.message);
         });
 
+        // V2.17.1: Add Gaylordsville suppliers (Jennings Oil, Marandola Fuel)
+        const { up: runGaylordsville } = require('./src/migrations/027-add-gaylordsville-suppliers');
+        runGaylordsville(sequelize).catch(err => {
+          logger.warn('⚠️  Gaylordsville suppliers migration:', err.message);
+        });
+
+        // V2.17.2: Add Vernon/Tolland County suppliers (Gottier, Troiano, Ferguson, etc.)
+        const { up: runVernon } = require('./src/migrations/028-add-vernon-area-suppliers');
+        runVernon(sequelize).catch(err => {
+          logger.warn('⚠️  Vernon area suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
