@@ -273,9 +273,9 @@ async function generateSEOPages(options = {}) {
     }
     log(`\n✅ Generated _leaderboard-snippet.html`);
 
-    // 6. Update sitemap
+    // 6. Update sitemap (includes supplier profile pages)
     const sitemapPath = path.join(websiteDir, 'sitemap.xml');
-    const sitemap = generateSitemap(generatedPages);
+    const sitemap = generateSitemap(generatedPages, suppliers);
     if (!dryRun) {
       await fs.writeFile(sitemapPath, sitemap, 'utf-8');
     }
@@ -326,6 +326,7 @@ async function getAllSuppliers(sequelize) {
       state,
       phone,
       website,
+      slug,
       postal_codes_served,
       service_counties,
       allow_price_display
@@ -805,7 +806,7 @@ function generatePageHTML(data) {
         "provider": {
           "@type": "LocalBusiness",
           "name": s.name,
-          "@id": `https://www.gethomeheat.com/supplier/${s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+          ...(s.slug && { "@id": `https://www.gethomeheat.com/supplier/${s.slug}` }),
           "image": "https://www.gethomeheat.com/images/app-icon.png",
           ...(s.phone && { "telephone": s.phone }),
           "priceRange": `$${s.price.toFixed(2)}/gal`
@@ -1186,8 +1187,19 @@ ${JSON.stringify({
 /**
  * Generate sitemap.xml
  */
-function generateSitemap(pages) {
+function generateSitemap(pages, suppliers = []) {
   const today = new Date().toISOString().split('T')[0];
+
+  // Supplier profile pages
+  const supplierUrls = suppliers
+    .filter(s => s.slug)
+    .map(s => `
+  <url>
+    <loc>https://www.gethomeheat.com/supplier/${s.slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>`).join('');
 
   const stateUrls = pages.states.map(s => `
   <url>
@@ -1293,6 +1305,7 @@ ${cityUrls}
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
+${supplierUrls}
 </urlset>`;
 }
 

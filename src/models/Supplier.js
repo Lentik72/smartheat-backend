@@ -140,6 +140,15 @@ const initSupplierModel = (sequelize) => {
       hoursNotes: {
         type: DataTypes.TEXT,
         field: 'hours_notes'
+      },
+      // V1.7.0: Supplier profile pages
+      slug: {
+        type: DataTypes.STRING(150),
+        unique: true
+      },
+      claimedAt: {
+        type: DataTypes.DATE,
+        field: 'claimed_at'
       }
     }, {
       tableName: 'suppliers',

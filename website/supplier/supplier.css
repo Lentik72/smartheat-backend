@@ -1,0 +1,194 @@
+/* Supplier Profile Page Styles */
+
+.supplier-profile {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.supplier-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.supplier-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px;
+}
+
+.supplier-location {
+  font-size: 18px;
+  color: #666;
+  margin: 0 0 12px;
+}
+
+.supplier-contact {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+.contact-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.contact-phone {
+  background: #2563eb;
+  color: white;
+}
+
+.contact-phone:hover {
+  background: #1d4ed8;
+}
+
+.contact-website {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.contact-website:hover {
+  background: #e5e7eb;
+}
+
+.contact-btn .icon {
+  font-size: 18px;
+}
+
+.supplier-section {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.supplier-section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.supplier-price .price-display {
+  font-size: 36px;
+  font-weight: 700;
+  color: #059669;
+  margin: 0;
+}
+
+.supplier-price .price-meta {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 4px 0 0;
+}
+
+.supplier-price-cta {
+  text-align: center;
+}
+
+.supplier-price-cta p {
+  color: #6b7280;
+  margin: 0 0 16px;
+}
+
+.hours-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.hours-list li {
+  padding: 6px 0;
+  color: #374151;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.badge-claimed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-emergency {
+  background: #fee2e2;
+  color: #991b1b;
+  margin-top: 12px;
+}
+
+.badge-weekend {
+  background: #dbeafe;
+  color: #1e40af;
+  margin-top: 8px;
+}
+
+.supplier-claim {
+  text-align: center;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+}
+
+.supplier-claim p {
+  color: #92400e;
+  margin: 0 0 16px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-secondary {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #d97706;
+}
+
+@media (max-width: 480px) {
+  .supplier-header h1 {
+    font-size: 24px;
+  }
+
+  .supplier-contact {
+    flex-direction: column;
+  }
+
+  .contact-btn {
+    justify-content: center;
+  }
+}
