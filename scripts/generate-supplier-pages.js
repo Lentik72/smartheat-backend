@@ -216,19 +216,24 @@ function generateSupplierPage(supplier, latestPrice) {
 </html>`;
 }
 
-async function main() {
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('  Supplier Profile Page Generator');
-  console.log('  ' + new Date().toLocaleString());
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('');
+async function generateSupplierPages(options = {}) {
+  const { sequelize: externalSequelize, logger = console, websiteDir } = options;
+  const isCLI = !externalSequelize;
 
-  if (dryRun) {
-    console.log('🔍 DRY RUN - No files will be written\n');
+  if (isCLI) {
+    logger.log('═══════════════════════════════════════════════════════════');
+    logger.log('  Supplier Profile Page Generator');
+    logger.log('  ' + new Date().toLocaleString());
+    logger.log('═══════════════════════════════════════════════════════════');
+    logger.log('');
+
+    if (dryRun) {
+      logger.log('🔍 DRY RUN - No files will be written\n');
+    }
   }
 
-  // Connect to database
-  const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  // Connect to database (or use provided instance)
+  const sequelize = externalSequelize || new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     logging: false,
     dialectOptions: {
@@ -237,8 +242,10 @@ async function main() {
   });
 
   try {
-    await sequelize.authenticate();
-    console.log('✅ Database connected\n');
+    if (!externalSequelize) {
+      await sequelize.authenticate();
+      logger.log('✅ Database connected\n');
+    }
 
     // Get all active suppliers with slugs
     const [suppliers] = await sequelize.query(`
@@ -258,7 +265,7 @@ async function main() {
       ORDER BY s.name
     `);
 
-    console.log(`📋 Found ${suppliers.length} active suppliers with slugs\n`);
+    logger.log(`📋 Found ${suppliers.length} active suppliers with slugs\n`);
 
     // Get latest prices for claimed suppliers
     const [prices] = await sequelize.query(`
@@ -272,7 +279,8 @@ async function main() {
     const priceMap = new Map(prices.map(p => [p.supplier_id, p]));
 
     // Create output directory
-    const outputDir = path.join(__dirname, '../website/supplier');
+    const baseDir = websiteDir || path.join(__dirname, '../website');
+    const outputDir = path.join(baseDir, 'supplier');
     if (!dryRun && !fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
@@ -289,26 +297,32 @@ async function main() {
       }
       generated++;
 
-      if (generated <= 5 || generated % 50 === 0) {
-        console.log(`  [${generated}/${suppliers.length}] ${supplier.name} → /supplier/${supplier.slug}.html`);
+      if (isCLI && (generated <= 5 || generated % 50 === 0)) {
+        logger.log(`  [${generated}/${suppliers.length}] ${supplier.name} → /supplier/${supplier.slug}.html`);
       }
     }
 
-    console.log(`\n✅ Generated ${generated} supplier profile pages`);
+    logger.log(`✅ Generated ${generated} supplier profile pages`);
 
     // Generate CSS file
     if (!dryRun) {
       const cssPath = path.join(outputDir, 'supplier.css');
       fs.writeFileSync(cssPath, generateSupplierCSS());
-      console.log('✅ Generated supplier.css');
+      if (isCLI) logger.log('✅ Generated supplier.css');
     }
 
-    await sequelize.close();
-    console.log('\n🎉 Done!');
+    if (!externalSequelize) {
+      await sequelize.close();
+    }
+
+    if (isCLI) logger.log('\n🎉 Done!');
+
+    return { success: true, generated, suppliers: suppliers.length };
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
-    process.exit(1);
+    logger.error('❌ Error:', error.message);
+    if (isCLI) process.exit(1);
+    return { success: false, error: error.message };
   }
 }
 
@@ -510,4 +524,18 @@ function generateSupplierCSS() {
 `;
 }
 
-main();
+// Export for scheduler
+module.exports = { generateSupplierPages };
+
+// Run directly if executed from command line
+if (require.main === module) {
+  generateSupplierPages()
+    .then(result => {
+      if (result?.success) {
+        process.exit(0);
+      } else {
+        process.exit(1);
+      }
+    })
+    .catch(() => process.exit(1));
+}
