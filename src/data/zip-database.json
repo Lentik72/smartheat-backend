@@ -32239,6 +32239,13 @@
     "lat": 40.6039,
     "lng": -83.9668
   },
+  "99009": {
+    "city": "Elk",
+    "county": "Spokane",
+    "state": "WA",
+    "lat": 48.02,
+    "lng": -117.26
+  },
   "99701": {
     "city": "Fairbanks",
     "county": "Fairbanks North Star",
@@ -44290,6 +44297,13 @@
     "state": "CT",
     "lat": 41.744527,
     "lng": -71.913339
+  },
+  "06389": {
+    "city": "Yantic",
+    "county": "New London",
+    "state": "CT",
+    "lat": 41.5612,
+    "lng": -72.1252
   },
   "06390": {
     "city": "",
