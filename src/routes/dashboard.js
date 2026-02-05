@@ -643,13 +643,19 @@ router.get('/geographic', async (req, res) => {
       logger.warn('[Dashboard] Could not load zip-database.json');
     }
 
-    // Get all ZIPs that suppliers serve (postal_codes_served is JSONB array)
+    // Get supplier count per ZIP (how many suppliers serve each ZIP)
     const supplierCoverage = await sequelize.query(`
-      SELECT DISTINCT jsonb_array_elements_text(postal_codes_served) as zip_code
-      FROM suppliers
-      WHERE active = true AND postal_codes_served IS NOT NULL AND jsonb_array_length(postal_codes_served) > 0
+      SELECT zip_code, COUNT(*) as supplier_count
+      FROM (
+        SELECT jsonb_array_elements_text(postal_codes_served) as zip_code
+        FROM suppliers
+        WHERE active = true AND postal_codes_served IS NOT NULL AND jsonb_array_length(postal_codes_served) > 0
+      ) zips
+      GROUP BY zip_code
     `, { type: sequelize.QueryTypes.SELECT });
-    const coveredZips = new Set(supplierCoverage.map(r => r.zip_code));
+
+    // Build map of ZIP -> supplier count
+    const zipSupplierCount = new Map(supplierCoverage.map(r => [r.zip_code, parseInt(r.supplier_count)]));
 
     // Get user search demand by ZIP (from user_locations)
     const demand = await sequelize.query(`
@@ -664,17 +670,20 @@ router.get('/geographic', async (req, res) => {
       LIMIT 200
     `, { type: sequelize.QueryTypes.SELECT });
 
-    // Enrich demand with coordinates and identify coverage gaps
+    // Enrich demand with coordinates and identify coverage gaps/limited coverage
     const demandHeatmap = [];
-    const coverageGaps = [];
+    const coverageGaps = [];      // 0 suppliers
+    const limitedCoverage = [];   // 1-2 suppliers
 
     demand.forEach(d => {
       const zipData = zipCoords[d.zip_code];
       const hasCoords = zipData?.lat && zipData?.lng;
+      const supplierCount = zipSupplierCount.get(d.zip_code) || 0;
 
       const entry = {
         zip: d.zip_code,
         count: parseInt(d.search_count),
+        supplierCount: supplierCount,
         lat: hasCoords ? zipData.lat : null,
         lng: hasCoords ? zipData.lng : null,
         city: zipData?.city || null,
@@ -687,9 +696,11 @@ router.get('/geographic', async (req, res) => {
         demandHeatmap.push(entry);
       }
 
-      // Add to gaps regardless of coordinates (still useful for table/count)
-      if (!coveredZips.has(d.zip_code)) {
+      // Categorize by supplier count
+      if (supplierCount === 0) {
         coverageGaps.push(entry);
+      } else if (supplierCount <= 2) {
+        limitedCoverage.push(entry);
       }
     });
 
@@ -719,12 +730,14 @@ router.get('/geographic', async (req, res) => {
 
     res.json({
       demandHeatmap,    // Blue circles - user search demand
-      coverageGaps,     // Red circles - searches with no supplier coverage
+      coverageGaps,     // Red circles - searches with no supplier coverage (0 suppliers)
+      limitedCoverage,  // Yellow circles - limited coverage (1-2 suppliers)
       allClicks,        // Table data - supplier clicks
       stats: {
         totalDemandZips: demandHeatmap.length,
         totalGapZips: coverageGaps.length,
-        coveredZips: coveredZips.size
+        totalLimitedZips: limitedCoverage.length,
+        coveredZips: zipSupplierCount.size
       }
     });
   } catch (error) {

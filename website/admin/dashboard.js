@@ -3503,12 +3503,28 @@ function loadCoverageMapWithView(view) {
     });
 
   } else if (view === 'gaps' && geographic) {
-    // Show only coverage gaps
+    // Show coverage gaps (red) and limited coverage (yellow)
     const gapData = geographic.coverageGaps || [];
+    const limitedData = geographic.limitedCoverage || [];
     const gapsWithCoords = gapData.filter(c => c.lat && c.lng);
+    const limitedWithCoords = limitedData.filter(c => c.lat && c.lng);
 
-    statsEl.innerHTML = `<span style="color: #ef4444">●</span> Coverage Gaps (${gapsWithCoords.length} ZIPs)`;
+    statsEl.innerHTML = `<span style="color: #ef4444">●</span> Coverage Gaps (${gapsWithCoords.length} ZIPs) &nbsp; <span style="color: #eab308">●</span> Limited Coverage (${limitedWithCoords.length} ZIPs)`;
 
+    // Draw limited coverage first (yellow) so gaps appear on top
+    limitedWithCoords.forEach(c => {
+      L.circleMarker([c.lat, c.lng], {
+        radius: 9,
+        fillColor: '#eab308',
+        color: '#ca8a04',
+        weight: 2,
+        fillOpacity: 0.7
+      })
+      .bindPopup(`<b>⚠️ LIMITED COVERAGE</b><br>${c.city || '--'}, ${c.state || ''}<br>ZIP: ${c.zip}<br>Searches: ${c.count}<br>Suppliers: ${c.supplierCount || '1-2'}`)
+      .addTo(map);
+    });
+
+    // Draw coverage gaps on top (red)
     gapsWithCoords.forEach(c => {
       L.circleMarker([c.lat, c.lng], {
         radius: 10,
@@ -3517,12 +3533,13 @@ function loadCoverageMapWithView(view) {
         weight: 2,
         fillOpacity: 0.7
       })
-      .bindPopup(`<b>⚠️ COVERAGE GAP</b><br>${c.city || '--'}, ${c.state || ''}<br>ZIP: ${c.zip}<br>Searches: ${c.count}`)
+      .bindPopup(`<b>🚫 NO COVERAGE</b><br>${c.city || '--'}, ${c.state || ''}<br>ZIP: ${c.zip}<br>Searches: ${c.count}<br>Suppliers: 0`)
       .addTo(map);
     });
 
-    if (gapsWithCoords.length > 0) {
-      const bounds = L.latLngBounds(gapsWithCoords.map(c => [c.lat, c.lng]));
+    const allPoints = [...gapsWithCoords, ...limitedWithCoords];
+    if (allPoints.length > 0) {
+      const bounds = L.latLngBounds(allPoints.map(c => [c.lat, c.lng]));
       map.fitBounds(bounds, { padding: [30, 30] });
     }
 
