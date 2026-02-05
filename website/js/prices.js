@@ -392,10 +392,15 @@
     const freshness = formatCardFreshness(scrapedAt);
     const hasValidWebsite = supplier.website && supplier.website.startsWith('https://');
 
+    // V2.15.0: Link to supplier profile page if slug available
+    const hasSlug = supplier.slug;
+
     return `
       <div class="supplier-card">
         <div class="supplier-info">
-          <div class="supplier-name">${escapeHtml(supplier.name)}</div>
+          <div class="supplier-name">
+            ${hasSlug ? `<a href="/supplier/${supplier.slug}.html" class="supplier-profile-link">${escapeHtml(supplier.name)}</a>` : escapeHtml(supplier.name)}
+          </div>
           <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
           <div class="supplier-actions">
             ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone" data-track-supplier-id="${supplier.id}" data-track-supplier-name="${escapeHtml(supplier.name)}" data-track-action="call">Call ${escapeHtml(phone)}</a>` : ''}

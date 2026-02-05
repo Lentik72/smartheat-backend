@@ -317,6 +317,7 @@ router.get('/', async (req, res) => {
         'postalCodesServed', 'serviceCities', 'serviceCounties',
         'serviceAreaRadius', 'lat', 'lng', 'verified',
         'claimed_at', 'claimed_by_email',  // V2.5.0: Track claimed/verified suppliers
+        'slug',  // V2.15.0: For linking to supplier profile pages
         // V2.14.0: Hours & Availability (only exposed when verified)
         'hoursWeekday', 'hoursSaturday', 'hoursSunday',
         'weekendDelivery', 'emergencyDelivery', 'emergencyPhone',
@@ -368,7 +369,9 @@ router.get('/', async (req, res) => {
             expiresAt: price.expiresAt
           } : null,
           // V2.5.0: Claimed supplier info
-          claimedAt: s.claimed_at || null
+          claimedAt: s.claimed_at || null,
+          // V2.15.0: Slug for profile page links
+          slug: s.slug || null
         };
         // V2.14.0: Only include hours if verified
         if (s.hoursVerifiedAt) {
@@ -572,7 +575,9 @@ router.get('/', async (req, res) => {
         priceStatus,  // 'fresh' | 'recent' | 'stale' | 'none'
         sortGroup,    // 'priced' | 'unpriced'
         // V2.5.0: Claimed supplier info (for verified badge)
-        claimedAt: s.claimed_at || null
+        claimedAt: s.claimed_at || null,
+        // V2.15.0: Slug for profile page links
+        slug: s.slug || null
       };
       // V2.14.0: Only include hours if verified
       if (s.hoursVerifiedAt) {
