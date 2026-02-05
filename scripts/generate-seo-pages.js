@@ -834,7 +834,7 @@ function generatePageHTML(data) {
     const hasValidWebsite = s.website && s.website.startsWith('https://');
     return `
         <tr>
-          <td class="supplier-name">${escapeHtml(s.name)}</td>
+          <td class="supplier-name">${s.slug ? `<a href="/supplier/${s.slug}.html" class="supplier-profile-link">${escapeHtml(s.name)}</a>` : escapeHtml(s.name)}</td>
           <td class="supplier-city">${escapeHtml(s.city || '')}</td>
           <td class="supplier-price">${s.hasPrice ? `$${s.price.toFixed(2)}` : '<span class="call-for-price">Call</span>'}</td>
           <td class="supplier-phone">${s.phone ? `<a href="tel:${s.phone}" class="phone-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="call">${escapeHtml(s.phone)}</a>` : '—'}</td>

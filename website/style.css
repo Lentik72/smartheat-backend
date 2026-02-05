@@ -2077,6 +2077,17 @@ body {
     color: var(--text-dark);
 }
 
+.supplier-profile-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.supplier-profile-link:hover {
+    color: var(--primary-orange);
+    text-decoration: underline;
+}
+
 .supplier-city {
     color: var(--text-muted);
     font-size: 0.9rem;
