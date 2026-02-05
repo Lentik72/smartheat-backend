@@ -208,7 +208,7 @@ router.get('/', requireAuth, async (req, res) => {
       WHERE s.active = true
         AND s.website IS NOT NULL
         AND sp.is_valid = true
-        AND (sp.price_per_gallon < 2.50 OR sp.price_per_gallon > 4.50)
+        AND (sp.price_per_gallon < 2.00 OR sp.price_per_gallon > 5.00)
       ORDER BY s.id, sp.scraped_at DESC
     `);
 
@@ -416,7 +416,7 @@ router.get('/stats', requireAuth, async (req, res) => {
         COUNT(DISTINCT s.id) FILTER (WHERE s.active = true AND s.allow_price_display = true) as price_enabled,
         COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.scraped_at > NOW() - INTERVAL '24 hours') as updated_24h,
         COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.scraped_at > NOW() - INTERVAL '7 days') as updated_7d,
-        COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.price_per_gallon < 2.50 OR sp.price_per_gallon > 4.50) as suspicious_prices,
+        COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.price_per_gallon < 2.00 OR sp.price_per_gallon > 5.00) as suspicious_prices,
         COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.source_type = 'manual') as manual_prices
       FROM suppliers s
       LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.is_valid = true
