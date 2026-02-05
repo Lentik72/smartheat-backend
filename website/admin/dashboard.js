@@ -3341,11 +3341,11 @@ async function loadCoverage() {
     const uniqueStates = new Set(allPoints.map(p => p.state).filter(Boolean));
     const statesCount = stateBreakdown.length || uniqueStates.size || 0;
 
-    // Summary cards
+    // Summary cards - use geographic data for gaps to match map display
     document.getElementById('cov-suppliers').textContent = overview.scraping?.suppliersTotal || '--';
     document.getElementById('cov-states').textContent = statesCount || '--';
     document.getElementById('cov-active-zips').textContent = geoStats.totalZips || (geoHeatmap.error ? 'Error' : '--');
-    document.getElementById('cov-gaps').textContent = overview.coverage?.trueCoverageGaps || '--';
+    document.getElementById('cov-gaps').textContent = geographic.coverageGaps?.length || overview.coverage?.trueCoverageGaps || '--';
 
     // Show error if geoHeatmap failed
     if (geoHeatmap.error) {
@@ -3509,7 +3509,12 @@ function loadCoverageMapWithView(view) {
     const gapsWithCoords = gapData.filter(c => c.lat && c.lng);
     const limitedWithCoords = limitedData.filter(c => c.lat && c.lng);
 
-    statsEl.innerHTML = `<span style="color: #ef4444">●</span> Coverage Gaps (${gapsWithCoords.length} ZIPs) &nbsp; <span style="color: #eab308">●</span> Limited Coverage (${limitedWithCoords.length} ZIPs)`;
+    // Show total counts with note if some ZIPs lack coordinates
+    const gapsMissing = gapData.length - gapsWithCoords.length;
+    const limitedMissing = limitedData.length - limitedWithCoords.length;
+    const gapLabel = gapsMissing > 0 ? `${gapsWithCoords.length} of ${gapData.length} ZIPs` : `${gapData.length} ZIPs`;
+    const limitedLabel = limitedMissing > 0 ? `${limitedWithCoords.length} of ${limitedData.length} ZIPs` : `${limitedData.length} ZIPs`;
+    statsEl.innerHTML = `<span style="color: #ef4444">●</span> Coverage Gaps (${gapLabel}) &nbsp; <span style="color: #eab308">●</span> Limited Coverage (${limitedLabel})`;
 
     // Draw limited coverage first (yellow) so gaps appear on top
     limitedWithCoords.forEach(c => {

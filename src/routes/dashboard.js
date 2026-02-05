@@ -699,10 +699,17 @@ router.get('/geographic', async (req, res) => {
       // Categorize by supplier count
       if (supplierCount === 0) {
         coverageGaps.push(entry);
+        // Log gaps missing coordinates for debugging
+        if (!hasCoords) {
+          logger.warn(`[Geographic] Coverage gap ZIP ${d.zip_code} missing from zip-database.json`);
+        }
       } else if (supplierCount <= 2) {
         limitedCoverage.push(entry);
       }
     });
+
+    // Log stats for debugging
+    logger.info(`[Geographic] Coverage: ${coverageGaps.length} gaps (${coverageGaps.filter(g => g.lat).length} with coords), ${limitedCoverage.length} limited (${limitedCoverage.filter(l => l.lat).length} with coords)`);
 
     // Also get supplier click data for the table
     const clicks = await sequelize.query(`
