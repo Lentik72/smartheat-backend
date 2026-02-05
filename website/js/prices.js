@@ -135,14 +135,63 @@
         pulseStates.textContent = data.stateCount;
       }
 
-      // Update leaderboard date
-      const leaderboardDate = document.getElementById('leaderboard-date');
-      if (leaderboardDate && data.lastUpdated) {
-        leaderboardDate.textContent = formatLeaderboardDate(data.lastUpdated);
+      // Update trust line with actual count
+      if (pricesTrust && data.supplierCount) {
+        pricesTrust.textContent = 'Tracking prices from ' + data.supplierCount + '+ active heating oil suppliers in our network.';
       }
     } catch (err) {
       // Silently fail - fallback to static values in HTML
       console.log('[MarketPulse] Failed to fetch live data');
+    }
+  }
+
+  // V2.17.0: Fetch live leaderboard data (state averages + top deals)
+  async function fetchLeaderboard() {
+    try {
+      const res = await fetch(`${API_BASE}/api/market/leaderboard`);
+      if (!res.ok) return;
+
+      const data = await res.json();
+
+      // Update leaderboard date
+      const leaderboardDate = document.getElementById('leaderboard-date');
+      if (leaderboardDate && data.generatedAt) {
+        leaderboardDate.textContent = 'Updated ' + data.generatedAt;
+      }
+
+      // Update state averages table
+      const stateTable = document.querySelector('.averages-table tbody');
+      if (stateTable && data.stateAverages && data.stateAverages.length > 0) {
+        const stateRows = data.stateAverages.map(function(s) {
+          const stateSlug = s.stateName.toLowerCase().replace(/\s+/g, '-');
+          const stateAbbrev = s.state.toLowerCase();
+          return '<tr>' +
+            '<td><a href="prices/' + stateAbbrev + '/">' + escapeHtml(s.stateName) + '</a></td>' +
+            '<td>$' + s.avgPrice.toFixed(2) + ' avg</td>' +
+            '<td>' + s.supplierCount + ' suppliers</td>' +
+            '<td><a href="prices/' + stateAbbrev + '/">See all →</a></td>' +
+            '</tr>';
+        }).join('\n');
+        stateTable.innerHTML = stateRows;
+      }
+
+      // Update top deals list
+      const dealsList = document.querySelector('.deals-list');
+      if (dealsList && data.topDeals && data.topDeals.length > 0) {
+        const dealItems = data.topDeals.map(function(d) {
+          return '<li class="deal-item">' +
+            '<span class="deal-price">$' + d.price + '/gal</span>' +
+            '<span class="deal-supplier">' + escapeHtml(d.supplierName) + '</span>' +
+            '<span class="deal-location">' + escapeHtml(d.city) + ', ' + d.state + '</span>' +
+            '</li>';
+        }).join('\n');
+        dealsList.innerHTML = dealItems;
+      }
+
+      console.log('[Leaderboard] Updated with live data: ' + data.stateAverages.length + ' states, ' + data.topDeals.length + ' deals');
+    } catch (err) {
+      // Silently fail - keep static values from HTML
+      console.log('[Leaderboard] Using static data:', err.message || err);
     }
   }
 
@@ -164,6 +213,9 @@
   function init() {
     // Fetch live Market Pulse data
     fetchMarketPulse();
+
+    // V2.17.0: Fetch live leaderboard data (state averages + top deals)
+    fetchLeaderboard();
 
     // Track page view and return visits
     trackPageView();

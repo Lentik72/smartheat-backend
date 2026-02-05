@@ -273,6 +273,17 @@ async function generateSEOPages(options = {}) {
     }
     log(`\n✅ Generated _leaderboard-snippet.html`);
 
+    // V2.17.0: Update prices.html with fresh leaderboard data
+    const pricesHtmlPath = path.join(websiteDir, 'prices.html');
+    if (!dryRun) {
+      try {
+        await updatePricesHtml(pricesHtmlPath, generatedPages.states, prices, suppliers);
+        log(`✅ Updated prices.html with fresh leaderboard data`);
+      } catch (updateError) {
+        log(`⚠️  Failed to update prices.html: ${updateError.message}`);
+      }
+    }
+
     // 6. Update sitemap (includes supplier profile pages)
     const sitemapPath = path.join(websiteDir, 'sitemap.xml');
     const sitemap = generateSitemap(generatedPages, suppliers);
@@ -316,6 +327,7 @@ async function generateSEOPages(options = {}) {
 
 /**
  * Get all active suppliers with service areas
+ * V2.17.0: Only include suppliers with allow_price_display = true for price listings
  */
 async function getAllSuppliers(sequelize) {
   const [results] = await sequelize.query(`
@@ -332,27 +344,31 @@ async function getAllSuppliers(sequelize) {
       allow_price_display
     FROM suppliers
     WHERE active = true
+      AND allow_price_display = true
     ORDER BY name
   `);
   return results;
 }
 
 /**
- * Get current valid prices
+ * Get current valid prices - V2.17.0: Only for suppliers with allow_price_display = true
  */
 async function getCurrentPrices(sequelize) {
   const [results] = await sequelize.query(`
-    SELECT DISTINCT ON (supplier_id)
-      supplier_id,
-      price_per_gallon as price,
-      min_gallons,
-      scraped_at,
-      source_type
-    FROM supplier_prices
-    WHERE is_valid = true
-      AND expires_at > NOW()
-      AND price_per_gallon BETWEEN $1 AND $2
-    ORDER BY supplier_id, scraped_at DESC
+    SELECT DISTINCT ON (sp.supplier_id)
+      sp.supplier_id,
+      sp.price_per_gallon as price,
+      sp.min_gallons,
+      sp.scraped_at,
+      sp.source_type
+    FROM supplier_prices sp
+    JOIN suppliers s ON sp.supplier_id = s.id
+    WHERE sp.is_valid = true
+      AND sp.expires_at > NOW()
+      AND sp.price_per_gallon BETWEEN $1 AND $2
+      AND s.active = true
+      AND s.allow_price_display = true
+    ORDER BY sp.supplier_id, sp.scraped_at DESC
   `, {
     bind: [MIN_VALID_PRICE, MAX_VALID_PRICE]
   });
@@ -1060,6 +1076,100 @@ ${supplierRows}
   <script src="${assetPath}js/seo-tracking.js"></script>
 </body>
 </html>`;
+}
+
+/**
+ * V2.17.0: Update prices.html with fresh leaderboard data
+ * Replaces the hardcoded state averages and top deals sections
+ */
+async function updatePricesHtml(pricesHtmlPath, states, prices, suppliers) {
+  let html = await fs.readFile(pricesHtmlPath, 'utf-8');
+
+  // Calculate state averages (same logic as generateLeaderboardSnippet)
+  const stateData = [];
+  for (const state of states) {
+    const stateSuppliers = suppliers.filter(s =>
+      s.state === state.abbrev.toUpperCase() && s.allow_price_display !== false
+    );
+    const statePrices = prices.filter(p =>
+      stateSuppliers.some(s => s.id === p.supplier_id)
+    );
+
+    if (statePrices.length >= 3) {
+      const avg = statePrices.reduce((a, b) => a + b.price, 0) / statePrices.length;
+      stateData.push({
+        ...state,
+        avg: avg.toFixed(2),
+        count: statePrices.length
+      });
+    }
+  }
+  stateData.sort((a, b) => parseFloat(a.avg) - parseFloat(b.avg));
+
+  // Top 5 deals
+  const displayableSuppliers = suppliers.filter(s => s.allow_price_display !== false);
+  const validPrices = prices
+    .filter(p => {
+      const supplier = displayableSuppliers.find(s => s.id === p.supplier_id);
+      return supplier && p.price >= MIN_VALID_PRICE && p.price <= MAX_VALID_PRICE;
+    })
+    .sort((a, b) => a.price - b.price)
+    .slice(0, 5);
+
+  const topDeals = validPrices.map(p => {
+    const supplier = suppliers.find(s => s.id === p.supplier_id);
+    return {
+      price: p.price.toFixed(2),
+      supplier: supplier?.name || 'Unknown',
+      city: supplier?.city || '',
+      state: supplier?.state || ''
+    };
+  });
+
+  // Generate new state averages table rows (escape $ as $$ for regex replacement)
+  const stateRows = stateData.map(s =>
+    `            <tr>\n` +
+    `              <td><a href="prices/${s.abbrev}/">${s.name}</a></td>\n` +
+    `              <td>$$${s.avg} avg</td>\n` +
+    `              <td>${s.count} suppliers</td>\n` +
+    `              <td><a href="prices/${s.abbrev}/">See all →</a></td>\n` +
+    `            </tr>`
+  ).join('\n');
+
+  // Generate new top deals items (escape $ as $$ for regex replacement)
+  const dealItems = topDeals.map(d =>
+    `            <li class="deal-item">\n` +
+    `              <span class="deal-price">$$${d.price}/gal</span>\n` +
+    `              <span class="deal-supplier">${escapeHtml(d.supplier)}</span>\n` +
+    `              <span class="deal-location">${escapeHtml(d.city)}, ${d.state}</span>\n` +
+    `            </li>`
+  ).join('\n');
+
+  // Update leaderboard date
+  const dateStr = formatDate();
+  html = html.replace(
+    /<p class="leaderboard-date"[^>]*>.*?<\/p>/,
+    `<p class="leaderboard-date" id="leaderboard-date">Updated ${dateStr}</p>`
+  );
+
+  // Replace state averages table body content (between <tbody> and </tbody>)
+  // Use function replacer to avoid $ interpretation issues
+  const stateTableRegex = /<table class="averages-table">\s*<tbody>[\s\S]*?<\/tbody>\s*<\/table>/;
+  if (stateTableRegex.test(html)) {
+    html = html.replace(stateTableRegex,
+      `<table class="averages-table">\n            <tbody>\n${stateRows}\n            </tbody>\n          </table>`
+    );
+  }
+
+  // Replace top deals list content (between <ul class="deals-list"> and </ul>)
+  const dealsListRegex = /<ul class="deals-list">[\s\S]*?<\/ul>/;
+  if (dealsListRegex.test(html)) {
+    html = html.replace(dealsListRegex,
+      `<ul class="deals-list">\n${dealItems}\n          </ul>`
+    );
+  }
+
+  await fs.writeFile(pricesHtmlPath, html, 'utf-8');
 }
 
 /**

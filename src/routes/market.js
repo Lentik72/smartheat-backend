@@ -133,7 +133,7 @@ router.get('/pulse', async (req, res) => {
       return res.json(cached);
     }
 
-    // Query live stats from database
+    // Query live stats from database - V2.17.0: Filter by allow_price_display
     const [stats] = await sequelize.query(`
       SELECT
         (SELECT COUNT(*) FROM suppliers WHERE active = true) as supplier_count,
@@ -144,7 +144,9 @@ router.get('/pulse', async (req, res) => {
       FROM supplier_prices sp
       JOIN suppliers s ON sp.supplier_id = s.id
       WHERE s.active = true
+        AND s.allow_price_display = true
         AND sp.scraped_at > NOW() - INTERVAL '14 days'
+        AND sp.price_per_gallon BETWEEN 2.00 AND 6.00
     `);
 
     const row = stats[0] || {};
@@ -168,6 +170,123 @@ router.get('/pulse', async (req, res) => {
     req.app.locals.logger.error('Market pulse error:', error);
     res.status(500).json({
       error: 'Failed to fetch market pulse',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/market/leaderboard - Live state averages and top deals for prices.html
+// V2.17.0: Real-time leaderboard data so prices.html always shows current prices
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const cache = req.app.locals.cache;
+    const logger = req.app.locals.logger;
+    const sequelize = req.app.locals.sequelize;
+    const cacheKey = 'market_leaderboard';
+
+    // Check cache (30 min TTL - more frequent updates for leaderboard)
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      logger.info('📦 Cache hit: market leaderboard');
+      return res.json(cached);
+    }
+
+    // State averages - group by state, filter displayable prices
+    const [stateStats] = await sequelize.query(`
+      SELECT
+        s.state,
+        COUNT(DISTINCT s.id) as supplier_count,
+        ROUND(AVG(sp.price_per_gallon)::numeric, 2) as avg_price,
+        ROUND(MIN(sp.price_per_gallon)::numeric, 2) as min_price,
+        ROUND(MAX(sp.price_per_gallon)::numeric, 2) as max_price
+      FROM suppliers s
+      JOIN supplier_prices sp ON s.id = sp.supplier_id
+      WHERE s.active = true
+        AND s.allow_price_display = true
+        AND sp.is_valid = true
+        AND sp.expires_at > NOW()
+        AND sp.price_per_gallon BETWEEN 2.00 AND 6.00
+        AND sp.scraped_at = (
+          SELECT MAX(sp2.scraped_at)
+          FROM supplier_prices sp2
+          WHERE sp2.supplier_id = s.id
+            AND sp2.is_valid = true
+            AND sp2.expires_at > NOW()
+        )
+      GROUP BY s.state
+      HAVING COUNT(DISTINCT s.id) >= 3
+      ORDER BY avg_price ASC
+    `);
+
+    // State name mapping
+    const STATE_NAMES = {
+      'NY': 'New York', 'CT': 'Connecticut', 'MA': 'Massachusetts',
+      'NJ': 'New Jersey', 'PA': 'Pennsylvania', 'RI': 'Rhode Island',
+      'NH': 'New Hampshire', 'ME': 'Maine', 'MD': 'Maryland',
+      'VA': 'Virginia', 'DE': 'Delaware', 'AK': 'Alaska', 'OH': 'Ohio'
+    };
+
+    const stateAverages = stateStats.map(s => ({
+      state: s.state,
+      stateName: STATE_NAMES[s.state] || s.state,
+      avgPrice: parseFloat(s.avg_price),
+      minPrice: parseFloat(s.min_price),
+      maxPrice: parseFloat(s.max_price),
+      supplierCount: parseInt(s.supplier_count)
+    }));
+
+    // Top 5 deals - lowest priced suppliers with valid displayable prices
+    const [topDeals] = await sequelize.query(`
+      SELECT DISTINCT ON (s.id)
+        s.name as supplier_name,
+        s.city,
+        s.state,
+        s.slug,
+        sp.price_per_gallon as price
+      FROM suppliers s
+      JOIN supplier_prices sp ON s.id = sp.supplier_id
+      WHERE s.active = true
+        AND s.allow_price_display = true
+        AND sp.is_valid = true
+        AND sp.expires_at > NOW()
+        AND sp.price_per_gallon BETWEEN 2.00 AND 6.00
+      ORDER BY s.id, sp.scraped_at DESC
+    `);
+
+    // Sort by price and take top 5
+    const sortedDeals = topDeals
+      .sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
+      .slice(0, 5)
+      .map(d => ({
+        supplierName: d.supplier_name,
+        city: d.city,
+        state: d.state,
+        slug: d.slug,
+        price: parseFloat(d.price).toFixed(2)
+      }));
+
+    const leaderboardData = {
+      stateAverages,
+      topDeals: sortedDeals,
+      lastUpdated: new Date().toISOString(),
+      generatedAt: new Date().toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      })
+    };
+
+    // Cache for 30 minutes
+    cache.set(cacheKey, leaderboardData, 1800);
+
+    logger.info(`📊 Market Leaderboard: ${stateAverages.length} states, ${sortedDeals.length} top deals`);
+    res.json(leaderboardData);
+
+  } catch (error) {
+    req.app.locals.logger.error('Market leaderboard error:', error);
+    res.status(500).json({
+      error: 'Failed to fetch market leaderboard',
       message: error.message
     });
   }

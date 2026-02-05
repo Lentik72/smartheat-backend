@@ -579,10 +579,10 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   });
   logger.info('⏰ Afternoon scrape scheduled: daily at 4:00 PM EST');
 
-  // V2.6.0: Schedule SEO + Supplier page generation at 7:00 PM EST (after scraping window closes)
+  // V2.17.0: Schedule SEO + Supplier page generation at 11:00 PM EST (low traffic period)
   // Generates static HTML pages directly on Railway for Google indexability
-  cron.schedule('0 19 * * *', async () => {
-    logger.info('📄 Starting page generation (7:00 PM EST)...');
+  cron.schedule('0 23 * * *', async () => {
+    logger.info('📄 Starting page generation (11:00 PM EST)...');
     const websiteDir = path.join(__dirname, 'website');
 
     // Generate SEO pages (city/county/state)
@@ -626,7 +626,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   }, {
     timezone: 'America/New_York'
   });
-  logger.info('📄 SEO + Supplier page generator scheduled: daily at 7:00 PM EST');
+  logger.info('📄 SEO + Supplier page generator scheduled: daily at 11:00 PM EST');
 
   // V2.6.0: Monthly reset of phone_only suppliers (1st of each month at 6 AM EST)
   // Gives blocked sites another chance after a month
