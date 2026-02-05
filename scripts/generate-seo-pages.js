@@ -327,7 +327,8 @@ async function generateSEOPages(options = {}) {
 
 /**
  * Get all active suppliers with service areas
- * V2.17.0: Only include suppliers with allow_price_display = true for price listings
+ * V2.17.1: Get ALL active suppliers (allow_price_display filtering is done at price level)
+ * Suppliers without displayable prices will show as "Call for price"
  */
 async function getAllSuppliers(sequelize) {
   const [results] = await sequelize.query(`
@@ -344,7 +345,6 @@ async function getAllSuppliers(sequelize) {
       allow_price_display
     FROM suppliers
     WHERE active = true
-      AND allow_price_display = true
     ORDER BY name
   `);
   return results;
