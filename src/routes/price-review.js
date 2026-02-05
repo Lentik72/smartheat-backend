@@ -270,11 +270,35 @@ router.get('/', requireAuth, async (req, res) => {
       LIMIT 20
     `);
 
+    // 4. V2.11.0: Suppliers that need initial manual pricing (never had a price, have website)
+    // These are suppliers we've added but can't auto-scrape (JS-loaded prices, 403, etc.)
+    const [needsInitialPrice] = await sequelize.query(`
+      SELECT
+        s.id,
+        s.name,
+        s.website,
+        s.city,
+        s.state,
+        NULL as current_price,
+        NULL as scraped_at,
+        'needs_initial_price' as review_reason
+      FROM suppliers s
+      WHERE s.active = true
+        AND s.website IS NOT NULL
+        AND s.allow_price_display = true
+        AND NOT EXISTS (
+          SELECT 1 FROM supplier_prices sp
+          WHERE sp.supplier_id = s.id AND sp.is_valid = true
+        )
+      ORDER BY s.created_at DESC
+      LIMIT 15
+    `);
+
     // Combine and deduplicate by supplier ID
     const reviewItems = [];
     const seenIds = new Set();
 
-    for (const item of [...suspiciousPrices, ...blockedSites, ...stalePrices]) {
+    for (const item of [...suspiciousPrices, ...blockedSites, ...needsInitialPrice, ...stalePrices]) {
       if (!seenIds.has(item.id)) {
         seenIds.add(item.id);
         reviewItems.push({
@@ -292,8 +316,8 @@ router.get('/', requireAuth, async (req, res) => {
       }
     }
 
-    // Sort by review reason priority: suspicious > blocked > stale
-    const priorityOrder = { suspicious_price: 0, scrape_blocked: 1, stale_price: 2 };
+    // Sort by review reason priority: suspicious > blocked > needs_initial > stale
+    const priorityOrder = { suspicious_price: 0, scrape_blocked: 1, needs_initial_price: 2, stale_price: 3 };
     reviewItems.sort((a, b) => priorityOrder[a.reviewReason] - priorityOrder[b.reviewReason]);
 
     logger?.info(`[PriceReview] Returning ${reviewItems.length} items for review`);

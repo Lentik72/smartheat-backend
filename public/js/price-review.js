@@ -32,6 +32,7 @@ let reviewItems = [];
 const reasonLabels = {
   suspicious_price: 'Suspicious Price',
   scrape_blocked: 'Scrape Blocked',
+  needs_initial_price: 'New Supplier',
   stale_price: 'Stale Data'
 };
 
@@ -120,6 +121,7 @@ function updateStats() {
   document.getElementById('stat-total').textContent = reviewItems.length;
   document.getElementById('stat-suspicious').textContent = reviewItems.filter(i => i.reviewReason === 'suspicious_price').length;
   document.getElementById('stat-blocked').textContent = reviewItems.filter(i => i.reviewReason === 'scrape_blocked').length;
+  document.getElementById('stat-new').textContent = reviewItems.filter(i => i.reviewReason === 'needs_initial_price').length;
   document.getElementById('stat-stale').textContent = reviewItems.filter(i => i.reviewReason === 'stale_price').length;
 }
 
