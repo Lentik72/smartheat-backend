@@ -242,16 +242,23 @@
       const data = await response.json();
 
       if (data.data && data.data.length > 0) {
-        // Filter to only suppliers with prices
+        // Separate priced and unpriced suppliers
         const suppliersWithPrices = data.data.filter(s => s.currentPrice && s.currentPrice.pricePerGallon);
+        const suppliersWithoutPrices = data.data.filter(s => !s.currentPrice || !s.currentPrice.pricePerGallon);
 
         if (suppliersWithPrices.length > 0) {
           currentSuppliers = suppliersWithPrices;
-          renderResults(zip, suppliersWithPrices);
+          renderResults(zip, suppliersWithPrices, suppliersWithoutPrices);
           showState('results');
 
           // Log empty ZIPs for analytics (without prices)
-          logAnalytics('price_lookup', { zip, count: suppliersWithPrices.length });
+          logAnalytics('price_lookup', { zip, count: suppliersWithPrices.length, unpricedCount: suppliersWithoutPrices.length });
+        } else if (suppliersWithoutPrices.length > 0) {
+          // No priced suppliers but have unpriced ones - show them
+          currentSuppliers = [];
+          renderResultsUnpricedOnly(zip, suppliersWithoutPrices);
+          showState('results');
+          logAnalytics('price_lookup_unpriced_only', { zip, count: suppliersWithoutPrices.length });
         } else {
           // Suppliers found but no prices
           showEmpty(zip);
@@ -273,7 +280,7 @@
   }
 
   // Render results
-  function renderResults(zip, suppliers) {
+  function renderResults(zip, suppliers, unpricedSuppliers = []) {
     // Sort by price
     suppliers.sort((a, b) => a.currentPrice.pricePerGallon - b.currentPrice.pricePerGallon);
 
@@ -309,9 +316,22 @@
 
     document.getElementById('freshness').textContent = formatRelativeTime(freshestDate);
 
-    // Render supplier cards
+    // Render supplier cards (priced)
     const cardsContainer = document.getElementById('supplier-cards');
-    cardsContainer.innerHTML = suppliers.map(s => createSupplierCard(s)).join('');
+    let cardsHtml = suppliers.map(s => createSupplierCard(s)).join('');
+
+    // Add unpriced suppliers section if any
+    if (unpricedSuppliers.length > 0) {
+      cardsHtml += `
+        <div class="unpriced-section">
+          <h3 class="unpriced-heading">Other Suppliers in Your Area</h3>
+          <p class="unpriced-subtitle">Call for current pricing</p>
+          ${unpricedSuppliers.map(s => createUnpricedSupplierCard(s)).join('')}
+        </div>
+      `;
+    }
+
+    cardsContainer.innerHTML = cardsHtml;
 
     // Show bookmark hint (once per session)
     if (!sessionStorage.getItem('homeheat_bookmark_shown')) {
@@ -328,6 +348,38 @@
     // Show PWA install banner after user has seen value (Android only)
     if (typeof window.showPwaInstallBanner === 'function') {
       setTimeout(() => window.showPwaInstallBanner(), 1500);
+    }
+  }
+
+  // Render results when only unpriced suppliers exist
+  function renderResultsUnpricedOnly(zip, unpricedSuppliers) {
+    const county = ZIP_COUNTY_MAP[zip];
+    const locationName = county ? `${county} (${zip})` : `ZIP ${zip}`;
+
+    // Update summary for unpriced-only view
+    document.getElementById('result-location').textContent = locationName;
+    document.getElementById('lowest-price').textContent = 'Call';
+    document.getElementById('highest-price').textContent = 'Call';
+
+    const savingsEl = document.getElementById('savings-potential');
+    savingsEl.innerHTML = `<strong>${unpricedSuppliers.length}</strong> supplier${unpricedSuppliers.length > 1 ? 's' : ''} serve this area`;
+    savingsEl.style.display = 'block';
+
+    document.getElementById('freshness').textContent = 'Call for prices';
+
+    // Render unpriced supplier cards
+    const cardsContainer = document.getElementById('supplier-cards');
+    cardsContainer.innerHTML = `
+      <div class="unpriced-notice">
+        <p>We don't have current pricing for suppliers in this area yet. Contact them directly for quotes.</p>
+      </div>
+      ${unpricedSuppliers.map(s => createUnpricedSupplierCard(s)).join('')}
+    `;
+
+    // Show bookmark hint
+    if (!sessionStorage.getItem('homeheat_bookmark_shown')) {
+      bookmarkHint.style.display = 'block';
+      sessionStorage.setItem('homeheat_bookmark_shown', 'true');
     }
   }
 
@@ -355,6 +407,33 @@
           <div class="price-unit">per gallon</div>
           ${price.minGallons ? `<div class="price-min">${price.minGallons}+ gal min</div>` : ''}
           <div class="price-freshness">${freshness}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Create unpriced supplier card HTML (call for price)
+  function createUnpricedSupplierCard(supplier) {
+    const phone = supplier.phone || '';
+    const phoneHref = phone.replace(/\D/g, '');
+    const hasValidWebsite = supplier.website && supplier.website.startsWith('https://');
+    const hasSlug = supplier.slug;
+
+    return `
+      <div class="supplier-card supplier-card-unpriced">
+        <div class="supplier-info">
+          <div class="supplier-name">
+            ${hasSlug ? `<a href="/supplier/${supplier.slug}.html" class="supplier-profile-link">${escapeHtml(supplier.name)}</a>` : escapeHtml(supplier.name)}
+          </div>
+          <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
+          <div class="supplier-actions">
+            ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone" data-track-supplier-id="${supplier.id}" data-track-supplier-name="${escapeHtml(supplier.name)}" data-track-action="call">Call ${escapeHtml(phone)}</a>` : ''}
+            ${hasValidWebsite ? `<a href="${escapeHtml(supplier.website)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="supplier-website-btn" data-track-supplier-id="${supplier.id}" data-track-supplier-name="${escapeHtml(supplier.name)}" data-track-action="website">Visit Website</a>` : ''}
+          </div>
+        </div>
+        <div class="supplier-price supplier-price-unpriced">
+          <div class="price-amount">Call</div>
+          <div class="price-unit">for price</div>
         </div>
       </div>
     `;

@@ -1287,6 +1287,58 @@ body {
     font-style: italic;
 }
 
+/* Unpriced Suppliers Section */
+.unpriced-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.unpriced-heading {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0 0 0.25rem 0;
+}
+
+.unpriced-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-gray);
+    margin: 0 0 1rem 0;
+}
+
+.unpriced-notice {
+    background: var(--background-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.unpriced-notice p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.supplier-card-unpriced {
+    border-style: dashed;
+    background: var(--background-light);
+}
+
+.supplier-card-unpriced .supplier-name a {
+    color: var(--primary-orange);
+    text-decoration: none;
+}
+
+.supplier-card-unpriced .supplier-name a:hover {
+    text-decoration: underline;
+}
+
+.supplier-price-unpriced .price-amount {
+    font-size: 1.25rem;
+    color: var(--text-gray);
+}
+
 /* Disclaimer */
 .price-disclaimer {
     font-size: 0.75rem;
