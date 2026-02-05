@@ -105,7 +105,7 @@ function generateSupplierPage(supplier, latestPrice) {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": supplier.name,
-    "@id": `https://www.gethomeheat.com/supplier/${supplier.slug}`,
+    "@id": `https://www.gethomeheat.com/supplier/${supplier.slug}.html`,
     ...(hasWebsite && { "url": website }),
     ...(phone && { "telephone": phone }),
     ...(city && state && {
@@ -290,7 +290,7 @@ async function main() {
       generated++;
 
       if (generated <= 5 || generated % 50 === 0) {
-        console.log(`  [${generated}/${suppliers.length}] ${supplier.name} → /supplier/${supplier.slug}`);
+        console.log(`  [${generated}/${suppliers.length}] ${supplier.name} → /supplier/${supplier.slug}.html`);
       }
     }
 

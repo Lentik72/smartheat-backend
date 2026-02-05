@@ -806,7 +806,7 @@ function generatePageHTML(data) {
         "provider": {
           "@type": "LocalBusiness",
           "name": s.name,
-          ...(s.slug && { "@id": `https://www.gethomeheat.com/supplier/${s.slug}` }),
+          ...(s.slug && { "@id": `https://www.gethomeheat.com/supplier/${s.slug}.html` }),
           "image": "https://www.gethomeheat.com/images/app-icon.png",
           ...(s.phone && { "telephone": s.phone }),
           "priceRange": `$${s.price.toFixed(2)}/gal`
@@ -1195,7 +1195,7 @@ function generateSitemap(pages, suppliers = []) {
     .filter(s => s.slug)
     .map(s => `
   <url>
-    <loc>https://www.gethomeheat.com/supplier/${s.slug}</loc>
+    <loc>https://www.gethomeheat.com/supplier/${s.slug}.html</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
