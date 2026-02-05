@@ -7,7 +7,8 @@
 
   // Detect page type from URL path
   var path = window.location.pathname;
-  if (path.includes('-county.html')) pageType = 'seo-county';
+  if (path.startsWith('/supplier/')) pageType = 'supplier-profile';
+  else if (path.includes('-county.html')) pageType = 'seo-county';
   else if (path.match(/\/[a-z]{2}\/index\.html$/) || path.match(/\/[a-z]{2}\/$/)) pageType = 'seo-state';
   else if (path.includes('long-island.html') || path.includes('hudson-valley.html') ||
            path.includes('capital-region.html') || path.includes('shoreline.html')) pageType = 'seo-region';

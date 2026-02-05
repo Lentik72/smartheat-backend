@@ -165,8 +165,8 @@ function generateSupplierPage(supplier, latestPrice) {
     </div>
 
     <div class="supplier-contact">
-      ${phone ? `<a href="tel:${supplier.phone}" class="contact-btn contact-phone"><span class="icon">&#128222;</span> ${phone}</a>` : ''}
-      ${hasWebsite ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener noreferrer" class="contact-btn contact-website"><span class="icon">&#127760;</span> Visit Website</a>` : ''}
+      ${phone ? `<a href="tel:${supplier.phone}" class="contact-btn contact-phone" data-supplier-id="${supplier.id}" data-supplier-name="${name}" data-action="call"><span class="icon">&#128222;</span> ${phone}</a>` : ''}
+      ${hasWebsite ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener noreferrer" class="contact-btn contact-website" data-supplier-id="${supplier.id}" data-supplier-name="${name}" data-action="website"><span class="icon">&#127760;</span> Visit Website</a>` : ''}
     </div>
 
     ${showPrice ? `
@@ -210,6 +210,8 @@ function generateSupplierPage(supplier, latestPrice) {
       </p>
     </div>
   </footer>
+
+  <script src="/js/seo-tracking.js"></script>
 </body>
 </html>`;
 }
