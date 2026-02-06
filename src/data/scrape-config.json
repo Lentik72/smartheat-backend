@@ -1503,6 +1503,13 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "capitolcityoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: PA Camp Hill - No price on website. COD. Serves Greater Harrisburg area.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_RI": "=== RHODE ISLAND ===",
 
   "bestdiscountoil.com": {

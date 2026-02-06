@@ -369,6 +369,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Portland PA suppliers migration:', err.message);
         });
 
+        // V2.17.4: Add Elizabethtown PA suppliers (Capitol City Oil, Rolling Hills Energy)
+        const { up: runElizabethtown } = require('./src/migrations/030-add-elizabethtown-pa-suppliers');
+        runElizabethtown(sequelize).catch(err => {
+          logger.warn('⚠️  Elizabethtown PA suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
