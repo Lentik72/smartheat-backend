@@ -381,6 +381,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  York PA suppliers migration:', err.message);
         });
 
+        // V2.17.6: Add Dighton MA suppliers (Affordable Fuel, Freedom Fuel, Forni Bros, T&M Fuel, Eastern Petroleum, Brodeur & Sons)
+        const { up: runDighton } = require('./src/migrations/032-add-dighton-ma-suppliers');
+        runDighton(sequelize).catch(err => {
+          logger.warn('⚠️  Dighton MA suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {

@@ -1350,6 +1350,49 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2})/Gallon"
   },
 
+  "fornibrosoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA East Bridgewater/South Shore - Family owned since 1947. COD. Price shown on homepage.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "brodeurandsons.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/fuel-oil/",
+    "notes": "MA New Bedford/Bristol County - Family owned since 1929. COD table pricing on fuel-oil page.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "orderaffordablefuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA Seekonk - Price behind order form. COD since 2004.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "freedomfuelma.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA Raynham - Price template variable not populated. Veteran-owned COD.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "tandmfuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA Attleboro - Wix JS-based site. Family owned COD.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "easternpetroleumonline.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA Norton - Dynamic pricing. Discount oil since 1978. 100 gal min.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_PA": "=== PENNSYLVANIA ===",
 
   "ferrofueloil.com": {
