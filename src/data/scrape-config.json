@@ -1475,6 +1475,34 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "fuelcellpetrol.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "PA Northampton County - Stockertown. COD. 75 gal min. Serves Lehigh Valley/Poconos.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "rfohl.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: PA Lehighton - No price displayed on site. COD available.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "tolinosfuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: PA Bangor - Price requires ZIP entry. COD available.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "pennywisefuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: PA Henryville - Price loaded via JavaScript. COD available.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_RI": "=== RHODE ISLAND ===",
 
   "bestdiscountoil.com": {
