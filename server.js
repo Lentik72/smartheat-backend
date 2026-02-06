@@ -387,6 +387,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Dighton MA suppliers migration:', err.message);
         });
 
+        // V2.17.7: Add Kent County DE suppliers (Terroco, PepUp, JC Eisenbrey, Barkley)
+        const { up: runKentDE } = require('./src/migrations/033-add-kent-county-de-suppliers');
+        runKentDE(sequelize).catch(err => {
+          logger.warn('⚠️  Kent County DE suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
