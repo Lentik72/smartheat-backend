@@ -375,6 +375,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Elizabethtown PA suppliers migration:', err.message);
         });
 
+        // V2.17.5: Add York PA suppliers (Edris Oil, Marstellar, RA Bair, Best Price Oil)
+        const { up: runYork } = require('./src/migrations/031-add-york-pa-suppliers');
+        runYork(sequelize).catch(err => {
+          logger.warn('⚠️  York PA suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
