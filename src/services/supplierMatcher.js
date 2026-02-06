@@ -120,11 +120,23 @@ function findSuppliersForZip(userZip, suppliers, options = {}) {
       }
     }
     // Priority 3: County match (60 points) - EXPLICIT ONLY
+    // V1.1.0: Added state validation to prevent cross-state county matches
+    // (e.g., York County VA supplier matching York County PA users)
+    // Allows match if supplier serves ANY ZIPs in user's state (handles multi-state suppliers)
     if (score === 0) {
       const serviceCounties = supplier.serviceCounties || supplier.service_counties || [];
       if (serviceCounties.includes(userInfo.county)) {
-        score = SCORE.COUNTY;
-        matchType = 'county';
+        // Check if supplier serves user's state (via ZIP codes or home state)
+        const supplierState = supplier.state;
+        const servesUserState = supplierState === userInfo.state ||
+          postalCodes.some(zip => {
+            const zipInfo = zipDatabase[zip];
+            return zipInfo && zipInfo.state === userInfo.state;
+          });
+        if (servesUserState) {
+          score = SCORE.COUNTY;
+          matchType = 'county';
+        }
       }
     }
     // Priority 4: Radius match (40 points) - BACKEND ONLY

@@ -29,6 +29,26 @@ const EXCLUDED_ZIPS = new Set([
   '19101', '19102', '19103', '19105', '19106', '19107', '19108', '19109'
 ]);
 
+// V2.7.0: Low heating oil market states - under 5% of homes use heating oil
+// Coverage gaps in these states are deprioritized (no COD suppliers exist)
+// Source: EIA Residential Energy Consumption Survey
+const LOW_OIL_MARKET_STATES = new Set([
+  'VA',  // Virginia - ~4% heating oil, mostly full-service only
+  'NC',  // North Carolina - <2% heating oil
+  'SC',  // South Carolina - <1% heating oil
+  'GA',  // Georgia - <1% heating oil
+  'FL',  // Florida - <1% heating oil
+  'AL',  // Alabama - <1% heating oil
+  'MS',  // Mississippi - <1% heating oil
+  'LA',  // Louisiana - <1% heating oil
+  'TX',  // Texas - <1% heating oil
+  'AZ',  // Arizona - <1% heating oil
+  'NV',  // Nevada - <1% heating oil
+  'CA',  // California - <2% heating oil
+  'OR',  // Oregon - <3% heating oil
+  'WA',  // Washington - <3% heating oil
+]);
+
 class CoverageIntelligenceService {
   constructor(sequelize, mailer = null) {
     this.sequelize = sequelize;
@@ -127,6 +147,7 @@ class CoverageIntelligenceService {
   /**
    * Find locations first seen in last 24 hours
    * V2.5.2: Skips excluded commercial ZIPs
+   * V2.7.0: Tags locations with marketType (high_oil, low_oil, excluded)
    */
   async findNewLocations() {
     const UserLocation = getUserLocationModel();
@@ -149,13 +170,18 @@ class CoverageIntelligenceService {
       if (EXCLUDED_ZIPS.has(loc.zipCode)) continue;
 
       const result = findSuppliersForZip(loc.zipCode, allSuppliers, { includeRadius: false });
+
+      // V2.7.0: Determine market type
+      const marketType = LOW_OIL_MARKET_STATES.has(loc.state) ? 'low_oil' : 'high_oil';
+
       enriched.push({
         zipCode: loc.zipCode,
         city: loc.city,
         county: loc.county,
         state: loc.state,
         firstSeenAt: loc.firstSeenAt,
-        supplierCount: result?.suppliers?.length || 0
+        supplierCount: result?.suppliers?.length || 0,
+        marketType
       });
     }
 
@@ -166,6 +192,7 @@ class CoverageIntelligenceService {
    * Analyze coverage for all tracked locations
    * Updates coverage quality in database
    * V2.5.2: Skips excluded commercial ZIPs
+   * V2.7.0: Tags gaps with marketType for prioritization
    */
   async analyzeCoverage() {
     const UserLocation = getUserLocationModel();
@@ -194,6 +221,9 @@ class CoverageIntelligenceService {
       const supplierCount = result?.suppliers?.length || 0;
       const quality = this.scoreCoverageQuality(supplierCount);
 
+      // V2.7.0: Determine market type
+      const marketType = LOW_OIL_MARKET_STATES.has(loc.state) ? 'low_oil' : 'high_oil';
+
       // Update location record
       await loc.update({
         supplierCount,
@@ -209,13 +239,19 @@ class CoverageIntelligenceService {
           state: loc.state,
           supplierCount,
           requestCount: loc.requestCount,
-          firstSeenAt: loc.firstSeenAt
+          firstSeenAt: loc.firstSeenAt,
+          marketType
         });
       }
     }
 
-    // Sort by request count (most active users first)
-    return gaps.sort((a, b) => b.requestCount - a.requestCount);
+    // Sort by market type (high_oil first) then by request count
+    return gaps.sort((a, b) => {
+      if (a.marketType !== b.marketType) {
+        return a.marketType === 'high_oil' ? -1 : 1;
+      }
+      return b.requestCount - a.requestCount;
+    });
   }
 
   /**
@@ -326,29 +362,44 @@ class CoverageIntelligenceService {
 
   /**
    * Generate recommendations based on analysis
+   * V2.7.0: Separates high-oil vs low-oil market gaps
    */
   generateRecommendations(report) {
     const recs = [];
 
-    // Priority gaps (users with no coverage)
-    const criticalGaps = report.coverageGaps.filter(g => g.supplierCount === 0);
-    if (criticalGaps.length > 0) {
+    // V2.7.0: Separate gaps by market type
+    const highOilGaps = report.coverageGaps.filter(g => g.marketType === 'high_oil');
+    const lowOilGaps = report.coverageGaps.filter(g => g.marketType === 'low_oil');
+
+    // Priority gaps in HIGH OIL markets (users with no coverage) - actionable
+    const criticalHighOil = highOilGaps.filter(g => g.supplierCount === 0);
+    if (criticalHighOil.length > 0) {
       recs.push({
         priority: 'HIGH',
         type: 'coverage_gap',
-        message: `${criticalGaps.length} ZIP code${criticalGaps.length > 1 ? 's have' : ' has'} NO supplier coverage`,
-        details: criticalGaps.slice(0, 5).map(g => `${g.city || 'Unknown'}, ${g.state} (${g.zipCode}) - ${g.requestCount} requests`)
+        message: `${criticalHighOil.length} ZIP code${criticalHighOil.length > 1 ? 's have' : ' has'} NO coverage in high-oil markets`,
+        details: criticalHighOil.slice(0, 5).map(g => `${g.city || 'Unknown'}, ${g.state} (${g.zipCode}) - ${g.requestCount} requests`)
       });
     }
 
-    // Poor coverage
-    const poorGaps = report.coverageGaps.filter(g => g.supplierCount > 0 && g.supplierCount < 3);
-    if (poorGaps.length > 0) {
+    // Poor coverage in high-oil markets
+    const poorHighOil = highOilGaps.filter(g => g.supplierCount > 0 && g.supplierCount < 3);
+    if (poorHighOil.length > 0) {
       recs.push({
         priority: 'MEDIUM',
         type: 'poor_coverage',
-        message: `${poorGaps.length} ZIP code${poorGaps.length > 1 ? 's have' : ' has'} limited coverage (1-2 suppliers)`,
-        details: poorGaps.slice(0, 5).map(g => `${g.city || 'Unknown'}, ${g.state} (${g.zipCode}) - ${g.supplierCount} supplier${g.supplierCount > 1 ? 's' : ''}`)
+        message: `${poorHighOil.length} ZIP code${poorHighOil.length > 1 ? 's have' : ' has'} limited coverage (1-2 suppliers)`,
+        details: poorHighOil.slice(0, 5).map(g => `${g.city || 'Unknown'}, ${g.state} (${g.zipCode}) - ${g.supplierCount} supplier${g.supplierCount > 1 ? 's' : ''}`)
+      });
+    }
+
+    // LOW OIL market gaps - track for propane/future expansion, lower priority
+    if (lowOilGaps.length > 0) {
+      recs.push({
+        priority: 'LOW',
+        type: 'low_oil_market',
+        message: `${lowOilGaps.length} searches in low-oil markets (potential propane users)`,
+        details: lowOilGaps.slice(0, 5).map(g => `${g.city || 'Unknown'}, ${g.state} (${g.zipCode}) - ${g.requestCount} requests`)
       });
     }
 
