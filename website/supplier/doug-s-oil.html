@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HCNTVGNVJ9');
+</script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Doug&#39;s Oil - Heating Oil Delivery | HomeHeat</title>
@@ -71,6 +80,24 @@
     
   </main>
 
+  <!-- Floating App Download Icon (iOS) -->
+  <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="floating-app-icon ios-only" id="floating-app-cta">
+    <img src="/images/app-icon.png" alt="HomeHeat">
+    <div class="float-text">
+      <span class="float-title">Get HomeHeat</span>
+      <span class="float-subtitle">Free on App Store</span>
+    </div>
+  </a>
+
+  <!-- Floating App Download Icon (iOS) -->
+  <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="floating-app-icon ios-only" id="floating-app-cta">
+    <img src="/images/app-icon.png" alt="HomeHeat">
+    <div class="float-text">
+      <span class="float-title">Get HomeHeat</span>
+      <span class="float-subtitle">Free on App Store</span>
+    </div>
+  </a>
+
   <footer class="footer">
     <div class="footer-content">
       <p>&copy; 2026 HomeHeat. Helping homeowners find heating oil.</p>
@@ -84,5 +111,80 @@
   </footer>
 
   <script src="/js/seo-tracking.js"></script>
+  <script src="/js/pwa.js"></script>
+  <script>
+  (function() {
+    var isAndroid = /Android/i.test(navigator.userAgent);
+    var floatingIcon = document.getElementById('floating-app-cta');
+    if (floatingIcon && !isAndroid) {
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 200) {
+          floatingIcon.classList.add('visible');
+        } else {
+          floatingIcon.classList.remove('visible');
+        }
+      });
+      floatingIcon.addEventListener('click', function() {
+        if (typeof gtag === 'function') {
+          gtag('event', 'app_download_click', { location: 'floating_icon', page: 'supplier' });
+        }
+      });
+    }
+    if (isAndroid && typeof showPwaInstallBanner === 'function') {
+      var pwaShown = false;
+      window.addEventListener('scroll', function() {
+        if (pwaShown) return;
+        var scrollPct = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
+        if (scrollPct > 0.5) {
+          pwaShown = true;
+          showPwaInstallBanner();
+        }
+      });
+    }
+    if (isAndroid) {
+      document.querySelectorAll('.ios-only').forEach(function(el) {
+        el.style.display = 'none';
+      });
+    }
+  })();
+  </script>
+
+  <script src="/js/pwa.js"></script>
+  <script>
+  (function() {
+    var isAndroid = /Android/i.test(navigator.userAgent);
+    var floatingIcon = document.getElementById("floating-app-cta");
+    if (floatingIcon && !isAndroid) {
+      window.addEventListener("scroll", function() {
+        if (window.scrollY > 200) {
+          floatingIcon.classList.add("visible");
+        } else {
+          floatingIcon.classList.remove("visible");
+        }
+      });
+      floatingIcon.addEventListener("click", function() {
+        if (typeof gtag === "function") {
+          gtag("event", "app_download_click", { location: "floating_icon", page: "supplier" });
+        }
+      });
+    }
+    if (isAndroid && typeof showPwaInstallBanner === "function") {
+      var pwaShown = false;
+      window.addEventListener("scroll", function() {
+        if (pwaShown) return;
+        var scrollPct = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
+        if (scrollPct > 0.5) {
+          pwaShown = true;
+          showPwaInstallBanner();
+        }
+      });
+    }
+    if (isAndroid) {
+      document.querySelectorAll(".ios-only").forEach(function(el) {
+        el.style.display = "none";
+      });
+    }
+  })();
+  </script>
 </body>
 </html>
