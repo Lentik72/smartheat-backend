@@ -363,6 +363,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Vernon area suppliers migration:', err.message);
         });
 
+        // V2.17.3: Add Portland PA suppliers (R.F. Ohl, Tolino's, Fuel Cell Petrol, Pennywise)
+        const { up: runPortland } = require('./src/migrations/029-add-portland-pa-suppliers');
+        runPortland(sequelize).catch(err => {
+          logger.warn('⚠️  Portland PA suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
