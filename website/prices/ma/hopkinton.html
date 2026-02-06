@@ -167,6 +167,15 @@
     </p>
   </main>
 
+  <!-- Floating App Download Icon (iOS) -->
+  <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="floating-app-icon ios-only" id="floating-app-cta">
+    <img src="../../images/app-icon.png" alt="HomeHeat">
+    <div class="float-text">
+      <span class="float-title">Get HomeHeat</span>
+      <span class="float-subtitle">Free on App Store</span>
+    </div>
+  </a>
+
   <footer class="footer">
     <div class="footer-links">
       <a href="../../for-suppliers.html">For Suppliers</a>
@@ -182,5 +191,48 @@
 
   <script src="../../js/nav.js"></script>
   <script src="../../js/seo-tracking.js"></script>
+  <script src="../../js/pwa.js"></script>
+  <script>
+  (function() {
+    var isAndroid = /Android/i.test(navigator.userAgent);
+
+    // iOS: Show floating app icon after scrolling
+    var floatingIcon = document.getElementById('floating-app-cta');
+    if (floatingIcon && !isAndroid) {
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 300) {
+          floatingIcon.classList.add('visible');
+        } else {
+          floatingIcon.classList.remove('visible');
+        }
+      });
+      floatingIcon.addEventListener('click', function() {
+        if (typeof gtag === 'function') {
+          gtag('event', 'app_download_click', { location: 'floating_icon', page: 'seo' });
+        }
+      });
+    }
+
+    // Android: Show PWA install banner after scrolling 50%
+    if (isAndroid && typeof showPwaInstallBanner === 'function') {
+      var pwaShown = false;
+      window.addEventListener('scroll', function() {
+        if (pwaShown) return;
+        var scrollPct = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
+        if (scrollPct > 0.5) {
+          pwaShown = true;
+          showPwaInstallBanner();
+        }
+      });
+    }
+
+    // Hide iOS elements on Android
+    if (isAndroid) {
+      document.querySelectorAll('.ios-only').forEach(function(el) {
+        el.style.display = 'none';
+      });
+    }
+  })();
+  </script>
 </body>
 </html>

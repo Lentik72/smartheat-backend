@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HCNTVGNVJ9');
+</script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found | HomeHeat</title>
+    <meta name="robots" content="noindex">
+
+    <link rel="stylesheet" href="style.css?v=16">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
+
+<style>
+.error-page {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.error-page h1 {
+    font-size: 4rem;
+    color: #FF6B35;
+    margin-bottom: 0.5rem;
+}
+
+.error-page h2 {
+    font-size: 1.5rem;
+    color: var(--text-primary, #333);
+    margin-bottom: 1rem;
+}
+
+.error-page p {
+    color: var(--text-muted, #666);
+    margin-bottom: 2rem;
+    max-width: 400px;
+}
+
+.error-links {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.error-links a {
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.error-links .primary-link {
+    background: #FF6B35;
+    color: white;
+}
+
+.error-links .secondary-link {
+    border: 1px solid var(--border-color, #ddd);
+    color: var(--text-primary, #333);
+}
+
+@media (prefers-color-scheme: dark) {
+    .error-page h2 {
+        color: #e5e5e5;
+    }
+    .error-links .secondary-link {
+        border-color: #444;
+        color: #e5e5e5;
+    }
+}
+</style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <img src="images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
+                HomeHeat
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="prices.html">Prices</a></li>
+                <li><a href="for-suppliers.html">For Suppliers</a></li>
+                <li><a href="learn/">Learn</a></li>
+                <li><a href="support.html">Support</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="error-page">
+        <h1>404</h1>
+        <h2>Page Not Found</h2>
+        <p>The page you're looking for doesn't exist or has been moved. Let's get you back on track.</p>
+
+        <div class="error-links">
+            <a href="/" class="primary-link">Go Home</a>
+            <a href="prices.html" class="secondary-link">Check Prices</a>
+        </div>
+    </main>
+
+    <!-- Floating App Download Icon (iOS) -->
+    <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="floating-app-icon ios-only" id="floating-app-cta">
+        <img src="images/app-icon.png" alt="HomeHeat">
+        <div class="float-text">
+            <span class="float-title">Get HomeHeat</span>
+            <span class="float-subtitle">Free on App Store</span>
+        </div>
+    </a>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="learn/">Learn</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="support.html">Support</a>
+        </div>
+        <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
+        <p>&copy; 2026 HomeHeat. All rights reserved.</p>
+    </footer>
+
+    <script src="js/nav.js"></script>
+    <script src="js/pwa.js"></script>
+    <script>
+    (function() {
+        var isAndroid = /Android/i.test(navigator.userAgent);
+        var floatingIcon = document.getElementById('floating-app-cta');
+
+        // Show floating icon immediately on 404 page
+        if (floatingIcon && !isAndroid) {
+            floatingIcon.classList.add('visible');
+            floatingIcon.addEventListener('click', function() {
+                if (typeof gtag === 'function') {
+                    gtag('event', 'app_download_click', { location: 'floating_icon', page: '404' });
+                }
+            });
+        }
+
+        // Android: Show PWA banner after short delay
+        if (isAndroid && typeof showPwaInstallBanner === 'function') {
+            setTimeout(function() {
+                showPwaInstallBanner();
+            }, 2000);
+        }
+
+        // Hide iOS elements on Android
+        if (isAndroid) {
+            document.querySelectorAll('.ios-only').forEach(function(el) {
+                el.style.display = 'none';
+            });
+        }
+
+        // Track 404 error
+        if (typeof gtag === 'function') {
+            gtag('event', 'page_not_found', {
+                page_path: window.location.pathname,
+                referrer: document.referrer
+            });
+        }
+    })();
+    </script>
+</body>
+</html>

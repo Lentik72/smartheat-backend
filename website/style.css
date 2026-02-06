@@ -3393,3 +3393,82 @@ body {
         font-size: 1.8rem;
     }
 }
+
+/* ============================================
+   Floating App Download Icon (Global)
+   ============================================ */
+.floating-app-icon {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    padding: 8px 16px 8px 8px;
+    border-radius: 50px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.floating-app-icon.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.floating-app-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+}
+
+.floating-app-icon img {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+}
+
+.floating-app-icon .float-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.floating-app-icon .float-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+}
+
+.floating-app-icon .float-subtitle {
+    font-size: 11px;
+    color: #FF6B35;
+}
+
+@media (max-width: 480px) {
+    .floating-app-icon {
+        bottom: 16px;
+        right: 16px;
+        padding: 6px 12px 6px 6px;
+    }
+    .floating-app-icon img {
+        width: 36px;
+        height: 36px;
+    }
+    .floating-app-icon .float-title {
+        font-size: 12px;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .floating-app-icon {
+        background: #2a2a2a;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .floating-app-icon .float-title {
+        color: #e5e5e5;
+    }
+}

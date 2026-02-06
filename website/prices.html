@@ -591,6 +591,83 @@
     color: #e5e5e5;
   }
 }
+
+/* Floating App Download Icon */
+.floating-app-icon {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    padding: 8px 16px 8px 8px;
+    border-radius: 50px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.floating-app-icon.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.floating-app-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+}
+
+.floating-app-icon img {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+}
+
+.floating-app-icon .float-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.floating-app-icon .float-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+}
+
+.floating-app-icon .float-subtitle {
+    font-size: 11px;
+    color: #FF6B35;
+}
+
+@media (max-width: 480px) {
+    .floating-app-icon {
+        bottom: 16px;
+        right: 16px;
+        padding: 6px 12px 6px 6px;
+    }
+    .floating-app-icon img {
+        width: 36px;
+        height: 36px;
+    }
+    .floating-app-icon .float-title {
+        font-size: 12px;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .floating-app-icon {
+        background: #2a2a2a;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .floating-app-icon .float-title {
+        color: #e5e5e5;
+    }
+}
 </style>
 </head>
 <body>
@@ -631,6 +708,8 @@
                 <a href="prices/md/" class="state-tab">Maryland</a>
                 <a href="prices/de/" class="state-tab">Delaware</a>
                 <a href="prices/va/" class="state-tab">Virginia</a>
+                <a href="prices/oh/" class="state-tab">Ohio</a>
+                <a href="prices/ak/" class="state-tab">Alaska</a>
             </div>
         </div>
     </div>
@@ -661,7 +740,7 @@
             <span class="pulse-dot"></span>
             <span>Live market snapshot</span>
             <span>·</span>
-            <span id="pulse-suppliers">430+</span> active suppliers across <span id="pulse-states">11</span> states
+            <span id="pulse-suppliers">430+</span> active suppliers across <span id="pulse-states">13</span> states
         </div>
         <p class="market-trust">Prices come directly from supplier websites or verified updates.</p>
 
@@ -968,6 +1047,15 @@
         </ul>
     </section>
 
+    <!-- Floating App Download Icon (iOS) -->
+    <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="floating-app-icon ios-only" id="floating-app-cta">
+        <img src="images/app-icon.png" alt="HomeHeat">
+        <div class="float-text">
+            <span class="float-title">Get HomeHeat</span>
+            <span class="float-subtitle">Free on App Store</span>
+        </div>
+    </a>
+
     <footer class="footer">
         <div class="footer-locations">
             <p class="footer-locations-title">Popular Locations</p>
@@ -1019,7 +1107,9 @@
             'ME': { name: 'Maine', path: 'prices/me/', suppliers: 5 },
             'MD': { name: 'Maryland', path: 'prices/md/', suppliers: 8 },
             'DE': { name: 'Delaware', path: 'prices/de/', suppliers: 3 },
-            'VA': { name: 'Virginia', path: 'prices/va/', suppliers: 6 }
+            'VA': { name: 'Virginia', path: 'prices/va/', suppliers: 6 },
+            'OH': { name: 'Ohio', path: 'prices/oh/', suppliers: 2 },
+            'AK': { name: 'Alaska', path: 'prices/ak/', suppliers: 3 }
         };
 
         // Check for returning user with saved ZIP
@@ -1152,6 +1242,48 @@
                 } catch (e) {}
             }
         });
+
+        // Platform detection
+        const isAndroid = /Android/i.test(navigator.userAgent);
+
+        // iOS: Show floating app icon after scrolling
+        const floatingIcon = document.getElementById('floating-app-cta');
+        if (floatingIcon && !isAndroid) {
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 300) {
+                    floatingIcon.classList.add('visible');
+                } else {
+                    floatingIcon.classList.remove('visible');
+                }
+            });
+
+            // Track clicks
+            floatingIcon.addEventListener('click', function() {
+                if (typeof gtag === 'function') {
+                    gtag('event', 'app_download_click', { location: 'floating_icon', page: 'prices' });
+                }
+            });
+        }
+
+        // Android: Show PWA install banner after scrolling 50%
+        if (isAndroid && typeof showPwaInstallBanner === 'function') {
+            let pwaPromptShown = false;
+            window.addEventListener('scroll', function() {
+                if (pwaPromptShown) return;
+                const scrollPercent = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
+                if (scrollPercent > 0.5) {
+                    pwaPromptShown = true;
+                    showPwaInstallBanner();
+                }
+            });
+        }
+
+        // Hide iOS elements on Android
+        if (isAndroid) {
+            document.querySelectorAll('.ios-only').forEach(function(el) {
+                el.style.display = 'none';
+            });
+        }
     })();
     </script>
 </body>
