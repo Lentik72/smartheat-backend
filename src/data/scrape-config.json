@@ -88,7 +88,8 @@
   "expresscod.com": {
     "enabled": true,
     "pattern": "table",
-    "notes": "Long Island Nassau/Suffolk - tiered pricing table $2.699-$2.819",
+    "targetTier": 5,
+    "notes": "Long Island Nassau/Suffolk - 4 tiers (lowest appears 3x). targetTier=5 = $3.54 (150 gal).",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -387,6 +388,8 @@
     "enabled": true,
     "pattern": "table",
     "pricePath": "/oil-prices/",
+    "targetTier": 3,
+    "notes": "Long Island - 5 tiers. targetTier=3 = $3.89 (150-299 gal).",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
