@@ -71,8 +71,10 @@
 
   "precisionheatingoil.com": {
     "enabled": true,
-    "pattern": "direct",
-    "notes": "Long Island",
+    "pattern": "table",
+    "pricePath": "/pricing",
+    "targetTier": 13,
+    "notes": "Long Island - tiered pricing on /pricing page (cash+credit mixed). targetTier=13 = $3.72 (cash 150gal).",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
