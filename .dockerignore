@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Backups
+backups*/
+
+# Documentation
+*.md
+!README.md
+
+# Development files
+.env.local
+.env.development
+*.log
+
+# Large static website content (served separately or via CDN)
+# Comment out if you need these in the Docker image
+# website/prices/
+# website/supplier/
+# website/learn/
