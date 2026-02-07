@@ -323,7 +323,7 @@ module.exports = {
           :weekendDelivery, :emergencyDelivery, :seniorDiscount, :notes,
           :active, :verified, :allowPriceDisplay, :createdAt, :updatedAt
         )
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (slug) DO NOTHING
       `, {
         replacements: {
           ...supplier,

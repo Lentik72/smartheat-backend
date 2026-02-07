@@ -124,7 +124,7 @@ module.exports = {
           :weekendDelivery, :emergencyDelivery, :seniorDiscount,
           :active, :verified, :createdAt, :updatedAt
         )
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (slug) DO NOTHING
       `, {
         replacements: {
           ...supplier,
