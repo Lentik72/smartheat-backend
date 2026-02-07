@@ -1243,10 +1243,12 @@
 
         // Platform detection
         const isAndroid = /Android/i.test(navigator.userAgent);
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isDesktop = !isMobile;
 
-        // iOS: Show floating app icon after scrolling
+        // Floating app icon - iOS mobile only
         const floatingIcon = document.getElementById('floating-app-cta');
-        if (floatingIcon && !isAndroid) {
+        if (floatingIcon && isMobile && !isAndroid) {
             window.addEventListener('scroll', function() {
                 if (window.scrollY > 300) {
                     floatingIcon.classList.add('visible');
@@ -1254,27 +1256,40 @@
                     floatingIcon.classList.remove('visible');
                 }
             });
-
-            // Track clicks
             floatingIcon.addEventListener('click', function() {
                 if (typeof gtag === 'function') {
                     gtag('event', 'app_download_click', { location: 'floating_icon', page: 'prices' });
                 }
             });
+        } else if (floatingIcon && isDesktop) {
+            floatingIcon.style.display = 'none';
         }
 
-        // Android: Show PWA install banner after scrolling 50%
-        if (isAndroid && typeof showPwaInstallBanner === 'function') {
-            let pwaPromptShown = false;
-            window.addEventListener('scroll', function() {
-                if (pwaPromptShown) return;
-                const scrollPercent = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
-                if (scrollPercent > 0.5) {
-                    pwaPromptShown = true;
-                    showPwaInstallBanner();
-                }
+        // QR Widget - desktop only (7-day dismiss)
+        function isQRDismissedRecently() {
+            const dismissed = localStorage.getItem('qr-widget-dismissed');
+            if (!dismissed) return false;
+            const sevenDays = 7 * 24 * 60 * 60 * 1000;
+            return (Date.now() - parseInt(dismissed, 10)) < sevenDays;
+        }
+
+        function showQRWidget() {
+            if (!isDesktop) return;
+            if (isQRDismissedRecently()) return;
+            if (document.getElementById('qr-widget')) return;
+
+            var widget = document.createElement('div');
+            widget.id = 'qr-widget';
+            widget.className = 'qr-widget';
+            widget.innerHTML = '<button class="qr-dismiss" aria-label="Dismiss">&times;</button><div class="qr-content"><img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://apps.apple.com/us/app/homeheat/id6747320571" alt="Download HomeHeat" width="100" height="100"><div class="qr-text"><strong>Get HomeHeat on your phone</strong><span>Scan to download the free app</span></div></div>';
+            document.body.appendChild(widget);
+            widget.querySelector('.qr-dismiss').addEventListener('click', function() {
+                localStorage.setItem('qr-widget-dismissed', Date.now().toString());
+                widget.style.opacity = '0';
+                setTimeout(function() { widget.remove(); }, 300);
             });
         }
+        if (isDesktop) setTimeout(showQRWidget, 2000);
 
         // Hide iOS elements on Android
         if (isAndroid) {

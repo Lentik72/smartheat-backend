@@ -930,7 +930,7 @@
     // QR Widget - show on desktop only
     function showQRWidget() {
         if (!isDesktop) return;
-        if (sessionStorage.getItem('qr-dismissed')) return;
+        if (isQRDismissedRecently()) return;
 
         const widget = document.createElement('div');
         widget.id = 'qr-widget';
@@ -948,7 +948,7 @@
         document.body.appendChild(widget);
 
         widget.querySelector('.qr-dismiss').addEventListener('click', function() {
-            sessionStorage.setItem('qr-dismissed', 'true');
+            localStorage.setItem('qr-widget-dismissed', Date.now().toString());
             widget.style.opacity = '0';
             setTimeout(function() { widget.remove(); }, 300);
             if (typeof gtag === 'function') {
