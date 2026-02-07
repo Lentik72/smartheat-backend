@@ -608,30 +608,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info('🔒 Security: Helmet, CORS, Rate limiting enabled');
 
-  // ONE-TIME STARTUP TRIGGER: Regenerate SEO + supplier pages (remove after deploy)
-  setTimeout(async () => {
-    const startupWebsiteDir = path.join(__dirname, 'website');
-    const adapterLogger = { log: (...args) => logger.info(args.join(' ')), error: (...args) => logger.error(args.join(' ')) };
-
-    // SEO pages
-    try {
-      const { generateSEOPages } = require('./scripts/generate-seo-pages');
-      const seoResult = await generateSEOPages({ sequelize, logger, outputDir: startupWebsiteDir, dryRun: false });
-      logger.info(`✅ [Startup] SEO pages regenerated: ${seoResult.states} states, ${seoResult.counties} counties, ${seoResult.cities} cities`);
-    } catch (err) {
-      logger.error('❌ [Startup] SEO page generation failed:', err.message);
-    }
-
-    // Supplier pages
-    try {
-      const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
-      const supResult = await generateSupplierPages({ sequelize, logger: adapterLogger, websiteDir: startupWebsiteDir });
-      logger.info(`✅ [Startup] Supplier pages regenerated: ${supResult.generated} pages`);
-    } catch (err) {
-      logger.error('❌ [Startup] Supplier page generation failed:', err.message);
-    }
-  }, 5000);
-
   // V2.6.0: DISABLED fixed 10 AM scrape - now using distributed scheduler (8AM-6PM)
   // Keeping commented for rollback if needed
   // cron.schedule('0 15 * * *', async () => {
