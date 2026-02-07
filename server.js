@@ -624,6 +624,16 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // logger.info('⏰ Price scraper scheduled: daily at 10:00 AM EST');
   logger.info('⏰ Fixed 10 AM scrape DISABLED - using distributed scheduler instead');
 
+  // One-time: delete test waitlist entry
+  setTimeout(async () => {
+    try {
+      await sequelize.query("DELETE FROM waitlist WHERE email = 'test-delete-me@example.com'");
+      logger.info('✅ Deleted test waitlist entry');
+    } catch (err) {
+      logger.error('❌ Failed to delete test entry:', err.message);
+    }
+  }, 5000);
+
   // V2.7.0: Second daily scrape at 4 PM EST to catch afternoon price updates
   // Catches suppliers who update prices after their morning distributed scrape
   cron.schedule('0 21 * * *', async () => {
