@@ -1005,13 +1005,13 @@
     widget.className = 'qr-widget';
     widget.innerHTML = `
       <button class="qr-dismiss" aria-label="Dismiss">&times;</button>
-      <div class="qr-content">
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571" target="_blank" class="qr-content">
         <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://apps.apple.com/us/app/homeheat/id6747320571" alt="Download HomeHeat" width="100" height="100">
         <div class="qr-text">
           <strong>Know when you'll need oil — not just what it costs</strong>
           <span>Scan to get the free HomeHeat app</span>
         </div>
-      </div>
+      </a>
     `;
 
     document.body.appendChild(widget);
@@ -1021,7 +1021,16 @@
       localStorage.setItem('qr-widget-dismissed', Date.now().toString());
       widget.style.opacity = '0';
       setTimeout(function() { widget.remove(); }, 300);
+      if (typeof gtag === 'function') { gtag('event', 'qr_widget_dismissed'); }
     });
+
+    // Click tracking
+    widget.querySelector('.qr-content').addEventListener('click', function() {
+      if (typeof gtag === 'function') { gtag('event', 'qr_widget_click'); }
+    });
+
+    // Shown tracking
+    if (typeof gtag === 'function') { gtag('event', 'qr_widget_shown'); }
   }
 
   // ========================================
