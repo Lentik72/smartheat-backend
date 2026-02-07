@@ -773,6 +773,14 @@ body {
     background: var(--primary-gradient-end);
 }
 
+/* Dark mode: ensure button text stays white */
+@media (prefers-color-scheme: dark) {
+    .contact-link {
+        color: white;
+        background: var(--primary-orange);
+    }
+}
+
 .faq-item {
     margin-bottom: 1.5rem;
 }
