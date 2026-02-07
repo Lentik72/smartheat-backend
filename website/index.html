@@ -519,100 +519,6 @@
         background: #2a2a2a;
     }
 }
-
-/* Floating App Download Icon */
-.floating-app-wrapper {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 100;
-    display: none;
-}
-.floating-app-wrapper.visible {
-    display: block;
-}
-.floating-app-icon {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: white;
-    padding: 8px 16px 8px 8px;
-    border-radius: 50px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    text-decoration: none;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.floating-app-icon:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(0,0,0,0.2);
-}
-.floating-app-icon img {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-}
-.floating-app-icon .float-text {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.2;
-}
-.floating-app-icon .float-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #333;
-}
-.floating-app-icon .float-subtitle {
-    font-size: 11px;
-    color: #FF6B35;
-}
-.floating-app-dismiss {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #666;
-    color: white;
-    border: 2px solid white;
-    font-size: 14px;
-    line-height: 18px;
-    text-align: center;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-.floating-app-dismiss:hover {
-    background: #444;
-}
-@media (max-width: 480px) {
-    .floating-app-wrapper {
-        bottom: 16px;
-        right: 16px;
-    }
-    .floating-app-icon {
-        padding: 6px 12px 6px 6px;
-    }
-    .floating-app-icon img {
-        width: 36px;
-        height: 36px;
-    }
-    .floating-app-icon .float-title {
-        font-size: 12px;
-    }
-}
-@media (prefers-color-scheme: dark) {
-    .floating-app-icon {
-        background: #2a2a2a;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-    .floating-app-icon .float-title {
-        color: #e5e5e5;
-    }
-    .floating-app-dismiss {
-        background: #888;
-        border-color: #2a2a2a;
-    }
-}
 </style>
 </head>
 <body>
@@ -891,246 +797,124 @@
     </footer>
 
     <script src="js/nav.js"></script>
+    <script src="js/widgets.js"></script>
+    <script src="js/pwa.js"></script>
     <script>
     // Android waitlist form
-    const androidForm = document.getElementById('android-waitlist-form');
-    if (androidForm) {
-        androidForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('android-email').value;
-            const zip_code = document.getElementById('android-zip').value;
-            const form = document.getElementById('android-waitlist-form');
-            const success = document.getElementById('android-waitlist-success');
+    (function() {
+        var androidForm = document.getElementById('android-waitlist-form');
+        if (androidForm) {
+            androidForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                var email = document.getElementById('android-email').value;
+                var zip_code = document.getElementById('android-zip').value;
+                var form = document.getElementById('android-waitlist-form');
+                var success = document.getElementById('android-waitlist-success');
 
+                try {
+                    var res = await fetch('/api/waitlist/android', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, zip_code: zip_code })
+                    });
+
+                    if (res.ok) {
+                        form.style.display = 'none';
+                        success.style.display = 'block';
+                        if (typeof gtag === 'function') {
+                            gtag('event', 'android_waitlist_signup', { zip: zip_code || 'none' });
+                        }
+                    }
+                } catch (err) {}
+            });
+        }
+
+        // Fetch live stats from /api/market/pulse
+        async function fetchLiveStats() {
             try {
-                const res = await fetch('/api/waitlist/android', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, zip_code })
-                });
-
+                var res = await fetch('/api/market/pulse');
                 if (res.ok) {
-                    form.style.display = 'none';
-                    success.style.display = 'block';
-                    if (typeof gtag === 'function') {
-                        gtag('event', 'android_waitlist_signup', { zip: zip_code || 'none' });
+                    var data = await res.json();
+                    if (data.supplierCount) {
+                        document.getElementById('stat-suppliers').textContent = data.supplierCount + '+';
+                    }
+                    if (data.stateCount) {
+                        document.getElementById('stat-states').textContent = data.stateCount;
+                    }
+                    if (data.priceAvg) {
+                        var avg = '$' + parseFloat(data.priceAvg).toFixed(2);
+                        document.getElementById('stat-avg-price').textContent = avg;
+                        document.getElementById('teaser-avg-price').textContent = avg;
                     }
                 }
-            } catch (err) {}
-        });
-    }
+            } catch (e) {}
+        }
+        fetchLiveStats();
 
-    // Device detection
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isDesktop = !isMobile;
+        // Track hero App Store download click
+        var heroDownload = document.getElementById('hero-download-cta');
+        if (heroDownload) {
+            heroDownload.addEventListener('click', function() {
+                if (typeof gtag === 'function') {
+                    gtag('event', 'app_download_click', { location: 'hero' });
+                }
+            });
+        }
 
-    // Show Android elements only on Android, iOS elements only on iOS mobile
-    if (isAndroid) {
-        document.querySelectorAll('.android-only').forEach(el => el.style.display = 'block');
-        document.querySelectorAll('.ios-only').forEach(el => el.style.display = 'none');
-    } else {
-        document.querySelectorAll('.android-only').forEach(el => el.style.display = 'none');
-    }
+        // Track "See prices in your area" click
+        var pricesCta = document.getElementById('prices-cta');
+        if (pricesCta) {
+            pricesCta.addEventListener('click', function() {
+                if (typeof gtag === 'function') {
+                    gtag('event', 'prices_cta_click', { location: 'prices_teaser' });
+                }
+            });
+        }
 
-    // Floating app icon - show only on iOS mobile after scrolling
-    function isFloatingIconDismissed() {
-        const dismissed = localStorage.getItem('floating-icon-dismissed');
-        if (!dismissed) return false;
-        const sevenDays = 7 * 24 * 60 * 60 * 1000;
-        return (Date.now() - parseInt(dismissed, 10)) < sevenDays;
-    }
+        // Screenshot scroll - drag to scroll on desktop + fade indicators
+        var scrollContainer = document.getElementById('screenshot-scroll');
+        var scrollWrapper = document.getElementById('screenshot-wrapper');
 
-    const floatingWrapper = document.getElementById('floating-app-wrapper');
-    const floatingIcon = document.getElementById('floating-app-cta');
-    const floatingDismiss = floatingWrapper ? floatingWrapper.querySelector('.floating-app-dismiss') : null;
+        if (scrollContainer && scrollWrapper) {
+            var isDown = false;
+            var startX;
+            var scrollLeft;
 
-    if (floatingWrapper && isMobile && !isAndroid && !isFloatingIconDismissed()) {
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 400) {
-                floatingWrapper.classList.add('visible');
-            } else {
-                floatingWrapper.classList.remove('visible');
+            function updateFades() {
+                var maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+                if (scrollContainer.scrollLeft > 10) {
+                    scrollWrapper.classList.add('scrolled-left');
+                } else {
+                    scrollWrapper.classList.remove('scrolled-left');
+                }
+                if (scrollContainer.scrollLeft >= maxScroll - 10) {
+                    scrollWrapper.classList.add('scrolled-right');
+                } else {
+                    scrollWrapper.classList.remove('scrolled-right');
+                }
             }
-        });
 
-        // Dismiss button - hide for 7 days
-        if (floatingDismiss) {
-            floatingDismiss.addEventListener('click', (e) => {
+            scrollContainer.addEventListener('scroll', updateFades);
+            updateFades();
+
+            scrollContainer.addEventListener('mousedown', function(e) {
+                isDown = true;
+                startX = e.pageX - scrollContainer.offsetLeft;
+                scrollLeft = scrollContainer.scrollLeft;
+            });
+
+            scrollContainer.addEventListener('mouseleave', function() { isDown = false; });
+            scrollContainer.addEventListener('mouseup', function() { isDown = false; });
+
+            scrollContainer.addEventListener('mousemove', function(e) {
+                if (!isDown) return;
                 e.preventDefault();
-                e.stopPropagation();
-                localStorage.setItem('floating-icon-dismissed', Date.now().toString());
-                floatingWrapper.style.display = 'none';
-                if (typeof gtag === 'function') {
-                    gtag('event', 'floating_icon_dismissed');
-                }
+                var x = e.pageX - scrollContainer.offsetLeft;
+                var walk = (x - startX) * 1.5;
+                scrollContainer.scrollLeft = scrollLeft - walk;
             });
         }
-
-        // Click on app link - hide for 7 days (they're going to install)
-        if (floatingIcon) {
-            floatingIcon.addEventListener('click', () => {
-                localStorage.setItem('floating-icon-dismissed', Date.now().toString());
-                if (typeof gtag === 'function') {
-                    gtag('event', 'app_download_click', { location: 'floating_icon' });
-                }
-            });
-        }
-    }
-
-    // QR Widget - show on desktop only
-    function isQRDismissedRecently() {
-        const dismissed = localStorage.getItem('qr-widget-dismissed');
-        if (!dismissed) return false;
-        const sevenDays = 7 * 24 * 60 * 60 * 1000;
-        return (Date.now() - parseInt(dismissed, 10)) < sevenDays;
-    }
-
-    function showQRWidget() {
-        if (!isDesktop) return;
-        if (isQRDismissedRecently()) return;
-
-        const widget = document.createElement('div');
-        widget.id = 'qr-widget';
-        widget.className = 'qr-widget';
-        widget.innerHTML = `
-            <button class="qr-dismiss" aria-label="Dismiss">&times;</button>
-            <a href="https://apps.apple.com/us/app/homeheat/id6747320571" target="_blank" class="qr-content">
-                <img src="images/app-icon.png" alt="HomeHeat" class="qr-app-icon">
-                <div class="qr-text">
-                    <strong>Track your tank from your phone</strong>
-                    <span>Scan with your iPhone camera to download free</span>
-                </div>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=144x144&data=https://apps.apple.com/us/app/homeheat/id6747320571" alt="QR Code" class="qr-code">
-            </a>
-        `;
-        document.body.appendChild(widget);
-
-        widget.querySelector('.qr-dismiss').addEventListener('click', function() {
-            localStorage.setItem('qr-widget-dismissed', Date.now().toString());
-            widget.style.opacity = '0';
-            setTimeout(function() { widget.remove(); }, 300);
-            if (typeof gtag === 'function') {
-                gtag('event', 'qr_widget_dismissed');
-            }
-        });
-
-        widget.querySelector('.qr-content').addEventListener('click', function() {
-            if (typeof gtag === 'function') {
-                gtag('event', 'qr_widget_click', { location: 'qr_widget' });
-            }
-        });
-
-        if (typeof gtag === 'function') {
-            gtag('event', 'qr_widget_shown');
-        }
-    }
-    setTimeout(showQRWidget, 2000);
-
-    // Fetch live stats from /api/market/pulse (optional - falls back to defaults)
-    async function fetchLiveStats() {
-        try {
-            const res = await fetch('/api/market/pulse');
-            if (res.ok) {
-                const data = await res.json();
-                if (data.supplierCount) {
-                    document.getElementById('stat-suppliers').textContent = data.supplierCount + '+';
-                }
-                if (data.stateCount) {
-                    document.getElementById('stat-states').textContent = data.stateCount;
-                }
-                if (data.priceAvg) {
-                    const avg = '$' + parseFloat(data.priceAvg).toFixed(2);
-                    document.getElementById('stat-avg-price').textContent = avg;
-                    document.getElementById('teaser-avg-price').textContent = avg;
-                }
-            }
-        } catch (e) {}
-    }
-    fetchLiveStats();
-
-    // GA Event Tracking for CTAs
-    function trackClick(eventName, params) {
-        if (typeof gtag === 'function') {
-            gtag('event', eventName, params);
-        }
-    }
-
-    // Track App Store download click (hero)
-    const heroDownload = document.getElementById('hero-download-cta');
-    if (heroDownload) {
-        heroDownload.addEventListener('click', () => {
-            trackClick('app_download_click', { location: 'hero' });
-        });
-    }
-
-    // Track floating app icon click
-    const floatingDownload = document.getElementById('floating-app-cta');
-    if (floatingDownload) {
-        floatingDownload.addEventListener('click', () => {
-            trackClick('app_download_click', { location: 'floating_icon' });
-        });
-    }
-
-    // Track "See prices in your area" click
-    const pricesCta = document.getElementById('prices-cta');
-    if (pricesCta) {
-        pricesCta.addEventListener('click', () => {
-            trackClick('prices_cta_click', { location: 'prices_teaser' });
-        });
-    }
-
-    // Screenshot scroll - drag to scroll on desktop + fade indicators
-    const scrollContainer = document.getElementById('screenshot-scroll');
-    const scrollWrapper = document.getElementById('screenshot-wrapper');
-
-    if (scrollContainer && scrollWrapper) {
-        let isDown = false;
-        let startX;
-        let scrollLeft;
-
-        // Update fade indicators based on scroll position
-        function updateFades() {
-            const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-            if (scrollContainer.scrollLeft > 10) {
-                scrollWrapper.classList.add('scrolled-left');
-            } else {
-                scrollWrapper.classList.remove('scrolled-left');
-            }
-            if (scrollContainer.scrollLeft >= maxScroll - 10) {
-                scrollWrapper.classList.add('scrolled-right');
-            } else {
-                scrollWrapper.classList.remove('scrolled-right');
-            }
-        }
-
-        scrollContainer.addEventListener('scroll', updateFades);
-        updateFades();
-
-        // Drag to scroll (desktop)
-        scrollContainer.addEventListener('mousedown', (e) => {
-            isDown = true;
-            startX = e.pageX - scrollContainer.offsetLeft;
-            scrollLeft = scrollContainer.scrollLeft;
-        });
-
-        scrollContainer.addEventListener('mouseleave', () => {
-            isDown = false;
-        });
-
-        scrollContainer.addEventListener('mouseup', () => {
-            isDown = false;
-        });
-
-        scrollContainer.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - scrollContainer.offsetLeft;
-            const walk = (x - startX) * 1.5;
-            scrollContainer.scrollLeft = scrollLeft - walk;
-        });
-    }
+    })();
     </script>
-    <script src="js/pwa.js"></script>
 </body>
 </html>
