@@ -108,8 +108,8 @@ const cache = new NodeCache({
 });
 
 // TEMP: Debug host detection
-app.get('/api/debug-host', (req, res) => {
-  res.json({ host: req.get('host'), hostname: req.hostname, xForwardedHost: req.get('x-forwarded-host'), headers: req.headers });
+app.get('/debug-host-check', (req, res) => {
+  res.json({ host: req.get('host'), hostname: req.hostname, xfh: req.get('x-forwarded-host') });
 });
 
 // Redirect non-www to www and Railway origin to production domain
