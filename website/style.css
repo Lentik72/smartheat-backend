@@ -777,14 +777,6 @@ body {
     background: var(--primary-gradient-end);
 }
 
-/* Dark mode: ensure button text stays white */
-@media (prefers-color-scheme: dark) {
-    .contact-link {
-        color: white;
-        background: var(--primary-orange);
-    }
-}
-
 .faq-item {
     margin-bottom: 1.5rem;
 }
@@ -1740,188 +1732,6 @@ body {
     border-color: var(--primary-orange);
 }
 
-/* Dark Mode Support - Warm tones to match brand */
-@media (prefers-color-scheme: dark) {
-    :root {
-        /* Slightly warm backgrounds - not pure gray */
-        --background: #121110;
-        --background-secondary: #1c1a18;
-        --background-card: #262320;
-        --background-light: #1c1a18;
-
-        /* Warm text colors */
-        --text-dark: #f5f3f0;
-        --text-secondary: #d0cdc8;
-        --text-gray: #a09a94;
-        --text-muted: #8a8580;
-
-        /* Warm borders */
-        --border-color: #3a3530;
-
-        /* Enhanced shadows for dark mode */
-        --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-        --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
-
-        /* Adjusted primary for dark mode */
-        --primary-orange-light: rgba(224, 122, 95, 0.15);
-    }
-
-    body {
-        background-color: var(--background);
-        color: var(--text-dark);
-    }
-
-    .nav {
-        background: var(--background);
-        border-bottom-color: var(--border-color);
-    }
-
-    .nav-logo {
-        color: var(--text-dark);
-    }
-
-    .nav-toggle span {
-        background: var(--text-dark);
-    }
-
-    .nav-links {
-        background: var(--background);
-    }
-
-    .nav-links a {
-        color: var(--text-gray);
-    }
-
-    .nav-links a:hover {
-        color: var(--primary-orange);
-        background: var(--primary-orange-light);
-    }
-
-    .nav-links a.active {
-        color: var(--primary-orange);
-    }
-
-    .price-summary,
-    .supplier-card,
-    .faq-details,
-    .support-card,
-    .feature-card {
-        background: var(--background-card);
-        border-color: var(--border-color);
-    }
-
-    .supplier-card h3,
-    .price-summary h2,
-    .price-value,
-    .feature-card h3 {
-        color: var(--text-dark);
-    }
-
-    .feature-card p,
-    .content-section p {
-        color: var(--text-gray);
-    }
-
-    /* Links in content sections - brighter for dark mode contrast */
-    .content-section a {
-        color: #F4A259; /* sunset-gold - better contrast than coral */
-    }
-
-    .content-section a:hover {
-        color: #FFC078;
-    }
-
-    .content-section a:visited {
-        color: #D4845A; /* slightly muted for visited */
-    }
-
-    /* Button links should keep white text */
-    .content-section .contact-link,
-    .content-section .contact-link:visited,
-    .content-section .contact-link:hover {
-        color: white;
-    }
-
-    .price-low .price-value {
-        color: #5dbb63;
-    }
-
-    .price-movement.movement-up {
-        background: rgba(231, 76, 60, 0.2);
-    }
-
-    .price-movement.movement-down {
-        background: rgba(39, 174, 96, 0.2);
-    }
-
-    .price-movement.movement-flat {
-        background: rgba(149, 165, 166, 0.2);
-    }
-
-    .nearby-zip-btn {
-        background: var(--background-secondary);
-        border-color: var(--border-color);
-        color: var(--text-dark);
-    }
-
-    .share-button {
-        background: var(--background-card);
-        border-color: var(--border-color);
-        color: var(--text-dark);
-    }
-
-    .share-button:hover {
-        background: var(--background-secondary);
-    }
-
-    .footer {
-        background: var(--background-card);
-        border-top: 1px solid var(--border-color);
-    }
-
-    .footer p,
-    .footer-links a {
-        color: var(--text-gray);
-    }
-
-    /* Content sections dark mode */
-    .screenshots,
-    .features {
-        background: var(--background);
-    }
-
-    .screenshots h2,
-    .features h2 {
-        color: var(--text-dark);
-    }
-
-    /* Hero gradients get darker in dark mode */
-    .hero,
-    .prices-hero {
-        background: linear-gradient(180deg, #4a3535 0%, #3d3028 50%, #352a1f 100%);
-    }
-
-    .hero-badge,
-    .trust-badge {
-        background: rgba(0,0,0,0.3);
-        border-color: rgba(255,255,255,0.1);
-        color: var(--text-dark);
-    }
-
-    .app-download-card {
-        background: var(--background-card);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-    }
-
-    .app-download-info .app-name {
-        color: var(--text-dark);
-    }
-
-    .screenshot-item img {
-        border-color: var(--border-color);
-    }
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    SEO PAGES - State Pages & Leaderboard
    Added for Google indexability
@@ -2574,38 +2384,6 @@ body {
     color: var(--text-gray);
     margin-top: 1.5rem;
     margin-bottom: 0.5rem;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   DARK MODE - SEO Pages
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-@media (prefers-color-scheme: dark) {
-    .state-prices-page {
-        background: var(--background);
-    }
-
-    .state-header h1,
-    .supplier-table-section h2,
-    .zip-cta h3,
-    .other-states h3,
-    .default-leaderboard h2,
-    .state-averages h3,
-    .top-deals h3 {
-        color: var(--text-dark);
-    }
-
-    .supplier-table th {
-        background: rgba(255,255,255,0.03);
-    }
-
-    .supplier-table tbody tr:hover {
-        background: rgba(255, 138, 0, 0.1);
-    }
-
-    .price-summary-card {
-        background: linear-gradient(135deg, #5d3d17 0%, #4a3012 100%);
-    }
 }
 
 /* ========================================
@@ -3555,19 +3333,5 @@ body {
     }
     .floating-app-icon .float-title {
         font-size: 12px;
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    .floating-app-icon {
-        background: #2a2a2a;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-    .floating-app-icon .float-title {
-        color: #e5e5e5;
-    }
-    .floating-app-dismiss {
-        background: #888;
-        border-color: #2a2a2a;
     }
 }
