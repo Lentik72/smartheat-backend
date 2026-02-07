@@ -107,10 +107,10 @@ const cache = new NodeCache({
   useClones: false
 });
 
-// Redirect non-www to www (preserves path for SEO)
+// Redirect non-www to www and Railway origin to production domain
 app.use((req, res, next) => {
   const host = req.get('host');
-  if (host === 'gethomeheat.com') {
+  if (host === 'gethomeheat.com' || (host && host.endsWith('.railway.app'))) {
     return res.redirect(301, `https://www.gethomeheat.com${req.originalUrl}`);
   }
   next();
@@ -155,15 +155,6 @@ app.use(limiter);
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Redirect Railway origin URL to production domain
-app.use((req, res, next) => {
-  const host = req.get('host') || '';
-  if (host.endsWith('.railway.app')) {
-    return res.redirect(301, `https://www.gethomeheat.com${req.originalUrl}`);
-  }
-  next();
-});
 
 // V2.6.0: Serve static website files
 // This allows Railway to host both API and website
