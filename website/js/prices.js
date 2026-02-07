@@ -985,17 +985,24 @@
   // DESKTOP QR WIDGET
   // ========================================
 
+  function isQRDismissedRecently() {
+    var dismissed = localStorage.getItem('qr-widget-dismissed');
+    if (!dismissed) return false;
+    var sevenDays = 7 * 24 * 60 * 60 * 1000;
+    return (Date.now() - parseInt(dismissed, 10)) < sevenDays;
+  }
+
   function showQRWidget() {
     // Only show on desktop
     if (/Mobi|Android/i.test(navigator.userAgent)) return;
 
-    // Check if already dismissed this session
-    if (sessionStorage.getItem('qr-dismissed')) return;
+    // Check if dismissed in last 7 days
+    if (isQRDismissedRecently()) return;
 
     // Create QR widget
     const widget = document.createElement('div');
     widget.id = 'qr-widget';
-    widget.className = 'qr-widget ios-only';
+    widget.className = 'qr-widget';
     widget.innerHTML = `
       <button class="qr-dismiss" aria-label="Dismiss">&times;</button>
       <div class="qr-content">
@@ -1009,9 +1016,9 @@
 
     document.body.appendChild(widget);
 
-    // Dismiss handler
+    // Dismiss handler - 7 day localStorage
     widget.querySelector('.qr-dismiss').addEventListener('click', function() {
-      sessionStorage.setItem('qr-dismissed', 'true');
+      localStorage.setItem('qr-widget-dismissed', Date.now().toString());
       widget.style.opacity = '0';
       setTimeout(function() { widget.remove(); }, 300);
     });
