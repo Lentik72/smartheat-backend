@@ -1831,6 +1831,13 @@ body {
         color: #D4845A; /* slightly muted for visited */
     }
 
+    /* Button links should keep white text */
+    .content-section .contact-link,
+    .content-section .contact-link:visited,
+    .content-section .contact-link:hover {
+        color: white;
+    }
+
     .price-low .price-value {
         color: #5dbb63;
     }
