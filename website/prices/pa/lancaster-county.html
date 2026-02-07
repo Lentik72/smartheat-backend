@@ -217,14 +217,17 @@
     </p>
   </main>
 
-  <!-- Floating App Download Icon (iOS) -->
-  <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="floating-app-icon ios-only" id="floating-app-cta">
-    <img src="../../images/app-icon.png" alt="HomeHeat">
-    <div class="float-text">
-      <span class="float-title">Get HomeHeat</span>
-      <span class="float-subtitle">Free on App Store</span>
-    </div>
-  </a>
+  <!-- Floating App Download Icon (iOS mobile only) -->
+  <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
+    <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
+    <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="floating-app-icon" id="floating-app-cta">
+      <img src="../../images/app-icon.png" alt="HomeHeat">
+      <div class="float-text">
+        <span class="float-title">Get HomeHeat</span>
+        <span class="float-subtitle">Free on App Store</span>
+      </div>
+    </a>
+  </div>
 
   <footer class="footer">
     <div class="footer-links">
@@ -248,23 +251,47 @@
     var isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     var isDesktop = !isMobile;
 
-    // Floating app icon - iOS mobile only
+    // Floating icon dismiss check
+    function isFloatingIconDismissed() {
+      var dismissed = localStorage.getItem('floating-icon-dismissed');
+      if (!dismissed) return false;
+      var sevenDays = 7 * 24 * 60 * 60 * 1000;
+      return (Date.now() - parseInt(dismissed, 10)) < sevenDays;
+    }
+
+    var floatingWrapper = document.getElementById('floating-app-wrapper');
     var floatingIcon = document.getElementById('floating-app-cta');
-    if (floatingIcon && isMobile && !isAndroid) {
+    var floatingDismiss = floatingWrapper ? floatingWrapper.querySelector('.floating-app-dismiss') : null;
+
+    // Floating app icon - iOS mobile only
+    if (floatingWrapper && isMobile && !isAndroid && !isFloatingIconDismissed()) {
+      floatingWrapper.style.display = 'block';
       window.addEventListener('scroll', function() {
         if (window.scrollY > 300) {
-          floatingIcon.classList.add('visible');
+          floatingWrapper.classList.add('visible');
         } else {
-          floatingIcon.classList.remove('visible');
+          floatingWrapper.classList.remove('visible');
         }
       });
-      floatingIcon.addEventListener('click', function() {
-        if (typeof gtag === 'function') {
-          gtag('event', 'app_download_click', { location: 'floating_icon', page: 'seo' });
-        }
-      });
-    } else if (floatingIcon && isDesktop) {
-      floatingIcon.style.display = 'none';
+      if (floatingDismiss) {
+        floatingDismiss.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          localStorage.setItem('floating-icon-dismissed', Date.now().toString());
+          floatingWrapper.style.display = 'none';
+          if (typeof gtag === 'function') {
+            gtag('event', 'floating_icon_dismissed', { page: 'seo' });
+          }
+        });
+      }
+      if (floatingIcon) {
+        floatingIcon.addEventListener('click', function() {
+          localStorage.setItem('floating-icon-dismissed', Date.now().toString());
+          if (typeof gtag === 'function') {
+            gtag('event', 'app_download_click', { location: 'floating_icon', page: 'seo' });
+          }
+        });
+      }
     }
 
     // QR Widget - desktop only (7-day dismiss)

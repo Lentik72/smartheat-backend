@@ -521,11 +521,21 @@
 }
 
 /* Floating App Download Icon */
-.floating-app-icon {
+.floating-app-wrapper {
     position: fixed;
     bottom: 24px;
     right: 24px;
     z-index: 100;
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+.floating-app-wrapper.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.floating-app-icon {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -536,39 +546,54 @@
     text-decoration: none;
     transition: transform 0.2s, box-shadow 0.2s;
 }
-
 .floating-app-icon:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 24px rgba(0,0,0,0.2);
 }
-
 .floating-app-icon img {
     width: 40px;
     height: 40px;
     border-radius: 10px;
 }
-
 .floating-app-icon .float-text {
     display: flex;
     flex-direction: column;
     line-height: 1.2;
 }
-
 .floating-app-icon .float-title {
     font-size: 13px;
     font-weight: 600;
     color: #333;
 }
-
 .floating-app-icon .float-subtitle {
     font-size: 11px;
     color: #FF6B35;
 }
-
+.floating-app-dismiss {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #666;
+    color: white;
+    border: 2px solid white;
+    font-size: 14px;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.floating-app-dismiss:hover {
+    background: #444;
+}
 @media (max-width: 480px) {
-    .floating-app-icon {
+    .floating-app-wrapper {
         bottom: 16px;
         right: 16px;
+    }
+    .floating-app-icon {
         padding: 6px 12px 6px 6px;
     }
     .floating-app-icon img {
@@ -579,7 +604,6 @@
         font-size: 12px;
     }
 }
-
 @media (prefers-color-scheme: dark) {
     .floating-app-icon {
         background: #2a2a2a;
@@ -587,6 +611,10 @@
     }
     .floating-app-icon .float-title {
         color: #e5e5e5;
+    }
+    .floating-app-dismiss {
+        background: #888;
+        border-color: #2a2a2a;
     }
 }
 </style>
@@ -795,14 +823,17 @@
         <a href="prices.html" class="cta-link" id="prices-cta">See prices in your area →</a>
     </section>
 
-    <!-- Floating App Download Icon -->
-    <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="floating-app-icon ios-only" id="floating-app-cta">
-        <img src="images/app-icon.png" alt="HomeHeat">
-        <div class="float-text">
-            <span class="float-title">Get HomeHeat</span>
-            <span class="float-subtitle">Free on App Store</span>
-        </div>
-    </a>
+    <!-- Floating App Download Icon (iOS mobile only) -->
+    <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
+        <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
+        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="floating-app-icon" id="floating-app-cta">
+            <img src="images/app-icon.png" alt="HomeHeat">
+            <div class="float-text">
+                <span class="float-title">Get HomeHeat</span>
+                <span class="float-subtitle">Free on App Store</span>
+            </div>
+        </a>
+    </div>
 
     <!-- FAQ Section - Kept but streamlined -->
     <section class="home-faq-section">
@@ -907,24 +938,50 @@
     }
 
     // Floating app icon - show only on iOS mobile after scrolling
+    function isFloatingIconDismissed() {
+        const dismissed = localStorage.getItem('floating-icon-dismissed');
+        if (!dismissed) return false;
+        const sevenDays = 7 * 24 * 60 * 60 * 1000;
+        return (Date.now() - parseInt(dismissed, 10)) < sevenDays;
+    }
+
+    const floatingWrapper = document.getElementById('floating-app-wrapper');
     const floatingIcon = document.getElementById('floating-app-cta');
-    if (floatingIcon && isMobile && !isAndroid) {
-        floatingIcon.style.opacity = '0';
-        floatingIcon.style.transform = 'translateY(20px)';
-        floatingIcon.style.transition = 'opacity 0.3s, transform 0.3s';
+    const floatingDismiss = floatingWrapper ? floatingWrapper.querySelector('.floating-app-dismiss') : null;
+
+    if (floatingWrapper && isMobile && !isAndroid && !isFloatingIconDismissed()) {
+        floatingWrapper.style.display = 'block';
 
         window.addEventListener('scroll', () => {
             if (window.scrollY > 400) {
-                floatingIcon.style.opacity = '1';
-                floatingIcon.style.transform = 'translateY(0)';
+                floatingWrapper.classList.add('visible');
             } else {
-                floatingIcon.style.opacity = '0';
-                floatingIcon.style.transform = 'translateY(20px)';
+                floatingWrapper.classList.remove('visible');
             }
         });
-    } else if (floatingIcon && isDesktop) {
-        // Hide floating icon on desktop
-        floatingIcon.style.display = 'none';
+
+        // Dismiss button - hide for 7 days
+        if (floatingDismiss) {
+            floatingDismiss.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                localStorage.setItem('floating-icon-dismissed', Date.now().toString());
+                floatingWrapper.style.display = 'none';
+                if (typeof gtag === 'function') {
+                    gtag('event', 'floating_icon_dismissed');
+                }
+            });
+        }
+
+        // Click on app link - hide for 7 days (they're going to install)
+        if (floatingIcon) {
+            floatingIcon.addEventListener('click', () => {
+                localStorage.setItem('floating-icon-dismissed', Date.now().toString());
+                if (typeof gtag === 'function') {
+                    gtag('event', 'app_download_click', { location: 'floating_icon' });
+                }
+            });
+        }
     }
 
     // QR Widget - show on desktop only
