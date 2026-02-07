@@ -2608,89 +2608,104 @@ body {
    QR Widget (Desktop Only)
    ======================================== */
 
+/* QR Widget - Desktop app download prompt */
 .qr-widget {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: 20px;
+    right: 20px;
     background: var(--background-card);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 16px 20px;
+    border-radius: 10px;
+    padding: 10px 14px;
     box-shadow: var(--shadow-lg);
     z-index: 1000;
     transition: opacity 0.3s ease;
 }
 
-.qr-dismiss {
+.qr-widget .qr-dismiss {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 24px;
-    height: 24px;
+    top: 6px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
     border: none;
     background: transparent;
     color: var(--text-gray);
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
+    padding: 0;
 }
 
-.qr-dismiss:hover {
+.qr-widget .qr-dismiss:hover {
     background: var(--background-secondary);
     color: var(--text-dark);
 }
 
-.qr-content {
+/* Link container - remove ALL link styling */
+.qr-widget a.qr-content,
+.qr-widget a.qr-content:link,
+.qr-widget a.qr-content:visited,
+.qr-widget a.qr-content:hover,
+.qr-widget a.qr-content:active {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
     text-decoration: none;
     color: inherit;
+    border: none;
+    outline: none;
 }
 
-.qr-content:hover {
+.qr-widget a.qr-content:hover {
     opacity: 0.9;
 }
 
-.qr-app-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    flex-shrink: 0;
+.qr-widget .qr-app-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 10px;
+    display: block;
 }
 
-.qr-code {
-    width: 72px;
-    height: 72px;
-    border-radius: 6px;
+.qr-widget .qr-code {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+    min-height: 64px;
+    border-radius: 4px;
     border: 1px solid var(--border-color);
-    flex-shrink: 0;
+    display: block;
 }
 
-.qr-text {
+.qr-widget .qr-text {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    padding-right: 16px;
+    gap: 1px;
+    max-width: 160px;
 }
 
-.qr-text strong {
-    font-size: 0.95rem;
+.qr-widget .qr-text strong {
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-dark);
-}
-
-.qr-text span {
-    font-size: 0.8rem;
-    color: var(--text-gray);
+    line-height: 1.3;
     text-decoration: none;
+    border-bottom: none;
 }
 
-.qr-content, .qr-content * {
-    text-decoration: none !important;
+.qr-widget .qr-text span {
+    font-size: 11px;
+    color: var(--text-gray);
+    line-height: 1.3;
+    text-decoration: none;
+    border-bottom: none;
 }
 
 /* Hide QR widget on mobile */
