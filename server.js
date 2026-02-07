@@ -569,6 +569,28 @@ app.use('/api/dashboard', dashboardRoutes);  // V2.14.0: Analytics dashboard
 // V2.10.0: Serve static files for admin tools
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Geolocation endpoint - reads Cloudflare headers (no external API)
+app.get('/api/geo', (req, res) => {
+  // Cloudflare adds these headers automatically
+  const country = req.headers['cf-ipcountry'] || null;
+  const city = req.headers['cf-ipcity'] || null;
+  const region = req.headers['cf-region-code'] || req.headers['cf-region'] || null;
+  const ip = req.headers['cf-connecting-ip'] || req.ip;
+
+  // Only return data for US (our coverage area)
+  if (country !== 'US') {
+    return res.json({ supported: false, country });
+  }
+
+  res.json({
+    supported: true,
+    country,
+    state: region,
+    city: city ? decodeURIComponent(city) : null,
+    ip: ip
+  });
+});
+
 // Cache status endpoint
 app.get('/api/cache/status', (req, res) => {
   const stats = cache.getStats();

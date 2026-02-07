@@ -92,20 +92,16 @@
         });
     }
 
-    // IP Geolocation (using free service, no API key needed)
+    // IP Geolocation (uses Cloudflare headers via our API - no external calls)
     async function detectLocation() {
         try {
-            // Use ipapi.co free tier (no API key, 1000 req/day)
-            const response = await fetch('https://ipapi.co/json/', {
-                timeout: 3000,
-                cache: 'default'
-            });
+            const response = await fetch('/api/geo');
             if (!response.ok) return null;
 
             const data = await response.json();
-            if (data.region_code && COVERED_STATES[data.region_code]) {
+            if (data.supported && data.state && COVERED_STATES[data.state]) {
                 return {
-                    state: data.region_code,
+                    state: data.state,
                     city: data.city,
                     region: data.city
                 };
