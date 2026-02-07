@@ -693,7 +693,8 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   setTimeout(async () => {
     try {
       const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
-      const result = await generateSupplierPages({ sequelize, logger, websiteDir });
+      const startupWebsiteDir = path.join(__dirname, 'website');
+      const result = await generateSupplierPages({ sequelize, logger, websiteDir: startupWebsiteDir });
       if (result.success) {
         logger.info(`✅ [Startup] Supplier pages regenerated: ${result.generated} pages`);
       } else {
