@@ -2686,6 +2686,11 @@ body {
 .qr-text span {
     font-size: 0.8rem;
     color: var(--text-gray);
+    text-decoration: none;
+}
+
+.qr-content, .qr-content * {
+    text-decoration: none !important;
 }
 
 /* Hide QR widget on mobile */

@@ -982,59 +982,6 @@
   });
 
   // ========================================
-  // DESKTOP QR WIDGET
-  // ========================================
-
-  function isQRDismissedRecently() {
-    var dismissed = localStorage.getItem('qr-widget-dismissed');
-    if (!dismissed) return false;
-    var sevenDays = 7 * 24 * 60 * 60 * 1000;
-    return (Date.now() - parseInt(dismissed, 10)) < sevenDays;
-  }
-
-  function showQRWidget() {
-    // Only show on desktop
-    if (/Mobi|Android/i.test(navigator.userAgent)) return;
-
-    // Check if dismissed in last 7 days
-    if (isQRDismissedRecently()) return;
-
-    // Create QR widget
-    const widget = document.createElement('div');
-    widget.id = 'qr-widget';
-    widget.className = 'qr-widget';
-    widget.innerHTML = `
-      <button class="qr-dismiss" aria-label="Dismiss">&times;</button>
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571" target="_blank" class="qr-content">
-        <img src="images/app-icon.png" alt="HomeHeat" class="qr-app-icon">
-        <div class="qr-text">
-          <strong>Track your tank from your phone</strong>
-          <span>Scan with your iPhone camera to download free</span>
-        </div>
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=144x144&data=https://apps.apple.com/us/app/homeheat/id6747320571" alt="QR Code" class="qr-code">
-      </a>
-    `;
-
-    document.body.appendChild(widget);
-
-    // Dismiss handler - 7 day localStorage
-    widget.querySelector('.qr-dismiss').addEventListener('click', function() {
-      localStorage.setItem('qr-widget-dismissed', Date.now().toString());
-      widget.style.opacity = '0';
-      setTimeout(function() { widget.remove(); }, 300);
-      if (typeof gtag === 'function') { gtag('event', 'qr_widget_dismissed'); }
-    });
-
-    // Click tracking
-    widget.querySelector('.qr-content').addEventListener('click', function() {
-      if (typeof gtag === 'function') { gtag('event', 'qr_widget_click'); }
-    });
-
-    // Shown tracking
-    if (typeof gtag === 'function') { gtag('event', 'qr_widget_shown'); }
-  }
-
-  // ========================================
   // ANDROID DETECTION
   // ========================================
 
@@ -1048,9 +995,6 @@
 
   // Start
   init();
-
-  // Show QR widget after page load (delayed for better UX)
-  setTimeout(showQRWidget, 3000);
 
   // Hide iOS elements on Android
   hideIOSElementsOnAndroid();
