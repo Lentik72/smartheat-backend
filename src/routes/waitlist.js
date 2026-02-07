@@ -551,4 +551,17 @@ router.get('/stats', async (req, res) => {
     }
 });
 
+// TEMP: list individual entries (remove after checking)
+router.get('/entries', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  try {
+    const [rows] = await sequelize.query(
+      'SELECT email, postal_code, country, source, created_at FROM waitlist ORDER BY created_at DESC'
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;
