@@ -688,6 +688,22 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   });
   logger.info('📄 SEO + Supplier page generator scheduled: daily at 11:00 PM EST');
 
+  // One-time startup regeneration of supplier pages (GA4 tag added)
+  // TODO: Remove this block after first successful deploy
+  setTimeout(async () => {
+    try {
+      const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
+      const result = await generateSupplierPages({ sequelize, logger, websiteDir });
+      if (result.success) {
+        logger.info(`✅ [Startup] Supplier pages regenerated: ${result.generated} pages`);
+      } else {
+        logger.error(`❌ [Startup] Supplier page generation failed: ${result.error}`);
+      }
+    } catch (error) {
+      logger.error('❌ [Startup] Supplier page generation failed:', error.message);
+    }
+  }, 5000); // 5s delay to let DB connections settle
+
   // V2.6.0: Monthly reset of phone_only suppliers (1st of each month at 6 AM EST)
   // Gives blocked sites another chance after a month
   cron.schedule('0 11 1 * *', async () => {
