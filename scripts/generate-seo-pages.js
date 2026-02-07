@@ -972,7 +972,7 @@ function generatePageHTML(data) {
   <meta property="og:url" content="${canonicalUrl}">
   <meta property="og:type" content="website">
 
-  <link rel="stylesheet" href="${assetPath}style.css?v=16">
+  <link rel="stylesheet" href="${assetPath}style.css?v=17">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
 
   <!-- Schema.org Structured Data -->
