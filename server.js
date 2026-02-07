@@ -158,8 +158,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Redirect Railway origin URL to production domain
 app.use((req, res, next) => {
-  const host = req.hostname;
-  if (host && host.endsWith('.railway.app')) {
+  const host = req.get('host') || '';
+  if (host.endsWith('.railway.app')) {
     return res.redirect(301, `https://www.gethomeheat.com${req.originalUrl}`);
   }
   next();
