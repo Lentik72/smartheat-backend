@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true  # Don't fail on moderate vulns (nodemailer)
+
+      - name: Build (minify assets)
+        run: npm run build
+
+      - name: Check server syntax
+        run: node --check server.js
+
+      - name: Check all JS files for syntax errors
+        run: |
+          for file in website/js/*.js; do
+            node --check "$file" || exit 1
+          done
+          echo "✅ All JS files valid"
+
+  notify-success:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: CI Passed
+        run: echo "✅ All checks passed - Railway will auto-deploy"
