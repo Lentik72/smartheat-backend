@@ -22,7 +22,7 @@
     <meta property="og:type" content="website">
 
     <link rel="canonical" href="https://www.gethomeheat.com/support.html">
-    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="stylesheet" href="style.css?v=20">
 
     <!-- FAQ structured data for SEO -->
     <script type="application/ld+json">
@@ -301,18 +301,6 @@
         }
         setTimeout(showQRWidget, 2000);
 
-        // Android: PWA banner
-        if (isAndroid && typeof showPwaInstallBanner === 'function') {
-            var pwaShown = false;
-            window.addEventListener('scroll', function() {
-                if (pwaShown) return;
-                var scrollPct = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
-                if (scrollPct > 0.5) {
-                    pwaShown = true;
-                    showPwaInstallBanner();
-                }
-            });
-        }
         if (isAndroid) {
             document.querySelectorAll('.ios-only').forEach(function(el) {
                 el.style.display = 'none';

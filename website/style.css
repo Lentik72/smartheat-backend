@@ -2783,8 +2783,8 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   PWA INSTALL BANNER (Android only, shown after search)
-   Card-style design for better visibility and conversion
+   PWA INSTALL BANNER (Android only)
+   Clean, non-intrusive design that appears after engagement
    ═══════════════════════════════════════════════════════════════════════════ */
 
 #pwa-install-banner {
@@ -2792,95 +2792,96 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 16px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    padding: 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     z-index: 9999;
-    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
-    animation: slideUp 0.4s ease-out;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-@keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+#pwa-install-banner.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .pwa-banner-card {
-    max-width: 400px;
+    max-width: 360px;
     margin: 0 auto;
-    background: white;
+    background: #1a1a1a;
     border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    padding: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
     position: relative;
-    text-align: center;
 }
 
-.pwa-banner-header {
+.pwa-banner-content {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 12px;
     margin-bottom: 12px;
 }
 
-.pwa-app-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+.pwa-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    flex-shrink: 0;
 }
 
-.pwa-banner-header strong {
-    font-size: 1.1rem;
-    color: var(--text-dark);
+.pwa-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.pwa-text strong {
     display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 2px;
 }
 
-.pwa-banner-desc {
-    font-size: 0.9rem;
-    color: var(--gray-600);
-    margin: 0 0 16px 0;
-    line-height: 1.4;
+.pwa-text span {
+    display: block;
+    font-size: 13px;
+    color: #999;
 }
 
 .pwa-install-btn {
     width: 100%;
-    background: var(--primary-orange);
+    background: #FF6B35;
     color: white;
     border: none;
-    padding: 14px 24px;
+    padding: 12px 20px;
     border-radius: 10px;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 14px;
     cursor: pointer;
     transition: background 0.2s, transform 0.1s;
 }
 
-.pwa-install-btn:hover {
-    background: var(--primary-orange-hover);
-}
-
 .pwa-install-btn:active {
     transform: scale(0.98);
+    background: #e55a2b;
 }
 
-.pwa-dismiss-btn {
+.pwa-dismiss {
     position: absolute;
     top: 8px;
     right: 8px;
     background: transparent;
     border: none;
-    color: var(--gray-400);
-    font-size: 1.5rem;
+    color: #666;
+    font-size: 20px;
     cursor: pointer;
     padding: 4px 8px;
     line-height: 1;
     border-radius: 50%;
-    transition: background 0.2s, color 0.2s;
 }
 
-.pwa-dismiss-btn:hover {
-    background: var(--gray-100);
-    color: var(--gray-600);
+.pwa-dismiss:active {
+    background: rgba(255,255,255,0.1);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

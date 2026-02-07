@@ -972,7 +972,7 @@ function generatePageHTML(data) {
   <meta property="og:url" content="${canonicalUrl}">
   <meta property="og:type" content="website">
 
-  <link rel="stylesheet" href="${assetPath}style.css?v=19">
+  <link rel="stylesheet" href="${assetPath}style.css?v=20">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
 
   <!-- Schema.org Structured Data -->
@@ -1124,19 +1124,6 @@ ${supplierRows}
       });
     }
     setTimeout(showQRWidget, 2000);
-
-    // Android: Show PWA install banner after scrolling 50%
-    if (isAndroid && typeof showPwaInstallBanner === 'function') {
-      var pwaShown = false;
-      window.addEventListener('scroll', function() {
-        if (pwaShown) return;
-        var scrollPct = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
-        if (scrollPct > 0.5) {
-          pwaShown = true;
-          showPwaInstallBanner();
-        }
-      });
-    }
 
     // Hide iOS elements on Android
     if (isAndroid) {

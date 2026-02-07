@@ -31,7 +31,7 @@
     <link rel="preconnect" href="https://www.googletagmanager.com">
     <link rel="preconnect" href="https://www.google-analytics.com">
 
-    <link rel="stylesheet" href="style.css?v=19">
+    <link rel="stylesheet" href="style.css?v=20">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
@@ -1012,19 +1012,6 @@
     if (pricesCta) {
         pricesCta.addEventListener('click', () => {
             trackClick('prices_cta_click', { location: 'prices_teaser' });
-        });
-    }
-
-    // Show PWA install banner for Android users after scrolling 50%
-    if (isAndroid && typeof showPwaInstallBanner === 'function') {
-        let pwaPromptShown = false;
-        window.addEventListener('scroll', () => {
-            if (pwaPromptShown) return;
-            const scrollPercent = (window.scrollY + window.innerHeight) / document.body.scrollHeight;
-            if (scrollPercent > 0.5) {
-                pwaPromptShown = true;
-                showPwaInstallBanner();
-            }
         });
     }
 

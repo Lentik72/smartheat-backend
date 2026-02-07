@@ -1,147 +1,161 @@
 /**
- * PWA Install Tracking
- * Defers install prompt until user has experienced value (completed a search)
+ * PWA Install Banner - Android Only
+ * Shows after user has experienced value (completed search, return visit, or engagement)
  */
 
 (function() {
   let deferredPrompt = null;
-  const platform = /Android/i.test(navigator.userAgent) ? 'android' : 'other';
+  const isAndroid = /Android/i.test(navigator.userAgent);
 
-  // Capture the install prompt but DON'T show it yet
+  // Only run on Android
+  if (!isAndroid) return;
+
+  // Check if already installed
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+
+  // Check if dismissed recently (7 days)
+  function isDismissedRecently() {
+    const dismissed = localStorage.getItem('pwa-banner-dismissed');
+    if (!dismissed) return false;
+    const dismissedTime = parseInt(dismissed, 10);
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    return (Date.now() - dismissedTime) < sevenDays;
+  }
+
+  // Track visit count
+  function getVisitCount() {
+    let count = parseInt(localStorage.getItem('pwa-visit-count') || '0', 10);
+    return count;
+  }
+
+  function incrementVisitCount() {
+    let count = getVisitCount() + 1;
+    localStorage.setItem('pwa-visit-count', count.toString());
+    return count;
+  }
+
+  // Capture the install prompt
   window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent Chrome from showing the prompt automatically
     e.preventDefault();
     deferredPrompt = e;
 
-    // Track that prompt is available (but not shown yet)
     if (typeof gtag === 'function') {
-      gtag('event', 'pwa_prompt_ready', { platform });
+      gtag('event', 'pwa_prompt_ready', { platform: 'android' });
     }
-
-    console.log('[PWA] Install prompt captured and deferred');
   });
 
-  // Show install banner after user has felt value
-  window.showPwaInstallBanner = function() {
-    // Only show on Android and if we have a deferred prompt
-    if (!deferredPrompt || platform !== 'android') return;
+  // Create and show the banner
+  function showBanner() {
+    if (!deferredPrompt) return;
+    if (isDismissedRecently()) return;
+    if (document.getElementById('pwa-install-banner')) return;
 
-    // Don't show if already dismissed this session
-    if (sessionStorage.getItem('pwa-banner-dismissed')) return;
-
-    // Don't show if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) return;
-
-    // Create banner - card style, honest messaging
     const banner = document.createElement('div');
     banner.id = 'pwa-install-banner';
     banner.innerHTML = `
       <div class="pwa-banner-card">
-        <button id="pwa-dismiss-btn" class="pwa-dismiss-btn" aria-label="Close">&times;</button>
-        <div class="pwa-banner-header">
-          <img src="/images/app-icon-small.png" alt="HomeHeat" class="pwa-app-icon">
-          <div>
-            <strong>Add to Home Screen</strong>
+        <button class="pwa-dismiss" aria-label="Close">&times;</button>
+        <div class="pwa-banner-content">
+          <img src="/images/app-icon.png" alt="HomeHeat" class="pwa-icon">
+          <div class="pwa-text">
+            <strong>Save HomeHeat</strong>
+            <span>Quick access — no App Store needed</span>
           </div>
         </div>
-        <p class="pwa-banner-desc">One tap to check today's prices</p>
-        <button id="pwa-install-btn" class="pwa-install-btn">Add to Home Screen</button>
+        <button class="pwa-install-btn">Add to Home Screen</button>
       </div>
     `;
     document.body.appendChild(banner);
 
-    // Track banner shown
+    // Animate in
+    requestAnimationFrame(() => {
+      banner.classList.add('visible');
+    });
+
+    // Track
     if (typeof gtag === 'function') {
-      gtag('event', 'pwa_install_prompt', { platform });
+      gtag('event', 'pwa_banner_shown', { platform: 'android' });
     }
-    fetch('/api/track-pwa', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event: 'install_prompt', platform })
-    }).catch(() => {});
 
-    console.log('[PWA] Install banner shown');
+    // Install click
+    banner.querySelector('.pwa-install-btn').addEventListener('click', async () => {
+      banner.classList.remove('visible');
+      setTimeout(() => banner.remove(), 300);
 
-    // Install button click
-    document.getElementById('pwa-install-btn').addEventListener('click', async () => {
-      banner.remove();
       deferredPrompt.prompt();
-
       const { outcome } = await deferredPrompt.userChoice;
-      console.log('[PWA] User choice:', outcome);
 
-      if (outcome === 'accepted') {
-        if (typeof gtag === 'function') {
-          gtag('event', 'pwa_install_accepted', { platform });
-        }
-      } else {
-        if (typeof gtag === 'function') {
-          gtag('event', 'pwa_install_dismissed', { platform });
-        }
+      if (typeof gtag === 'function') {
+        gtag('event', outcome === 'accepted' ? 'pwa_installed' : 'pwa_install_declined', { platform: 'android' });
       }
 
       deferredPrompt = null;
     });
 
-    // Dismiss button click
-    document.getElementById('pwa-dismiss-btn').addEventListener('click', () => {
-      banner.remove();
-      sessionStorage.setItem('pwa-banner-dismissed', 'true');
+    // Dismiss click
+    banner.querySelector('.pwa-dismiss').addEventListener('click', () => {
+      banner.classList.remove('visible');
+      setTimeout(() => banner.remove(), 300);
+      localStorage.setItem('pwa-banner-dismissed', Date.now().toString());
 
       if (typeof gtag === 'function') {
-        gtag('event', 'pwa_banner_dismissed', { platform });
+        gtag('event', 'pwa_banner_dismissed', { platform: 'android' });
       }
-
-      console.log('[PWA] Banner dismissed');
     });
-  };
+  }
+
+  // Trigger: After ZIP search (called from prices.js or other code)
+  window.showPwaInstallBanner = showBanner;
+
+  // Trigger: Return visitor (2nd+ visit) after 3 seconds
+  const visitCount = incrementVisitCount();
+  if (visitCount >= 2) {
+    setTimeout(() => {
+      showBanner();
+    }, 3000);
+  }
+
+  // Trigger: First-time visitor after 45 seconds of engagement
+  if (visitCount === 1) {
+    setTimeout(() => {
+      showBanner();
+    }, 45000);
+  }
+
+  // Trigger: User scrolls back up (indicates engagement)
+  let lastScrollY = 0;
+  let scrollUpCount = 0;
+  window.addEventListener('scroll', () => {
+    if (window.scrollY < lastScrollY - 100) {
+      scrollUpCount++;
+      if (scrollUpCount >= 2) {
+        showBanner();
+      }
+    }
+    lastScrollY = window.scrollY;
+  }, { passive: true });
 
   // Track successful installation
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
-
-    // Remove banner if still showing
     const banner = document.getElementById('pwa-install-banner');
     if (banner) banner.remove();
 
     if (typeof gtag === 'function') {
-      gtag('event', 'pwa_installed', { platform });
+      gtag('event', 'pwa_app_installed', { platform: 'android' });
     }
 
-    fetch('/api/track-pwa', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event: 'installed', platform })
-    }).catch(() => {});
-
-    console.log('[PWA] App installed successfully');
+    // Clear dismiss so they don't see banner on other devices
+    localStorage.removeItem('pwa-banner-dismissed');
   });
 
-  // Track standalone mode launches (opened from home screen)
-  function trackStandaloneLaunch() {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-      || window.navigator.standalone === true;
-
-    if (isStandalone) {
-      if (sessionStorage.getItem('pwa-launch-tracked')) return;
+  // Track standalone launches
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (!sessionStorage.getItem('pwa-launch-tracked')) {
       sessionStorage.setItem('pwa-launch-tracked', 'true');
-
-      const launchPlatform = /Android/i.test(navigator.userAgent) ? 'android' : 'ios';
-
       if (typeof gtag === 'function') {
-        gtag('event', 'pwa_standalone_launch', { platform: launchPlatform });
+        gtag('event', 'pwa_standalone_launch', { platform: 'android' });
       }
-
-      fetch('/api/track-pwa', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: 'standalone_launch', platform: launchPlatform })
-      }).catch(() => {});
-
-      console.log('[PWA] Launched in standalone mode');
     }
   }
-
-  trackStandaloneLaunch();
-  window.matchMedia('(display-mode: standalone)').addEventListener('change', trackStandaloneLaunch);
 })();
