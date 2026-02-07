@@ -252,7 +252,7 @@
       var widget = document.createElement('div');
       widget.id = 'qr-widget';
       widget.className = 'qr-widget';
-      widget.innerHTML = '<button class="qr-dismiss" aria-label="Dismiss">&times;</button><a href="https://apps.apple.com/us/app/homeheat/id6747320571" target="_blank" class="qr-content"><img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://apps.apple.com/us/app/homeheat/id6747320571" alt="Download HomeHeat" width="100" height="100"><div class="qr-text"><strong>Know when you\'ll need oil — not just what it costs</strong><span>Scan to get the free HomeHeat app</span></div></a>';
+      widget.innerHTML = '<button class="qr-dismiss" aria-label="Dismiss">&times;</button><a href="https://apps.apple.com/us/app/homeheat/id6747320571" target="_blank" class="qr-content"><img src="../../images/app-icon.png" alt="HomeHeat" class="qr-app-icon"><div class="qr-text"><strong>Track your tank from your phone</strong><span>Scan with your iPhone camera to download free</span></div><img src="https://api.qrserver.com/v1/create-qr-code/?size=144x144&data=https://apps.apple.com/us/app/homeheat/id6747320571" alt="QR Code" class="qr-code"></a>';
       document.body.appendChild(widget);
       widget.querySelector('.qr-dismiss').addEventListener('click', function() {
         localStorage.setItem('qr-widget-dismissed', Date.now().toString());

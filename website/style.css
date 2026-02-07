@@ -2615,7 +2615,7 @@ body {
     background: var(--background-card);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 16px;
+    padding: 16px 20px;
     box-shadow: var(--shadow-lg);
     z-index: 1000;
     transition: opacity 0.3s ease;
@@ -2646,7 +2646,7 @@ body {
 .qr-content {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     text-decoration: none;
     color: inherit;
 }
@@ -2655,24 +2655,36 @@ body {
     opacity: 0.9;
 }
 
-.qr-content img {
-    border-radius: 8px;
+.qr-app-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.qr-code {
+    width: 72px;
+    height: 72px;
+    border-radius: 6px;
     border: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .qr-text {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
+    padding-right: 16px;
 }
 
 .qr-text strong {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 600;
     color: var(--text-dark);
 }
 
 .qr-text span {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: var(--text-gray);
 }
 
