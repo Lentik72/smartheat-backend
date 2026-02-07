@@ -641,10 +641,12 @@
     return div.innerHTML;
   }
 
-  // Simple analytics logging (console only for now)
+  // Analytics logging — console + GA4 via gtag
   function logAnalytics(event, data) {
     console.log('[Analytics]', event, data);
-    // Could send to backend in future
+    if (typeof gtag === 'function') {
+      gtag('event', event, data || {});
+    }
   }
 
   // Track page view and return visits
