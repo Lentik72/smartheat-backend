@@ -143,7 +143,7 @@
           '<strong>Track your tank from your phone</strong>' +
           '<span>Scan with your iPhone camera to download free</span>' +
         '</div>' +
-        '<img src="https://api.qrserver.com/v1/create-qr-code/?size=144x144&data=https://apps.apple.com/us/app/homeheat/id6747320571" alt="QR Code" class="qr-code">' +
+        '<img src="' + assetPath + 'images/qr-appstore.png" alt="QR Code" class="qr-code">' +
       '</a>';
 
     document.body.appendChild(widget);

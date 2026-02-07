@@ -141,7 +141,6 @@
       }
     } catch (err) {
       // Silently fail - fallback to static values in HTML
-      console.log('[MarketPulse] Failed to fetch live data');
     }
   }
 
@@ -188,10 +187,8 @@
         dealsList.innerHTML = dealItems;
       }
 
-      console.log('[Leaderboard] Updated with live data: ' + data.stateAverages.length + ' states, ' + data.topDeals.length + ' deals');
     } catch (err) {
       // Silently fail - keep static values from HTML
-      console.log('[Leaderboard] Using static data:', err.message || err);
     }
   }
 
@@ -539,9 +536,6 @@
         return;
       } catch (err) {
         // User cancelled or share failed, fall through to clipboard
-        if (err.name !== 'AbortError') {
-          console.log('Native share failed:', err);
-        }
       }
     }
 
@@ -641,9 +635,8 @@
     return div.innerHTML;
   }
 
-  // Analytics logging — console + GA4 via gtag
+  // Analytics logging via GA4 gtag
   function logAnalytics(event, data) {
-    console.log('[Analytics]', event, data);
     if (typeof gtag === 'function') {
       gtag('event', event, data || {});
     }
