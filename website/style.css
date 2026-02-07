@@ -758,10 +758,13 @@ body {
     color: var(--text-dark);
 }
 
-.contact-link {
+.contact-link,
+.content-section .contact-link,
+.content-section .contact-link:visited,
+.content-section .contact-link:hover {
     display: inline-block;
     background: var(--primary-orange);
-    color: white;
+    color: white !important;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
     text-decoration: none;
@@ -769,7 +772,8 @@ body {
     margin-top: 1rem;
 }
 
-.contact-link:hover {
+.contact-link:hover,
+.content-section .contact-link:hover {
     background: var(--primary-gradient-end);
 }
 
@@ -3457,10 +3461,23 @@ body {
     right: 24px;
     z-index: 100;
     display: none;
+    visibility: hidden;
 }
 
 .floating-app-wrapper.visible {
     display: block;
+    visibility: visible;
+}
+
+/* Ensure dismiss button is completely hidden when wrapper is hidden */
+.floating-app-wrapper .floating-app-dismiss {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.floating-app-wrapper.visible .floating-app-dismiss {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .floating-app-icon {
