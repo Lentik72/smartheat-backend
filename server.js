@@ -156,6 +156,15 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Redirect Railway origin URL to production domain
+app.use((req, res, next) => {
+  const host = req.hostname;
+  if (host && host.endsWith('.railway.app')) {
+    return res.redirect(301, `https://www.gethomeheat.com${req.originalUrl}`);
+  }
+  next();
+});
+
 // V2.6.0: Serve static website files
 // This allows Railway to host both API and website
 app.use(express.static(path.join(__dirname, 'website')));
