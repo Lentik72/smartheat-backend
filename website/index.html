@@ -527,13 +527,9 @@
     right: 24px;
     z-index: 100;
     display: none;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.3s, transform 0.3s;
 }
 .floating-app-wrapper.visible {
-    opacity: 1;
-    transform: translateY(0);
+    display: block;
 }
 .floating-app-icon {
     display: flex;
@@ -950,8 +946,6 @@
     const floatingDismiss = floatingWrapper ? floatingWrapper.querySelector('.floating-app-dismiss') : null;
 
     if (floatingWrapper && isMobile && !isAndroid && !isFloatingIconDismissed()) {
-        floatingWrapper.style.display = 'block';
-
         window.addEventListener('scroll', () => {
             if (window.scrollY > 400) {
                 floatingWrapper.classList.add('visible');

@@ -159,16 +159,15 @@
         var floatingIcon = document.getElementById('floating-app-cta');
         var floatingDismiss = floatingWrapper ? floatingWrapper.querySelector('.floating-app-dismiss') : null;
 
-        // Floating icon - iOS mobile only
+        // Floating icon - iOS mobile only (show immediately on 404)
         if (floatingWrapper && isMobile && !isAndroid && !isFloatingIconDismissed()) {
-            floatingWrapper.style.display = 'block';
             floatingWrapper.classList.add('visible');
             if (floatingDismiss) {
                 floatingDismiss.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     localStorage.setItem('floating-icon-dismissed', Date.now().toString());
-                    floatingWrapper.style.display = 'none';
+                    floatingWrapper.classList.remove('visible');
                     if (typeof gtag === 'function') {
                         gtag('event', 'floating_icon_dismissed', { page: '404' });
                     }

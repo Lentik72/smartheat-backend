@@ -3419,14 +3419,10 @@ body {
     right: 24px;
     z-index: 100;
     display: none;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.3s, transform 0.3s;
 }
 
 .floating-app-wrapper.visible {
-    opacity: 1;
-    transform: translateY(0);
+    display: block;
 }
 
 .floating-app-icon {

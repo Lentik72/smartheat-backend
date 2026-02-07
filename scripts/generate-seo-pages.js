@@ -1106,7 +1106,6 @@ ${supplierRows}
 
     // Floating app icon - iOS mobile only
     if (floatingWrapper && isMobile && !isAndroid && !isFloatingIconDismissed()) {
-      floatingWrapper.style.display = 'block';
       window.addEventListener('scroll', function() {
         if (window.scrollY > 300) {
           floatingWrapper.classList.add('visible');
