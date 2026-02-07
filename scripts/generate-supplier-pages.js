@@ -145,6 +145,7 @@ function generateSupplierPage(supplier, latestPrice) {
   <meta property="og:url" content="https://www.gethomeheat.com/supplier/${supplier.slug}">
 
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <meta name="apple-itunes-app" content="app-id=6747320571">
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/supplier/supplier.css">
 
@@ -200,6 +201,15 @@ function generateSupplierPage(supplier, latestPrice) {
 
     ${hoursHtml}
 
+    <div class="supplier-section supplier-app-cta">
+      <h2>Track Your Oil Usage</h2>
+      <p>Get price drop alerts, run-out predictions, and track your heating oil &mdash; no sensors needed.</p>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_supplier&utm_medium=website&utm_campaign=supplier_profile" class="btn btn-primary ios-only">Download HomeHeat Free &rarr;</a>
+      <a href="/prices.html" class="btn btn-primary android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat to Your Phone &rarr;</a>
+      <p class="app-micro ios-only">Free. No hardware. No ads.</p>
+      <p class="app-micro android-only" style="display:none">Works like an app &mdash; no download needed.</p>
+    </div>
+
     ${!isClaimed ? `
     <div class="supplier-section supplier-claim">
       <h2>Is this your business?</h2>
@@ -208,6 +218,17 @@ function generateSupplierPage(supplier, latestPrice) {
     </div>
     ` : ''}
   </main>
+
+  <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
+    <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
+    <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_supplier&utm_medium=website&utm_campaign=supplier_floating" class="floating-app-icon" id="floating-app-cta">
+      <img src="/images/app-icon.png" alt="HomeHeat">
+      <div class="float-text">
+        <span class="float-title">Get HomeHeat</span>
+        <span class="float-subtitle">Free on App Store</span>
+      </div>
+    </a>
+  </div>
 
   <footer class="footer">
     <div class="footer-content">
@@ -221,7 +242,9 @@ function generateSupplierPage(supplier, latestPrice) {
     </div>
   </footer>
 
+  <script src="/js/widgets.js"></script>
   <script src="/js/seo-tracking.js"></script>
+  <script src="/js/pwa.js"></script>
 </body>
 </html>`;
 }
@@ -532,6 +555,23 @@ function generateSupplierCSS() {
   }
 }
 
+.supplier-app-cta {
+  text-align: center;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.supplier-app-cta p {
+  color: #4b5563;
+  margin: 0 0 16px;
+}
+
+.supplier-app-cta .app-micro {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 12px 0 0;
+}
+
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
   .supplier-header h1 {
@@ -582,6 +622,19 @@ function generateSupplierCSS() {
 
   .supplier-price-cta p {
     color: #a8a29e;
+  }
+
+  .supplier-app-cta {
+    background: #172554;
+    border-color: #1e3a5f;
+  }
+
+  .supplier-app-cta p {
+    color: #93c5fd;
+  }
+
+  .supplier-app-cta .app-micro {
+    color: #6b7280;
   }
 }
 `;
