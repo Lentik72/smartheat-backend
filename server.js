@@ -624,6 +624,19 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // logger.info('⏰ Price scraper scheduled: daily at 10:00 AM EST');
   logger.info('⏰ Fixed 10 AM scrape DISABLED - using distributed scheduler instead');
 
+  // One-time startup: regenerate supplier pages (dark mode CSS removed)
+  setTimeout(async () => {
+    try {
+      const startupWebsiteDir = path.join(__dirname, 'website');
+      const adapterLogger = { log: (...args) => logger.info(args.join(' ')), error: (...args) => logger.error(args.join(' ')) };
+      const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
+      await generateSupplierPages({ sequelize, logger: adapterLogger, websiteDir: startupWebsiteDir });
+      logger.info('✅ Supplier pages regenerated (dark mode CSS removed)');
+    } catch (err) {
+      logger.error('❌ Supplier page regen failed:', err.message);
+    }
+  }, 5000);
+
   // V2.7.0: Second daily scrape at 4 PM EST to catch afternoon price updates
   // Catches suppliers who update prices after their morning distributed scrape
   cron.schedule('0 21 * * *', async () => {
