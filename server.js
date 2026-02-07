@@ -569,17 +569,31 @@ app.use('/api/dashboard', dashboardRoutes);  // V2.14.0: Analytics dashboard
 // V2.10.0: Serve static files for admin tools
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Geolocation endpoint - reads Cloudflare headers (no external API)
-app.get('/api/geo', (req, res) => {
+// Geolocation endpoint - Cloudflare headers + fallback to ipapi.co (server-side, no CORS)
+app.get('/api/geo', async (req, res) => {
   // Cloudflare adds these headers automatically
   const country = req.headers['cf-ipcountry'] || null;
-  const city = req.headers['cf-ipcity'] || null;
-  const region = req.headers['cf-region-code'] || req.headers['cf-region'] || null;
+  let city = req.headers['cf-ipcity'] || null;
+  let region = req.headers['cf-region-code'] || req.headers['cf-region'] || null;
   const ip = req.headers['cf-connecting-ip'] || req.ip;
 
   // Only return data for US (our coverage area)
   if (country !== 'US') {
     return res.json({ supported: false, country });
+  }
+
+  // If Cloudflare didn't provide city/state, use ipapi.co server-side (no CORS issue)
+  if (!region && ip) {
+    try {
+      const axios = require('axios');
+      const geoRes = await axios.get(`https://ipapi.co/${ip}/json/`, { timeout: 3000 });
+      if (geoRes.data && geoRes.data.region_code) {
+        region = geoRes.data.region_code;
+        city = geoRes.data.city;
+      }
+    } catch (e) {
+      // Fallback failed, continue without detailed geo
+    }
   }
 
   res.json({
