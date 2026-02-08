@@ -5,7 +5,7 @@
   'use strict';
 
   // Configuration
-  const API_BASE = 'https://smartheat-backend-production.up.railway.app';
+  const API_BASE = '';
   const API_ENDPOINT = '/api/v1/suppliers';
 
   // ZIP to County mapping (common counties for share text)
