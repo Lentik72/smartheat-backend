@@ -332,35 +332,6 @@
     <script src="js/nav.js"></script>
     <script src="js/widgets.js"></script>
     <script src="js/pwa.js"></script>
-
-    <script>
-    // Handle ?supplier= parameter for personalized claim experience
-    (function() {
-        const params = new URLSearchParams(window.location.search);
-        const supplierSlug = params.get('supplier');
-
-        if (supplierSlug) {
-            // Convert slug to display name (domino-fuel -> Domino Fuel)
-            const displayName = supplierSlug
-                .split('-')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
-
-            // Show personalized section
-            const personalized = document.getElementById('claim-personalized');
-            const nameEl = document.getElementById('supplier-display-name');
-            const profileLink = document.getElementById('profile-link');
-
-            if (personalized && nameEl && profileLink) {
-                nameEl.textContent = displayName;
-                profileLink.href = '/supplier/' + supplierSlug + '.html';
-                personalized.classList.remove('hidden');
-            }
-
-            // Update page title
-            document.title = 'Claim ' + displayName + ' - HomeHeat';
-        }
-    })();
-    </script>
+    <script src="js/supplier-claim.js"></script>
 </body>
 </html>
