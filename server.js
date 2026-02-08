@@ -934,7 +934,7 @@ function scheduleCoverageIntelligence() {
               VALUES (:token, 'price_review', :expiresAt)
             `, { replacements: { token, expiresAt } });
 
-            const baseUrl = process.env.BACKEND_URL || 'https://smartheat-backend-production.up.railway.app';
+            const baseUrl = process.env.BACKEND_URL || 'https://www.gethomeheat.com';
             priceReviewLink = `${baseUrl}/price-review.html?mltoken=${token}`;
             logger.info('[DailyReports] Generated price review magic link');
           } catch (err) {

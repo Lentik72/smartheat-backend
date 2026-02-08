@@ -97,7 +97,7 @@ const requireAuth = async (req, res, next) => {
 
   } catch (error) {
     logger?.error('[PriceReview] Auth error:', error.message);
-    return res.status(500).json({ error: 'Authentication failed' });
+    return res.status(500).json({ error: 'Authentication failed', detail: error.message });
   }
 };
 
@@ -129,7 +129,7 @@ router.post('/generate-link', async (req, res) => {
     });
 
     // Build the full URL
-    const baseUrl = process.env.BACKEND_URL || 'https://smartheat-backend-production.up.railway.app';
+    const baseUrl = process.env.BACKEND_URL || 'https://www.gethomeheat.com';
     const url = `${baseUrl}/price-review.html?mltoken=${token}`;
 
     logger?.info(`[PriceReview] Generated new magic link, expires: ${expiresAt.toISOString()}`);
