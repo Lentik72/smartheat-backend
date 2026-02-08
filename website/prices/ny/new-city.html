@@ -3,7 +3,12 @@
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
-  <script src="../../js/analytics.js"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HCNTVGNVJ9');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Heating Oil Prices in New City, NY - Updated February 7, 2026 | HomeHeat</title>
@@ -16,9 +21,8 @@
   <meta property="og:url" content="https://www.gethomeheat.com/prices/ny/new-city.html">
   <meta property="og:type" content="website">
 
-  <link rel="stylesheet" href="../../style.min.css?v=24">
+  <link rel="stylesheet" href="../../style.css?v=16">
   <link rel="icon" type="image/png" sizes="32x32" href="../../favicon-32.png">
-  <meta name="apple-itunes-app" content="app-id=6747320571">
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices.html"},{"@type":"ListItem","position":3,"name":"New York","item":"https://www.gethomeheat.com/prices/ny/"},{"@type":"ListItem","position":4,"name":"Rockland County","item":"https://www.gethomeheat.com/prices/ny/rockland-county.html"},{"@type":"ListItem","position":5,"name":"New City"}]}</script>
@@ -76,7 +80,7 @@
         <tbody>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/direct-oil-north.html" class="supplier-profile-link">Direct Oil North</a></td>
+          <td class="supplier-name">Direct Oil North</td>
           <td class="supplier-city">Thornwood</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(914) 495-3073" class="phone-link" data-supplier-id="7ec16881-5433-429d-b134-20196b870b4c" data-supplier-name="Direct Oil North" data-action="call">(914) 495-3073</a></td>
@@ -84,7 +88,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/economy-fuel-ny.html" class="supplier-profile-link">Economy Fuel NY</a></td>
+          <td class="supplier-name">Economy Fuel NY</td>
           <td class="supplier-city">New City</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(845) 634-3456" class="phone-link" data-supplier-id="378e9ef0-ad23-4d73-bed0-dc8f5b68b254" data-supplier-name="Economy Fuel NY" data-action="call">(845) 634-3456</a></td>
@@ -92,7 +96,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/emergency-services-fuel-corp.html" class="supplier-profile-link">Emergency Services Fuel Corp</a></td>
+          <td class="supplier-name">Emergency Services Fuel Corp</td>
           <td class="supplier-city">Briarcliff Manor</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(914) 762-5208" class="phone-link" data-supplier-id="cab896c1-908f-422b-a2a1-3097ef69f57d" data-supplier-name="Emergency Services Fuel Corp" data-action="call">(914) 762-5208</a></td>
@@ -100,7 +104,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/palisades-fuel.html" class="supplier-profile-link">Palisades Fuel</a></td>
+          <td class="supplier-name">Palisades Fuel</td>
           <td class="supplier-city">Tappan</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(845) 359-1700" class="phone-link" data-supplier-id="fef5efcb-3852-493e-8b89-f8e0d788454a" data-supplier-name="Palisades Fuel" data-action="call">(845) 359-1700</a></td>
@@ -108,7 +112,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/panco-petroleum.html" class="supplier-profile-link">Panco Petroleum</a></td>
+          <td class="supplier-name">Panco Petroleum</td>
           <td class="supplier-city">Goshen</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(800) 477-4645" class="phone-link" data-supplier-id="3b5df602-5666-44a4-ae2b-bbddc51c9f31" data-supplier-name="Panco Petroleum" data-action="call">(800) 477-4645</a></td>
@@ -122,16 +126,6 @@
     <p class="disclaimer">
       Prices shown are reported by suppliers. Actual delivered prices may vary by volume and payment method. Always confirm when ordering.
     </p>
-
-    <!-- App CTA -->
-    <section class="zip-cta app-cta-inline">
-      <h3>Never Run Out of Oil</h3>
-      <p>HomeHeat tracks your usage and predicts when you'll need your next delivery &mdash; no sensors required.</p>
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_price_page" class="cta-button ios-only">Get HomeHeat Free &rarr;</a>
-      <a href="../../prices.html" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat to Your Phone &rarr;</a>
-      <p style="font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0" class="ios-only">Free app. No hardware. No ads.</p>
-      <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
-    </section>
 
     <!-- Hub Links (Counties/Cities) -->
     
@@ -167,18 +161,6 @@
     </p>
   </main>
 
-  <!-- Floating App Download Icon (iOS mobile only) -->
-  <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
-    <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
-    <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_floating" class="floating-app-icon" id="floating-app-cta">
-      <img src="../../images/app-icon.png" alt="HomeHeat">
-      <div class="float-text">
-        <span class="float-title">Get HomeHeat</span>
-        <span class="float-subtitle">Free on App Store</span>
-      </div>
-    </a>
-  </div>
-
   <footer class="footer">
     <div class="footer-links">
       <a href="../../for-suppliers.html">For Suppliers</a>
@@ -193,8 +175,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script src="../../js/widgets.js"></script>
   <script src="../../js/seo-tracking.js"></script>
-  <script src="../../js/pwa.js"></script>
 </body>
 </html>

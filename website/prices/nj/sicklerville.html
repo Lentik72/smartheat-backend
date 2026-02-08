@@ -3,7 +3,12 @@
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
-  <script src="../../js/analytics.js"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HCNTVGNVJ9');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Heating Oil Prices in Sicklerville, NJ - Updated February 7, 2026 | HomeHeat</title>
@@ -16,9 +21,8 @@
   <meta property="og:url" content="https://www.gethomeheat.com/prices/nj/sicklerville.html">
   <meta property="og:type" content="website">
 
-  <link rel="stylesheet" href="../../style.min.css?v=24">
+  <link rel="stylesheet" href="../../style.css?v=16">
   <link rel="icon" type="image/png" sizes="32x32" href="../../favicon-32.png">
-  <meta name="apple-itunes-app" content="app-id=6747320571">
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices.html"},{"@type":"ListItem","position":3,"name":"New Jersey","item":"https://www.gethomeheat.com/prices/nj/"},{"@type":"ListItem","position":4,"name":"Camden County","item":"https://www.gethomeheat.com/prices/nj/camden-county.html"},{"@type":"ListItem","position":5,"name":"Sicklerville"}]}</script>
@@ -76,7 +80,7 @@
         <tbody>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/7-oil-plus.html" class="supplier-profile-link">7 Oil Plus</a></td>
+          <td class="supplier-name">7 Oil Plus</td>
           <td class="supplier-city">Hammonton</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(856) 786-0707" class="phone-link" data-supplier-id="5f765b30-e9d0-43d8-a955-b4c95c2faf97" data-supplier-name="7 Oil Plus" data-action="call">(856) 786-0707</a></td>
@@ -84,7 +88,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/oil-depot-sj.html" class="supplier-profile-link">Oil Depot SJ</a></td>
+          <td class="supplier-name">Oil Depot SJ</td>
           <td class="supplier-city">South Jersey</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(856) 282-4848" class="phone-link" data-supplier-id="d208e16c-6fec-4231-bee2-8c597c8494cb" data-supplier-name="Oil Depot SJ" data-action="call">(856) 282-4848</a></td>
@@ -92,7 +96,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/royal-oil.html" class="supplier-profile-link">Royal Oil</a></td>
+          <td class="supplier-name">Royal Oil</td>
           <td class="supplier-city">Woodbury</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(856) 845-1866" class="phone-link" data-supplier-id="1d569f55-0eae-449a-a38a-e874a3c92680" data-supplier-name="Royal Oil" data-action="call">(856) 845-1866</a></td>
@@ -100,7 +104,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/weaver-oil-company.html" class="supplier-profile-link">Weaver Oil Company</a></td>
+          <td class="supplier-name">Weaver Oil Company</td>
           <td class="supplier-city">West Deptford</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(856) 845-1505" class="phone-link" data-supplier-id="74f691f4-2016-4deb-b2f8-e5d644a91be2" data-supplier-name="Weaver Oil Company" data-action="call">(856) 845-1505</a></td>
@@ -114,16 +118,6 @@
     <p class="disclaimer">
       Prices shown are reported by suppliers. Actual delivered prices may vary by volume and payment method. Always confirm when ordering.
     </p>
-
-    <!-- App CTA -->
-    <section class="zip-cta app-cta-inline">
-      <h3>Never Run Out of Oil</h3>
-      <p>HomeHeat tracks your usage and predicts when you'll need your next delivery &mdash; no sensors required.</p>
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_price_page" class="cta-button ios-only">Get HomeHeat Free &rarr;</a>
-      <a href="../../prices.html" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat to Your Phone &rarr;</a>
-      <p style="font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0" class="ios-only">Free app. No hardware. No ads.</p>
-      <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
-    </section>
 
     <!-- Hub Links (Counties/Cities) -->
     
@@ -159,18 +153,6 @@
     </p>
   </main>
 
-  <!-- Floating App Download Icon (iOS mobile only) -->
-  <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
-    <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
-    <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_floating" class="floating-app-icon" id="floating-app-cta">
-      <img src="../../images/app-icon.png" alt="HomeHeat">
-      <div class="float-text">
-        <span class="float-title">Get HomeHeat</span>
-        <span class="float-subtitle">Free on App Store</span>
-      </div>
-    </a>
-  </div>
-
   <footer class="footer">
     <div class="footer-links">
       <a href="../../for-suppliers.html">For Suppliers</a>
@@ -185,8 +167,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script src="../../js/widgets.js"></script>
   <script src="../../js/seo-tracking.js"></script>
-  <script src="../../js/pwa.js"></script>
 </body>
 </html>

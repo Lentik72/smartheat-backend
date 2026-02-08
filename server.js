@@ -583,11 +583,17 @@ app.use('/api/dashboard', dashboardRoutes);  // V2.14.0: Analytics dashboard
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Geolocation endpoint - Cloudflare headers + fallback to ipapi.co (server-side, no CORS)
+// Returns county for more accurate location display (IP geolocation is imprecise at city level)
 app.get('/api/geo', async (req, res) => {
+  const axios = require('axios');
+
   // Cloudflare adds these headers automatically
   const country = req.headers['cf-ipcountry'] || null;
-  let city = req.headers['cf-ipcity'] || null;
   let region = req.headers['cf-region-code'] || req.headers['cf-region'] || null;
+  let postal = null;
+  let county = null;
+  let lat = null;
+  let lon = null;
   const ip = req.headers['cf-connecting-ip'] || req.ip;
 
   // Only return data for US (our coverage area)
@@ -595,25 +601,52 @@ app.get('/api/geo', async (req, res) => {
     return res.json({ supported: false, country });
   }
 
-  // If Cloudflare didn't provide city/state, use ipapi.co server-side (no CORS issue)
+  // If Cloudflare didn't provide state, use ipapi.co server-side (no CORS issue)
   if (!region && ip) {
     try {
-      const axios = require('axios');
       const geoRes = await axios.get(`https://ipapi.co/${ip}/json/`, { timeout: 3000 });
-      if (geoRes.data && geoRes.data.region_code) {
-        region = geoRes.data.region_code;
-        city = geoRes.data.city;
+      if (geoRes.data) {
+        region = geoRes.data.region_code || region;
+        postal = geoRes.data.postal;
+        lat = geoRes.data.latitude;
+        lon = geoRes.data.longitude;
       }
     } catch (e) {
       // Fallback failed, continue without detailed geo
     }
   }
 
+  // Look up county using FCC Census Block API (free, accurate, returns county)
+  if (lat && lon) {
+    try {
+      const fccRes = await axios.get(
+        `https://geo.fcc.gov/api/census/block/find?latitude=${lat}&longitude=${lon}&format=json`,
+        { timeout: 3000 }
+      );
+      if (fccRes.data && fccRes.data.County && fccRes.data.County.name) {
+        county = fccRes.data.County.name + ' County';
+      }
+    } catch (e) {
+      // County lookup failed
+    }
+  }
+
+  // Fallback to state name if no county
+  if (!county && region) {
+    const stateNames = {
+      'NY': 'New York', 'CT': 'Connecticut', 'MA': 'Massachusetts',
+      'NJ': 'New Jersey', 'PA': 'Pennsylvania', 'NH': 'New Hampshire',
+      'RI': 'Rhode Island', 'ME': 'Maine', 'MD': 'Maryland',
+      'DE': 'Delaware', 'VA': 'Virginia', 'AK': 'Alaska'
+    };
+    county = stateNames[region] || region;
+  }
+
   res.json({
     supported: true,
     country,
     state: region,
-    city: city ? decodeURIComponent(city) : null,
+    county: county,
     ip: ip
   });
 });

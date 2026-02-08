@@ -3,7 +3,12 @@
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
-  <script src="../../js/analytics.js"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HCNTVGNVJ9');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Heating Oil Prices in Higganum, CT - Updated February 7, 2026 | HomeHeat</title>
@@ -16,13 +21,12 @@
   <meta property="og:url" content="https://www.gethomeheat.com/prices/ct/higganum.html">
   <meta property="og:type" content="website">
 
-  <link rel="stylesheet" href="../../style.min.css?v=24">
+  <link rel="stylesheet" href="../../style.css?v=16">
   <link rel="icon" type="image/png" sizes="32x32" href="../../favicon-32.png">
-  <meta name="apple-itunes-app" content="app-id=6747320571">
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices.html"},{"@type":"ListItem","position":3,"name":"Connecticut","item":"https://www.gethomeheat.com/prices/ct/"},{"@type":"ListItem","position":4,"name":"Middlesex County","item":"https://www.gethomeheat.com/prices/ct/middlesex-county.html"},{"@type":"ListItem","position":5,"name":"Higganum"}]}</script>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Higganum, CT","description":"Compare heating oil prices from local suppliers in Higganum, CT","numberOfItems":2,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from Mims Oil LLC","description":"Heating oil delivery service from Mims Oil LLC in Higganum, CT. Current price: $3.52 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Higganum, CT","provider":{"@type":"LocalBusiness","name":"Mims Oil LLC","@id":"https://www.gethomeheat.com/supplier/mims-oil-llc.html","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(203) 238-7512","priceRange":"$3.52/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.52","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":2,"item":{"@type":"Service","name":"Heating Oil Delivery from Advanced Heating Oil","description":"Heating oil delivery service from Advanced Heating Oil in Higganum, CT. Current price: $3.69 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Higganum, CT","provider":{"@type":"LocalBusiness","name":"Advanced Heating Oil","@id":"https://www.gethomeheat.com/supplier/advanced-heating-oil.html","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(860) 859-9080","priceRange":"$3.69/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.69","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Higganum, CT","description":"Compare heating oil prices from local suppliers in Higganum, CT","numberOfItems":2,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from Mims Oil LLC","description":"Heating oil delivery service from Mims Oil LLC in Higganum, CT. Current price: $3.52 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Higganum, CT","provider":{"@type":"LocalBusiness","name":"Mims Oil LLC","@id":"https://www.gethomeheat.com/supplier/mims-oil-llc","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(203) 238-7512","priceRange":"$3.52/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.52","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":2,"item":{"@type":"Service","name":"Heating Oil Delivery from Advanced Heating Oil","description":"Heating oil delivery service from Advanced Heating Oil in Higganum, CT. Current price: $3.69 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Higganum, CT","provider":{"@type":"LocalBusiness","name":"Advanced Heating Oil","@id":"https://www.gethomeheat.com/supplier/advanced-heating-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(860) 859-9080","priceRange":"$3.69/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.69","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
 </head>
 <body data-zip="06441">
   <nav class="nav">
@@ -90,7 +94,7 @@
         <tbody>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/mims-oil-llc.html" class="supplier-profile-link">Mims Oil LLC</a></td>
+          <td class="supplier-name">Mims Oil LLC</td>
           <td class="supplier-city">Meriden</td>
           <td class="supplier-price">$3.52</td>
           <td class="supplier-phone"><a href="tel:(203) 238-7512" class="phone-link" data-supplier-id="b1d4fbe3-568c-4e28-a2ed-e216296d7adc" data-supplier-name="Mims Oil LLC" data-action="call">(203) 238-7512</a></td>
@@ -98,7 +102,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/advanced-heating-oil.html" class="supplier-profile-link">Advanced Heating Oil</a></td>
+          <td class="supplier-name">Advanced Heating Oil</td>
           <td class="supplier-city">Groton</td>
           <td class="supplier-price">$3.69</td>
           <td class="supplier-phone"><a href="tel:(860) 859-9080" class="phone-link" data-supplier-id="ff561ef6-930e-46ef-84cd-1dcf5da7e7d2" data-supplier-name="Advanced Heating Oil" data-action="call">(860) 859-9080</a></td>
@@ -106,7 +110,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/brazos-oil.html" class="supplier-profile-link">Brazos Oil</a></td>
+          <td class="supplier-name">Brazos Oil</td>
           <td class="supplier-city">Middletown</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(860) 342-1136" class="phone-link" data-supplier-id="8381d613-62f7-4796-aead-4424e4219a09" data-supplier-name="Brazos Oil" data-action="call">(860) 342-1136</a></td>
@@ -114,7 +118,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/fjb-oil.html" class="supplier-profile-link">FJB Oil</a></td>
+          <td class="supplier-name">FJB Oil</td>
           <td class="supplier-city">Wolcott</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(203) 441-4704" class="phone-link" data-supplier-id="577dc573-2c75-45b9-9e92-a772f6bf0e53" data-supplier-name="FJB Oil" data-action="call">(203) 441-4704</a></td>
@@ -122,7 +126,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/norwich-discount-oil.html" class="supplier-profile-link">Norwich Discount Oil</a></td>
+          <td class="supplier-name">Norwich Discount Oil</td>
           <td class="supplier-city">Norwich</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(860) 886-5508" class="phone-link" data-supplier-id="b7ef6fc5-a447-496b-b0a1-5447df7bf5a8" data-supplier-name="Norwich Discount Oil" data-action="call">(860) 886-5508</a></td>
@@ -130,7 +134,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/tamaro-oil-corporation.html" class="supplier-profile-link">Tamaro Oil Corporation</a></td>
+          <td class="supplier-name">Tamaro Oil Corporation</td>
           <td class="supplier-city">Orange</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(203) 795-3835" class="phone-link" data-supplier-id="5dd87df2-69de-432b-8c0d-f461d6ae3582" data-supplier-name="Tamaro Oil Corporation" data-action="call">(203) 795-3835</a></td>
@@ -144,16 +148,6 @@
     <p class="disclaimer">
       Prices shown are reported by suppliers. Actual delivered prices may vary by volume and payment method. Always confirm when ordering.
     </p>
-
-    <!-- App CTA -->
-    <section class="zip-cta app-cta-inline">
-      <h3>Never Run Out of Oil</h3>
-      <p>HomeHeat tracks your usage and predicts when you'll need your next delivery &mdash; no sensors required.</p>
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_price_page" class="cta-button ios-only">Get HomeHeat Free &rarr;</a>
-      <a href="../../prices.html" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat to Your Phone &rarr;</a>
-      <p style="font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0" class="ios-only">Free app. No hardware. No ads.</p>
-      <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
-    </section>
 
     <!-- Hub Links (Counties/Cities) -->
     
@@ -189,18 +183,6 @@
     </p>
   </main>
 
-  <!-- Floating App Download Icon (iOS mobile only) -->
-  <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
-    <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
-    <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_floating" class="floating-app-icon" id="floating-app-cta">
-      <img src="../../images/app-icon.png" alt="HomeHeat">
-      <div class="float-text">
-        <span class="float-title">Get HomeHeat</span>
-        <span class="float-subtitle">Free on App Store</span>
-      </div>
-    </a>
-  </div>
-
   <footer class="footer">
     <div class="footer-links">
       <a href="../../for-suppliers.html">For Suppliers</a>
@@ -215,8 +197,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script src="../../js/widgets.js"></script>
   <script src="../../js/seo-tracking.js"></script>
-  <script src="../../js/pwa.js"></script>
 </body>
 </html>

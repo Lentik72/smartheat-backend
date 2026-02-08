@@ -3,7 +3,12 @@
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
-  <script src="../../js/analytics.js"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HCNTVGNVJ9');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Heating Oil Prices in Saugus, MA - Updated February 7, 2026 | HomeHeat</title>
@@ -16,13 +21,12 @@
   <meta property="og:url" content="https://www.gethomeheat.com/prices/ma/saugus.html">
   <meta property="og:type" content="website">
 
-  <link rel="stylesheet" href="../../style.min.css?v=24">
+  <link rel="stylesheet" href="../../style.css?v=16">
   <link rel="icon" type="image/png" sizes="32x32" href="../../favicon-32.png">
-  <meta name="apple-itunes-app" content="app-id=6747320571">
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices.html"},{"@type":"ListItem","position":3,"name":"Massachusetts","item":"https://www.gethomeheat.com/prices/ma/"},{"@type":"ListItem","position":4,"name":"Essex County","item":"https://www.gethomeheat.com/prices/ma/essex-county.html"},{"@type":"ListItem","position":5,"name":"Saugus"}]}</script>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Saugus, MA","description":"Compare heating oil prices from local suppliers in Saugus, MA","numberOfItems":2,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from Northeast Oil Delivery","description":"Heating oil delivery service from Northeast Oil Delivery in Saugus, MA. Current price: $3.59 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Saugus, MA","provider":{"@type":"LocalBusiness","name":"Northeast Oil Delivery","@id":"https://www.gethomeheat.com/supplier/northeast-oil-delivery.html","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(781) 286-2602","priceRange":"$3.59/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.59","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":2,"item":{"@type":"Service","name":"Heating Oil Delivery from Absolute Oil Company","description":"Heating oil delivery service from Absolute Oil Company in Saugus, MA. Current price: $3.99 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Saugus, MA","provider":{"@type":"LocalBusiness","name":"Absolute Oil Company","@id":"https://www.gethomeheat.com/supplier/absolute-oil-company.html","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(978) 531-7774","priceRange":"$3.99/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.99","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Saugus, MA","description":"Compare heating oil prices from local suppliers in Saugus, MA","numberOfItems":2,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from Northeast Oil Delivery","description":"Heating oil delivery service from Northeast Oil Delivery in Saugus, MA. Current price: $3.59 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Saugus, MA","provider":{"@type":"LocalBusiness","name":"Northeast Oil Delivery","@id":"https://www.gethomeheat.com/supplier/northeast-oil-delivery","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(781) 286-2602","priceRange":"$3.59/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.59","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":2,"item":{"@type":"Service","name":"Heating Oil Delivery from Absolute Oil Company","description":"Heating oil delivery service from Absolute Oil Company in Saugus, MA. Current price: $3.99 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Saugus, MA","provider":{"@type":"LocalBusiness","name":"Absolute Oil Company","@id":"https://www.gethomeheat.com/supplier/absolute-oil-company","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(978) 531-7774","priceRange":"$3.99/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.99","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
 </head>
 <body data-zip="01906">
   <nav class="nav">
@@ -90,7 +94,7 @@
         <tbody>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/northeast-oil-delivery.html" class="supplier-profile-link">Northeast Oil Delivery</a></td>
+          <td class="supplier-name">Northeast Oil Delivery</td>
           <td class="supplier-city">Revere</td>
           <td class="supplier-price">$3.59</td>
           <td class="supplier-phone"><a href="tel:(781) 286-2602" class="phone-link" data-supplier-id="a92c8e38-d441-403f-a8b1-40d82fc3ca03" data-supplier-name="Northeast Oil Delivery" data-action="call">(781) 286-2602</a></td>
@@ -98,7 +102,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/absolute-oil-company.html" class="supplier-profile-link">Absolute Oil Company</a></td>
+          <td class="supplier-name">Absolute Oil Company</td>
           <td class="supplier-city">Peabody</td>
           <td class="supplier-price">$3.99</td>
           <td class="supplier-phone"><a href="tel:(978) 531-7774" class="phone-link" data-supplier-id="03507e81-6951-487c-8789-96cc7ad4ac0a" data-supplier-name="Absolute Oil Company" data-action="call">(978) 531-7774</a></td>
@@ -106,7 +110,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/basile-oil-company.html" class="supplier-profile-link">Basile Oil Company</a></td>
+          <td class="supplier-name">Basile Oil Company</td>
           <td class="supplier-city">Watertown</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(888) 574-5234" class="phone-link" data-supplier-id="b3b8a4b1-bb31-4c92-b2fb-d8a7dd615f88" data-supplier-name="Basile Oil Company" data-action="call">(888) 574-5234</a></td>
@@ -114,7 +118,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/cod-petro.html" class="supplier-profile-link">COD Petro</a></td>
+          <td class="supplier-name">COD Petro</td>
           <td class="supplier-city">Quincy</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(781) 982-5585" class="phone-link" data-supplier-id="937e70e7-28a1-4d42-aad4-612f814e6959" data-supplier-name="COD Petro" data-action="call">(781) 982-5585</a></td>
@@ -122,7 +126,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/dollarwise-oil.html" class="supplier-profile-link">DollarWise Oil</a></td>
+          <td class="supplier-name">DollarWise Oil</td>
           <td class="supplier-city">Massachusetts</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(855) 346-0753" class="phone-link" data-supplier-id="65f50f0f-8f3f-4b67-85ee-e7c079ba879f" data-supplier-name="DollarWise Oil" data-action="call">(855) 346-0753</a></td>
@@ -130,7 +134,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/john-s-oil.html" class="supplier-profile-link">John&#039;s Oil</a></td>
+          <td class="supplier-name">John&#039;s Oil</td>
           <td class="supplier-city">Lynn</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(781) 592-9505" class="phone-link" data-supplier-id="1d3f6582-95c2-49ee-972e-803657376ac1" data-supplier-name="John&#039;s Oil" data-action="call">(781) 592-9505</a></td>
@@ -138,7 +142,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/keohan-fuels.html" class="supplier-profile-link">Keohan Fuels</a></td>
+          <td class="supplier-name">Keohan Fuels</td>
           <td class="supplier-city">Melrose</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(781) 665-5455" class="phone-link" data-supplier-id="4353f205-476a-4e5c-a1e1-5a936d0ae623" data-supplier-name="Keohan Fuels" data-action="call">(781) 665-5455</a></td>
@@ -146,7 +150,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/mario-s-oil.html" class="supplier-profile-link">Mario&#039;s Oil</a></td>
+          <td class="supplier-name">Mario&#039;s Oil</td>
           <td class="supplier-city">Everett</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(617) 387-4464" class="phone-link" data-supplier-id="58673689-3d49-4a4b-bb10-4e26e0642946" data-supplier-name="Mario&#039;s Oil" data-action="call">(617) 387-4464</a></td>
@@ -154,7 +158,7 @@
         </tr>
 
         <tr>
-          <td class="supplier-name"><a href="/supplier/walsh-s-oil.html" class="supplier-profile-link">Walsh&#039;s Oil</a></td>
+          <td class="supplier-name">Walsh&#039;s Oil</td>
           <td class="supplier-city">Lynn</td>
           <td class="supplier-price"><span class="call-for-price">Call</span></td>
           <td class="supplier-phone"><a href="tel:(781) 598-0099" class="phone-link" data-supplier-id="2c5498f8-d902-4fd7-9ee7-5bf3f10e5a68" data-supplier-name="Walsh&#039;s Oil" data-action="call">(781) 598-0099</a></td>
@@ -168,16 +172,6 @@
     <p class="disclaimer">
       Prices shown are reported by suppliers. Actual delivered prices may vary by volume and payment method. Always confirm when ordering.
     </p>
-
-    <!-- App CTA -->
-    <section class="zip-cta app-cta-inline">
-      <h3>Never Run Out of Oil</h3>
-      <p>HomeHeat tracks your usage and predicts when you'll need your next delivery &mdash; no sensors required.</p>
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_price_page" class="cta-button ios-only">Get HomeHeat Free &rarr;</a>
-      <a href="../../prices.html" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat to Your Phone &rarr;</a>
-      <p style="font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0" class="ios-only">Free app. No hardware. No ads.</p>
-      <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
-    </section>
 
     <!-- Hub Links (Counties/Cities) -->
     
@@ -213,18 +207,6 @@
     </p>
   </main>
 
-  <!-- Floating App Download Icon (iOS mobile only) -->
-  <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
-    <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
-    <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_floating" class="floating-app-icon" id="floating-app-cta">
-      <img src="../../images/app-icon.png" alt="HomeHeat">
-      <div class="float-text">
-        <span class="float-title">Get HomeHeat</span>
-        <span class="float-subtitle">Free on App Store</span>
-      </div>
-    </a>
-  </div>
-
   <footer class="footer">
     <div class="footer-links">
       <a href="../../for-suppliers.html">For Suppliers</a>
@@ -239,8 +221,6 @@
   </footer>
 
   <script src="../../js/nav.js"></script>
-  <script src="../../js/widgets.js"></script>
   <script src="../../js/seo-tracking.js"></script>
-  <script src="../../js/pwa.js"></script>
 </body>
 </html>

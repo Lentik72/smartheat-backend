@@ -93,6 +93,7 @@
     }
 
     // IP Geolocation (uses Cloudflare headers via our API - no external calls)
+    // Returns county for more accurate display (IP geolocation is imprecise at city level)
     async function detectLocation() {
         try {
             const response = await fetch('/api/geo');
@@ -102,8 +103,8 @@
             if (data.supported && data.state && COVERED_STATES[data.state]) {
                 return {
                     state: data.state,
-                    city: data.city,
-                    region: data.city
+                    county: data.county,
+                    region: data.county  // Display county instead of city
                 };
             }
         } catch (e) {
@@ -122,7 +123,7 @@
         // Priority 2: Try IP geolocation
         const location = await detectLocation();
         if (location) {
-            showNearYou(location.state, location.city);
+            showNearYou(location.state, location.county);
         }
     }
 
