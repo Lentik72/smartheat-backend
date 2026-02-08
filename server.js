@@ -110,7 +110,7 @@ const cache = new NodeCache({
 // Redirect non-www to www and Railway origin to production domain
 // Skip /health so Railway's healthcheck still gets a 200
 app.use((req, res, next) => {
-  if (req.path === '/health') return next();
+  if (req.path === '/health' || req.path.startsWith('/api/')) return next();
   const host = req.get('host');
   if (host === 'gethomeheat.com' || (host && host.endsWith('.railway.app'))) {
     return res.redirect(301, `https://www.gethomeheat.com${req.originalUrl}`);
