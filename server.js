@@ -775,23 +775,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   });
   logger.info('📄 SEO + Supplier page generator scheduled: daily at 11:00 PM EST');
 
-  // ONE-TIME: Regenerate all pages on startup (color-scheme fix + CSS v=25)
-  // TODO: Remove after successful deploy
-  setTimeout(async () => {
-    const websiteDir = path.join(__dirname, 'website');
-    try {
-      const { generateSEOPages } = require('./scripts/generate-seo-pages');
-      const seoResult = await generateSEOPages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
-      logger.info(`✅ [STARTUP] SEO pages regenerated: ${seoResult.statePages} state pages`);
-    } catch (e) { logger.error('[STARTUP] SEO regen failed:', e.message); }
-    try {
-      const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
-      const supplierLogger = { log: (...args) => logger.info(args.join(' ')), error: (...args) => logger.error(args.join(' ')) };
-      const supResult = await generateSupplierPages({ sequelize, logger: supplierLogger, websiteDir });
-      logger.info(`✅ [STARTUP] Supplier pages regenerated: ${supResult.generated} pages`);
-    } catch (e) { logger.error('[STARTUP] Supplier regen failed:', e.message); }
-  }, 5000);
-
   // V2.6.0: Monthly reset of phone_only suppliers (1st of each month at 6 AM EST)
   // Gives blocked sites another chance after a month
   cron.schedule('0 11 1 * *', async () => {
