@@ -624,7 +624,11 @@ app.get('/api/geo', async (req, res) => {
         { timeout: 3000 }
       );
       if (fccRes.data && fccRes.data.County && fccRes.data.County.name) {
-        county = fccRes.data.County.name + ' County';
+        county = fccRes.data.County.name;
+        // Only add "County" suffix if not already present
+        if (!county.toLowerCase().includes('county')) {
+          county += ' County';
+        }
       }
     } catch (e) {
       // County lookup failed
