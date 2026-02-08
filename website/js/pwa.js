@@ -4,10 +4,17 @@
  */
 
 (function() {
+  // Register service worker (required for PWA install prompt)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Service worker registration failed - PWA features won't work
+    });
+  }
+
   let deferredPrompt = null;
   const isAndroid = /Android/i.test(navigator.userAgent);
 
-  // Only run on Android
+  // Only run banner logic on Android
   if (!isAndroid) return;
 
   // Check if already installed
