@@ -1,5 +1,6 @@
 /* HomeHeat Website Styles */
 :root {
+    color-scheme: light only;
     /* Primary - Warm & Inviting */
     --primary-orange: #E07A5F;
     --primary-orange-hover: #D66B4F;
