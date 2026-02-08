@@ -775,6 +775,33 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   });
   logger.info('📄 SEO + Supplier page generator scheduled: daily at 11:00 PM EST');
 
+  // Regenerate all pages on startup (after healthcheck passes)
+  // Generated pages live on the filesystem but git has stale versions.
+  // Each Railway deploy creates a fresh container from git, so pages must
+  // be regenerated every time the server starts.
+  setTimeout(async () => {
+    const websiteDir = path.join(__dirname, 'website');
+    try {
+      const { generateSEOPages } = require('./scripts/generate-seo-pages');
+      const seoResult = await generateSEOPages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+      if (seoResult.success) {
+        logger.info(`✅ [Startup] SEO pages regenerated: ${seoResult.statePages} state, ${seoResult.totalSuppliers} suppliers`);
+      } else {
+        logger.warn(`⚠️ [Startup] SEO generation skipped: ${seoResult.reason}`);
+      }
+    } catch (e) { logger.error('[Startup] SEO page generation failed:', e.message); }
+    try {
+      const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
+      const supplierLogger = { log: (...args) => logger.info(args.join(' ')), error: (...args) => logger.error(args.join(' ')) };
+      const supResult = await generateSupplierPages({ sequelize, logger: supplierLogger, websiteDir });
+      if (supResult.success) {
+        logger.info(`✅ [Startup] Supplier pages regenerated: ${supResult.generated} pages`);
+      } else {
+        logger.error(`❌ [Startup] Supplier page generation failed: ${supResult.error}`);
+      }
+    } catch (e) { logger.error('[Startup] Supplier page generation failed:', e.message); }
+  }, 10000);
+
   // V2.6.0: Monthly reset of phone_only suppliers (1st of each month at 6 AM EST)
   // Gives blocked sites another chance after a month
   cron.schedule('0 11 1 * *', async () => {
