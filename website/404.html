@@ -129,14 +129,6 @@
     <script src="js/nav.js"></script>
     <script src="js/widgets.js"></script>
     <script src="js/pwa.js"></script>
-    <script>
-    // Track 404 error
-    if (typeof gtag === 'function') {
-        gtag('event', 'page_not_found', {
-            page_path: window.location.pathname,
-            referrer: document.referrer
-        });
-    }
-    </script>
+    <script src="js/404.js"></script>
 </body>
 </html>
