@@ -75,7 +75,7 @@ const requireAuth = async (req, res, next) => {
     }
 
     // Update usage stats
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
     const userAgent = req.headers['user-agent'] || '';
 
     await sequelize.query(`
@@ -97,7 +97,7 @@ const requireAuth = async (req, res, next) => {
 
   } catch (error) {
     logger?.error('[PriceReview] Auth error:', error.message);
-    return res.status(500).json({ error: 'Authentication failed', detail: error.message });
+    return res.status(500).json({ error: 'Authentication failed' });
   }
 };
 
