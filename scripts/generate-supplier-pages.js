@@ -408,21 +408,21 @@ function generateSupplierCSS() {
 }
 
 .contact-phone {
-  background: #2563eb;
+  background: #FF6B35;
   color: white;
 }
 
 .contact-phone:hover {
-  background: #1d4ed8;
+  background: #E55A2B;
 }
 
 .contact-website {
-  background: #f3f4f6;
+  background: #FEF3EB;
   color: #374151;
 }
 
 .contact-website:hover {
-  background: #e5e7eb;
+  background: #FDDCC8;
 }
 
 .contact-btn .icon {
@@ -430,7 +430,7 @@ function generateSupplierCSS() {
 }
 
 .supplier-section {
-  background: #f9fafb;
+  background: #FEF3EB;
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
@@ -439,7 +439,7 @@ function generateSupplierCSS() {
 .supplier-section h2 {
   font-size: 16px;
   font-weight: 600;
-  color: #374151;
+  color: #1a1a1a;
   margin: 0 0 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -448,13 +448,13 @@ function generateSupplierCSS() {
 .supplier-price .price-display {
   font-size: 36px;
   font-weight: 700;
-  color: #059669;
+  color: #2d8a2d;
   margin: 0;
 }
 
 .supplier-price .price-meta {
   font-size: 14px;
-  color: #6b7280;
+  color: #4B5563;
   margin: 4px 0 0;
 }
 
@@ -463,7 +463,7 @@ function generateSupplierCSS() {
 }
 
 .supplier-price-cta p {
-  color: #6b7280;
+  color: #4B5563;
   margin: 0 0 16px;
 }
 
@@ -475,7 +475,7 @@ function generateSupplierCSS() {
 
 .hours-list li {
   padding: 6px 0;
-  color: #374151;
+  color: #1a1a1a;
 }
 
 .badge {
@@ -525,21 +525,21 @@ function generateSupplierCSS() {
 }
 
 .btn-primary {
-  background: #2563eb;
+  background: #FF6B35;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #1d4ed8;
+  background: #E55A2B;
 }
 
 .btn-secondary {
-  background: #f59e0b;
+  background: #FF6B35;
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #d97706;
+  background: #E55A2B;
 }
 
 @media (max-width: 480px) {
@@ -558,18 +558,18 @@ function generateSupplierCSS() {
 
 .supplier-app-cta {
   text-align: center;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: #FEF3EB;
+  border: 1px solid #E5D8D0;
 }
 
 .supplier-app-cta p {
-  color: #4b5563;
+  color: #374151;
   margin: 0 0 16px;
 }
 
 .supplier-app-cta .app-micro {
   font-size: 12px;
-  color: #9ca3af;
+  color: #6b7280;
   margin: 12px 0 0;
 }
 

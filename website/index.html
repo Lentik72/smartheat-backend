@@ -141,11 +141,11 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: var(--bg-secondary, #f8f9fa);
+    background: var(--background-secondary, #FEF3EB);
     padding: 8px 14px;
     border-radius: 20px;
     font-size: 14px;
-    color: var(--text-primary, #333);
+    color: var(--text-dark, #1a1a1a);
 }
 
 .app-store-rating .stars {
@@ -157,18 +157,18 @@
     max-width: 400px;
     margin: 0 auto;
     padding: 12px 16px;
-    background: var(--bg-secondary, #f8f9fa);
+    background: var(--background-secondary, #FEF3EB);
     border-radius: 12px;
     font-size: 14px;
     font-style: italic;
-    color: var(--text-muted, #666);
+    color: var(--text-gray, #4B5563);
     text-align: center;
 }
 
 .user-review-quote .review-author {
     font-style: normal;
     font-weight: 500;
-    color: var(--text-primary, #333);
+    color: var(--text-dark, #1a1a1a);
     margin-top: 6px;
     font-size: 12px;
 }
@@ -179,9 +179,9 @@
     justify-content: center;
     gap: 24px;
     padding: 12px 20px;
-    background: var(--bg-secondary, #f8f9fa);
-    border-top: 1px solid var(--border-color, #eee);
-    border-bottom: 1px solid var(--border-color, #eee);
+    background: var(--background-secondary, #FEF3EB);
+    border-top: 1px solid var(--border-color, #E5D8D0);
+    border-bottom: 1px solid var(--border-color, #E5D8D0);
     flex-wrap: wrap;
 }
 
@@ -190,11 +190,11 @@
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: var(--text-muted, #666);
+    color: var(--text-gray, #4B5563);
 }
 
 .live-stat strong {
-    color: var(--text-primary, #333);
+    color: var(--text-dark, #1a1a1a);
 }
 
 .live-stat .pulse-dot {
@@ -240,14 +240,14 @@
 
 .screenshot-scroll-wrapper::before {
     left: 0;
-    background: linear-gradient(to right, var(--bg-primary, white) 0%, transparent 100%);
+    background: linear-gradient(to right, var(--background-card, white) 0%, transparent 100%);
     opacity: 0;
     transition: opacity 0.3s;
 }
 
 .screenshot-scroll-wrapper::after {
     right: 0;
-    background: linear-gradient(to left, var(--bg-primary, white) 0%, transparent 100%);
+    background: linear-gradient(to left, var(--background-card, white) 0%, transparent 100%);
 }
 
 .screenshot-scroll-wrapper.scrolled-left::before {
@@ -263,6 +263,9 @@
     gap: 16px;
     overflow-x: auto;
     padding: 0 20px 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+    justify-content: center;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
@@ -321,7 +324,7 @@
 
 .screenshot-scroll .screenshot-item p {
     font-size: 12px;
-    color: var(--text-muted, #666);
+    color: var(--text-gray, #4B5563);
     text-align: center;
     margin-top: 8px;
 }
@@ -330,7 +333,7 @@
 .scroll-hint {
     text-align: center;
     font-size: 12px;
-    color: var(--text-muted, #999);
+    color: var(--text-muted, #6b7280);
     margin-top: 8px;
 }
 
@@ -357,7 +360,7 @@
 }
 
 .features-v2 .section-header p {
-    color: var(--text-muted, #666);
+    color: var(--text-gray, #4B5563);
     font-size: 16px;
 }
 
@@ -368,8 +371,8 @@
 }
 
 .feature-card-v2 {
-    background: var(--bg-primary, white);
-    border: 1px solid var(--border-color, #eee);
+    background: var(--background-card, white);
+    border: 1px solid var(--border-color, #E5D8D0);
     border-radius: 12px;
     padding: 20px;
 }
@@ -382,18 +385,18 @@
 .feature-card-v2 h3 {
     font-size: 16px;
     margin-bottom: 8px;
-    color: var(--text-primary, #333);
+    color: var(--text-dark, #1a1a1a);
 }
 
 .feature-card-v2 p {
     font-size: 14px;
-    color: var(--text-muted, #666);
+    color: var(--text-gray, #4B5563);
     line-height: 1.5;
 }
 
 /* Simplified Value Props */
 .value-props-v2 {
-    background: var(--bg-secondary, #f8f9fa);
+    background: var(--background-secondary, #FEF3EB);
     padding: 32px 20px;
     text-align: center;
 }
@@ -403,7 +406,7 @@
 }
 
 .value-props-v2 > p {
-    color: var(--text-muted, #666);
+    color: var(--text-gray, #4B5563);
     max-width: 500px;
     margin: 0 auto 24px;
 }
@@ -416,13 +419,13 @@
 }
 
 .value-badge {
-    background: var(--bg-primary, white);
-    border: 1px solid var(--border-color, #ddd);
+    background: var(--background-card, white);
+    border: 1px solid var(--border-color, #E5D8D0);
     padding: 10px 18px;
     border-radius: 24px;
     font-size: 14px;
     font-weight: 500;
-    color: var(--text-primary, #333);
+    color: var(--text-dark, #1a1a1a);
 }
 
 /* Prices Teaser */
@@ -439,7 +442,7 @@
 }
 
 .prices-teaser p {
-    color: var(--text-muted, #666);
+    color: var(--text-gray, #4B5563);
     margin-bottom: 16px;
 }
 
@@ -447,7 +450,7 @@
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    background: var(--bg-secondary, #f8f9fa);
+    background: var(--background-secondary, #FEF3EB);
     padding: 12px 20px;
     border-radius: 12px;
     margin-bottom: 16px;
@@ -461,7 +464,7 @@
 
 .prices-teaser .price-preview .price-label {
     font-size: 13px;
-    color: var(--text-muted, #666);
+    color: var(--text-gray, #4B5563);
     text-align: left;
 }
 
@@ -478,6 +481,7 @@
 </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
     <nav class="nav">
         <div class="nav-container">
             <a href="/" class="nav-logo">
@@ -500,7 +504,7 @@
     </nav>
 
     <!-- Hero Section - Streamlined -->
-    <section class="hero">
+    <section class="hero" id="main-content">
         <div class="hero-badge">Free on the App Store</div>
         <h1>Know when you'll run out — before it happens.</h1>
         <p class="hero-tagline">HomeHeat predicts when your heating oil or propane tank will need a refill using your usage and local weather — no sensors required.</p>
