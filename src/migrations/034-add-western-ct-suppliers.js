@@ -84,7 +84,7 @@ module.exports = {
         notes: null,
         active: true,
         verified: false,
-        allowPriceDisplay: true,
+        allowPriceDisplay: false,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -176,7 +176,7 @@ module.exports = {
         notes: null,
         active: true,
         verified: false,
-        allowPriceDisplay: true,
+        allowPriceDisplay: false,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -244,7 +244,7 @@ module.exports = {
         notes: null,
         active: true,
         verified: false,
-        allowPriceDisplay: true,
+        allowPriceDisplay: false,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -322,7 +322,7 @@ module.exports = {
         notes: null,
         active: true,
         verified: false,
-        allowPriceDisplay: true,
+        allowPriceDisplay: false,
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -366,6 +366,13 @@ module.exports = {
 
       console.log(`[Migration 034] Added ${supplier.name} (${supplier.city}, ${supplier.state})`);
     }
+
+    // Ensure no price display/scraping for these directory-only suppliers
+    await sequelize.query(`
+      UPDATE suppliers
+      SET allow_price_display = false
+      WHERE slug IN ('leahys-fuels', 'mitchell-oil', 'baribault-fuel', 'santa-energy')
+    `);
   },
 
   async down(sequelize) {
