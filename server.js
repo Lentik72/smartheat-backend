@@ -411,6 +411,11 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Western CT suppliers migration:', err.message);
         });
 
+        const { up: runHudsonValley } = require('./src/migrations/035-add-hudson-valley-ny-suppliers');
+        runHudsonValley(sequelize).catch(err => {
+          logger.warn('⚠️  Hudson Valley NY suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
