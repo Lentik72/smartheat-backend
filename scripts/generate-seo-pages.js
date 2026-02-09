@@ -156,10 +156,18 @@ async function generateSEOPages(options = {}) {
     for (const [stateCode, stateInfo] of Object.entries(STATES)) {
       log(`\n📍 Processing ${stateInfo.name}...`);
 
-      // Create state directory
+      // Create state directory (clear stale pages from previous runs)
       const stateDir = path.join(pricesDir, stateInfo.abbrev);
       if (!dryRun) {
         await fs.mkdir(stateDir, { recursive: true });
+        // Remove all existing .html files so stale pages don't linger
+        // when template changes or suppliers drop below threshold
+        const existingFiles = await fs.readdir(stateDir);
+        for (const file of existingFiles) {
+          if (file.endsWith('.html')) {
+            await fs.unlink(path.join(stateDir, file));
+          }
+        }
       }
 
       // Get suppliers for this state (by physical location OR service area)

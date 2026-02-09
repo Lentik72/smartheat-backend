@@ -62,7 +62,7 @@ router.post('/log-action', async (req, res) => {
   }
 
   // Validate pageSource if provided
-  const validPageSources = ['prices', 'state', 'county', 'city', 'seo-state', 'seo-region', 'seo-county', 'seo-city'];
+  const validPageSources = ['prices', 'state', 'county', 'city', 'seo-state', 'seo-region', 'seo-county', 'seo-city', 'supplier-profile', 'seo-page'];
   if (pageSource && !validPageSources.includes(pageSource)) {
     return res.status(400).json({ error: 'Invalid page source' });
   }
