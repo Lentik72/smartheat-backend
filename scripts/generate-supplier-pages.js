@@ -148,7 +148,7 @@ function generateSupplierPage(supplier, latestPrice) {
   <meta name="apple-itunes-app" content="app-id=6747320571">
   <meta name="color-scheme" content="light only">
   <link rel="stylesheet" href="/style.min.css?v=26">
-  <link rel="stylesheet" href="/supplier/supplier.css?v=23">
+  <link rel="stylesheet" href="/supplier/supplier.css?v=24">
 
   <script type="application/ld+json">${JSON.stringify(schemaData)}</script>
 </head>
