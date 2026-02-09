@@ -159,6 +159,11 @@ function generateSupplierPage(supplier, latestPrice) {
         <img src="/images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
         HomeHeat
       </a>
+      <button class="nav-toggle" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <ul class="nav-links">
         <li><a href="/">Home</a></li>
         <li><a href="/prices.html">Prices</a></li>
@@ -232,17 +237,19 @@ function generateSupplierPage(supplier, latestPrice) {
   </div>
 
   <footer class="footer">
-    <div class="footer-content">
-      <p>&copy; ${new Date().getFullYear()} HomeHeat. Helping homeowners find heating oil.</p>
-      <p class="footer-links">
-        <a href="/prices.html">Prices</a> &middot;
-        <a href="/for-suppliers.html">For Suppliers</a> &middot;
-        <a href="/privacy.html">Privacy</a> &middot;
-        <a href="/terms.html">Terms</a>
-      </p>
+    <div class="footer-links">
+      <a href="/prices.html">Prices</a>
+      <a href="/for-suppliers.html">For Suppliers</a>
+      <a href="/how-prices-work.html">How Prices Work</a>
+      <a href="/learn/">Learn</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
     </div>
+    <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
+    <p>&copy; ${new Date().getFullYear()} HomeHeat. All rights reserved.</p>
   </footer>
 
+  <script src="/js/nav.js"></script>
   <script src="/js/widgets.js"></script>
   <script src="/js/seo-tracking.js"></script>
   <script src="/js/pwa.js"></script>

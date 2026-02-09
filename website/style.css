@@ -400,7 +400,7 @@ body {
 
 /* "What the App Adds" Section */
 .app-features {
-    padding: var(--space-16) var(--space-4);
+    padding: var(--space-16) var(--space-8);
     background: var(--background-secondary);
     text-align: center;
 }
@@ -1676,6 +1676,26 @@ body {
         gap: 1rem;
     }
 
+    /* Full-width sections - reduce horizontal padding on mobile */
+    .section-wrapper,
+    .value-props-section,
+    .home-faq-section,
+    .seo-keyword-section,
+    .bottom-cta-section,
+    .supplier-hero,
+    .guarantees-section,
+    .how-it-works,
+    .advisory-section,
+    .cta-section,
+    .supplier-faq-section,
+    .prices-info-hero,
+    .prices-content-section,
+    .principles-section,
+    .cta-section--alt {
+        padding-left: var(--space-4);
+        padding-right: var(--space-4);
+    }
+
     .hero h1 {
         font-size: 2rem;
     }
@@ -1757,6 +1777,55 @@ body {
     background: var(--primary-orange);
     color: white;
     border-color: var(--primary-orange);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEARN HUB PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.learn-section {
+    margin-bottom: 3rem;
+}
+
+.learn-section-title {
+    border-bottom: 2px solid var(--primary-orange);
+    padding-bottom: 0.5rem;
+}
+
+.learn-section-title--upcoming {
+    border-bottom-color: var(--border-color);
+    color: var(--text-gray);
+}
+
+.learn-section-desc {
+    color: var(--text-gray);
+    margin-bottom: 1.5rem;
+}
+
+.learn-intro {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 3rem;
+}
+
+.learn-article-list {
+    list-style: none;
+    padding: 0;
+}
+
+.learn-article-list li {
+    margin-bottom: 0.75rem;
+}
+
+.learn-footer-context {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.learn-footer-context p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
