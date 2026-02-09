@@ -192,3 +192,21 @@
     justify-content: center;
   }
 }
+
+.supplier-app-cta {
+  text-align: center;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.supplier-app-cta p {
+  color: #4b5563;
+  margin: 0 0 16px;
+}
+
+.supplier-app-cta .app-micro {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 12px 0 0;
+}
+
