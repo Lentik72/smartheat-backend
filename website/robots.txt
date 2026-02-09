@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /*?supplier=
 
 Sitemap: https://www.gethomeheat.com/sitemap.xml
