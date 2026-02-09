@@ -137,12 +137,12 @@ function generateSupplierPage(supplier, latestPrice) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${name} - Heating Oil Delivery | HomeHeat</title>
   <meta name="description" content="${name} provides heating oil delivery in ${serviceArea}. Contact for current prices and delivery availability.">
-  <link rel="canonical" href="https://www.gethomeheat.com/supplier/${supplier.slug}">
+  <link rel="canonical" href="https://www.gethomeheat.com/supplier/${supplier.slug}.html">
 
   <meta property="og:title" content="${name} - Heating Oil Delivery">
   <meta property="og:description" content="Heating oil delivery in ${serviceArea}">
   <meta property="og:type" content="business.business">
-  <meta property="og:url" content="https://www.gethomeheat.com/supplier/${supplier.slug}">
+  <meta property="og:url" content="https://www.gethomeheat.com/supplier/${supplier.slug}.html">
 
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
