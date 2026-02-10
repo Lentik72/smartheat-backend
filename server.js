@@ -441,6 +441,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  347 Oil migration:', err.message);
         });
 
+        // V2.21.0: Add 6 verified COD suppliers (NY + CT)
+        const { up: runCodSuppliersMigration } = require('./src/migrations/039-add-cod-suppliers');
+        runCodSuppliersMigration(sequelize).catch(err => {
+          logger.warn('⚠️  COD suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
