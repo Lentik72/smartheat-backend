@@ -447,6 +447,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  COD suppliers migration:', err.message);
         });
 
+        // V2.22.0: Add Jennison Fuels (Central NY COD supplier)
+        const { up: runJennisonFuelsMigration } = require('./src/migrations/040-add-jennison-fuels');
+        runJennisonFuelsMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Jennison Fuels migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
