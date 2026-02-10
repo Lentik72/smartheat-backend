@@ -435,6 +435,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Alaska suppliers migration:', err.message);
         });
 
+        // V2.20.0: Add 347 Oil (Northern Westchester, NY)
+        const { up: run347OilMigration } = require('./src/migrations/038-add-347-oil');
+        run347OilMigration(sequelize).catch(err => {
+          logger.warn('⚠️  347 Oil migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
