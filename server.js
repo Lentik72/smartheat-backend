@@ -453,6 +453,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Jennison Fuels migration:', err.message);
         });
 
+        // V2.23.0: Add Ace Fueling (Lower Bucks County, PA COD supplier)
+        const { up: runAceFuelingMigration } = require('./src/migrations/041-add-ace-fueling');
+        runAceFuelingMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Ace Fueling migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {

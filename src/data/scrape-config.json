@@ -1588,6 +1588,14 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "ace4oil.com": {
+    "enabled": true,
+    "pattern": "table",
+    "targetTier": 2,
+    "notes": "PA Bristol/Lower Bucks County - True COD. 5 tiers (50-74/75-99/100-124/125-149/150-249). targetTier=2 = 100-124 gal tier ($3.95). 24/7 emergency.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_RI": "=== RHODE ISLAND ===",
 
   "bestdiscountoil.com": {
