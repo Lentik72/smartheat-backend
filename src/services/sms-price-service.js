@@ -274,12 +274,12 @@ class SmsPriceService {
         `, { replacements: { phone: normalizedPhone } });
       }
       await this.logSms({ fromPhone, type: 'keyword', status: 'start', twilioMessageSid });
-      return "Welcome back! Text your price to update.";
+      return "HomeHeat: You're now opted in. Text your price (e.g. 3.49) to update your listing. Reply HELP for info or STOP to unsubscribe.";
     }
 
     if (keyword === 'HELP') {
       await this.logSms({ fromPhone, type: 'keyword', status: 'help', twilioMessageSid });
-      return "HomeHeat SMS: text your price (e.g. 3.49) to update your listing. Text STOP to unsubscribe. Terms: gethomeheat.com/sms-terms Questions? support@gethomeheat.com";
+      return "HomeHeat SMS: text your price (e.g. 3.49) to update your listing. Text STOP to unsubscribe. Terms: gethomeheat.com/sms-terms.html Questions? support@gethomeheat.com";
     }
 
     return null;
