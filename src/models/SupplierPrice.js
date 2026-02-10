@@ -29,8 +29,8 @@ const initSupplierPriceModel = (sequelize) => {
         type: DataTypes.DECIMAL(5, 3),
         allowNull: false,
         validate: {
-          min: 2.00,
-          max: 5.00
+          min: 1.50,
+          max: 8.00
         }
       },
       minGallons: {
@@ -44,7 +44,7 @@ const initSupplierPriceModel = (sequelize) => {
         comment: 'Only heating oil supported initially'
       },
       sourceType: {
-        type: DataTypes.ENUM('scraped', 'manual', 'user_reported', 'aggregator_signal'),
+        type: DataTypes.ENUM('scraped', 'manual', 'user_reported', 'aggregator_signal', 'supplier_sms', 'supplier_direct'),
         defaultValue: 'scraped',
         allowNull: false,
         comment: 'aggregator_signal prices are for market signals only, never displayed'
@@ -94,8 +94,8 @@ const initSupplierPriceModel = (sequelize) => {
         beforeSave: (price) => {
           // Validate price range
           const priceVal = parseFloat(price.pricePerGallon);
-          if (priceVal < 2.00 || priceVal > 5.00) {
-            throw new Error(`Price $${priceVal} outside valid range ($2.00-$5.00)`);
+          if (priceVal < 1.50 || priceVal > 8.00) {
+            throw new Error(`Price $${priceVal} outside valid range ($1.50-$8.00)`);
           }
         }
       }

@@ -33,8 +33,11 @@ const CoverageReportMailer = require('./src/services/CoverageReportMailer');
 // V2.15.0: Import ScrapeConfigSync for syncing config to database
 const ScrapeConfigSync = require('./src/services/ScrapeConfigSync');
 
+// V2.18.0: Import SMS Price Service for supplier price updates via text
+const SmsPriceService = require('./src/services/sms-price-service');
+
 // Import route modules with error handling
-let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes, dashboardRoutes;
+let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes, dashboardRoutes, smsWebhookRoutes;
 
 try {
   weatherRoutes = require('./src/routes/weather');
@@ -49,6 +52,7 @@ try {
   waitlistRoutes = require('./src/routes/waitlist');  // V2.9.0: Canada waitlist
   trackingRoutes = require('./src/routes/tracking');  // V2.12.0: Click tracking for sniper outreach
   dashboardRoutes = require('./src/routes/dashboard');  // V2.14.0: Analytics dashboard
+  smsWebhookRoutes = require('./src/routes/sms-webhook');  // V2.18.0: SMS price updates
 } catch (error) {
   console.error('Error loading route modules:', error.message);
   // Create placeholder routers if routes fail to load
@@ -149,7 +153,7 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => !req.path.startsWith('/api'), // Skip rate limiting for non-API routes
+  skip: (req) => !req.path.startsWith('/api') || req.path.startsWith('/api/webhook/'), // Skip rate limiting for non-API routes and webhooks
 });
 app.use(limiter);
 
@@ -192,7 +196,10 @@ const API_KEYS = {
   DATABASE_URL: process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL,
   JWT_SECRET: process.env.JWT_SECRET,
   EMAIL_USER: process.env.EMAIL_USER,
-  EMAIL_PASS: process.env.EMAIL_PASS
+  EMAIL_PASS: process.env.EMAIL_PASS,
+  TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
+  TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
+  TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER
 };
 
 // Log environment info for debugging
@@ -416,6 +423,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Hudson Valley NY suppliers migration:', err.message);
         });
 
+        // V2.18.0: SMS price update support (enum values, tracking table, supplier SMS columns)
+        const { up: runSmsMigration } = require('./src/migrations/036-add-sms-price-support');
+        runSmsMigration(sequelize).catch(err => {
+          logger.warn('⚠️  SMS price support migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
@@ -427,6 +440,11 @@ if (API_KEYS.DATABASE_URL) {
         }).catch(err => {
           logger.warn('⚠️  ScrapeConfigSync error:', err.message);
         });
+
+        // V2.18.0: Initialize SMS Price Service
+        const smsPriceService = new SmsPriceService(sequelize, logger);
+        app.locals.smsPriceService = smsPriceService;
+        logger.info('✅ SMS Price Service initialized');
 
         logger.info('📊 Database ready for operations');
       })
@@ -588,6 +606,7 @@ app.use('/api/admin/supplier-claims', require('./src/routes/admin-supplier-claim
 app.use('/api/supplier-update', require('./src/routes/supplier-update'));  // V2.11.0: Supplier magic link price update
 app.use('/api', require('./src/routes/tracking'));  // V2.12.0: Click tracking for sniper outreach
 app.use('/api/dashboard', dashboardRoutes);  // V2.14.0: Analytics dashboard
+app.use('/api/webhook/twilio', smsWebhookRoutes);  // V2.18.0: SMS price updates via Twilio
 
 // V2.10.0: Serve static files for admin tools
 app.use(express.static(path.join(__dirname, 'public')));
