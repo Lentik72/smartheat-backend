@@ -32281,6 +32281,265 @@
     "lat": 64.489102,
     "lng": -146.924788
   },
+  "99501": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.218,
+    "lng": -149.850
+  },
+  "99502": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.149,
+    "lng": -149.943
+  },
+  "99503": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.190,
+    "lng": -149.890
+  },
+  "99504": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.210,
+    "lng": -149.740
+  },
+  "99505": {
+    "city": "Fort Richardson",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.259,
+    "lng": -149.653
+  },
+  "99506": {
+    "city": "Elmendorf AFB",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.250,
+    "lng": -149.800
+  },
+  "99507": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.143,
+    "lng": -149.855
+  },
+  "99508": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.195,
+    "lng": -149.820
+  },
+  "99509": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.200,
+    "lng": -149.880
+  },
+  "99510": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.217,
+    "lng": -149.858
+  },
+  "99511": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.100,
+    "lng": -149.850
+  },
+  "99515": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.108,
+    "lng": -149.886
+  },
+  "99516": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.062,
+    "lng": -149.790
+  },
+  "99517": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.199,
+    "lng": -149.932
+  },
+  "99518": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.151,
+    "lng": -149.909
+  },
+  "99519": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.174,
+    "lng": -149.996
+  },
+  "99520": {
+    "city": "Anchorage",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 61.218,
+    "lng": -149.900
+  },
+  "99540": {
+    "city": "Indian",
+    "county": "Anchorage",
+    "state": "AK",
+    "lat": 60.984,
+    "lng": -149.534
+  },
+  "99556": {
+    "city": "Anchor Point",
+    "county": "Kenai Peninsula",
+    "state": "AK",
+    "lat": 59.777,
+    "lng": -151.832
+  },
+  "99603": {
+    "city": "Homer",
+    "county": "Kenai Peninsula",
+    "state": "AK",
+    "lat": 59.643,
+    "lng": -151.548
+  },
+  "99610": {
+    "city": "Kasilof",
+    "county": "Kenai Peninsula",
+    "state": "AK",
+    "lat": 60.331,
+    "lng": -151.268
+  },
+  "99611": {
+    "city": "Kenai",
+    "county": "Kenai Peninsula",
+    "state": "AK",
+    "lat": 60.556,
+    "lng": -151.243
+  },
+  "99615": {
+    "city": "Kodiak",
+    "county": "Kodiak Island",
+    "state": "AK",
+    "lat": 57.790,
+    "lng": -152.407
+  },
+  "99623": {
+    "city": "Wasilla",
+    "county": "Matanuska-Susitna",
+    "state": "AK",
+    "lat": 61.550,
+    "lng": -149.520
+  },
+  "99631": {
+    "city": "Moose Pass",
+    "county": "Kenai Peninsula",
+    "state": "AK",
+    "lat": 60.488,
+    "lng": -149.370
+  },
+  "99645": {
+    "city": "Palmer",
+    "county": "Matanuska-Susitna",
+    "state": "AK",
+    "lat": 61.600,
+    "lng": -149.112
+  },
+  "99654": {
+    "city": "Wasilla",
+    "county": "Matanuska-Susitna",
+    "state": "AK",
+    "lat": 61.581,
+    "lng": -149.439
+  },
+  "99664": {
+    "city": "Seward",
+    "county": "Kenai Peninsula",
+    "state": "AK",
+    "lat": 60.104,
+    "lng": -149.443
+  },
+  "99669": {
+    "city": "Soldotna",
+    "county": "Kenai Peninsula",
+    "state": "AK",
+    "lat": 60.488,
+    "lng": -151.058
+  },
+  "99686": {
+    "city": "Valdez",
+    "county": "Valdez-Cordova",
+    "state": "AK",
+    "lat": 61.131,
+    "lng": -146.348
+  },
+  "99687": {
+    "city": "Wasilla",
+    "county": "Matanuska-Susitna",
+    "state": "AK",
+    "lat": 61.530,
+    "lng": -149.480
+  },
+  "99688": {
+    "city": "Willow",
+    "county": "Matanuska-Susitna",
+    "state": "AK",
+    "lat": 61.759,
+    "lng": -150.038
+  },
+  "99694": {
+    "city": "Houston",
+    "county": "Matanuska-Susitna",
+    "state": "AK",
+    "lat": 61.630,
+    "lng": -149.818
+  },
+  "99801": {
+    "city": "Juneau",
+    "county": "Juneau",
+    "state": "AK",
+    "lat": 58.301,
+    "lng": -134.419
+  },
+  "99824": {
+    "city": "Douglas",
+    "county": "Juneau",
+    "state": "AK",
+    "lat": 58.276,
+    "lng": -134.394
+  },
+  "99901": {
+    "city": "Ketchikan",
+    "county": "Ketchikan Gateway",
+    "state": "AK",
+    "lat": 55.342,
+    "lng": -131.648
+  },
+  "99835": {
+    "city": "Sitka",
+    "county": "Sitka",
+    "state": "AK",
+    "lat": 57.053,
+    "lng": -135.330
+  },
   "01001": {
     "state": "MA",
     "county": "Hampden",

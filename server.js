@@ -429,6 +429,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  SMS price support migration:', err.message);
         });
 
+        // V2.19.0: Add Alaska suppliers (Homerun Oil, Ike's Fuel, update Sourdough Fuel)
+        const { up: runAlaskaMigration } = require('./src/migrations/037-add-alaska-suppliers');
+        runAlaskaMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Alaska suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
