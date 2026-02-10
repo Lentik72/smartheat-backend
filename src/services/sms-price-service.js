@@ -122,7 +122,7 @@ class SmsPriceService {
         fromPhone, messageBody: body, supplierId: supplier.id,
         type: 'price_attempt', status: 'invalid_price', twilioMessageSid
       });
-      return "Didn't catch that. Reply with just your price, e.g. 3.49";
+      return "Didn't catch that. Please reply with just your price, like 3.49";
     }
 
     // Store pending confirmation in sms_price_updates
@@ -132,7 +132,7 @@ class SmsPriceService {
       twilioMessageSid
     });
 
-    return `You're updating ${supplier.name}. Reply YES to publish $${price.toFixed(2)} on your listing.`;
+    return `HomeHeat: You're updating ${supplier.name}.\nReply YES to publish $${price.toFixed(2)} on your listing.`;
   }
 
   /**
@@ -165,11 +165,11 @@ class SmsPriceService {
 
       if (expired.length > 0) {
         await this.logSms({ fromPhone, supplierId: supplier.id, type: 'confirm', status: 'expired', twilioMessageSid });
-        return "That confirmation expired. Text your price again, e.g. 3.49";
+        return "That confirmation expired. Text your price again, like 3.49";
       }
 
       await this.logSms({ fromPhone, supplierId: supplier.id, type: 'confirm', status: 'no_pending', twilioMessageSid });
-      return "No pending price. Text your price first, e.g. 3.49";
+      return "No pending price. Text your price first, like 3.49";
     }
 
     const price = parseFloat(pending[0].parsed_price);
@@ -209,7 +209,7 @@ class SmsPriceService {
     });
 
     const slug = supplier.slug || supplier.id;
-    return `Published! $${price.toFixed(2)} is now live: gethomeheat.com/supplier/${slug}\nMost suppliers update weekly. Just text your price anytime.`;
+    return `Published! $${price.toFixed(2)} is now live:\ngethomeheat.com/supplier/${slug}\nJust text your price anytime to update.`;
   }
 
   /**
@@ -223,7 +223,7 @@ class SmsPriceService {
         fromPhone, messageBody: body, supplierId: supplier.id,
         type: 'price_update', status: 'invalid_price', twilioMessageSid
       });
-      return "Didn't catch that. Reply with just your price, e.g. 3.49";
+      return "Didn't catch that. Please reply with just your price, like 3.49";
     }
 
     // Insert into supplier_prices
@@ -250,7 +250,7 @@ class SmsPriceService {
       parsedPrice: price, type: 'price_update', status: 'success', twilioMessageSid
     });
 
-    return `Saved at $${price.toFixed(2)}/gal. We recommend updating at least weekly to keep it fresh.`;
+    return `Saved at $${price.toFixed(2)}/gal.`;
   }
 
   /**
@@ -274,12 +274,12 @@ class SmsPriceService {
         `, { replacements: { phone: normalizedPhone } });
       }
       await this.logSms({ fromPhone, type: 'keyword', status: 'start', twilioMessageSid });
-      return "HomeHeat: You're now opted in. Text your price (e.g. 3.49) to update your listing. Reply HELP for info or STOP to unsubscribe.";
+      return "HomeHeat: You're all set! Just text your price anytime to update your listing. Reply STOP to unsubscribe or HELP for info.";
     }
 
     if (keyword === 'HELP') {
       await this.logSms({ fromPhone, type: 'keyword', status: 'help', twilioMessageSid });
-      return "HomeHeat SMS: text your price (e.g. 3.49) to update your listing. Text STOP to unsubscribe. Terms: gethomeheat.com/sms-terms.html Questions? support@gethomeheat.com";
+      return "HomeHeat SMS Help:\nText your price like 3.49 to update your listing.\nSTOP to unsubscribe. Terms: gethomeheat.com/sms-terms.html\nQuestions? support@gethomeheat.com";
     }
 
     return null;
