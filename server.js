@@ -459,6 +459,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Ace Fueling migration:', err.message);
         });
 
+        // V2.24.0: Add regional COD suppliers (VA, Western NY, VT, Northern ME)
+        const { up: runRegionalCodMigration } = require('./src/migrations/042-add-regional-cod-suppliers');
+        runRegionalCodMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Regional COD suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
