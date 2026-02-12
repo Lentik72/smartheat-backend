@@ -2216,7 +2216,8 @@ class UnifiedAnalytics {
       // Add click data to website section
       const websiteData = website.data || {};
       try {
-        const [clicks] = await this.sequelize.query(`
+        // Note: With type: SELECT, Sequelize returns rows array directly (not [rows, metadata])
+        const clicks = await this.sequelize.query(`
           SELECT
             COUNT(*) as total_clicks,
             COUNT(*) FILTER (WHERE action_type = 'call') as call_clicks,

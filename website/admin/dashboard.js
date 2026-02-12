@@ -7,6 +7,7 @@
 // State
 let authToken = sessionStorage.getItem('dashboardToken') || '';
 let currentDays = 30;
+let currentTab = 'leaderboard';  // Track active tab for period refresh
 let suppliersPage = 0;
 const suppliersLimit = 50;
 
@@ -173,6 +174,9 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
 // Tab navigation handler (shared between tabs and sidebar)
 function handleTabSwitch(target) {
+  // Track current tab for period refresh
+  currentTab = target;
+
   // Update active tab (legacy tabs)
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   const legacyTab = document.querySelector(`.tab[data-tab="${target}"]`);
@@ -299,8 +303,32 @@ document.querySelectorAll('.period-btn').forEach(btn => {
     document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     loadDashboard();
+    // Also reload the current tab with new period
+    reloadCurrentTab();
   });
 });
+
+// Reload current tab (called when period changes)
+function reloadCurrentTab() {
+  switch (currentTab) {
+    case 'leaderboard': loadLeaderboard(); break;
+    case 'app-analytics': loadAppAnalytics(); break;
+    case 'growth': loadGrowth(); break;
+    case 'coverage': loadCoverage(); break;
+    case 'recommendations': loadRecommendations(); break;
+    case 'website': loadWebsite(); break;
+    case 'ios-app': loadIOSApp(); break;
+    case 'android': loadAndroidSignals(); break;
+    case 'retention': loadRetention(); break;
+    case 'acquisition': loadAcquisition(); break;
+    case 'searches': loadSearches(); break;
+    case 'clicks': loadClicks(); break;
+    case 'prices': loadPrices(); break;
+    case 'map': loadMap(); break;
+    case 'scrapers': loadScrapers(); break;
+    // Note: suppliers and settings don't need period refresh
+  }
+}
 
 // Load overview (top cards)
 async function loadOverview() {
@@ -3020,26 +3048,16 @@ async function loadGrowth() {
   contentEl.classList.add('hidden');
 
   try {
-    const [unified, retention, recommendations, overview] = await Promise.all([
+    const [unified, retention, recommendations] = await Promise.all([
       api(`/unified?days=${currentDays}`),
       api('/retention').catch(() => ({ available: false })),
-      api(`/recommendations?days=${currentDays}`).catch(() => ({ recommendations: [] })),
-      api(`/overview?days=${currentDays}`).catch(() => ({ website: {} }))
+      api(`/recommendations?days=${currentDays}`).catch(() => ({ recommendations: [] }))
     ]);
 
     // Platform comparison
     const ios = unified?.app || {};
     const android = unified?.android || {};
-    // V2.27.1: Use overview data for clicks (more reliable), unified for GA4 data
-    const website = {
-      ...unified?.website,
-      totalClicks: overview?.website?.totalClicks ?? unified?.website?.totalClicks ?? 0,
-      callClicks: overview?.website?.callClicks ?? unified?.website?.callClicks ?? 0
-    };
-
-    // V2.27.1: Debug logging for click data
-    console.log('[Growth] Website data (merged):', website);
-    console.log('[Growth] From unified:', unified?.website?.totalClicks, 'From overview:', overview?.website?.totalClicks);
+    const website = unified?.website || {};
 
     // iOS users: check both BigQuery structure (summary.totalUsers) and database structure (uniqueUsers)
     const iosUsers = ios.summary?.totalUsers || ios.uniqueUsers || 0;
