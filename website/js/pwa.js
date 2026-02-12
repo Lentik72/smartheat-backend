@@ -69,7 +69,7 @@
             <span>See today's prices. Plan ahead.</span>
           </div>
         </div>
-        <button class="pwa-install-btn">Add HomeHeat</button>
+        <button class="pwa-install-btn">Add to Home Screen</button>
       </div>
     `;
     document.body.appendChild(banner);
