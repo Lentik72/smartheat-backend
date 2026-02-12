@@ -2227,6 +2227,7 @@ class UnifiedAnalytics {
         websiteData.totalClicks = parseInt(clicks[0]?.total_clicks) || 0;
         websiteData.callClicks = parseInt(clicks[0]?.call_clicks) || 0;
         websiteData.websiteClicks = parseInt(clicks[0]?.website_clicks) || 0;
+        this.logger.info(`[UnifiedAnalytics] Click data for ${days}d: total=${websiteData.totalClicks}, calls=${websiteData.callClicks}, websites=${websiteData.websiteClicks}`);
       } catch (e) {
         this.logger.error('[UnifiedAnalytics] Click data error:', e.message);
       }
