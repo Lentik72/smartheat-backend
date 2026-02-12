@@ -17,8 +17,9 @@
   // Only run banner logic on Android
   if (!isAndroid) return;
 
-  // Check if already installed
+  // Check if already installed (standalone mode or previously installed)
   if (window.matchMedia('(display-mode: standalone)').matches) return;
+  if (localStorage.getItem('pwa-installed')) return;
 
   // Check if dismissed recently (3 days)
   function isDismissedRecently() {
@@ -147,6 +148,9 @@
     deferredPrompt = null;
     const banner = document.getElementById('pwa-install-banner');
     if (banner) banner.remove();
+
+    // Mark as installed so banner never shows again on this browser
+    localStorage.setItem('pwa-installed', 'true');
 
     if (typeof gtag === 'function') {
       gtag('event', 'pwa_app_installed', { platform: 'android' });
