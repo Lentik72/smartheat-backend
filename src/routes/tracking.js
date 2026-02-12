@@ -51,19 +51,25 @@ router.post('/log-action', async (req, res) => {
   const userAgent = req.headers['user-agent'] || '';
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
 
+  // V2.27.1: Enhanced logging for diagnostics
+  console.log(`[Tracking] Received log-action request: action=${action}, supplier=${supplierName || supplierId || 'none'}, zip=${zipCode || 'none'}, source=${pageSource || 'none'}, device=${deviceType || 'none'}/${platform || 'none'}`);
+
   // Validate required fields (supplierName is enough if supplierId not available)
   if (!action || (!supplierId && !supplierName)) {
+    console.log(`[Tracking] REJECTED: Missing required fields - action=${action}, supplierId=${supplierId}, supplierName=${supplierName}`);
     return res.status(400).json({ error: 'Missing required fields (need action and either supplierId or supplierName)' });
   }
 
   // Validate action type
   if (!['call', 'website'].includes(action)) {
+    console.log(`[Tracking] REJECTED: Invalid action type: ${action}`);
     return res.status(400).json({ error: 'Invalid action type' });
   }
 
   // Validate pageSource if provided
   const validPageSources = ['prices', 'state', 'county', 'city', 'seo-state', 'seo-region', 'seo-county', 'seo-city', 'supplier-profile', 'seo-page'];
   if (pageSource && !validPageSources.includes(pageSource)) {
+    console.log(`[Tracking] REJECTED: Invalid page source: ${pageSource}`);
     return res.status(400).json({ error: 'Invalid page source' });
   }
 
@@ -81,6 +87,9 @@ router.post('/log-action', async (req, res) => {
         if (suppliers && suppliers.length > 0) {
           resolvedSupplierId = suppliers[0].id;
           resolvedSupplierName = supplierName || suppliers[0].name;
+          console.log(`[Tracking] Supplier resolved: ${resolvedSupplierName} (${resolvedSupplierId})`);
+        } else {
+          console.log(`[Tracking] Supplier not found in DB: ${supplierId}`);
         }
       } catch (lookupErr) {
         // Invalid UUID format or DB error - continue without supplier_id
@@ -89,19 +98,21 @@ router.post('/log-action', async (req, res) => {
     }
 
     // Insert click record (supplier_id can be NULL if not found)
-    await sequelize.query(
+    const [result] = await sequelize.query(
       `INSERT INTO supplier_clicks
        (supplier_id, action_type, zip_code, user_agent, ip_address, supplier_name, page_source, device_type, platform)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id`,
       { bind: [resolvedSupplierId, action, zipCode || null, userAgent, ip, resolvedSupplierName, pageSource || null, deviceType || null, platform || null] }
     );
 
-    console.log(`[Tracking] ${action} click for ${resolvedSupplierName} from ZIP ${zipCode || 'unknown'} (${deviceType || 'unknown'}/${platform || 'unknown'})`);
+    const insertedId = result[0]?.id || 'unknown';
+    console.log(`[Tracking] SUCCESS: ${action} click for ${resolvedSupplierName} from ZIP ${zipCode || 'unknown'} (${deviceType || 'unknown'}/${platform || 'unknown'}) - row ID: ${insertedId}`);
 
-    res.json({ success: true });
+    res.json({ success: true, id: insertedId });
 
   } catch (err) {
-    console.error('[Tracking Error]', err.message);
+    console.error('[Tracking] DB ERROR:', err.message, err.stack);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -529,6 +540,62 @@ router.get('/admin/stats', async (req, res) => {
   } catch (err) {
     console.error('[Tracking Stats Error]', err.message);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/tracking/diagnostic
+ * V2.27.1: Public diagnostic endpoint to verify tracking is working
+ * Returns aggregate stats only (no PII)
+ */
+router.get('/diagnostic', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+
+  try {
+    const [stats] = await sequelize.query(`
+      SELECT
+        COUNT(*) as total_clicks,
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '1 hour') as last_hour,
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') as last_24h,
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_7d,
+        COUNT(*) FILTER (WHERE action_type = 'call') as call_clicks,
+        COUNT(*) FILTER (WHERE action_type = 'website') as website_clicks,
+        MAX(created_at) as last_click_at,
+        MIN(created_at) as first_click_at
+      FROM supplier_clicks
+    `);
+
+    // Get recent click summary (no PII - just counts by source)
+    const [recentBySource] = await sequelize.query(`
+      SELECT
+        page_source,
+        COUNT(*) as count
+      FROM supplier_clicks
+      WHERE created_at > NOW() - INTERVAL '24 hours'
+      GROUP BY page_source
+      ORDER BY count DESC
+    `);
+
+    const data = stats[0] || {};
+    res.json({
+      status: 'ok',
+      tracking: {
+        total: parseInt(data.total_clicks) || 0,
+        lastHour: parseInt(data.last_hour) || 0,
+        last24h: parseInt(data.last_24h) || 0,
+        last7d: parseInt(data.last_7d) || 0,
+        calls: parseInt(data.call_clicks) || 0,
+        websites: parseInt(data.website_clicks) || 0,
+        lastClickAt: data.last_click_at || null,
+        firstClickAt: data.first_click_at || null
+      },
+      recentBySource: recentBySource || [],
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (err) {
+    console.error('[Tracking Diagnostic Error]', err.message);
+    res.status(500).json({ status: 'error', error: err.message });
   }
 });
 
