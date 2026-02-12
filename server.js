@@ -474,6 +474,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  PA regional suppliers migration:', err.message);
         });
 
+        // V2.26.0: Add Bangor ME area suppliers (Penobscot County)
+        const { up: runBangorMeMigration } = require('./src/migrations/044-add-bangor-me-suppliers');
+        runBangorMeMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Bangor ME suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
