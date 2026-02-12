@@ -3020,20 +3020,26 @@ async function loadGrowth() {
   contentEl.classList.add('hidden');
 
   try {
-    const [unified, retention, recommendations] = await Promise.all([
+    const [unified, retention, recommendations, overview] = await Promise.all([
       api(`/unified?days=${currentDays}`),
       api('/retention').catch(() => ({ available: false })),
-      api(`/recommendations?days=${currentDays}`).catch(() => ({ recommendations: [] }))
+      api(`/recommendations?days=${currentDays}`).catch(() => ({ recommendations: [] })),
+      api(`/overview?days=${currentDays}`).catch(() => ({ website: {} }))
     ]);
 
     // Platform comparison
     const ios = unified?.app || {};
     const android = unified?.android || {};
-    const website = unified?.website || {};
+    // V2.27.1: Use overview data for clicks (more reliable), unified for GA4 data
+    const website = {
+      ...unified?.website,
+      totalClicks: overview?.website?.totalClicks ?? unified?.website?.totalClicks ?? 0,
+      callClicks: overview?.website?.callClicks ?? unified?.website?.callClicks ?? 0
+    };
 
     // V2.27.1: Debug logging for click data
-    console.log('[Growth] Website data from unified API:', website);
-    console.log('[Growth] totalClicks:', website.totalClicks, 'callClicks:', website.callClicks, 'activeUsers:', website.activeUsers);
+    console.log('[Growth] Website data (merged):', website);
+    console.log('[Growth] From unified:', unified?.website?.totalClicks, 'From overview:', overview?.website?.totalClicks);
 
     // iOS users: check both BigQuery structure (summary.totalUsers) and database structure (uniqueUsers)
     const iosUsers = ios.summary?.totalUsers || ios.uniqueUsers || 0;
