@@ -10,6 +10,7 @@ const expressWinston = require('express-winston');
 const { Sequelize } = require('sequelize');
 const cron = require('node-cron');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 // Load package.json for version info
@@ -161,6 +162,34 @@ app.use(limiter);
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// V2.27.0: Clean URL support - Redirect .html to clean URLs (301)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api') ||
+      req.path.match(/\.(js|css|png|jpg|jpeg|webp|gif|ico|svg|woff2?|json|xml|txt)$/)) {
+    return next();
+  }
+  // Redirect .html to clean URL (except functional pages like update-price.html)
+  if (req.path.endsWith('.html') && !req.path.includes('update-price') && !req.path.includes('price-review') && !req.path.startsWith('/admin')) {
+    const cleanPath = req.path.slice(0, -5);
+    return res.redirect(301, cleanPath + (req._parsedUrl.search || ''));
+  }
+  next();
+});
+
+// V2.27.0: Clean URL support - Serve clean URLs by resolving to .html files
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api') ||
+      req.path.match(/\.(js|css|png|jpg|jpeg|webp|gif|ico|svg|woff2?|json|xml|txt|html)$/) ||
+      req.path.endsWith('/')) {
+    return next();
+  }
+  const htmlPath = path.join(__dirname, 'website', req.path + '.html');
+  if (fs.existsSync(htmlPath)) {
+    req.url = req.path + '.html';
+  }
+  next();
+});
 
 // V2.6.0: Serve static website files
 // This allows Railway to host both API and website

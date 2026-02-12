@@ -5,14 +5,14 @@
     'seo-' + document.body.className.match(/seo-(\w+)/)[1] : 'seo-page';
   var pageZip = document.body.getAttribute('data-zip') || null;
 
-  // Detect page type from URL path
+  // Detect page type from URL path (supports both .html and clean URLs)
   var path = window.location.pathname;
   if (path.startsWith('/supplier/')) pageType = 'supplier-profile';
-  else if (path.includes('-county.html')) pageType = 'seo-county';
-  else if (path.match(/\/[a-z]{2}\/index\.html$/) || path.match(/\/[a-z]{2}\/$/)) pageType = 'seo-state';
-  else if (path.includes('long-island.html') || path.includes('hudson-valley.html') ||
-           path.includes('capital-region.html') || path.includes('shoreline.html')) pageType = 'seo-region';
-  else if (path.match(/\/prices\/[a-z]{2}\/[^\/]+\.html$/)) pageType = 'seo-city';
+  else if (path.includes('-county')) pageType = 'seo-county';
+  else if (path.match(/\/[a-z]{2}\/index\.html$/) || path.match(/\/[a-z]{2}\/?$/)) pageType = 'seo-state';
+  else if (path.includes('long-island') || path.includes('hudson-valley') ||
+           path.includes('capital-region') || path.includes('shoreline')) pageType = 'seo-region';
+  else if (path.match(/\/prices\/[a-z]{2}\/[^\/]+$/)) pageType = 'seo-city';
 
   function track(id, name, action) {
     var now = Date.now();

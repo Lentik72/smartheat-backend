@@ -105,7 +105,7 @@ function generateSupplierPage(supplier, latestPrice) {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": supplier.name,
-    "@id": `https://www.gethomeheat.com/supplier/${supplier.slug}.html`,
+    "@id": `https://www.gethomeheat.com/supplier/${supplier.slug}`,
     ...(hasWebsite && { "url": website }),
     ...(phone && { "telephone": phone }),
     ...(city && state && {
@@ -137,12 +137,12 @@ function generateSupplierPage(supplier, latestPrice) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${name} - Heating Oil Delivery | HomeHeat</title>
   <meta name="description" content="${name} provides heating oil delivery in ${serviceArea}. Contact for current prices and delivery availability.">
-  <link rel="canonical" href="https://www.gethomeheat.com/supplier/${supplier.slug}.html">
+  <link rel="canonical" href="https://www.gethomeheat.com/supplier/${supplier.slug}">
 
   <meta property="og:title" content="${name} - Heating Oil Delivery">
   <meta property="og:description" content="Heating oil delivery in ${serviceArea}">
   <meta property="og:type" content="business.business">
-  <meta property="og:url" content="https://www.gethomeheat.com/supplier/${supplier.slug}.html">
+  <meta property="og:url" content="https://www.gethomeheat.com/supplier/${supplier.slug}">
 
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
@@ -166,10 +166,10 @@ function generateSupplierPage(supplier, latestPrice) {
       </button>
       <ul class="nav-links">
         <li><a href="/">Home</a></li>
-        <li><a href="/prices.html">Prices</a></li>
-        <li><a href="/for-suppliers.html">For Suppliers</a></li>
+        <li><a href="/prices">Prices</a></li>
+        <li><a href="/for-suppliers">For Suppliers</a></li>
         <li><a href="/learn/">Learn</a></li>
-        <li><a href="/support.html">Support</a></li>
+        <li><a href="/support">Support</a></li>
       </ul>
     </div>
   </nav>
@@ -238,12 +238,12 @@ function generateSupplierPage(supplier, latestPrice) {
 
   <footer class="footer">
     <div class="footer-links">
-      <a href="/prices.html">Prices</a>
-      <a href="/for-suppliers.html">For Suppliers</a>
-      <a href="/how-prices-work.html">How Prices Work</a>
+      <a href="/prices">Prices</a>
+      <a href="/for-suppliers">For Suppliers</a>
+      <a href="/how-prices-work">How Prices Work</a>
       <a href="/learn/">Learn</a>
-      <a href="/privacy.html">Privacy</a>
-      <a href="/terms.html">Terms</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
     </div>
     <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
     <p>&copy; ${new Date().getFullYear()} HomeHeat. All rights reserved.</p>

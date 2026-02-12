@@ -521,7 +521,7 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
     canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
-      { name: 'Prices', url: '/prices.html' },
+      { name: 'Prices', url: '/prices' },
       { name: stateInfo.name, url: null }
     ],
     stats,
@@ -588,10 +588,10 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
     title: `Heating Oil Prices in ${countyName} County, ${stateInfo.name}`,
     h1: `${countyName} County Heating Oil Prices`,
     description: `Compare ${suppliers.length} heating oil suppliers in ${countyName} County, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Updated daily.`,
-    canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/${countySlug}.html`,
+    canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/${countySlug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
-      { name: 'Prices', url: '/prices.html' },
+      { name: 'Prices', url: '/prices' },
       { name: stateInfo.name, url: `/prices/${stateInfo.abbrev}/` },
       { name: `${countyName} County`, url: null }
     ],
@@ -654,10 +654,10 @@ async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, 
     title: `Heating Oil Prices in ${region.name}, ${stateInfo.name}`,
     h1: `${region.name} Heating Oil Prices`,
     description: `Compare ${suppliers.length} heating oil suppliers in ${region.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Covers ${region.counties.join(', ')} counties. Updated daily.`,
-    canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/${region.slug}.html`,
+    canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/${region.slug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
-      { name: 'Prices', url: '/prices.html' },
+      { name: 'Prices', url: '/prices' },
       { name: stateInfo.name, url: `/prices/${stateInfo.abbrev}/` },
       { name: region.name, url: null }
     ],
@@ -740,12 +740,12 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
     title: `Heating Oil Prices in ${cityName}, ${stateCode}`,
     h1: `${cityName} Heating Oil Prices`,
     description: `Compare ${suppliers.length} heating oil suppliers in ${cityName}, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Updated daily.`,
-    canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/${citySlug}.html`,
+    canonicalUrl: `https://www.gethomeheat.com/prices/${stateInfo.abbrev}/${citySlug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
-      { name: 'Prices', url: '/prices.html' },
+      { name: 'Prices', url: '/prices' },
       { name: stateInfo.name, url: `/prices/${stateInfo.abbrev}/` },
-      ...(countyNameFormatted ? [{ name: `${countyNameFormatted} County`, url: `/prices/${stateInfo.abbrev}/${slugify(countyName)}-county.html` }] : []),
+      ...(countyNameFormatted ? [{ name: `${countyNameFormatted} County`, url: `/prices/${stateInfo.abbrev}/${slugify(countyName)}-county` }] : []),
       { name: cityName, url: null }
     ],
     stats,
@@ -829,7 +829,7 @@ function generatePageHTML(data) {
         "provider": {
           "@type": "LocalBusiness",
           "name": s.name,
-          ...(s.slug && { "@id": `https://www.gethomeheat.com/supplier/${s.slug}.html` }),
+          ...(s.slug && { "@id": `https://www.gethomeheat.com/supplier/${s.slug}` }),
           "image": "https://www.gethomeheat.com/images/app-icon.png",
           ...(s.phone && { "telephone": s.phone }),
           "priceRange": `$${s.price.toFixed(2)}/gal`
@@ -857,7 +857,7 @@ function generatePageHTML(data) {
     const hasValidWebsite = s.website && s.website.startsWith('https://');
     return `
         <tr>
-          <td class="supplier-name">${s.slug ? `<a href="/supplier/${s.slug}.html" class="supplier-profile-link">${escapeHtml(s.name)}</a>` : escapeHtml(s.name)}</td>
+          <td class="supplier-name">${s.slug ? `<a href="/supplier/${s.slug}" class="supplier-profile-link">${escapeHtml(s.name)}</a>` : escapeHtml(s.name)}</td>
           <td class="supplier-city">${escapeHtml(s.city || '')}</td>
           <td class="supplier-price">${s.hasPrice ? `$${s.price.toFixed(2)}` : '<span class="call-for-price">Call</span>'}</td>
           <td class="supplier-phone">${s.phone ? `<a href="tel:${s.phone}" class="phone-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="call">${escapeHtml(s.phone)}</a>` : '—'}</td>
@@ -987,7 +987,7 @@ function generatePageHTML(data) {
 <body${zips && zips[0] ? ` data-zip="${zips[0]}"` : ''}>
   <nav class="nav">
     <div class="nav-container">
-      <a href="${assetPath}index.html" class="nav-logo">
+      <a href="/" class="nav-logo">
         <img src="${assetPath}images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
         HomeHeat
       </a>
@@ -997,11 +997,11 @@ function generatePageHTML(data) {
         <span></span>
       </button>
       <ul class="nav-links">
-        <li><a href="${assetPath}index.html">Home</a></li>
-        <li><a href="${assetPath}prices.html" class="active">Prices</a></li>
-        <li><a href="${assetPath}for-suppliers.html">For Suppliers</a></li>
-        <li><a href="${assetPath}learn/">Learn</a></li>
-        <li><a href="${assetPath}support.html">Support</a></li>
+        <li><a href="/">Home</a></li>
+        <li><a href="/prices" class="active">Prices</a></li>
+        <li><a href="/for-suppliers">For Suppliers</a></li>
+        <li><a href="/learn/">Learn</a></li>
+        <li><a href="/support">Support</a></li>
       </ul>
     </div>
   </nav>
@@ -1049,7 +1049,7 @@ ${supplierRows}
       <h3>Never Run Out of Oil</h3>
       <p>HomeHeat tracks your usage and predicts when you'll need your next delivery &mdash; no sensors required.</p>
       <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_price_page" class="cta-button ios-only">Get HomeHeat Free &rarr;</a>
-      <a href="${assetPath}prices.html" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat to Your Phone &rarr;</a>
+      <a href="/prices" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat to Your Phone &rarr;</a>
       <p style="font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0" class="ios-only">Free app. No hardware. No ads.</p>
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
@@ -1061,7 +1061,7 @@ ${supplierRows}
     <section class="zip-cta">
       <h3>Find prices in your exact area</h3>
       <p>Enter your ZIP code for suppliers that deliver to your address.</p>
-      <a href="${assetPath}prices.html" class="cta-button">Check My ZIP Code →</a>
+      <a href="/prices" class="cta-button">Check My ZIP Code →</a>
     </section>
 
     <!-- Other States -->
@@ -1069,7 +1069,7 @@ ${supplierRows}
 
     <!-- Trust Footer -->
     <p class="trust-footer">
-      Data updated daily by HomeHeat · <a href="${assetPath}index.html">gethomeheat.com</a>
+      Data updated daily by HomeHeat · <a href="/">gethomeheat.com</a>
     </p>
   </main>
 
@@ -1087,12 +1087,12 @@ ${supplierRows}
 
   <footer class="footer">
     <div class="footer-links">
-      <a href="${assetPath}for-suppliers.html">For Suppliers</a>
-      <a href="${assetPath}how-prices-work.html">How Prices Work</a>
-      <a href="${assetPath}learn/">Learn</a>
-      <a href="${assetPath}privacy.html">Privacy Policy</a>
-      <a href="${assetPath}terms.html">Terms of Service</a>
-      <a href="${assetPath}support.html">Support</a>
+      <a href="/for-suppliers">For Suppliers</a>
+      <a href="/how-prices-work">How Prices Work</a>
+      <a href="/learn/">Learn</a>
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/terms">Terms of Service</a>
+      <a href="/support">Support</a>
     </div>
     <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
     <p>&copy; 2026 HomeHeat. All rights reserved.</p>
@@ -1333,7 +1333,7 @@ function generateSitemap(pages, suppliers = []) {
     .filter(s => s.slug)
     .map(s => `
   <url>
-    <loc>https://www.gethomeheat.com/supplier/${s.slug}.html</loc>
+    <loc>https://www.gethomeheat.com/supplier/${s.slug}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -1349,7 +1349,7 @@ function generateSitemap(pages, suppliers = []) {
 
   const regionUrls = pages.regions.map(r => `
   <url>
-    <loc>https://www.gethomeheat.com/prices/${r.state}/${r.slug}.html</loc>
+    <loc>https://www.gethomeheat.com/prices/${r.state}/${r.slug}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.75</priority>
@@ -1357,7 +1357,7 @@ function generateSitemap(pages, suppliers = []) {
 
   const countyUrls = pages.counties.map(c => `
   <url>
-    <loc>https://www.gethomeheat.com/prices/${c.state}/${c.slug}.html</loc>
+    <loc>https://www.gethomeheat.com/prices/${c.state}/${c.slug}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
@@ -1365,7 +1365,7 @@ function generateSitemap(pages, suppliers = []) {
 
   const cityUrls = pages.cities.map(c => `
   <url>
-    <loc>https://www.gethomeheat.com/prices/${c.state}/${c.slug}.html</loc>
+    <loc>https://www.gethomeheat.com/prices/${c.state}/${c.slug}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -1380,7 +1380,7 @@ function generateSitemap(pages, suppliers = []) {
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.gethomeheat.com/prices.html</loc>
+    <loc>https://www.gethomeheat.com/prices</loc>
     <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
@@ -1390,13 +1390,13 @@ ${regionUrls}
 ${countyUrls}
 ${cityUrls}
   <url>
-    <loc>https://www.gethomeheat.com/for-suppliers.html</loc>
+    <loc>https://www.gethomeheat.com/for-suppliers</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.gethomeheat.com/how-prices-work.html</loc>
+    <loc>https://www.gethomeheat.com/how-prices-work</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -1408,37 +1408,37 @@ ${cityUrls}
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.gethomeheat.com/learn/heating-oil-usage.html</loc>
+    <loc>https://www.gethomeheat.com/learn/heating-oil-usage</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.gethomeheat.com/learn/heating-oil-winter.html</loc>
+    <loc>https://www.gethomeheat.com/learn/heating-oil-winter</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.gethomeheat.com/learn/measure-heating-oil.html</loc>
+    <loc>https://www.gethomeheat.com/learn/measure-heating-oil</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.gethomeheat.com/privacy.html</loc>
+    <loc>https://www.gethomeheat.com/privacy</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.gethomeheat.com/terms.html</loc>
+    <loc>https://www.gethomeheat.com/terms</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.gethomeheat.com/support.html</loc>
+    <loc>https://www.gethomeheat.com/support</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>

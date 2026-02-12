@@ -20,7 +20,7 @@
 
         if (personalized && nameEl && profileLink) {
             nameEl.textContent = displayName;
-            profileLink.href = '/supplier/' + supplierSlug + '.html';
+            profileLink.href = '/supplier/' + supplierSlug;
             personalized.classList.remove('hidden');
         }
 

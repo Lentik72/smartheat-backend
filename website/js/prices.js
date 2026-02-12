@@ -448,7 +448,7 @@
       <div class="supplier-card">
         <div class="supplier-info">
           <div class="supplier-name">
-            ${hasSlug ? `<a href="/supplier/${supplier.slug}.html" class="supplier-profile-link">${escapeHtml(supplier.name)}</a>` : escapeHtml(supplier.name)}
+            ${hasSlug ? `<a href="/supplier/${supplier.slug}" class="supplier-profile-link">${escapeHtml(supplier.name)}</a>` : escapeHtml(supplier.name)}
           </div>
           <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
           <div class="supplier-actions">
@@ -477,7 +477,7 @@
       <div class="supplier-card supplier-card-unpriced">
         <div class="supplier-info">
           <div class="supplier-name">
-            ${hasSlug ? `<a href="/supplier/${supplier.slug}.html" class="supplier-profile-link">${escapeHtml(supplier.name)}</a>` : escapeHtml(supplier.name)}
+            ${hasSlug ? `<a href="/supplier/${supplier.slug}" class="supplier-profile-link">${escapeHtml(supplier.name)}</a>` : escapeHtml(supplier.name)}
           </div>
           <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
           <div class="supplier-actions">
