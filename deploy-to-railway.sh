@@ -85,6 +85,18 @@ echo "4. Test API documentation:"
 echo "   curl https://your-app.railway.app/api/docs"
 echo ""
 
+# Step 6: Purge Cloudflare Cache
+echo "📋 Step 6: Purge Cloudflare Cache"
+echo "---------------------------------"
+echo "IMPORTANT: After deployment, purge Cloudflare cache to serve updated files."
+echo ""
+echo "1. Go to Cloudflare dashboard → gethomeheat.com"
+echo "2. Caching → Configuration → Purge Cache"
+echo "3. Choose 'Purge Everything' (or specific files like pwa.js, style.css)"
+echo ""
+echo "Without this step, users may receive cached/stale files."
+echo ""
+
 # Environment Check
 echo "📋 Environment Variables Checklist"
 echo "===================================="
