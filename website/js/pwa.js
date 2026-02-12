@@ -20,13 +20,13 @@
   // Check if already installed
   if (window.matchMedia('(display-mode: standalone)').matches) return;
 
-  // Check if dismissed recently (7 days)
+  // Check if dismissed recently (3 days)
   function isDismissedRecently() {
     const dismissed = localStorage.getItem('pwa-banner-dismissed');
     if (!dismissed) return false;
     const dismissedTime = parseInt(dismissed, 10);
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    return (Date.now() - dismissedTime) < sevenDays;
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+    return (Date.now() - dismissedTime) < threeDays;
   }
 
   // Track visit count
@@ -41,9 +41,9 @@
     return count;
   }
 
-  // Capture the install prompt
+  // Capture the install prompt (don't prevent default - allows native Chrome mini-infobar as fallback)
   window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
+    // Store for custom banner, but let native UI show too
     deferredPrompt = e;
 
     if (typeof gtag === 'function') {
@@ -122,11 +122,11 @@
     }, 3000);
   }
 
-  // Trigger: First-time visitor after 45 seconds of engagement
+  // Trigger: First-time visitor after 15 seconds of engagement
   if (visitCount === 1) {
     setTimeout(() => {
       showBanner();
-    }, 45000);
+    }, 15000);
   }
 
   // Trigger: User scrolls back up (indicates engagement)

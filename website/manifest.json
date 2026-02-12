@@ -1,8 +1,10 @@
 {
+  "id": "com.gethomeheat.pwa",
   "name": "HomeHeat - Oil & Propane Tracker",
   "short_name": "HomeHeat",
   "description": "Track heating oil and propane usage, predict run-out dates, and find local suppliers.",
   "start_url": "/prices.html",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#1a1a1a",
   "theme_color": "#FF6B35",
