@@ -465,6 +465,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Regional COD suppliers migration:', err.message);
         });
 
+        // V2.25.0: Add PA regional suppliers (Wayne, Northumberland, Schuylkill)
+        const { up: runPaRegionalMigration } = require('./src/migrations/043-add-pa-regional-suppliers');
+        runPaRegionalMigration(sequelize).catch(err => {
+          logger.warn('⚠️  PA regional suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
