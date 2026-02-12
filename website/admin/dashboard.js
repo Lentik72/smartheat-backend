@@ -3031,6 +3031,10 @@ async function loadGrowth() {
     const android = unified?.android || {};
     const website = unified?.website || {};
 
+    // V2.27.1: Debug logging for click data
+    console.log('[Growth] Website data from unified API:', website);
+    console.log('[Growth] totalClicks:', website.totalClicks, 'callClicks:', website.callClicks, 'activeUsers:', website.activeUsers);
+
     // iOS users: check both BigQuery structure (summary.totalUsers) and database structure (uniqueUsers)
     const iosUsers = ios.summary?.totalUsers || ios.uniqueUsers || 0;
     const iosDeliveries = ios.deliveries?.total || ios.saves || 0;
