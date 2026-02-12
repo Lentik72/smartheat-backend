@@ -167,7 +167,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Cache JS files for 1 hour, immutable assets (with hash/version) can cache longer
 app.use(express.static(path.join(__dirname, 'website'), {
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+    if (filePath.endsWith('.html')) {
+      // HTML pages: cache 1 hour, revalidate after (SEO pages regenerate daily)
+      res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
       // Short cache for CSS/JS - versioned via query params
       res.setHeader('Cache-Control', 'public, max-age=3600');
     } else if (filePath.match(/\.(png|jpg|jpeg|webp|gif|ico|svg|woff2?)$/)) {
