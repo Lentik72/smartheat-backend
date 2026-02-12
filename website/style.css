@@ -2725,8 +2725,8 @@ body {
     max-width: 360px;
     margin: 0 auto;
     background: #1a1a1a;
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 12px;
+    padding: 12px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.3);
     position: relative;
 }
@@ -2734,14 +2734,14 @@ body {
 .pwa-banner-content {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .pwa-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     flex-shrink: 0;
 }
 
@@ -2769,8 +2769,8 @@ body {
     background: #FF6B35;
     color: white;
     border: none;
-    padding: 12px 20px;
-    border-radius: 10px;
+    padding: 10px 16px;
+    border-radius: 8px;
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;

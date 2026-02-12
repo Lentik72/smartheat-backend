@@ -66,10 +66,10 @@
           <img src="/images/app-icon.png" alt="HomeHeat" class="pwa-icon">
           <div class="pwa-text">
             <strong>Save HomeHeat</strong>
-            <span>Quick access — no App Store needed</span>
+            <span>See today's prices. Plan ahead.</span>
           </div>
         </div>
-        <button class="pwa-install-btn">Add to Home Screen</button>
+        <button class="pwa-install-btn">Add HomeHeat</button>
       </div>
     `;
     document.body.appendChild(banner);
