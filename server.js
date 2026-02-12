@@ -480,6 +480,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Bangor ME suppliers migration:', err.message);
         });
 
+        // V2.26.1: Fix - Add CN Brown Energy (didn't insert in 044)
+        const { up: runCnBrownMigration } = require('./src/migrations/045-add-cn-brown-energy');
+        runCnBrownMigration(sequelize).catch(err => {
+          logger.warn('⚠️  CN Brown Energy migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
