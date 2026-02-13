@@ -28,6 +28,70 @@ const {
 } = require('../data/zip-centroids');
 const router = express.Router();
 
+// V2.3.0: Helper to get state from ZIP code
+function getStateFromZip(zipCode) {
+  if (!zipCode || zipCode.length < 2) return null;
+  const prefix2 = zipCode.substring(0, 2);
+  const prefix3 = zipCode.substring(0, 3);
+
+  // Special cases
+  if (['028', '029'].includes(prefix3)) return 'RI';
+  if (['197', '198', '199'].includes(prefix3)) return 'DE';
+
+  const stateMap = {
+    '01': 'MA', '02': 'MA',
+    '03': 'NH', '04': 'ME', '05': 'VT', '06': 'CT',
+    '07': 'NJ', '08': 'NJ',
+    '10': 'NY', '11': 'NY', '12': 'NY', '13': 'NY', '14': 'NY',
+    '15': 'PA', '16': 'PA', '17': 'PA', '18': 'PA', '19': 'PA',
+    '20': 'DC', '21': 'MD', '22': 'VA', '23': 'VA'
+  };
+
+  return stateMap[prefix2] || null;
+}
+
+// V2.3.0: Calculate market price from scraped supplier data
+async function calculateMarketPriceFromScrapedData(sequelize, zipPrefix, fullZipCode, logger) {
+  try {
+    const state = getStateFromZip(fullZipCode || zipPrefix);
+    if (!state) {
+      logger.debug(`[V2.3.0] Cannot determine state from ZIP ${zipPrefix}`);
+      return null;
+    }
+
+    // Query average price from scraped data for this state (last 7 days)
+    const [results] = await sequelize.query(`
+      SELECT
+        AVG(sp.price_per_gallon) as avg_price,
+        COUNT(*) as data_points,
+        MIN(sp.price_per_gallon) as min_price,
+        MAX(sp.price_per_gallon) as max_price
+      FROM supplier_prices sp
+      JOIN suppliers s ON sp.supplier_id = s.id
+      WHERE s.state = :state
+        AND sp.is_valid = true
+        AND sp.scraped_at > NOW() - INTERVAL '7 days'
+        AND sp.price_per_gallon BETWEEN 1.50 AND 7.00
+    `, {
+      replacements: { state },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    if (!results || !results.avg_price || results.data_points < 3) {
+      logger.debug(`[V2.3.0] Insufficient scraped data for state ${state}: ${results?.data_points || 0} points`);
+      return null;
+    }
+
+    const avgPrice = parseFloat(results.avg_price);
+    logger.info(`[V2.3.0] Calculated market price for ${state}: $${avgPrice.toFixed(2)} (${results.data_points} suppliers, range $${parseFloat(results.min_price).toFixed(2)}-$${parseFloat(results.max_price).toFixed(2)})`);
+
+    return avgPrice;
+  } catch (error) {
+    logger.error(`[V2.3.0] Error calculating market price: ${error.message}`);
+    return null;
+  }
+}
+
 // Mock database - In production, replace with MongoDB
 let communitySuppliers = [
   {
@@ -690,17 +754,28 @@ router.post('/deliveries', [
       });
     }
 
-    // Validation: Check against market price if provided
+    // V2.3.0: Calculate market price from scraped data if not provided by client
+    let effectiveMarketPrice = marketPriceAtTime;
+    if (!effectiveMarketPrice) {
+      const sequelize = req.app.locals.sequelize;
+      if (sequelize) {
+        effectiveMarketPrice = await calculateMarketPriceFromScrapedData(
+          sequelize, zipPrefix, fullZipCode, logger
+        );
+      }
+    }
+
+    // Validation: Check against market price if available
     let validationStatus = 'valid';
     let rejectionReason = null;
 
-    if (marketPriceAtTime) {
+    if (effectiveMarketPrice) {
       const thresholds = VALIDATION_THRESHOLDS[gallonsBucket];
-      const deviation = Math.abs(roundedPrice - marketPriceAtTime) / marketPriceAtTime;
+      const deviation = Math.abs(roundedPrice - effectiveMarketPrice) / effectiveMarketPrice;
 
       if (deviation > thresholds.hardReject) {
         // Hard rejection - don't store
-        logger.warn(`[V18.0] Hard reject: ${roundedPrice} vs market ${marketPriceAtTime} (${(deviation * 100).toFixed(1)}% deviation)`);
+        logger.warn(`[V18.0] Hard reject: ${roundedPrice} vs market ${effectiveMarketPrice} (${(deviation * 100).toFixed(1)}% deviation)`);
         return res.status(400).json({
           success: false,
           status: 'rejected',
@@ -711,7 +786,7 @@ router.post('/deliveries', [
         // Soft exclusion - store but don't include in averages
         validationStatus = 'soft_excluded';
         rejectionReason = 'moderate_market_deviation';
-        logger.info(`[V18.0] Soft exclude: ${roundedPrice} vs market ${marketPriceAtTime} (${(deviation * 100).toFixed(1)}% deviation)`);
+        logger.info(`[V18.0] Soft exclude: ${roundedPrice} vs market ${effectiveMarketPrice} (${(deviation * 100).toFixed(1)}% deviation)`);
       }
     }
 
@@ -764,7 +839,7 @@ router.post('/deliveries', [
       pricePerGallon: roundedPrice,
       deliveryMonth,
       gallonsBucket,
-      marketPriceAtTime: marketPriceAtTime || null,
+      marketPriceAtTime: effectiveMarketPrice || null,
       validationStatus,
       rejectionReason,
       contributorHash,
