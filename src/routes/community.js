@@ -639,7 +639,7 @@ router.post('/deliveries', [
   body('pricePerGallon').isFloat({ min: 1.00, max: 8.00 }).withMessage('Price must be between $1.00 and $8.00'),
   body('deliveryMonth').matches(/^\d{4}-\d{2}$/).withMessage('Delivery month must be YYYY-MM format'),
   body('gallonsBucket').isIn(['small', 'medium', 'large', 'xlarge', 'bulk']).withMessage('Invalid gallons bucket'),
-  body('marketPriceAtTime').optional().isFloat({ min: 1.00, max: 8.00 }),
+  body('marketPriceAtTime').optional({ nullable: true }).isFloat({ min: 1.00, max: 8.00 }),
   body('contributorHash').isLength({ min: 64, max: 64 }).withMessage('Invalid contributor hash'),
   // V20.1: Fuel type is required for new submissions
   body('fuelType').isIn(FUEL_TYPES).withMessage(`Fuel type must be one of: ${FUEL_TYPES.join(', ')}`),
