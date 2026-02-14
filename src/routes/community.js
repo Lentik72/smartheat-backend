@@ -2048,32 +2048,70 @@ router.get('/admin/deliveries', verifyAdminToken, async (req, res) => {
   }
 });
 
-// V19.0.5b: Delete all test data (V2.3.1: Now requires admin auth)
+// V19.0.5b: Delete test data (V2.3.1: Now requires admin auth, supports date filter)
+// Query params:
+//   ?since=YYYY-MM-DD  - Delete only deliveries created on or after this date
+//   ?all=true          - Delete ALL deliveries (requires explicit confirmation)
 router.delete('/admin/deliveries', verifyAdminToken, async (req, res) => {
   const logger = req.app.locals.logger;
+  const { since, all } = req.query;
 
   try {
     const CommunityDelivery = getCommunityDeliveryModel();
+    const { getCommunityDeliveryRawModel } = require('../models/CommunityDeliveryRaw');
+    const CommunityDeliveryRaw = getCommunityDeliveryRawModel();
+
     if (!CommunityDelivery) {
       return res.status(503).json({ error: 'Service unavailable' });
     }
 
-    const count = await CommunityDelivery.count();
-    await CommunityDelivery.destroy({ where: {}, truncate: true });
+    let whereClause = {};
+    let description = 'all';
+
+    if (since) {
+      // Delete only deliveries created on or after the specified date
+      const { Op } = require('sequelize');
+      whereClause = {
+        createdAt: { [Op.gte]: new Date(since) }
+      };
+      description = `since ${since}`;
+    } else if (all !== 'true') {
+      return res.status(400).json({
+        error: 'Safety check: specify ?since=YYYY-MM-DD or ?all=true'
+      });
+    }
+
+    const count = await CommunityDelivery.count({ where: whereClause });
+
+    // Delete raw records first (FK constraint), then public records
+    if (CommunityDeliveryRaw && since) {
+      const deliveryIds = await CommunityDelivery.findAll({
+        where: whereClause,
+        attributes: ['id']
+      });
+      const ids = deliveryIds.map(d => d.id);
+      if (ids.length > 0) {
+        const { Op } = require('sequelize');
+        await CommunityDeliveryRaw.destroy({ where: { deliveryId: { [Op.in]: ids } } });
+      }
+    }
+
+    await CommunityDelivery.destroy({ where: whereClause });
 
     // Clear cache
     const cache = req.app.locals.cache;
     cache.flushAll();
 
-    logger.info(`[V19.0.5b] Deleted all ${count} deliveries`);
+    logger.info(`[V2.3.1] Deleted ${count} deliveries (${description})`);
 
     res.json({
       success: true,
-      deletedCount: count
+      deletedCount: count,
+      filter: description
     });
 
   } catch (error) {
-    logger.error('[V19.0.5b] Delete all error:', error);
+    logger.error('[V2.3.1] Delete error:', error);
     res.status(500).json({ error: 'Delete failed' });
   }
 });
