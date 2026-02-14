@@ -65,6 +65,11 @@ const initCommunityDeliveryModel = (sequelize) => {
           is: /^\d{4}-\d{2}$/
         }
       },
+      // V2.3.0: Full delivery date (YYYY-MM-DD) for precise duplicate detection
+      deliveryDate: {
+        type: DataTypes.DATEONLY,
+        allowNull: true  // Nullable for backward compatibility
+      },
       // Bucket: small (<100), medium (100-200), large (200-350), xlarge (350-500), bulk (>500)
       gallonsBucket: {
         type: DataTypes.ENUM('small', 'medium', 'large', 'xlarge', 'bulk'),
@@ -144,7 +149,9 @@ const initCommunityDeliveryModel = (sequelize) => {
         },
         // V2.2.0: Supplier tracking indexes
         { fields: ['supplier_name'] },
-        { fields: ['is_directory_supplier'] }
+        { fields: ['is_directory_supplier'] },
+        // V2.3.0: Delivery date for duplicate detection
+        { fields: ['delivery_date'] }
       ]
     });
 

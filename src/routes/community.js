@@ -638,6 +638,8 @@ router.post('/deliveries', [
   body('fullZipCode').optional().matches(/^\d{5}$/).withMessage('Full ZIP code must be 5 digits'),
   body('pricePerGallon').isFloat({ min: 1.00, max: 8.00 }).withMessage('Price must be between $1.00 and $8.00'),
   body('deliveryMonth').matches(/^\d{4}-\d{2}$/).withMessage('Delivery month must be YYYY-MM format'),
+  // V2.3.0: Full delivery date for better duplicate detection (optional for backward compat)
+  body('deliveryDate').optional().matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Delivery date must be YYYY-MM-DD format'),
   body('gallonsBucket').isIn(['small', 'medium', 'large', 'xlarge', 'bulk']).withMessage('Invalid gallons bucket'),
   body('marketPriceAtTime').optional({ nullable: true }).isFloat({ min: 1.00, max: 8.00 }),
   body('contributorHash').isLength({ min: 64, max: 64 }).withMessage('Invalid contributor hash'),
@@ -665,6 +667,7 @@ router.post('/deliveries', [
       fullZipCode,
       pricePerGallon,
       deliveryMonth,
+      deliveryDate,  // V2.3.0: Full date for duplicate detection
       gallonsBucket,
       marketPriceAtTime,
       contributorHash,
@@ -711,19 +714,26 @@ router.post('/deliveries', [
 
     // V19.0.5: Duplicate detection - same user can't submit same delivery twice
     // V20.1: Now includes fuelType in duplicate check
-    // Match on: contributorHash + deliveryMonth + roundedPrice + gallonsBucket + fuelType
-    const existingDelivery = await CommunityDelivery.findOne({
-      where: {
-        contributorHash,
-        deliveryMonth,
-        pricePerGallon: roundedPrice,
-        gallonsBucket,
-        fuelType  // V20.1: Fuel type must match
-      }
-    });
+    // V2.3.0: Use deliveryDate when available for more precise duplicate detection
+    // Match on: contributorHash + (deliveryDate OR deliveryMonth) + roundedPrice + gallonsBucket + fuelType
+    const duplicateWhere = {
+      contributorHash,
+      pricePerGallon: roundedPrice,
+      gallonsBucket,
+      fuelType  // V20.1: Fuel type must match
+    };
+
+    // V2.3.0: Prefer exact date match, fall back to month for older clients
+    if (deliveryDate) {
+      duplicateWhere.deliveryDate = deliveryDate;
+    } else {
+      duplicateWhere.deliveryMonth = deliveryMonth;
+    }
+
+    const existingDelivery = await CommunityDelivery.findOne({ where: duplicateWhere });
 
     if (existingDelivery) {
-      logger.info(`[V19.0.5] Duplicate submission rejected: ${contributorHash.substring(0, 8)}... already submitted $${roundedPrice} for ${deliveryMonth} (${fuelType})`);
+      logger.info(`[V2.3.0] Duplicate submission rejected: ${contributorHash.substring(0, 8)}... already submitted $${roundedPrice} for ${deliveryDate || deliveryMonth} (${fuelType})`);
       return res.status(409).json({
         success: false,
         status: 'duplicate',
@@ -734,18 +744,24 @@ router.post('/deliveries', [
 
     // V19.0.5b: Also check for same price in same area (catches reinstalls with new hash)
     // V20.1: Now includes fuelType - same price+fuel in same ZIP is likely same person
-    const existingAreaDelivery = await CommunityDelivery.findOne({
-      where: {
-        zipPrefix,
-        deliveryMonth,
-        pricePerGallon: roundedPrice,
-        gallonsBucket,
-        fuelType  // V20.1: Fuel type must match
-      }
-    });
+    // V2.3.0: Use deliveryDate when available
+    const areaDuplicateWhere = {
+      zipPrefix,
+      pricePerGallon: roundedPrice,
+      gallonsBucket,
+      fuelType  // V20.1: Fuel type must match
+    };
+
+    if (deliveryDate) {
+      areaDuplicateWhere.deliveryDate = deliveryDate;
+    } else {
+      areaDuplicateWhere.deliveryMonth = deliveryMonth;
+    }
+
+    const existingAreaDelivery = await CommunityDelivery.findOne({ where: areaDuplicateWhere });
 
     if (existingAreaDelivery) {
-      logger.info(`[V19.0.5b] Area duplicate rejected: $${roundedPrice} ${fuelType} for ${deliveryMonth} in ${zipPrefix} already exists`);
+      logger.info(`[V2.3.0] Area duplicate rejected: $${roundedPrice} ${fuelType} for ${deliveryDate || deliveryMonth} in ${zipPrefix} already exists`);
       return res.status(409).json({
         success: false,
         status: 'duplicate',
@@ -832,12 +848,14 @@ router.post('/deliveries', [
     // V18.6: Include fullZipCode for distance-based queries
     // V20.1: Include fuelType for propane/oil isolation
     // V2.2.0: Include supplier tracking data
+    // V2.3.0: Include deliveryDate for precise duplicate detection
     const delivery = await CommunityDelivery.create({
       zipPrefix,
       fullZipCode: fullZipCode || null,
       fuelType,  // V20.1: Store fuel type
       pricePerGallon: roundedPrice,
       deliveryMonth,
+      deliveryDate: deliveryDate || null,  // V2.3.0: Full date
       gallonsBucket,
       marketPriceAtTime: effectiveMarketPrice || null,
       validationStatus,
