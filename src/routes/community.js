@@ -682,10 +682,10 @@ router.post('/deliveries', [
     const roundedPrice = roundPrice(parseFloat(pricePerGallon));
 
     // Validate delivery month is not too old (max 90 days)
-    const deliveryDate = new Date(deliveryMonth + '-01');
+    const deliveryMonthDate = new Date(deliveryMonth + '-01');
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    if (deliveryDate < ninetyDaysAgo) {
+    if (deliveryMonthDate < ninetyDaysAgo) {
       return res.status(400).json({
         success: false,
         status: 'rejected',
