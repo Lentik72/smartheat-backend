@@ -82,6 +82,7 @@ try {
 // Import model initializers
 const { initSupplierModel } = require('./src/models/Supplier');
 const { initCommunityDeliveryModel } = require('./src/models/CommunityDelivery');
+const { initCommunityDeliveryRawModel } = require('./src/models/CommunityDeliveryRaw');  // V2.3.1: Raw telemetry
 const { initSupplierPriceModel } = require('./src/models/SupplierPrice');
 
 const app = express();
@@ -309,6 +310,17 @@ if (API_KEYS.DATABASE_URL) {
         if (CommunityDelivery) {
           await CommunityDelivery.sync({ alter: true }); // alter: true for initial deployment
           logger.info('✅ CommunityDelivery model synced');
+
+          // V2.3.1: Initialize CommunityDeliveryRaw model for exact telemetry data
+          // This table stores exact data (price, gallons, timestamp, full ZIP) while
+          // community_deliveries stores only anonymized data for public display
+          const CommunityDeliveryRaw = initCommunityDeliveryRawModel(sequelize, CommunityDelivery);
+          if (CommunityDeliveryRaw) {
+            await CommunityDeliveryRaw.sync({ alter: true });
+            logger.info('✅ CommunityDeliveryRaw model synced (telemetry hard wall)');
+          } else {
+            logger.warn('⚠️  CommunityDeliveryRaw model failed to initialize - raw telemetry disabled');
+          }
         } else {
           logger.error('❌ CommunityDelivery model failed to initialize');
         }

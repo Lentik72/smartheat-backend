@@ -1,6 +1,7 @@
 // src/routes/community.js - Privacy-Compliant Community Supplier API
 // V18.0: Added community benchmarking endpoints for delivery price sharing
 // V18.6: Added distance-based community grouping (10→15→20 mile tiers)
+// V2.3.1: Telemetry Hard Wall - dual payload support for exact data collection
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
 const { v4: uuidv4 } = require('uuid');
@@ -16,6 +17,8 @@ const {
   FUEL_TYPES,
   DEFAULT_FUEL_TYPE
 } = require('../models/CommunityDelivery');
+// V2.3.1: Import raw telemetry model
+const { getCommunityDeliveryRawModel } = require('../models/CommunityDeliveryRaw');
 
 // V20.1: 45-day freshness threshold for community data
 const FRESHNESS_THRESHOLD_DAYS = 45;
@@ -633,17 +636,24 @@ router.get('/activity', (req, res) => {
 // V18.6: Now accepts optional fullZipCode for distance-based community
 // V20.1: Now requires fuelType for propane/oil isolation
 // V2.2.0: Now accepts optional supplier tracking data
+// V2.3.1: Dual payload support - accepts both old (pre-anonymized) and new (exact) formats
+//         New format: exactPrice, exactGallons, exactTimestamp, fullZipCode
+//         Backend anonymizes for public table, stores exact in raw table (telemetry hard wall)
 router.post('/deliveries', [
-  body('zipPrefix').matches(/^\d{3}$/).withMessage('ZIP prefix must be 3 digits'),
-  body('fullZipCode').optional().matches(/^\d{5}$/).withMessage('Full ZIP code must be 5 digits'),
-  body('pricePerGallon').isFloat({ min: 1.00, max: 8.00 }).withMessage('Price must be between $1.00 and $8.00'),
-  body('deliveryMonth').matches(/^\d{4}-\d{2}$/).withMessage('Delivery month must be YYYY-MM format'),
-  // V2.3.0: Full delivery date for better duplicate detection (optional for backward compat)
+  // V2.3.1: OLD FORMAT fields (required for legacy clients)
+  body('zipPrefix').optional().matches(/^\d{3}$/).withMessage('ZIP prefix must be 3 digits'),
+  body('pricePerGallon').optional().isFloat({ min: 1.00, max: 8.00 }).withMessage('Price must be between $1.00 and $8.00'),
+  body('deliveryMonth').optional().matches(/^\d{4}-\d{2}$/).withMessage('Delivery month must be YYYY-MM format'),
   body('deliveryDate').optional().matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Delivery date must be YYYY-MM-DD format'),
-  body('gallonsBucket').isIn(['small', 'medium', 'large', 'xlarge', 'bulk']).withMessage('Invalid gallons bucket'),
+  body('gallonsBucket').optional().isIn(['small', 'medium', 'large', 'xlarge', 'bulk']).withMessage('Invalid gallons bucket'),
+  // V2.3.1: NEW FORMAT fields (for v2.3.1+ iOS clients)
+  body('exactPrice').optional().isFloat({ min: 1.00, max: 8.00 }).withMessage('Exact price must be between $1.00 and $8.00'),
+  body('exactGallons').optional().isFloat({ min: 1 }).withMessage('Exact gallons must be positive'),
+  body('exactTimestamp').optional().isISO8601().withMessage('Exact timestamp must be ISO8601 format'),
+  body('fullZipCode').optional().matches(/^\d{5}$/).withMessage('Full ZIP code must be 5 digits'),
+  // Common fields
   body('marketPriceAtTime').optional({ nullable: true }).isFloat({ min: 1.00, max: 8.00 }),
   body('contributorHash').isLength({ min: 64, max: 64 }).withMessage('Invalid contributor hash'),
-  // V20.1: Fuel type is required for new submissions
   body('fuelType').isIn(FUEL_TYPES).withMessage(`Fuel type must be one of: ${FUEL_TYPES.join(', ')}`),
   // V2.2.0: Optional supplier tracking
   body('supplierName').optional().trim().isLength({ max: 255 }).withMessage('Supplier name too long'),
@@ -662,24 +672,75 @@ router.post('/deliveries', [
       });
     }
 
+    // V2.3.1: Detect payload type - new format uses exactPrice
+    const isNewPayload = req.body.exactPrice !== undefined;
+
+    // V2.3.1: Variables that differ between old/new payload formats
+    let zipPrefix, fullZipCode, roundedPrice, gallonsBucket, deliveryMonth, deliveryDate;
+    let exactPrice, exactGallons, exactTimestamp;
+
+    if (isNewPayload) {
+      // V2.3.1: NEW FORMAT - exact fields, backend anonymizes
+      const { exactPrice: ep, exactGallons: eg, exactTimestamp: et, fullZipCode: fz } = req.body;
+
+      // Validate fullZipCode is present and valid (Edge Case 4)
+      if (!fz || !/^\d{5}$/.test(fz)) {
+        return res.status(400).json({
+          success: false,
+          status: 'rejected',
+          reason: 'invalid_zip',
+          message: 'Invalid ZIP code'
+        });
+      }
+
+      // Store exact values for raw table
+      exactPrice = parseFloat(ep);
+      exactGallons = parseFloat(eg);
+      exactTimestamp = new Date(et);
+      fullZipCode = fz;
+
+      // Derive anonymized fields from exact data
+      roundedPrice = roundPrice(exactPrice);
+      gallonsBucket = getGallonsBucket(exactGallons);
+      zipPrefix = fullZipCode.substring(0, 3);
+
+      // Edge Case 2: Normalize to UTC to avoid timezone bugs at midnight
+      deliveryDate = exactTimestamp.toISOString().slice(0, 10);  // UTC date YYYY-MM-DD
+      deliveryMonth = deliveryDate.substring(0, 7);  // YYYY-MM from UTC date
+
+      logger.info(`[V2.3.1] New payload received: exact $${exactPrice} → rounded $${roundedPrice}, ${exactGallons}gal → ${gallonsBucket}, ZIP ${fullZipCode}`);
+
+    } else {
+      // V2.3.1: OLD FORMAT - already anonymized, no raw insert
+      zipPrefix = req.body.zipPrefix;
+      fullZipCode = req.body.fullZipCode || null;
+      roundedPrice = roundPrice(parseFloat(req.body.pricePerGallon));
+      gallonsBucket = req.body.gallonsBucket;
+      deliveryMonth = req.body.deliveryMonth;
+      deliveryDate = req.body.deliveryDate || null;
+
+      // Validate required old format fields
+      if (!zipPrefix || !req.body.pricePerGallon || !deliveryMonth || !gallonsBucket) {
+        return res.status(400).json({
+          success: false,
+          status: 'rejected',
+          reason: 'missing_fields',
+          message: 'Missing required fields for legacy payload'
+        });
+      }
+
+      logger.info(`[V2.3.1] Legacy payload received: ZIP ${zipPrefix}, $${roundedPrice}, ${gallonsBucket}`);
+    }
+
+    // Common fields
     const {
-      zipPrefix,
-      fullZipCode,
-      pricePerGallon,
-      deliveryMonth,
-      deliveryDate,  // V2.3.0: Full date for duplicate detection
-      gallonsBucket,
       marketPriceAtTime,
       contributorHash,
-      fuelType,  // V20.1: Required fuel type
-      // V2.2.0: Optional supplier tracking
+      fuelType,
       supplierName,
       supplierId,
       isDirectorySupplier
     } = req.body;
-
-    // Round price to nearest $0.05 for anonymization
-    const roundedPrice = roundPrice(parseFloat(pricePerGallon));
 
     // Validate delivery month is not too old (max 90 days)
     const deliveryMonthDate = new Date(deliveryMonth + '-01');
@@ -715,15 +776,13 @@ router.post('/deliveries', [
     // V19.0.5: Duplicate detection - same user can't submit same delivery twice
     // V20.1: Now includes fuelType in duplicate check
     // V2.3.0: Use deliveryDate when available for more precise duplicate detection
-    // Match on: contributorHash + (deliveryDate OR deliveryMonth) + roundedPrice + gallonsBucket + fuelType
     const duplicateWhere = {
       contributorHash,
       pricePerGallon: roundedPrice,
       gallonsBucket,
-      fuelType  // V20.1: Fuel type must match
+      fuelType
     };
 
-    // V2.3.0: Prefer exact date match, fall back to month for older clients
     if (deliveryDate) {
       duplicateWhere.deliveryDate = deliveryDate;
     } else {
@@ -733,7 +792,7 @@ router.post('/deliveries', [
     const existingDelivery = await CommunityDelivery.findOne({ where: duplicateWhere });
 
     if (existingDelivery) {
-      logger.info(`[V2.3.0] Duplicate submission rejected: ${contributorHash.substring(0, 8)}... already submitted $${roundedPrice} for ${deliveryDate || deliveryMonth} (${fuelType})`);
+      logger.info(`[V2.3.1] Duplicate submission rejected: ${contributorHash.substring(0, 8)}... already submitted $${roundedPrice} for ${deliveryDate || deliveryMonth} (${fuelType})`);
       return res.status(409).json({
         success: false,
         status: 'duplicate',
@@ -743,13 +802,11 @@ router.post('/deliveries', [
     }
 
     // V19.0.5b: Also check for same price in same area (catches reinstalls with new hash)
-    // V20.1: Now includes fuelType - same price+fuel in same ZIP is likely same person
-    // V2.3.0: Use deliveryDate when available
     const areaDuplicateWhere = {
       zipPrefix,
       pricePerGallon: roundedPrice,
       gallonsBucket,
-      fuelType  // V20.1: Fuel type must match
+      fuelType
     };
 
     if (deliveryDate) {
@@ -761,7 +818,7 @@ router.post('/deliveries', [
     const existingAreaDelivery = await CommunityDelivery.findOne({ where: areaDuplicateWhere });
 
     if (existingAreaDelivery) {
-      logger.info(`[V2.3.0] Area duplicate rejected: $${roundedPrice} ${fuelType} for ${deliveryDate || deliveryMonth} in ${zipPrefix} already exists`);
+      logger.info(`[V2.3.1] Area duplicate rejected: $${roundedPrice} ${fuelType} for ${deliveryDate || deliveryMonth} in ${zipPrefix} already exists`);
       return res.status(409).json({
         success: false,
         status: 'duplicate',
@@ -790,8 +847,7 @@ router.post('/deliveries', [
       const deviation = Math.abs(roundedPrice - effectiveMarketPrice) / effectiveMarketPrice;
 
       if (deviation > thresholds.hardReject) {
-        // Hard rejection - don't store
-        logger.warn(`[V18.0] Hard reject: ${roundedPrice} vs market ${effectiveMarketPrice} (${(deviation * 100).toFixed(1)}% deviation)`);
+        logger.warn(`[V2.3.1] Hard reject: ${roundedPrice} vs market ${effectiveMarketPrice} (${(deviation * 100).toFixed(1)}% deviation)`);
         return res.status(400).json({
           success: false,
           status: 'rejected',
@@ -799,19 +855,17 @@ router.post('/deliveries', [
           message: 'Price seems incorrect. Please verify and try again.'
         });
       } else if (deviation > thresholds.softExclude) {
-        // Soft exclusion - store but don't include in averages
         validationStatus = 'soft_excluded';
         rejectionReason = 'moderate_market_deviation';
-        logger.info(`[V18.0] Soft exclude: ${roundedPrice} vs market ${effectiveMarketPrice} (${(deviation * 100).toFixed(1)}% deviation)`);
+        logger.info(`[V2.3.1] Soft exclude: ${roundedPrice} vs market ${effectiveMarketPrice} (${(deviation * 100).toFixed(1)}% deviation)`);
       }
     }
 
     // Calculate contributor weight (prevent one user from dominating)
-    // V20.1: Filter by fuelType
     const areaDeliveries = await CommunityDelivery.count({
       where: {
         zipPrefix,
-        fuelType,  // V20.1: Only count same fuel type
+        fuelType,
         deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
         validationStatus: 'valid'
       }
@@ -820,7 +874,7 @@ router.post('/deliveries', [
     const contributorDeliveries = await CommunityDelivery.count({
       where: {
         zipPrefix,
-        fuelType,  // V20.1: Only count same fuel type
+        fuelType,
         contributorHash,
         deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
         validationStatus: 'valid'
@@ -837,43 +891,96 @@ router.post('/deliveries', [
       maxWeight = 0.20;
     }
 
-    // If this contributor already has entries, reduce weight
     const contributionWeight = contributorDeliveries > 0
       ? Math.max(0.5, 1.0 - (contributorDeliveries * 0.2))
       : 1.0;
 
     const cappedWeight = Math.min(contributionWeight, maxWeight * (areaDeliveries + 1));
 
-    // Create the delivery record
-    // V18.6: Include fullZipCode for distance-based queries
-    // V20.1: Include fuelType for propane/oil isolation
-    // V2.2.0: Include supplier tracking data
-    // V2.3.0: Include deliveryDate for precise duplicate detection
-    const delivery = await CommunityDelivery.create({
-      zipPrefix,
-      fullZipCode: fullZipCode || null,
-      fuelType,  // V20.1: Store fuel type
-      pricePerGallon: roundedPrice,
-      deliveryMonth,
-      deliveryDate: deliveryDate || null,  // V2.3.0: Full date
-      gallonsBucket,
-      marketPriceAtTime: effectiveMarketPrice || null,
-      validationStatus,
-      rejectionReason,
-      contributorHash,
-      contributionWeight: Math.min(cappedWeight, 1.0),
-      // V2.2.0: Supplier tracking
-      supplierName: supplierName || null,
-      supplierId: supplierId || null,
-      isDirectorySupplier: isDirectorySupplier || false
-    });
+    // V2.3.1: Transaction wrapper for atomicity (Edge Case 3)
+    // If raw insert fails, public insert should also rollback
+    const sequelize = req.app.locals.sequelize;
+    let delivery;
+
+    if (isNewPayload && sequelize) {
+      // NEW PAYLOAD: Wrap both inserts in transaction
+      const t = await sequelize.transaction();
+      try {
+        // Create anonymized public record
+        // V2.3.1 Edge Case 1: Do NOT store fullZipCode in public table for new payloads
+        // Full ZIP is stored ONLY in raw table
+        delivery = await CommunityDelivery.create({
+          zipPrefix,
+          fullZipCode: null,  // V2.3.1: Explicit null - exact ZIP only in raw table
+          fuelType,
+          pricePerGallon: roundedPrice,
+          deliveryMonth,
+          deliveryDate,
+          gallonsBucket,
+          marketPriceAtTime: effectiveMarketPrice || null,
+          validationStatus,
+          rejectionReason,
+          contributorHash,
+          contributionWeight: Math.min(cappedWeight, 1.0),
+          supplierName: supplierName || null,
+          supplierId: supplierId || null,
+          isDirectorySupplier: isDirectorySupplier || false
+        }, { transaction: t });
+
+        // Create exact raw record (internal only - telemetry zone)
+        const CommunityDeliveryRaw = getCommunityDeliveryRawModel();
+        if (CommunityDeliveryRaw) {
+          // V2.3.1 TEST HOOK: Force failure to verify transaction rollback
+          if (process.env.FAIL_RAW_INSERT === '1') {
+            logger.warn('[V2.3.1 TEST] FAIL_RAW_INSERT=1 - forcing raw insert failure');
+            throw new Error('TEST: Forced raw insert failure');
+          }
+
+          await CommunityDeliveryRaw.create({
+            deliveryId: delivery.id,
+            exactPrice,
+            exactGallons,
+            exactTimestamp,
+            fullZipCode
+          }, { transaction: t });
+          logger.info(`[V2.3.1] Raw telemetry stored: delivery ${delivery.id}, exact $${exactPrice}, ${exactGallons}gal, ZIP ${fullZipCode}`);
+        } else {
+          logger.warn(`[V2.3.1] CommunityDeliveryRaw model not available - raw data not stored`);
+        }
+
+        await t.commit();
+      } catch (error) {
+        await t.rollback();
+        logger.error(`[V2.3.1] Transaction rollback: ${error.message}`);
+        throw error;
+      }
+    } else {
+      // OLD PAYLOAD: Single insert, no raw record
+      // V2.3.1: Legacy clients still store fullZipCode in public table for backward compat
+      delivery = await CommunityDelivery.create({
+        zipPrefix,
+        fullZipCode: fullZipCode || null,  // Legacy behavior preserved
+        fuelType,
+        pricePerGallon: roundedPrice,
+        deliveryMonth,
+        deliveryDate: deliveryDate || null,
+        gallonsBucket,
+        marketPriceAtTime: effectiveMarketPrice || null,
+        validationStatus,
+        rejectionReason,
+        contributorHash,
+        contributionWeight: Math.min(cappedWeight, 1.0),
+        supplierName: supplierName || null,
+        supplierId: supplierId || null,
+        isDirectorySupplier: isDirectorySupplier || false
+      });
+    }
 
     // Get updated area stats
-    // V20.1: Filter by fuelType
     const updatedStats = await CommunityDelivery.count({
       where: {
         zipPrefix,
-        fuelType,  // V20.1: Only count same fuel type
+        fuelType,
         deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
         validationStatus: 'valid'
       }
@@ -882,7 +989,7 @@ router.post('/deliveries', [
     const uniqueContributors = await CommunityDelivery.count({
       where: {
         zipPrefix,
-        fuelType,  // V20.1: Only count same fuel type
+        fuelType,
         deliveryMonth: { [Op.in]: [currentMonth, getPreviousMonth()] },
         validationStatus: 'valid'
       },
@@ -893,11 +1000,12 @@ router.post('/deliveries', [
     const thresholdMet = updatedStats >= 3 && uniqueContributors >= 2;
     const unlockedFeature = thresholdMet && areaDeliveries < 3;
 
-    // V2.2.0: Log supplier if provided
+    // Log submission
     const supplierInfo = supplierName ? `, supplier: ${supplierName}${isDirectorySupplier ? ' (directory)' : ''}` : '';
-    logger.info(`[V2.2.0] Delivery submitted: ZIP ${zipPrefix}, $${roundedPrice}, ${fuelType}, bucket ${gallonsBucket}, status ${validationStatus}${supplierInfo}`);
+    const payloadType = isNewPayload ? 'v2.3.1+' : 'legacy';
+    logger.info(`[V2.3.1] Delivery submitted (${payloadType}): ZIP ${zipPrefix}, $${roundedPrice}, ${fuelType}, bucket ${gallonsBucket}, status ${validationStatus}${supplierInfo}`);
 
-    // Response based on validation status
+    // Response based on validation status (unchanged structure)
     if (validationStatus === 'soft_excluded') {
       return res.json({
         success: true,
@@ -911,7 +1019,7 @@ router.post('/deliveries', [
       success: true,
       status: 'valid',
       message: unlockedFeature
-        ? '🎉 You just activated community data for your area!'
+        ? 'You just activated community data for your area!'
         : 'Thank you for contributing!',
       areaStats: {
         deliveryCount: updatedStats,
@@ -922,7 +1030,7 @@ router.post('/deliveries', [
     });
 
   } catch (error) {
-    logger.error('[V18.0] Community delivery submission error:', error);
+    logger.error('[V2.3.1] Community delivery submission error:', error);
     res.status(500).json({
       success: false,
       status: 'error',
@@ -1882,10 +1990,34 @@ router.get('/trend-v2/:zipCode', [
 
 // ============================================================================
 // V19.0.5b: ADMIN - Deduplicate existing data (one-time cleanup)
+// V2.3.1: Added auth middleware for security
 // ============================================================================
 
-// V19.0.5b: Debug - view all deliveries
-router.get('/admin/deliveries', async (req, res) => {
+// V2.3.1: JWT verification middleware for admin endpoints
+const jwt = require('jsonwebtoken');
+
+const verifyAdminToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded.role || (decoded.role !== 'admin' && decoded.role !== 'super_admin')) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: 'Invalid or expired token' });
+  }
+};
+
+// V19.0.5b: Debug - view all deliveries (V2.3.1: Now requires admin auth)
+router.get('/admin/deliveries', verifyAdminToken, async (req, res) => {
   try {
     const CommunityDelivery = getCommunityDeliveryModel();
     if (!CommunityDelivery) {
@@ -1916,8 +2048,8 @@ router.get('/admin/deliveries', async (req, res) => {
   }
 });
 
-// V19.0.5b: Delete all test data
-router.delete('/admin/deliveries', async (req, res) => {
+// V19.0.5b: Delete all test data (V2.3.1: Now requires admin auth)
+router.delete('/admin/deliveries', verifyAdminToken, async (req, res) => {
   const logger = req.app.locals.logger;
 
   try {
@@ -1946,7 +2078,8 @@ router.delete('/admin/deliveries', async (req, res) => {
   }
 });
 
-router.post('/admin/deduplicate', async (req, res) => {
+// V2.3.1: Now requires admin auth
+router.post('/admin/deduplicate', verifyAdminToken, async (req, res) => {
   const logger = req.app.locals.logger;
 
   try {
