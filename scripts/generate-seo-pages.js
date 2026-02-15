@@ -892,7 +892,7 @@ function generatePageHTML(data) {
       <h3>Popular Regions</h3>
       <div class="link-grid">
         ${regionLinks.map(r =>
-          `<a href="${r.slug}.html" class="featured-link">${escapeHtml(r.name)} <span class="count">(${r.count})</span></a>`
+          `<a href="${r.slug}" class="featured-link">${escapeHtml(r.name)} <span class="count">(${r.count})</span></a>`
         ).join('\n        ')}
       </div>
     </section>` : '';
@@ -903,7 +903,7 @@ function generatePageHTML(data) {
       <h3>Counties in ${stateInfo.name}</h3>
       <div class="link-grid">
         ${countyLinks.slice(0, 20).map(c =>
-          `<a href="${c.slug}.html">${escapeHtml(c.name)} County <span class="count">(${c.count})</span></a>`
+          `<a href="${c.slug}">${escapeHtml(c.name)} County <span class="count">(${c.count})</span></a>`
         ).join('\n        ')}
       </div>
     </section>` : '';
@@ -917,7 +917,7 @@ function generatePageHTML(data) {
       <h3>Counties in ${data.region}</h3>
       <div class="link-grid">
         ${countyLinks.map(c =>
-          `<a href="${c.slug}.html">${escapeHtml(c.name)} County <span class="count">(${c.count})</span></a>`
+          `<a href="${c.slug}">${escapeHtml(c.name)} County <span class="count">(${c.count})</span></a>`
         ).join('\n        ')}
       </div>
     </section>`;
@@ -929,7 +929,7 @@ function generatePageHTML(data) {
       <h3>Cities in ${county} County</h3>
       <div class="link-grid">
         ${cityLinks.slice(0, 20).map(c =>
-          `<a href="${c.slug}.html">${escapeHtml(c.name)} <span class="count">(${c.count})</span></a>`
+          `<a href="${c.slug}">${escapeHtml(c.name)} <span class="count">(${c.count})</span></a>`
         ).join('\n        ')}
       </div>
     </section>`;
@@ -941,7 +941,7 @@ function generatePageHTML(data) {
       <h3>Other Cities in ${county} County</h3>
       <div class="link-grid">
         ${siblingCities.map(c =>
-          `<a href="${c.slug}.html">${escapeHtml(c.name)} <span class="count">(${c.count})</span></a>`
+          `<a href="${c.slug}">${escapeHtml(c.name)} <span class="count">(${c.count})</span></a>`
         ).join('\n        ')}
       </div>
     </section>`;
