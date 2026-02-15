@@ -2021,5 +2021,19 @@
     "pattern": "direct",
     "notes": "ME Exeter/Bangor - Prices displayed in banner (#2 and Blend). Serves Penobscot/Piscataquis County. COD confirmed.",
     "priceRegex": "#2\\s*\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "jamisonenergy.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "ME Standish/Lakes Region - Family owned COD since 2001. Shows #2 oil + kerosene prices on homepage.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "sealandenergymaine.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "ME Windham/Cumberland County - Will-call + auto delivery. Shows oil price on homepage.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   }
 }
