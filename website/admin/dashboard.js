@@ -378,13 +378,24 @@ async function loadOverview() {
       document.getElementById('users-freshness').textContent = 'No activity yet';
     }
 
-    // Card 2: Deliveries Logged (using saves from app data as proxy)
-    const deliveries = unified?.app?.deliveries?.total ?? unified?.app?.saves ?? 0;
-    document.getElementById('total-deliveries').textContent = deliveries;
-    document.getElementById('deliveries-breakdown').textContent = deliveries > 0
-      ? `~$${(deliveries * 500).toLocaleString()} in orders`
-      : 'No deliveries logged yet';
+    // Card 2: Deliveries Shared (community_deliveries table - shared to backend)
+    const deliveriesShared = unified?.app?.deliveries?.total ?? 0;
+    document.getElementById('total-deliveries').textContent = deliveriesShared;
+    document.getElementById('deliveries-breakdown').textContent = deliveriesShared > 0
+      ? `${deliveriesShared} price point${deliveriesShared > 1 ? 's' : ''} shared`
+      : 'No deliveries shared yet';
     document.getElementById('deliveries-freshness').textContent = '';
+
+    // Card 2b: Deliveries Logged (app_events - local app logging)
+    const topEvents = unified?.app?.topEvents || [];
+    const deliveryLoggedEvent = topEvents.find(e => e.name === 'delivery_logged');
+    const deliveriesLogged = deliveryLoggedEvent?.count || 0;
+    const deliveriesLoggedUsers = deliveryLoggedEvent?.uniqueUsers || 0;
+    document.getElementById('total-deliveries-logged').textContent = deliveriesLogged;
+    document.getElementById('deliveries-logged-breakdown').textContent = deliveriesLogged > 0
+      ? `${deliveriesLoggedUsers} user${deliveriesLoggedUsers > 1 ? 's' : ''} logging`
+      : 'No deliveries logged yet';
+    document.getElementById('deliveries-logged-freshness').textContent = '';
 
     // Card 3: Est. Revenue (from supplier clicks)
     const totalClicks = data.website.totalClicks || 0;
@@ -1706,8 +1717,18 @@ async function loadIOSApp() {
       retentionEl.textContent = '--%';
     }
 
-    // Deliveries - this is tracked in our database via supplier_engagements or could be separate
-    document.getElementById('ios-deliveries').textContent = app.saves || '--';
+    // Deliveries Logged (from app_events / topEvents)
+    const iosTopEvents = app.topEvents || [];
+    const iosDeliveryLoggedEvent = iosTopEvents.find(e => e.name === 'delivery_logged');
+    const iosDeliveriesLogged = iosDeliveryLoggedEvent?.count || 0;
+    document.getElementById('ios-deliveries').textContent = iosDeliveriesLogged || '--';
+
+    // Deliveries Shared (from community_deliveries table)
+    const iosDeliveriesShared = app.deliveries?.total || 0;
+    const iosDeliveriesSharedEl = document.getElementById('ios-deliveries-shared');
+    if (iosDeliveriesSharedEl) {
+      iosDeliveriesSharedEl.textContent = iosDeliveriesShared || '--';
+    }
 
     // Event breakdown from our database
     document.getElementById('ios-event-supplier').textContent = app.views || '--';

@@ -187,10 +187,16 @@
           <div class="card-freshness" id="users-freshness">--</div>
         </div>
         <div class="card" id="card-deliveries">
-          <div class="card-label">Deliveries Logged</div>
+          <div class="card-label">Deliveries Shared</div>
           <div class="card-value" id="total-deliveries">--</div>
-          <div class="card-sub" id="deliveries-breakdown">Real orders tracked</div>
+          <div class="card-sub" id="deliveries-breakdown">Community price data</div>
           <div class="card-freshness" id="deliveries-freshness">--</div>
+        </div>
+        <div class="card" id="card-deliveries-logged">
+          <div class="card-label">Deliveries Logged</div>
+          <div class="card-value" id="total-deliveries-logged">--</div>
+          <div class="card-sub" id="deliveries-logged-breakdown">Local app logging</div>
+          <div class="card-freshness" id="deliveries-logged-freshness">--</div>
         </div>
         <div class="card" id="card-revenue">
           <div class="card-label">Est. Revenue</div>
@@ -1673,9 +1679,14 @@
             <div class="hint">Target: 30%+</div>
           </div>
           <div class="panel">
-            <h3>Deliveries Logged</h3>
+            <h3>Deliveries Logged (Local)</h3>
             <div id="ios-deliveries" class="stat-large">--</div>
-            <div class="hint">Real orders</div>
+            <div class="hint">App logging events</div>
+          </div>
+          <div class="panel">
+            <h3>Deliveries Shared</h3>
+            <div id="ios-deliveries-shared" class="stat-large">--</div>
+            <div class="hint">Community contributions</div>
           </div>
           <div class="panel full-width">
             <h3>App Event Breakdown</h3>
