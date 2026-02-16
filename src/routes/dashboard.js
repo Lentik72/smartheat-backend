@@ -177,7 +177,9 @@ router.get('/diag', async (req, res) => {
     FIREBASE_SERVICE_ACCOUNT_JSON: diagnose('firebase', fbCreds),
     GOOGLE_APPLICATION_CREDENTIALS_JSON: diagnose('google', gaCreds),
     FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || 'not set',
-    BIGQUERY_DATASET: process.env.BIGQUERY_DATASET || 'not set (default: analytics_515155647)'
+    BIGQUERY_DATASET: process.env.BIGQUERY_DATASET || 'not set (default: analytics_515155647)',
+    GA4_PROPERTY_ID: process.env.GA4_PROPERTY_ID || 'not set (for website analytics)',
+    FIREBASE_GA4_PROPERTY_ID: process.env.FIREBASE_GA4_PROPERTY_ID || 'not set (for iOS app events - get from Firebase console > Project settings > Integrations > Google Analytics)'
   });
 });
 

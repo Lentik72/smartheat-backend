@@ -1732,13 +1732,23 @@
             <div class="setup-guide">
               <h3>Connect Firebase Analytics</h3>
               <p>Enable Firebase API to see detailed iOS app analytics including retention cohorts, user journeys, and event funnels.</p>
+
+              <h4>Option 1: Firebase GA4 Property (Recommended - No BigQuery required)</h4>
+              <ol>
+                <li>Go to <a href="https://console.firebase.google.com/project/smartheat-e0729/settings/integrations/analytics" target="_blank">Firebase Console &gt; Project settings &gt; Integrations &gt; Google Analytics</a></li>
+                <li>Find the linked GA4 property ID (starts with numbers, e.g., <code>123456789</code>)</li>
+                <li>Set <code>FIREBASE_GA4_PROPERTY_ID</code> env var with this property ID</li>
+                <li>Ensure <code>FIREBASE_SERVICE_ACCOUNT_JSON</code> is set (same as below)</li>
+              </ol>
+
+              <h4>Option 2: BigQuery Export (Requires enabling BigQuery in Firebase)</h4>
               <ol>
                 <li>Go to <a href="https://console.firebase.google.com/project/smartheat-e0729/settings/serviceaccounts/adminsdk" target="_blank">Firebase Console &gt; Service Accounts</a></li>
                 <li>Click "Generate new private key"</li>
                 <li>Download the JSON file</li>
-                <li>Base64 encode it: <code>base64 -i serviceAccount.json</code></li>
-                <li>Set <code>GOOGLE_APPLICATION_CREDENTIALS_JSON</code> env var with the encoded value</li>
+                <li>Set <code>FIREBASE_SERVICE_ACCOUNT_JSON</code> env var with the raw JSON content</li>
                 <li>Set <code>FIREBASE_PROJECT_ID=smartheat-e0729</code></li>
+                <li>Enable BigQuery export in <a href="https://console.firebase.google.com/project/smartheat-e0729/settings/integrations/bigquery" target="_blank">Firebase &gt; Integrations &gt; BigQuery</a></li>
               </ol>
               <div class="setup-actions">
                 <a href="https://console.firebase.google.com/project/smartheat-e0729/analytics" target="_blank" class="btn">Open Firebase Console</a>

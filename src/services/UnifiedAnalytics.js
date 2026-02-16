@@ -21,6 +21,8 @@ class UnifiedAnalytics {
     // GA4 client (lazy initialized)
     this.ga4Client = null;
     this.ga4PropertyId = process.env.GA4_PROPERTY_ID || null;
+    // Firebase GA4 property ID (for iOS app events - separate from website GA4)
+    this.firebaseGA4PropertyId = process.env.FIREBASE_GA4_PROPERTY_ID || null;
 
     // Firebase client (lazy initialized)
     this.firebaseApp = null;
@@ -616,7 +618,102 @@ class UnifiedAnalytics {
   }
 
   /**
-   * Get iOS app metrics - tries BigQuery first, falls back to database
+   * Get iOS app metrics from Firebase GA4 property via GA4 Data API
+   * Firebase Analytics data is automatically synced to GA4
+   * @param {number} days - Number of days to look back
+   */
+  async getAppMetricsFromFirebaseGA4(days = 7) {
+    await this.initGA4();
+
+    if (!this.ga4Client) {
+      return {
+        available: false,
+        reason: 'GA4 client not configured',
+        data: null
+      };
+    }
+
+    if (!this.firebaseGA4PropertyId) {
+      return {
+        available: false,
+        reason: 'FIREBASE_GA4_PROPERTY_ID not set - get this from Firebase console > Project settings > Integrations > Google Analytics',
+        data: null
+      };
+    }
+
+    try {
+      const startDate = `${days}daysAgo`;
+      const endDate = 'today';
+
+      // Query top events (including delivery_logged, tank_reading, etc.)
+      const [eventsReport, usersReport] = await Promise.all([
+        this.ga4Client.properties.runReport({
+          property: `properties/${this.firebaseGA4PropertyId}`,
+          requestBody: {
+            dateRanges: [{ startDate, endDate }],
+            dimensions: [{ name: 'eventName' }],
+            metrics: [
+              { name: 'eventCount' },
+              { name: 'totalUsers' }
+            ],
+            orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+            limit: 50
+          }
+        }),
+        // Get total users and sessions
+        this.ga4Client.properties.runReport({
+          property: `properties/${this.firebaseGA4PropertyId}`,
+          requestBody: {
+            dateRanges: [{ startDate, endDate }],
+            metrics: [
+              { name: 'activeUsers' },
+              { name: 'sessions' },
+              { name: 'averageSessionDuration' }
+            ]
+          }
+        })
+      ]);
+
+      // Parse events
+      const topEvents = (eventsReport.data.rows || []).map(row => ({
+        name: row.dimensionValues[0].value,
+        count: parseInt(row.metricValues[0].value) || 0,
+        uniqueUsers: parseInt(row.metricValues[1].value) || 0
+      }));
+
+      // Parse user summary
+      const usersRow = usersReport.data.rows?.[0]?.metricValues || [];
+      const summary = {
+        totalUsers: parseInt(usersRow[0]?.value) || 0,
+        totalSessions: parseInt(usersRow[1]?.value) || 0,
+        avgSessionDuration: Math.round(parseFloat(usersRow[2]?.value) || 0)
+      };
+
+      this.logger.info(`[UnifiedAnalytics] Firebase GA4 returned ${topEvents.length} events, ${summary.totalUsers} users`);
+
+      return {
+        available: true,
+        source: 'firebase-ga4',
+        data: {
+          summary,
+          topEvents,
+          dailyActiveUsers: [], // Could add daily breakdown if needed
+          retention: { newUsers: 0, day1: 0, day7: 0, day1Rate: 0, day7Rate: 0 },
+          topScreens: []
+        }
+      };
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Firebase GA4 query error:', error.message);
+      return {
+        available: false,
+        reason: error.message,
+        data: null
+      };
+    }
+  }
+
+  /**
+   * Get iOS app metrics - tries BigQuery first, then Firebase GA4, falls back to database
    * @param {number} days - Number of days to look back
    */
   async getAppMetrics(days = 7) {
@@ -624,6 +721,12 @@ class UnifiedAnalytics {
     const bigQueryData = await this.getAppMetricsFromBigQuery(days);
     if (bigQueryData.available && bigQueryData.data) {
       return bigQueryData;
+    }
+
+    // Try Firebase GA4 API (alternative to BigQuery)
+    const firebaseGA4Data = await this.getAppMetricsFromFirebaseGA4(days);
+    if (firebaseGA4Data.available && firebaseGA4Data.data) {
+      return firebaseGA4Data;
     }
 
     // Fall back to database (supplier_engagements table)
