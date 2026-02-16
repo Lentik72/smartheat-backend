@@ -436,6 +436,14 @@ class UnifiedAnalytics {
         ? Math.round(dau.reduce((sum, d) => sum + (parseInt(d.users) || 0), 0) / dau.length)
         : 0;
 
+      // Log what events BigQuery returned
+      const topEventsData = events.map(e => ({
+        name: e.event_name,
+        count: parseInt(e.count) || 0,
+        uniqueUsers: parseInt(e.unique_users) || 0
+      }));
+      this.logger.info(`[UnifiedAnalytics] BigQuery topEvents: ${JSON.stringify(topEventsData.slice(0, 10).map(e => e.name))}`);
+
       const result = {
         available: true,
         source: 'bigquery',
@@ -461,11 +469,7 @@ class UnifiedAnalytics {
               ? ((retention.day7_retained / retention.new_users) * 100).toFixed(1)
               : 0
           },
-          topEvents: events.map(e => ({
-            name: e.event_name,
-            count: parseInt(e.count) || 0,
-            uniqueUsers: parseInt(e.unique_users) || 0
-          })),
+          topEvents: topEventsData,
           topScreens: screens.map(s => ({
             name: s.screen_name,
             views: parseInt(s.views) || 0,
