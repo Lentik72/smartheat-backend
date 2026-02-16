@@ -2213,6 +2213,33 @@ class UnifiedAnalytics {
       appData.confidence = confidence;
       appData.onboardingFunnel = onboardingFunnel;
 
+      // V2.29.0: Add topEvents from app_events table if not available from BigQuery
+      if (!appData.topEvents || appData.topEvents.length === 0) {
+        try {
+          const dbEvents = await this.sequelize.query(`
+            SELECT
+              event_name as name,
+              COUNT(*) as count,
+              COUNT(DISTINCT device_id_hash) as unique_users
+            FROM app_events
+            WHERE created_at > NOW() - INTERVAL '${days} days'
+            GROUP BY event_name
+            ORDER BY count DESC
+            LIMIT 50
+          `, { type: this.sequelize.QueryTypes.SELECT });
+
+          appData.topEvents = dbEvents.map(e => ({
+            name: e.name,
+            count: parseInt(e.count) || 0,
+            uniqueUsers: parseInt(e.unique_users) || 0
+          }));
+          this.logger.info(`[UnifiedAnalytics] Added ${appData.topEvents.length} topEvents from app_events table`);
+        } catch (e) {
+          this.logger.warn('[UnifiedAnalytics] Failed to get topEvents from app_events:', e.message);
+          appData.topEvents = [];
+        }
+      }
+
       // Add click data to website section
       const websiteData = website.data || {};
       try {
