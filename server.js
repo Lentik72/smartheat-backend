@@ -544,6 +544,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Coverage gap suppliers migration:', err.message);
         });
 
+        // V2.29.0: Add ip_hash column to user_locations for proper unique user counting
+        const { up: runIpHashMigration } = require('./src/migrations/048-add-ip-hash-to-user-locations');
+        runIpHashMigration(sequelize).catch(err => {
+          logger.warn('⚠️  IP hash migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
