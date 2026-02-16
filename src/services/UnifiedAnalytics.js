@@ -339,7 +339,7 @@ class UnifiedAnalytics {
       };
 
       // Run queries in parallel with timeouts
-      const [dauResult, sessionsResult, eventsResult, retentionResult, screenResult] = await Promise.all([
+      const [dauResult, sessionsResult, eventsResult, retentionResult, screenResult, deliveryLoggedResult] = await Promise.all([
         // Daily Active Users
         queryWithTimeout(`
           SELECT
@@ -418,6 +418,16 @@ class UnifiedAnalytics {
           HAVING screen_name IS NOT NULL
           ORDER BY views DESC
           LIMIT 10
+        `),
+
+        // Specific delivery_logged count (may not be in top 50)
+        queryWithTimeout(`
+          SELECT
+            COUNT(*) as count,
+            COUNT(DISTINCT user_pseudo_id) as unique_users
+          FROM \`${this.bigQueryProject}.${dataset}.events_*\`
+          WHERE _TABLE_SUFFIX BETWEEN '${startDateStr}' AND '${endDateStr}'
+            AND event_name = 'delivery_logged'
         `)
       ]);
 
@@ -427,6 +437,7 @@ class UnifiedAnalytics {
       const events = eventsResult[0] || [];
       const retention = retentionResult[0]?.[0] || {};
       const screens = screenResult[0] || [];
+      const deliveryLogged = deliveryLoggedResult[0]?.[0] || { count: 0, unique_users: 0 };
 
       // Calculate totals
       const totalUsers = dau.length > 0
@@ -437,11 +448,25 @@ class UnifiedAnalytics {
         : 0;
 
       // Log what events BigQuery returned
-      const topEventsData = events.map(e => ({
+      let topEventsData = events.map(e => ({
         name: e.event_name,
         count: parseInt(e.count) || 0,
         uniqueUsers: parseInt(e.unique_users) || 0
       }));
+
+      // Add delivery_logged if not already in top events (it's queried separately)
+      const deliveryLoggedCount = parseInt(deliveryLogged.count) || 0;
+      const deliveryLoggedUsers = parseInt(deliveryLogged.unique_users) || 0;
+      this.logger.info(`[UnifiedAnalytics] BigQuery delivery_logged: count=${deliveryLoggedCount}, users=${deliveryLoggedUsers}`);
+
+      if (deliveryLoggedCount > 0 && !topEventsData.find(e => e.name === 'delivery_logged')) {
+        topEventsData.push({
+          name: 'delivery_logged',
+          count: deliveryLoggedCount,
+          uniqueUsers: deliveryLoggedUsers
+        });
+      }
+
       this.logger.info(`[UnifiedAnalytics] BigQuery topEvents: ${JSON.stringify(topEventsData.slice(0, 10).map(e => e.name))}`);
 
       const result = {

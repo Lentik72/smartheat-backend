@@ -386,15 +386,15 @@ async function loadOverview() {
       : 'No deliveries shared yet';
     document.getElementById('deliveries-freshness').textContent = '';
 
-    // Card 2b: Deliveries Logged (app_events - local app logging via Firebase Analytics)
+    // Card 2b: Deliveries Logged (Firebase Analytics - requires user opt-in)
     // Note: Only counts users who opted-in to analytics (default OFF since v1.5.5)
     const topEvents = unified?.app?.topEvents || [];
     const deliveryLoggedEvent = topEvents.find(e => e.name === 'delivery_logged');
     const deliveriesLogged = deliveryLoggedEvent?.count || 0;
     const deliveriesLoggedUsers = deliveryLoggedEvent?.uniqueUsers || 0;
-    document.getElementById('total-deliveries-logged').textContent = deliveriesLogged > 0 ? deliveriesLogged : 'N/A';
+    document.getElementById('total-deliveries-logged').textContent = deliveriesLogged > 0 ? deliveriesLogged : '0';
     document.getElementById('deliveries-logged-breakdown').textContent = deliveriesLogged > 0
-      ? `${deliveriesLoggedUsers} user${deliveriesLoggedUsers > 1 ? 's' : ''} logging`
+      ? `${deliveriesLoggedUsers} user${deliveriesLoggedUsers > 1 ? 's' : ''} (opt-in only)`
       : 'Opt-in analytics only';
     document.getElementById('deliveries-logged-freshness').textContent = '';
 
