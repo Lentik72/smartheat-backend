@@ -165,10 +165,15 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // V2.27.0: Clean URL support - Redirect .html to clean URLs (301)
+// V2.28.0: Also redirect /index to / (Google found /index as separate page)
 app.use((req, res, next) => {
   if (req.path.startsWith('/api') ||
       req.path.match(/\.(js|css|png|jpg|jpeg|webp|gif|ico|svg|woff2?|json|xml|txt)$/)) {
     return next();
+  }
+  // Redirect /index to / (homepage canonical)
+  if (req.path === '/index') {
+    return res.redirect(301, '/' + (req._parsedUrl.search || ''));
   }
   // Redirect .html to clean URL (except functional pages like update-price.html)
   if (req.path.endsWith('.html') && !req.path.includes('update-price') && !req.path.includes('price-review') && !req.path.startsWith('/admin')) {
