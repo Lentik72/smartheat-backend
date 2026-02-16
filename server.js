@@ -532,6 +532,18 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  CN Brown Energy migration:', err.message);
         });
 
+        // V2.27.0: Add Casco ME (Lakes Region) suppliers
+        const { up: runCascoMeMigration } = require('./src/migrations/046-add-casco-me-suppliers');
+        runCascoMeMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Casco ME suppliers migration:', err.message);
+        });
+
+        // V2.28.0: Add coverage gap suppliers (Quakertown PA, Cromwell CT, Honesdale PA)
+        const { up: runCoverageGapMigration } = require('./src/migrations/047-add-coverage-gap-suppliers');
+        runCoverageGapMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Coverage gap suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
