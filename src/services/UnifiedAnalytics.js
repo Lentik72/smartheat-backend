@@ -1381,7 +1381,7 @@ class UnifiedAnalytics {
         }
       };
     } catch (error) {
-      this.logger.error('[UnifiedAnalytics] Confidence score error:', error.message);
+      this.logger.error(`[UnifiedAnalytics] Confidence score error: ${error.message}`, error.stack?.split('\n')[1] || '');
       return { avg: 0, highPct: 0, medPct: 0, lowPct: 0, factors: {} };
     }
   }
