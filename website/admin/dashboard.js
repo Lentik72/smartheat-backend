@@ -386,15 +386,16 @@ async function loadOverview() {
       : 'No deliveries shared yet';
     document.getElementById('deliveries-freshness').textContent = '';
 
-    // Card 2b: Deliveries Logged (app_events - local app logging)
+    // Card 2b: Deliveries Logged (app_events - local app logging via Firebase Analytics)
+    // Note: Only counts users who opted-in to analytics (default OFF since v1.5.5)
     const topEvents = unified?.app?.topEvents || [];
     const deliveryLoggedEvent = topEvents.find(e => e.name === 'delivery_logged');
     const deliveriesLogged = deliveryLoggedEvent?.count || 0;
     const deliveriesLoggedUsers = deliveryLoggedEvent?.uniqueUsers || 0;
-    document.getElementById('total-deliveries-logged').textContent = deliveriesLogged;
+    document.getElementById('total-deliveries-logged').textContent = deliveriesLogged > 0 ? deliveriesLogged : 'N/A';
     document.getElementById('deliveries-logged-breakdown').textContent = deliveriesLogged > 0
       ? `${deliveriesLoggedUsers} user${deliveriesLoggedUsers > 1 ? 's' : ''} logging`
-      : 'No deliveries logged yet';
+      : 'Opt-in analytics only';
     document.getElementById('deliveries-logged-freshness').textContent = '';
 
     // Card 3: Est. Revenue (from supplier clicks)

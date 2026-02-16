@@ -324,7 +324,7 @@ router.get('/overview', async (req, res) => {
       // User stats (estimate unique users from database activity)
       safeQuery('userStats', `
         SELECT
-          (SELECT COUNT(DISTINCT zip_code)
+          (SELECT COUNT(DISTINCT COALESCE(ip_hash, zip_code))
            FROM user_locations
            WHERE created_at > NOW() - INTERVAL '${days} days') as website_users,
           (SELECT COUNT(DISTINCT ip_hash)
