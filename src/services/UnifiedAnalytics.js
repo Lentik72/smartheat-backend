@@ -459,15 +459,23 @@ class UnifiedAnalytics {
       const deliveryLoggedUsers = parseInt(deliveryLogged.unique_users) || 0;
       this.logger.info(`[UnifiedAnalytics] BigQuery delivery_logged: count=${deliveryLoggedCount}, users=${deliveryLoggedUsers}`);
 
-      if (deliveryLoggedCount > 0 && !topEventsData.find(e => e.name === 'delivery_logged')) {
-        topEventsData.push({
+      // Check if delivery_logged already exists in events
+      const existingDeliveryLogged = topEventsData.find(e => e.name === 'delivery_logged');
+      this.logger.info(`[UnifiedAnalytics] delivery_logged existing in topEvents: ${existingDeliveryLogged ? `YES (count=${existingDeliveryLogged.count})` : 'NO'}`);
+
+      if (deliveryLoggedCount > 0 && !existingDeliveryLogged) {
+        // Add at the beginning so it's always visible in logs
+        topEventsData.unshift({
           name: 'delivery_logged',
           count: deliveryLoggedCount,
           uniqueUsers: deliveryLoggedUsers
         });
+        this.logger.info(`[UnifiedAnalytics] Added delivery_logged to topEventsData at position 0`);
       }
 
-      this.logger.info(`[UnifiedAnalytics] BigQuery topEvents: ${JSON.stringify(topEventsData.slice(0, 10).map(e => e.name))}`);
+      // Verify delivery_logged is now in the array
+      const finalDeliveryLogged = topEventsData.find(e => e.name === 'delivery_logged');
+      this.logger.info(`[UnifiedAnalytics] delivery_logged FINAL: ${finalDeliveryLogged ? `count=${finalDeliveryLogged.count}, users=${finalDeliveryLogged.uniqueUsers}` : 'NOT FOUND'}`);
 
       const result = {
         available: true,
