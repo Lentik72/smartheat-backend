@@ -2412,6 +2412,51 @@ class UnifiedAnalytics {
         }
       }
 
+      // V2.30.0: ALWAYS check app_events for delivery_logged (no consent required)
+      // This gives the REAL count, not just opt-in users from Firebase Analytics
+      try {
+        const dbDeliveryLogged = await this.sequelize.query(`
+          SELECT
+            COUNT(*) as count,
+            COUNT(DISTINCT device_id_hash) as unique_users
+          FROM app_events
+          WHERE event_name = 'delivery_logged'
+            AND created_at > NOW() - INTERVAL '${days} days'
+        `, { type: this.sequelize.QueryTypes.SELECT });
+
+        const dbCount = parseInt(dbDeliveryLogged[0]?.count) || 0;
+        const dbUsers = parseInt(dbDeliveryLogged[0]?.unique_users) || 0;
+
+        // Find existing delivery_logged in topEvents (from BigQuery)
+        const existingIdx = appData.topEvents?.findIndex(e => e.name === 'delivery_logged') ?? -1;
+        const existingCount = existingIdx >= 0 ? appData.topEvents[existingIdx].count : 0;
+
+        // Use the HIGHER count (app_events should be higher since no consent needed)
+        if (dbCount > existingCount) {
+          if (existingIdx >= 0) {
+            appData.topEvents[existingIdx] = {
+              name: 'delivery_logged',
+              count: dbCount,
+              uniqueUsers: dbUsers,
+              source: 'app_events'  // Mark source for debugging
+            };
+          } else {
+            appData.topEvents = appData.topEvents || [];
+            appData.topEvents.unshift({
+              name: 'delivery_logged',
+              count: dbCount,
+              uniqueUsers: dbUsers,
+              source: 'app_events'
+            });
+          }
+          this.logger.info(`[UnifiedAnalytics] Using app_events delivery_logged: count=${dbCount}, users=${dbUsers} (vs BigQuery ${existingCount})`);
+        } else {
+          this.logger.info(`[UnifiedAnalytics] Keeping BigQuery delivery_logged: count=${existingCount} (app_events has ${dbCount})`);
+        }
+      } catch (e) {
+        this.logger.warn('[UnifiedAnalytics] Failed to query app_events for delivery_logged:', e.message);
+      }
+
       // Add click data to website section
       const websiteData = website.data || {};
       try {
