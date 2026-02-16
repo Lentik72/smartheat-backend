@@ -494,15 +494,21 @@ header h1 {
   color: white;
 }
 
-/* Cards - 4-column grid on desktop, responsive */
+/* Cards - 5-column grid on desktop, responsive */
 .cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-md);
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
+  .cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
   .cards {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -516,7 +522,7 @@ header h1 {
 
 .card {
   background: white;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1rem;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   border: 1px solid rgba(0,0,0,0.04);
@@ -537,7 +543,7 @@ header h1 {
 }
 
 .card-value {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--gray-900);
   letter-spacing: -0.02em;
