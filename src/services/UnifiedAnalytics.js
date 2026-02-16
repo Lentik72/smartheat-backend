@@ -764,12 +764,15 @@ class UnifiedAnalytics {
   async getAppMetrics(days = 7) {
     // Try BigQuery first (has full Firebase Analytics data)
     const bigQueryData = await this.getAppMetricsFromBigQuery(days);
+    this.logger.info(`[UnifiedAnalytics] BigQuery result: available=${bigQueryData.available}, hasData=${!!bigQueryData.data}, reason=${bigQueryData.reason || 'none'}`);
     if (bigQueryData.available && bigQueryData.data) {
       return bigQueryData;
     }
 
     // Try Firebase GA4 API (alternative to BigQuery)
+    this.logger.info(`[UnifiedAnalytics] Trying Firebase GA4... propertyId=${this.firebaseGA4PropertyId || 'NOT SET'}`);
     const firebaseGA4Data = await this.getAppMetricsFromFirebaseGA4(days);
+    this.logger.info(`[UnifiedAnalytics] Firebase GA4 result: available=${firebaseGA4Data.available}, hasData=${!!firebaseGA4Data.data}, reason=${firebaseGA4Data.reason || 'none'}`);
     if (firebaseGA4Data.available && firebaseGA4Data.data) {
       return firebaseGA4Data;
     }
