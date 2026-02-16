@@ -550,6 +550,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  IP hash migration:', err.message);
         });
 
+        // V2.30.0: Add Cheshire County NH suppliers (West Chesterfield coverage gap)
+        const { up: runCheshireNHMigration } = require('./src/migrations/049-add-cheshire-nh-suppliers');
+        runCheshireNHMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Cheshire NH suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
