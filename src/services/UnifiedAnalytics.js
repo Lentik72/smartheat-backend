@@ -1414,7 +1414,12 @@ class UnifiedAnalytics {
         }
       };
     } catch (error) {
-      this.logger.error(`[UnifiedAnalytics] Confidence score error: ${error.message}`, error.stack?.split('\n')[1] || '');
+      // Log full error with position info for debugging SQL issues
+      this.logger.error(`[UnifiedAnalytics] Confidence score error: ${error.message}`);
+      if (error.position) {
+        this.logger.error(`[UnifiedAnalytics] Error position: ${error.position}`);
+      }
+      // Non-critical feature - return empty metrics silently
       return { avg: 0, highPct: 0, medPct: 0, lowPct: 0, factors: {} };
     }
   }
