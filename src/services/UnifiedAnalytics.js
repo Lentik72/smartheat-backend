@@ -18,11 +18,13 @@ class UnifiedAnalytics {
     this.sequelize = sequelize;
     this.logger = logger;
 
-    // GA4 client (lazy initialized)
+    // GA4 client (lazy initialized) - for website analytics
     this.ga4Client = null;
     this.ga4PropertyId = process.env.GA4_PROPERTY_ID || null;
     // Firebase GA4 property ID (for iOS app events - separate from website GA4)
     this.firebaseGA4PropertyId = process.env.FIREBASE_GA4_PROPERTY_ID || null;
+    // Separate GA4 client for Firebase (uses Firebase service account)
+    this.firebaseGA4Client = null;
 
     // Firebase client (lazy initialized)
     this.firebaseApp = null;
@@ -97,6 +99,56 @@ class UnifiedAnalytics {
     } catch (error) {
       this.logger.error('[UnifiedAnalytics] GA4 init error:', error.message);
       this.initialized.ga4 = true;
+      return false;
+    }
+  }
+
+  /**
+   * Initialize Firebase GA4 client using Firebase service account
+   * This is separate from the website GA4 client
+   */
+  async initFirebaseGA4() {
+    if (this.firebaseGA4Client) return true;
+
+    try {
+      // Use Firebase service account (not website credentials)
+      const credentialsJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
+      if (!credentialsJson) {
+        this.logger.info('[UnifiedAnalytics] FIREBASE_SERVICE_ACCOUNT_JSON not set, skipping Firebase GA4 init');
+        return false;
+      }
+
+      if (!this.firebaseGA4PropertyId) {
+        this.logger.info('[UnifiedAnalytics] FIREBASE_GA4_PROPERTY_ID not set, skipping Firebase GA4 init');
+        return false;
+      }
+
+      // Parse credentials
+      const trimmedCreds = credentialsJson.trim();
+      let credentials;
+      if (trimmedCreds.startsWith('{')) {
+        credentials = JSON.parse(trimmedCreds);
+      } else {
+        credentials = JSON.parse(Buffer.from(trimmedCreds, 'base64').toString('utf8'));
+      }
+
+      // Create JWT client with Firebase service account
+      const auth = new google.auth.GoogleAuth({
+        credentials,
+        scopes: ['https://www.googleapis.com/auth/analytics.readonly']
+      });
+
+      // Create GA4 Data API client for Firebase
+      this.firebaseGA4Client = google.analyticsdata({
+        version: 'v1beta',
+        auth
+      });
+
+      this.logger.info(`[UnifiedAnalytics] Firebase GA4 client initialized for property ${this.firebaseGA4PropertyId}`);
+      return true;
+    } catch (error) {
+      this.logger.error('[UnifiedAnalytics] Firebase GA4 init error:', error.message);
       return false;
     }
   }
@@ -623,20 +675,13 @@ class UnifiedAnalytics {
    * @param {number} days - Number of days to look back
    */
   async getAppMetricsFromFirebaseGA4(days = 7) {
-    await this.initGA4();
+    // Initialize Firebase GA4 client (uses Firebase service account)
+    const initialized = await this.initFirebaseGA4();
 
-    if (!this.ga4Client) {
+    if (!initialized || !this.firebaseGA4Client) {
       return {
         available: false,
-        reason: 'GA4 client not configured',
-        data: null
-      };
-    }
-
-    if (!this.firebaseGA4PropertyId) {
-      return {
-        available: false,
-        reason: 'FIREBASE_GA4_PROPERTY_ID not set - get this from Firebase console > Project settings > Integrations > Google Analytics',
+        reason: 'Firebase GA4 client not configured - need FIREBASE_SERVICE_ACCOUNT_JSON and FIREBASE_GA4_PROPERTY_ID',
         data: null
       };
     }
@@ -647,7 +692,7 @@ class UnifiedAnalytics {
 
       // Query top events (including delivery_logged, tank_reading, etc.)
       const [eventsReport, usersReport] = await Promise.all([
-        this.ga4Client.properties.runReport({
+        this.firebaseGA4Client.properties.runReport({
           property: `properties/${this.firebaseGA4PropertyId}`,
           requestBody: {
             dateRanges: [{ startDate, endDate }],
@@ -661,7 +706,7 @@ class UnifiedAnalytics {
           }
         }),
         // Get total users and sessions
-        this.ga4Client.properties.runReport({
+        this.firebaseGA4Client.properties.runReport({
           property: `properties/${this.firebaseGA4PropertyId}`,
           requestBody: {
             dateRanges: [{ startDate, endDate }],
