@@ -372,7 +372,7 @@ class UnifiedAnalytics {
           WHERE _TABLE_SUFFIX BETWEEN '${startDateStr}' AND '${endDateStr}'
           GROUP BY event_name
           ORDER BY count DESC
-          LIMIT 15
+          LIMIT 50
         `),
 
         // Day 1 and Day 7 Retention
