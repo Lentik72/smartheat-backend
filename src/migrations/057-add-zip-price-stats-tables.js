@@ -20,11 +20,12 @@ module.exports = {
 
   async up(sequelize) {
     // Check if tables already exist
-    const [existingTables] = await sequelize.query(`
+    const [results] = await sequelize.query(`
       SELECT table_name FROM information_schema.tables
       WHERE table_schema = 'public'
       AND table_name IN ('zip_price_stats', 'zip_current_stats')
     `);
+    const existingTables = results || [];
 
     if (existingTables.length > 0) {
       console.log('[Migration 057] Tables already exist, skipping creation');

@@ -233,22 +233,22 @@ class ZipStatsComputer {
       SELECT
         s.state,
         array_agg(DISTINCT s.city) FILTER (WHERE s.city IS NOT NULL) as cities,
-        array_agg(DISTINCT sc.name) FILTER (WHERE sc.name IS NOT NULL) as counties
-      FROM suppliers s
-      LEFT JOIN (
-        SELECT DISTINCT ON (s2.id) s2.id, unnest(s2.service_counties::text[]::text[]) as name
-        FROM suppliers s2
-        WHERE s2.service_counties IS NOT NULL
-      ) sc ON sc.id = s.id,
+        (
+          SELECT array_agg(DISTINCT county)
+          FROM suppliers s2,
+               jsonb_array_elements_text(s2.service_counties) as county
+          WHERE s2.id = s.id
+        ) as counties
+      FROM suppliers s,
       jsonb_array_elements_text(s.postal_codes_served) as zip
       WHERE SUBSTRING(zip::text, 1, 3) = :zipPrefix
         AND s.active = true
-      GROUP BY s.state
+      GROUP BY s.state, s.id
       ORDER BY COUNT(*) DESC
       LIMIT 1
     `, { replacements: { zipPrefix } });
 
-    if (results.length === 0) {
+    if (!results || results.length === 0) {
       return { regionName: null, cities: [] };
     }
 
