@@ -1,6 +1,7 @@
 // Supplier Directory Model
 // V1.4.0: Added serviceCities, lat, lng for unified matching
 // V1.5.0: Added allowPriceDisplay for price scraping opt-out
+// V2.31.3: Added deliveryModel for future contract company support
 const { DataTypes } = require('sequelize');
 
 let Supplier;
@@ -173,6 +174,13 @@ const initSupplierModel = (sequelize) => {
         field: 'senior_discount',
         defaultValue: 'unknown',
         comment: 'yes, no, unknown'
+      },
+      // V2.31.3: Delivery model for future contract company support
+      deliveryModel: {
+        type: DataTypes.ENUM('cod', 'contract'),
+        field: 'delivery_model',
+        defaultValue: 'cod',
+        comment: 'cod = will-call/COD, contract = full-service/auto-delivery'
       }
     }, {
       tableName: 'suppliers',
@@ -197,7 +205,8 @@ const initSupplierModel = (sequelize) => {
           name: 'suppliers_service_cities_gin',
           fields: ['service_cities'],  // Use snake_case (underscored: true)
           using: 'GIN'
-        }
+        },
+        { fields: ['delivery_model'] }
       ]
     });
 

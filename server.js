@@ -591,6 +591,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  CT COD suppliers migration:', err.message);
         });
 
+        // V2.31.3: Add delivery_model column (future-proofs for contract companies)
+        const { up: runDeliveryModelMigration } = require('./src/migrations/056-add-delivery-model-column');
+        runDeliveryModelMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Delivery model column migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {

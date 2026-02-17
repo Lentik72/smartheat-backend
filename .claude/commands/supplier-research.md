@@ -59,13 +59,30 @@ Use existing migrations (049, 050) as templates.
 2. Add to `scrape-config.json` if scrapable
 3. Commit and push
 
-## DO NOT ADD If:
+## DO NOT ADD to Production If:
 - No explicit COD/will-call language on their site
 - HVAC-only company (no fuel delivery)
 - Aggregator/broker/reseller
 - Acquired, closed, or merged
 - Uses Droplet/third-party ordering with no public prices
-- "Call for pricing" model with no displayed prices
+- Contract-only company (automatic delivery, budget plans required)
+
+## Contract Companies: Stage for Future
+
+If you find a quality supplier that is **contract-only** (no COD option):
+1. Do NOT add to database migration
+2. Add to `scrape-config.json` under staging section:
+   - `_future_contract_oil` for heating oil
+   - `_future_contract_propane` for propane
+3. Include: name, website, notes on why they're contract-only
+
+## Fuel Type Handling
+
+- Oil suppliers → `fuel_types: ['heating_oil']`
+- Propane suppliers → `fuel_types: ['propane']`
+- Dual-fuel suppliers → `fuel_types: ['heating_oil', 'propane']`
+
+App has separate oil and propane directories. Database is unified, UI is filtered.
 
 ## Research Target: $ARGUMENTS
 
