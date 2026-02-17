@@ -988,10 +988,30 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     } catch (error) {
       logger.error('❌ Supplier page generation failed:', error.message);
     }
+
+    // V2.32.0: Generate ZIP Elite pages
+    try {
+      const { generateZipElitePages } = require('./scripts/generate-zip-elite-pages');
+
+      const result = await generateZipElitePages({
+        sequelize,
+        logger,
+        outputDir: websiteDir,
+        dryRun: false
+      });
+
+      if (result.success) {
+        logger.info(`✅ ZIP Elite pages generated: ${result.generated} pages`);
+      } else {
+        logger.error(`❌ ZIP Elite page generation failed`);
+      }
+    } catch (error) {
+      logger.error('❌ ZIP Elite page generation failed:', error.message);
+    }
   }, {
     timezone: 'America/New_York'
   });
-  logger.info('📄 SEO + Supplier page generator scheduled: daily at 11:00 PM EST');
+  logger.info('📄 SEO + Supplier + ZIP Elite page generator scheduled: daily at 11:00 PM EST');
 
   // Regenerate all pages on startup (after healthcheck passes)
   // Generated pages live on the filesystem but git has stale versions.
@@ -1018,6 +1038,15 @@ const server = app.listen(PORT, '0.0.0.0', () => {
         logger.error(`❌ [Startup] Supplier page generation failed: ${supResult.error}`);
       }
     } catch (e) { logger.error('[Startup] Supplier page generation failed:', e.message); }
+    try {
+      const { generateZipElitePages } = require('./scripts/generate-zip-elite-pages');
+      const zipResult = await generateZipElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+      if (zipResult.success) {
+        logger.info(`✅ [Startup] ZIP Elite pages regenerated: ${zipResult.generated} pages`);
+      } else {
+        logger.error(`❌ [Startup] ZIP Elite page generation failed`);
+      }
+    } catch (e) { logger.error('[Startup] ZIP Elite page generation failed:', e.message); }
   }, 10000);
 
   // V2.6.0: Monthly reset of phone_only suppliers (1st of each month at 6 AM EST)
