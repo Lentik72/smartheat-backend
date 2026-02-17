@@ -562,6 +562,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Northern NH suppliers migration:', err.message);
         });
 
+        // V2.30.2: Add Fairfield County CT suppliers
+        const { up: runFairfieldCTMigration } = require('./src/migrations/051-add-fairfield-ct-suppliers');
+        runFairfieldCTMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Fairfield CT suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
