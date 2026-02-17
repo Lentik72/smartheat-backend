@@ -1955,6 +1955,29 @@
     "priceRegex": "#2 Heating Oil[\\s\\S]*?([0-9]+\\.[0-9]{2,3})/gal"
   },
 
+  "harrisenergyinc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/current-fuel-prices/",
+    "notes": "NH Northern/Littleton - Will-call. 100 gal min. $0.03 senior/military discount.",
+    "priceRegex": "#2 Heating Fuel:\\s*\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "presbyenergy.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/todays-cash-prices/2-home-heating-fuel/",
+    "notes": "NH Northern/Franconia - COD + Will-call. 125 gal min. 10-day cash price.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "dutileoil.net": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NH Lakes Region/Laconia - 10-day cash prices. Since 1930. Also delivers coal.",
+    "priceRegex": "#2 FUEL=\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_VT": "=== VERMONT ===",
 
   "foxfuelvt.com": {

@@ -556,6 +556,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Cheshire NH suppliers migration:', err.message);
         });
 
+        // V2.30.1: Add Northern NH & Lakes Region suppliers
+        const { up: runNorthernNHMigration } = require('./src/migrations/050-add-northern-nh-suppliers');
+        runNorthernNHMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Northern NH suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
