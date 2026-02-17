@@ -227,38 +227,56 @@ class ZipStatsComputer {
 
   /**
    * Get region name and cities for a ZIP prefix
+   * Finds the most common county among all suppliers serving this ZIP prefix
    */
   async getRegionInfo(zipPrefix) {
-    const [results] = await this.sequelize.query(`
-      SELECT
-        s.state,
-        array_agg(DISTINCT s.city) FILTER (WHERE s.city IS NOT NULL) as cities,
-        (
-          SELECT array_agg(DISTINCT county)
-          FROM suppliers s2,
-               jsonb_array_elements_text(s2.service_counties) as county
-          WHERE s2.id = s.id
-        ) as counties
+    // Find the most common county among suppliers serving this ZIP prefix
+    const [countyResults] = await this.sequelize.query(`
+      SELECT county, s.state, COUNT(*) as supplier_count
       FROM suppliers s,
-      jsonb_array_elements_text(s.postal_codes_served) as zip
+           jsonb_array_elements_text(s.postal_codes_served) as zip,
+           jsonb_array_elements_text(s.service_counties) as county
       WHERE SUBSTRING(zip::text, 1, 3) = :zipPrefix
         AND s.active = true
-      GROUP BY s.state, s.id
+      GROUP BY county, s.state
       ORDER BY COUNT(*) DESC
       LIMIT 1
     `, { replacements: { zipPrefix } });
 
-    if (!results || results.length === 0) {
-      return { regionName: null, cities: [] };
+    // Get all cities from suppliers serving this ZIP prefix
+    const [cityResults] = await this.sequelize.query(`
+      SELECT DISTINCT s.city
+      FROM suppliers s,
+           jsonb_array_elements_text(s.postal_codes_served) as zip
+      WHERE SUBSTRING(zip::text, 1, 3) = :zipPrefix
+        AND s.active = true
+        AND s.city IS NOT NULL
+      LIMIT 10
+    `, { replacements: { zipPrefix } });
+
+    if (!countyResults || countyResults.length === 0) {
+      // Fallback to just state if no county data
+      const [stateResult] = await this.sequelize.query(`
+        SELECT DISTINCT s.state
+        FROM suppliers s,
+             jsonb_array_elements_text(s.postal_codes_served) as zip
+        WHERE SUBSTRING(zip::text, 1, 3) = :zipPrefix
+          AND s.active = true
+        LIMIT 1
+      `, { replacements: { zipPrefix } });
+
+      return {
+        regionName: stateResult?.[0]?.state || null,
+        cities: cityResults?.map(c => c.city) || []
+      };
     }
 
-    const { state, cities, counties } = results[0];
-    const countyName = counties && counties.length > 0 ? counties[0] : null;
-    const regionName = countyName ? `${countyName} County, ${state}` : state;
+    const { county, state } = countyResults[0];
+    const regionName = county ? `${county} County, ${state}` : state;
 
     return {
       regionName,
-      cities: (cities || []).slice(0, 10) // Limit to top 10 cities
+      cities: cityResults?.map(c => c.city) || []
     };
   }
 
