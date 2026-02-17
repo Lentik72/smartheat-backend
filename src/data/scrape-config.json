@@ -1002,6 +1002,28 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "williamsfueloil.com": {
+    "enabled": true,
+    "pattern": "table",
+    "targetTier": 2,
+    "name": "Williams Fuel Oil",
+    "phone": "(860) 684-9123",
+    "notes": "CT Stafford Springs/Tolland County - COD tiered pricing (100-149/150-299/300-499/500+). targetTier=2 gets 150 gal price.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": ["06076", "06075", "06084", "06279", "06278", "06250", "06268", "06066", "06029", "06040", "06071", "06238", "06082", "06088", "06016", "01057", "01081", "01521", "01069", "01028", "01106"]
+  },
+
+  "incredibleoil.com": {
+    "enabled": true,
+    "pattern": "table",
+    "targetTier": 1,
+    "name": "Incredible Oil",
+    "phone": "(203) 265-4328",
+    "notes": "CT Wallingford/New Haven County - COD tiered pricing (300+/100-299/50-99). targetTier=1 gets 100-299 gal price.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": ["06492", "06410", "06450", "06451", "06405", "06471", "06473", "06437", "06443", "06514", "06517", "06518", "06524", "06413", "06416", "06422", "06455", "06457", "06037", "06489"]
+  },
+
   "_section_MA": "=== MASSACHUSETTS ===",
 
   "georgesoil.com": {

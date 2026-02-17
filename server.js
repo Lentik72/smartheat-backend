@@ -573,6 +573,24 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  CT coverage suppliers migration:', err.message);
         });
 
+        // V2.31.0: Add Eastern CT suppliers (Windham + Tolland + New London)
+        const { up: runEasternCTMigration } = require('./src/migrations/053-add-eastern-ct-suppliers');
+        runEasternCTMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Eastern CT suppliers migration:', err.message);
+        });
+
+        // V2.31.1: Add CT directory suppliers (Sisters Oil, River Valley, Reliable Oil)
+        const { up: runCTDirectoryMigration } = require('./src/migrations/054-add-ct-directory-suppliers');
+        runCTDirectoryMigration(sequelize).catch(err => {
+          logger.warn('⚠️  CT directory suppliers migration:', err.message);
+        });
+
+        // V2.31.2: Add CT COD suppliers (Incredible Oil, Economy Fuel)
+        const { up: runCTCODMigration } = require('./src/migrations/055-add-ct-cod-suppliers');
+        runCTCODMigration(sequelize).catch(err => {
+          logger.warn('⚠️  CT COD suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
