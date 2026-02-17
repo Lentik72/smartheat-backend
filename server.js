@@ -25,6 +25,9 @@ const { initScheduler } = require('./src/services/DistributedScheduler');
 // V2.6.0: Import scrape backoff for monthly reset
 const { monthlyReset } = require('./src/services/scrapeBackoff');
 
+// V2.32.0: Import ZIP stats computer for pre-computed aggregates
+const ZipStatsComputer = require('./src/services/ZipStatsComputer');
+
 // V2.4.0: Import Activity Analytics
 const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsService');
 
@@ -597,6 +600,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Delivery model column migration:', err.message);
         });
 
+        // V2.32.0: Add ZIP price stats tables (pre-computed aggregation layer)
+        const { up: runZipStatsMigration } = require('./src/migrations/057-add-zip-price-stats-tables');
+        runZipStatsMigration(sequelize).catch(err => {
+          logger.warn('⚠️  ZIP price stats migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
@@ -774,6 +783,7 @@ app.use('/api/admin/supplier-claims', require('./src/routes/admin-supplier-claim
 app.use('/api/supplier-update', require('./src/routes/supplier-update'));  // V2.11.0: Supplier magic link price update
 app.use('/api', require('./src/routes/tracking'));  // V2.12.0: Click tracking for sniper outreach
 app.use('/api/dashboard', dashboardRoutes);  // V2.14.0: Analytics dashboard
+app.use('/api/zip', require('./src/routes/zip-stats'));  // V2.32.0: ZIP price intelligence
 app.use('/api/webhook/twilio', smsWebhookRoutes);  // V2.18.0: SMS price updates via Twilio
 
 // V2.10.0: Serve static files for admin tools
@@ -909,18 +919,29 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 
   // V2.7.0: Second daily scrape at 4 PM EST to catch afternoon price updates
   // Catches suppliers who update prices after their morning distributed scrape
+  // V2.32.0: Also triggers ZIP stats computation after scrape completes
   cron.schedule('0 21 * * *', async () => {
     logger.info('⏰ Starting afternoon price scrape (4:00 PM EST)...');
     try {
       const result = await runScraper({ sequelize, logger });
       logger.info(`✅ Afternoon scrape complete: ${result.success} success, ${result.failed} failed`);
+
+      // V2.32.0: Compute ZIP price stats after scrape
+      logger.info('📊 Computing ZIP price statistics...');
+      const zipStatsComputer = new ZipStatsComputer(sequelize, logger);
+      const statsResult = await zipStatsComputer.compute();
+      if (statsResult.success) {
+        logger.info(`✅ ZIP stats computed: ${statsResult.updated} ZIPs updated in ${statsResult.durationMs}ms`);
+      } else {
+        logger.warn('⚠️  ZIP stats computation failed:', statsResult.error);
+      }
     } catch (error) {
       logger.error('❌ Afternoon scrape failed:', error.message);
     }
   }, {
     timezone: 'UTC' // 21:00 UTC = 4:00 PM EST
   });
-  logger.info('⏰ Afternoon scrape scheduled: daily at 4:00 PM EST');
+  logger.info('⏰ Afternoon scrape scheduled: daily at 4:00 PM EST (+ ZIP stats)');
 
   // V2.17.0: Schedule SEO + Supplier page generation at 11:00 PM EST (low traffic period)
   // Generates static HTML pages directly on Railway for Google indexability
