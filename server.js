@@ -568,6 +568,11 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Fairfield CT suppliers migration:', err.message);
         });
 
+        const { up: runCTCoverageMigration } = require('./src/migrations/052-add-ct-coverage-suppliers');
+        runCTCoverageMigration(sequelize).catch(err => {
+          logger.warn('⚠️  CT coverage suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
