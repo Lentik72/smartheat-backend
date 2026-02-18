@@ -121,7 +121,23 @@ async function generateZipElitePages(options = {}) {
         replacements: { prefix: stats.zip_prefix, fuelType: stats.fuel_type || 'heating_oil' }
       });
 
-      const html = generateZipPageHTML(stats, history);
+      // Get primary county for this ZIP prefix (for internal linking)
+      const [countyInfo] = await sequelize.query(`
+        SELECT ztc.county_name, ztc.state_code, ccs.data_quality_score
+        FROM zip_to_county ztc
+        LEFT JOIN county_current_stats ccs
+          ON ccs.county_name = ztc.county_name
+          AND ccs.state_code = ztc.state_code
+          AND ccs.fuel_type = 'heating_oil'
+        WHERE SUBSTRING(ztc.zip_code, 1, 3) = :prefix
+        GROUP BY ztc.county_name, ztc.state_code, ccs.data_quality_score
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+      `, { replacements: { prefix: stats.zip_prefix } });
+
+      const county = countyInfo.length > 0 ? countyInfo[0] : null;
+
+      const html = generateZipPageHTML(stats, history, county);
       const filePath = path.join(zipDir, `${stats.zip_prefix}.html`);
 
       if (!dryRun) {
@@ -173,7 +189,7 @@ async function generateZipElitePages(options = {}) {
 /**
  * Generate HTML for a ZIP Elite page
  */
-function generateZipPageHTML(stats, history) {
+function generateZipPageHTML(stats, history, county = null) {
   const zipPrefix = stats.zip_prefix;
   const regionName = stats.region_name || `ZIP ${zipPrefix}xx Area`;
   const medianPrice = parseFloat(stats.median_price) || null;
@@ -513,6 +529,15 @@ function generateZipPageHTML(stats, history) {
       <a href="/prices" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat &rarr;</a>
       <p class="cta-micro ios-only">Free app. No hardware. No ads.</p>
     </section>
+
+    <!-- County Overview Link -->
+    ${county && county.data_quality_score >= 0.45 ? `
+    <section class="county-link-section">
+      <h3>County Price Overview</h3>
+      <p>See the full ${escapeHtml(county.county_name)} County, ${county.state_code} price report with trends and market analysis.</p>
+      <a href="/prices/county/${county.state_code.toLowerCase()}/${slugify(county.county_name)}" class="cta-button-secondary">View ${escapeHtml(county.county_name)} County Report &rarr;</a>
+    </section>
+    ` : ''}
 
     <!-- Related Areas -->
     <section class="related-section">
@@ -913,6 +938,27 @@ function generateZipEliteCSS() {
   margin: 12px 0 0;
 }
 
+/* County Link Section */
+.county-link-section {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.county-link-section h3 {
+  font-size: 18px;
+  margin: 0 0 8px;
+  color: #0369a1;
+}
+
+.county-link-section p {
+  margin: 0 0 16px;
+  color: #0c4a6e;
+}
+
 /* Related Section */
 .related-section {
   background: #f9fafb;
@@ -1089,6 +1135,13 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function slugify(str) {
+  if (!str) return '';
+  return str.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 // Export for scheduler

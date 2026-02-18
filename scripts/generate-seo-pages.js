@@ -882,6 +882,21 @@ function generatePageHTML(data) {
       </div>
     </section>` : '';
 
+  // Elite page link banner (for county pages with Elite coverage)
+  // Links to /prices/county/{state}/{county} if county Elite page exists
+  const countySlugForElite = county ? slugify(county) : null;
+  const eliteBannerHtml = (type === 'county' && county && stateCode) ? `
+    <section class="elite-banner">
+      <div class="elite-banner-content">
+        <span class="elite-icon">📊</span>
+        <div class="elite-text">
+          <strong>Looking for price trends and market analysis?</strong>
+          <span>View the ${escapeHtml(county)} County Price Report with charts, trends, and ZIP breakdown.</span>
+        </div>
+        <a href="/prices/county/${stateCode.toLowerCase()}/${countySlugForElite}" class="elite-link">View Price Report →</a>
+      </div>
+    </section>` : '';
+
   // Hub links section
   let hubLinksHtml = '';
 
@@ -1019,6 +1034,9 @@ function generatePageHTML(data) {
 
     <!-- Market Intelligence Stats -->
     ${statsHtml}
+
+    <!-- Elite Page Banner (County pages only) -->
+    ${eliteBannerHtml}
 
     <!-- Supplier Table -->
     <section class="supplier-table-section">

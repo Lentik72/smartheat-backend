@@ -3431,3 +3431,68 @@ body {
         font-size: 12px;
     }
 }
+
+/* Elite Page Link Banner (Directory → Elite pages) */
+.elite-banner {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #bae6fd;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.elite-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.elite-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.elite-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.elite-text strong {
+    display: block;
+    color: #0369a1;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.elite-text span {
+    font-size: 0.85rem;
+    color: #0c4a6e;
+}
+
+.elite-link {
+    background: #0284c7;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.elite-link:hover {
+    background: #0369a1;
+}
+
+@media (max-width: 600px) {
+    .elite-banner-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    .elite-link {
+        width: 100%;
+        text-align: center;
+    }
+}
