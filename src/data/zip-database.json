@@ -1206,7 +1206,9 @@
   "10608": {
     "city": "White Plains",
     "county": "Westchester",
-    "state": "NY"
+    "state": "NY",
+    "lat": 41.033986,
+    "lng": -73.76291
   },
   "10701": {
     "city": "Yonkers",
@@ -22099,7 +22101,9 @@
   "18902": {
     "city": "Doylestown",
     "county": "Bucks",
-    "state": "PA"
+    "state": "PA",
+    "lat": 40.310045,
+    "lng": -75.130459
   },
   "18912": {
     "city": "Buckingham",
@@ -24267,7 +24271,9 @@
   "19942": {
     "city": "Farmington",
     "county": "Kent",
-    "state": "DE"
+    "state": "DE",
+    "lat": 38.8689,
+    "lng": -75.5773
   },
   "19943": {
     "city": "Felton",
@@ -26785,7 +26791,9 @@
   "21409": {
     "city": "Annapolis",
     "county": "Anne Arundel",
-    "state": "MD"
+    "state": "MD",
+    "lat": 38.97864,
+    "lng": -76.492786
   },
   "21502": {
     "city": "Cresaptown",
@@ -28113,7 +28121,9 @@
   "22025": {
     "city": "Dumfries",
     "county": "Prince William",
-    "state": "VA"
+    "state": "VA",
+    "lat": 38.56741,
+    "lng": -77.326765
   },
   "22026": {
     "city": "Dumfries",
@@ -28783,7 +28793,9 @@
   "22551": {
     "city": "Spotsylvania",
     "county": "Spotsylvania",
-    "state": "VA"
+    "state": "VA",
+    "lat": 38.188094,
+    "lng": -77.674175
   },
   "22553": {
     "city": "Spotsylvania",
@@ -28809,7 +28821,9 @@
   "22556": {
     "city": "Stafford",
     "county": "Stafford",
-    "state": "VA"
+    "state": "VA",
+    "lat": 38.416727,
+    "lng": -77.457978
   },
   "22560": {
     "city": "Tappahannock",
@@ -29850,7 +29864,9 @@
   "23453": {
     "city": "Virginia Beach",
     "county": "Virginia Beach",
-    "state": "VA"
+    "state": "VA",
+    "lat": 36.849658,
+    "lng": -75.976075
   },
   "23454": {
     "city": "Virginia Beach",
@@ -32286,7 +32302,7 @@
     "county": "Anchorage",
     "state": "AK",
     "lat": 61.218,
-    "lng": -149.850
+    "lng": -149.85
   },
   "99502": {
     "city": "Anchorage",
@@ -32299,15 +32315,15 @@
     "city": "Anchorage",
     "county": "Anchorage",
     "state": "AK",
-    "lat": 61.190,
-    "lng": -149.890
+    "lat": 61.19,
+    "lng": -149.89
   },
   "99504": {
     "city": "Anchorage",
     "county": "Anchorage",
     "state": "AK",
-    "lat": 61.210,
-    "lng": -149.740
+    "lat": 61.21,
+    "lng": -149.74
   },
   "99505": {
     "city": "Fort Richardson",
@@ -32320,8 +32336,8 @@
     "city": "Elmendorf AFB",
     "county": "Anchorage",
     "state": "AK",
-    "lat": 61.250,
-    "lng": -149.800
+    "lat": 61.25,
+    "lng": -149.8
   },
   "99507": {
     "city": "Anchorage",
@@ -32335,14 +32351,14 @@
     "county": "Anchorage",
     "state": "AK",
     "lat": 61.195,
-    "lng": -149.820
+    "lng": -149.82
   },
   "99509": {
     "city": "Anchorage",
     "county": "Anchorage",
     "state": "AK",
-    "lat": 61.200,
-    "lng": -149.880
+    "lat": 61.2,
+    "lng": -149.88
   },
   "99510": {
     "city": "Anchorage",
@@ -32355,8 +32371,8 @@
     "city": "Anchorage",
     "county": "Anchorage",
     "state": "AK",
-    "lat": 61.100,
-    "lng": -149.850
+    "lat": 61.1,
+    "lng": -149.85
   },
   "99515": {
     "city": "Anchorage",
@@ -32370,7 +32386,7 @@
     "county": "Anchorage",
     "state": "AK",
     "lat": 61.062,
-    "lng": -149.790
+    "lng": -149.79
   },
   "99517": {
     "city": "Anchorage",
@@ -32398,7 +32414,7 @@
     "county": "Anchorage",
     "state": "AK",
     "lat": 61.218,
-    "lng": -149.900
+    "lng": -149.9
   },
   "99540": {
     "city": "Indian",
@@ -32439,28 +32455,28 @@
     "city": "Kodiak",
     "county": "Kodiak Island",
     "state": "AK",
-    "lat": 57.790,
+    "lat": 57.79,
     "lng": -152.407
   },
   "99623": {
     "city": "Wasilla",
     "county": "Matanuska-Susitna",
     "state": "AK",
-    "lat": 61.550,
-    "lng": -149.520
+    "lat": 61.55,
+    "lng": -149.52
   },
   "99631": {
     "city": "Moose Pass",
     "county": "Kenai Peninsula",
     "state": "AK",
     "lat": 60.488,
-    "lng": -149.370
+    "lng": -149.37
   },
   "99645": {
     "city": "Palmer",
     "county": "Matanuska-Susitna",
     "state": "AK",
-    "lat": 61.600,
+    "lat": 61.6,
     "lng": -149.112
   },
   "99654": {
@@ -32495,8 +32511,8 @@
     "city": "Wasilla",
     "county": "Matanuska-Susitna",
     "state": "AK",
-    "lat": 61.530,
-    "lng": -149.480
+    "lat": 61.53,
+    "lng": -149.48
   },
   "99688": {
     "city": "Willow",
@@ -32509,7 +32525,7 @@
     "city": "Houston",
     "county": "Matanuska-Susitna",
     "state": "AK",
-    "lat": 61.630,
+    "lat": 61.63,
     "lng": -149.818
   },
   "99801": {
@@ -32538,7 +32554,7 @@
     "county": "Sitka",
     "state": "AK",
     "lat": 57.053,
-    "lng": -135.330
+    "lng": -135.33
   },
   "01001": {
     "state": "MA",
@@ -44789,7 +44805,9 @@
   "06461": {
     "city": "Milford",
     "county": "New Haven",
-    "state": "CT"
+    "state": "CT",
+    "lat": 41.222222,
+    "lng": -73.05706
   },
   "06468": {
     "city": "Monroe",
@@ -45395,7 +45413,9 @@
   "06805": {
     "city": "Bethel",
     "county": "Fairfield",
-    "state": "CT"
+    "state": "CT",
+    "lat": 41.371228,
+    "lng": -73.413962
   },
   "06807": {
     "city": "Cos Cob",
@@ -45463,17 +45483,23 @@
   "06824": {
     "city": "Fairfield",
     "county": "Fairfield",
-    "state": "CT"
+    "state": "CT",
+    "lat": 41.141208,
+    "lng": -73.263726
   },
   "06825": {
     "city": "Fairfield",
     "county": "Fairfield",
-    "state": "CT"
+    "state": "CT",
+    "lat": 41.179076,
+    "lng": -73.235312
   },
   "06828": {
     "city": "Fairfield",
     "county": "Fairfield",
-    "state": "CT"
+    "state": "CT",
+    "lat": 41.152556,
+    "lng": -73.243891
   },
   "06830": {
     "city": "Greenwich",
@@ -45506,7 +45532,9 @@
   "06838": {
     "city": "Greens Farms",
     "county": "Fairfield",
-    "state": "CT"
+    "state": "CT",
+    "lat": 41.126654,
+    "lng": -73.319104
   },
   "06840": {
     "city": "New Canaan",
@@ -45651,7 +45679,9 @@
   "06890": {
     "city": "Southport",
     "county": "Fairfield",
-    "state": "CT"
+    "state": "CT",
+    "lat": 41.136702,
+    "lng": -73.283564
   },
   "06896": {
     "city": "Redding",
@@ -45769,11 +45799,6 @@
     "state": "CT",
     "lat": 41.308873,
     "lng": -73.363661
-  },
-  "06993": {
-    "city": "Bethel",
-    "county": "Fairfield",
-    "state": "CT"
   },
   "07001": {
     "state": "NJ",
@@ -46605,7 +46630,9 @@
   "07395": {
     "state": "NJ",
     "county": "Hudson",
-    "city": "Jersey City"
+    "city": "Jersey City",
+    "lat": 40.721568,
+    "lng": -74.047455
   },
   "07399": {
     "state": "NJ",
@@ -48194,7 +48221,9 @@
   "07969": {
     "state": "NJ",
     "county": "Somerset",
-    "city": "Pottersville"
+    "city": "Pottersville",
+    "lat": 40.713712,
+    "lng": -74.721829
   },
   "07970": {
     "city": "Mount Freedom",
