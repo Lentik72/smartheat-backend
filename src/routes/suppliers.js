@@ -812,7 +812,7 @@ router.get('/debug/supplier-prices', async (req, res) => {
   ];
 
   try {
-    // Check if these suppliers have any prices at all
+    // Check if these suppliers have any prices at all (raw SQL)
     const [prices] = await sequelize.query(`
       SELECT supplier_id, price_per_gallon, source_type, expires_at,
              CASE WHEN expires_at > NOW() THEN 'valid' ELSE 'expired' END as status
@@ -821,6 +821,9 @@ router.get('/debug/supplier-prices', async (req, res) => {
       ORDER BY scraped_at DESC
       LIMIT 20
     `, { replacements: { ids: sampleIds } });
+
+    // Test the getLatestPrices function directly
+    const priceMapResult = await getLatestPrices(sampleIds);
 
     // Check total suppliers with prices
     const [stats] = await sequelize.query(`
@@ -843,11 +846,13 @@ router.get('/debug/supplier-prices', async (req, res) => {
     res.json({
       checkedIds: sampleIds,
       pricesForCheckedIds: prices,
+      priceMapFromFunction: priceMapResult,
+      priceMapKeys: Object.keys(priceMapResult || {}),
       stats: stats[0],
       sampleSuppliersWithPrices: withPrices
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message, stack: error.stack });
   }
 });
 
