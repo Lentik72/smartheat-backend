@@ -759,6 +759,44 @@ router.get('/debug/prices', async (req, res) => {
   }
 });
 
+// Emergency fix: Extend expired prices (one-time use)
+router.get('/debug/fix-prices', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    // Fix expired prices
+    const [, meta] = await sequelize.query(`
+      UPDATE supplier_prices
+      SET expires_at = NOW() + INTERVAL '48 hours',
+          updated_at = NOW()
+      WHERE is_valid = true
+        AND scraped_at > NOW() - INTERVAL '7 days'
+        AND expires_at <= NOW()
+        AND source_type != 'aggregator_signal'
+    `);
+
+    // Check result
+    const [after] = await sequelize.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE expires_at > NOW() AND is_valid = true AND source_type != 'aggregator_signal') as displayable,
+        COUNT(*) FILTER (WHERE expires_at <= NOW() AND is_valid = true AND source_type != 'aggregator_signal') as still_expired
+      FROM supplier_prices
+      WHERE scraped_at > NOW() - INTERVAL '7 days'
+    `);
+
+    res.json({
+      fixed: meta?.rowCount || 'unknown',
+      after: after[0],
+      message: 'Prices extended by 48 hours'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Diagnostic: Check if ZIP is in database
 router.get('/debug/zip/:zip', async (req, res) => {
   const { zipDatabase } = require('../services/supplierMatcher');
