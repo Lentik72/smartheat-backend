@@ -36,7 +36,14 @@
 .county-meta {
   color: #666;
   font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.geographic-context {
+  color: #888;
+  font-size: 0.85rem;
   margin-bottom: 0.75rem;
+  font-style: italic;
 }
 
 /* Confidence Badges - Never show numeric */
