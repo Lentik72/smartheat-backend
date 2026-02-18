@@ -307,51 +307,76 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️ Migration warning:', migrationError.message);
         }
 
+        // V2.35.17: Each model wrapped in try/catch to prevent cascading failures
+        // Previously, one model failure would prevent all subsequent models from initializing
+
         // V1.3.0: Initialize Supplier model and sync table
-        const Supplier = initSupplierModel(sequelize);
-        if (Supplier) {
-          await Supplier.sync({ alter: false }); // Don't alter in production, use migrations
-          logger.info('✅ Supplier model synced');
+        try {
+          const Supplier = initSupplierModel(sequelize);
+          if (Supplier) {
+            await Supplier.sync({ alter: false }); // Don't alter in production, use migrations
+            logger.info('✅ Supplier model synced');
+          } else {
+            logger.error('❌ Supplier model failed to initialize');
+          }
+        } catch (err) {
+          logger.error('❌ Supplier model sync failed:', err.message);
         }
 
         // V18.0: Initialize CommunityDelivery model for benchmarking
-        const CommunityDelivery = initCommunityDeliveryModel(sequelize);
-        if (CommunityDelivery) {
-          await CommunityDelivery.sync({ alter: true }); // alter: true for initial deployment
-          logger.info('✅ CommunityDelivery model synced');
+        try {
+          const CommunityDelivery = initCommunityDeliveryModel(sequelize);
+          if (CommunityDelivery) {
+            await CommunityDelivery.sync({ alter: true }); // alter: true for initial deployment
+            logger.info('✅ CommunityDelivery model synced');
 
-          // V2.3.1: Initialize CommunityDeliveryRaw model for exact telemetry data
-          // This table stores exact data (price, gallons, timestamp, full ZIP) while
-          // community_deliveries stores only anonymized data for public display
-          const CommunityDeliveryRaw = initCommunityDeliveryRawModel(sequelize, CommunityDelivery);
-          if (CommunityDeliveryRaw) {
-            await CommunityDeliveryRaw.sync({ alter: true });
-            logger.info('✅ CommunityDeliveryRaw model synced (telemetry hard wall)');
+            // V2.3.1: Initialize CommunityDeliveryRaw model for exact telemetry data
+            // This table stores exact data (price, gallons, timestamp, full ZIP) while
+            // community_deliveries stores only anonymized data for public display
+            try {
+              const CommunityDeliveryRaw = initCommunityDeliveryRawModel(sequelize, CommunityDelivery);
+              if (CommunityDeliveryRaw) {
+                await CommunityDeliveryRaw.sync({ alter: true });
+                logger.info('✅ CommunityDeliveryRaw model synced (telemetry hard wall)');
+              } else {
+                logger.warn('⚠️  CommunityDeliveryRaw model failed to initialize - raw telemetry disabled');
+              }
+            } catch (err) {
+              logger.error('❌ CommunityDeliveryRaw model sync failed:', err.message);
+            }
           } else {
-            logger.warn('⚠️  CommunityDeliveryRaw model failed to initialize - raw telemetry disabled');
+            logger.error('❌ CommunityDelivery model failed to initialize');
           }
-        } else {
-          logger.error('❌ CommunityDelivery model failed to initialize');
+        } catch (err) {
+          logger.error('❌ CommunityDelivery model sync failed:', err.message);
         }
 
         // V2.0.2: Initialize SupplierPrice model for price tracking
-        const SupplierPrice = initSupplierPriceModel(sequelize);
-        if (SupplierPrice) {
-          await SupplierPrice.sync({ alter: false });
-          app.locals.SupplierPrice = SupplierPrice;  // Store for route access
-          logger.info('✅ SupplierPrice model synced');
-        } else {
-          logger.error('❌ SupplierPrice model failed to initialize');
+        try {
+          const SupplierPrice = initSupplierPriceModel(sequelize);
+          if (SupplierPrice) {
+            await SupplierPrice.sync({ alter: false });
+            app.locals.SupplierPrice = SupplierPrice;  // Store for route access
+            logger.info('✅ SupplierPrice model synced');
+          } else {
+            logger.error('❌ SupplierPrice model failed to initialize');
+          }
+        } catch (err) {
+          logger.error('❌ SupplierPrice model sync failed:', err.message);
         }
 
         // V2.3.0: Initialize UserLocation model for Coverage Intelligence
-        const { initUserLocationModel } = require('./src/models/UserLocation');
-        const UserLocation = initUserLocationModel(sequelize);
-        if (UserLocation) {
-          await UserLocation.sync({ alter: false });
-          logger.info('✅ UserLocation model synced');
-        } else {
-          logger.warn('⚠️  UserLocation model failed to initialize');
+        try {
+          const { initUserLocationModel } = require('./src/models/UserLocation');
+          const UserLocation = initUserLocationModel(sequelize);
+          if (UserLocation) {
+            await UserLocation.sync({ alter: false });
+            logger.info('✅ UserLocation model synced');
+          } else {
+            logger.warn('⚠️  UserLocation model failed to initialize');
+          }
+        } catch (err) {
+          logger.error('❌ UserLocation model sync failed:', err.message);
         }
 
         // V2.4.0: Initialize Activity Analytics Service
@@ -640,9 +665,11 @@ if (API_KEYS.DATABASE_URL) {
         logger.info('📊 Database ready for operations');
       })
       .catch(err => {
-        logger.warn('⚠️  PostgreSQL connection failed:', err.message || err);
+        // V2.35.17: More accurate error message - could be connection OR model sync failure
+        logger.error('❌ Database initialization failed:', err.message || err);
+        logger.error('Error stack:', err.stack);
         logger.warn('Connection string format:', API_KEYS.DATABASE_URL ? 'postgresql://[hidden]' : 'Not provided');
-        logger.warn('Database features will be unavailable until PostgreSQL is configured');
+        logger.warn('Database features may be partially unavailable');
         // Don't exit - allow server to run without database
       });
   } catch (error) {
