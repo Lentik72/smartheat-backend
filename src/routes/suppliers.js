@@ -799,61 +799,14 @@ router.get('/debug/fix-prices', async (req, res) => {
   }
 });
 
-// Diagnostic: Check prices for specific suppliers
+// Diagnostic: Check price system status
 router.get('/debug/supplier-prices', async (req, res) => {
   const sequelize = req.app.locals.sequelize;
   if (!sequelize) {
     return res.status(503).json({ error: 'Database not available' });
   }
 
-  // Sample supplier IDs from ZIP 10549
-  const sampleIds = [
-    'c6615844-06fd-4a6a-be62-01854ed4b428',  // Chrysalis Fuel
-    'c776d8ee-bb46-4370-80e1-60edca96ada3',  // Hunter's Heating Oil
-    '688141f6-0601-4ad5-b7bb-f5e81846cc24'   // Buy Rite Fuel
-  ];
-
   try {
-    // Check if these suppliers have any prices at all (raw SQL)
-    const [prices] = await sequelize.query(`
-      SELECT supplier_id, price_per_gallon, source_type, expires_at,
-             CASE WHEN expires_at > NOW() THEN 'valid' ELSE 'expired' END as status
-      FROM supplier_prices
-      WHERE supplier_id IN (:ids)
-      ORDER BY scraped_at DESC
-      LIMIT 20
-    `, { replacements: { ids: sampleIds } });
-
-    // Test the getLatestPrices function directly
-    let priceMapResult;
-    let priceMapError = null;
-    try {
-      priceMapResult = await getLatestPrices(sampleIds, sequelize);
-    } catch (e) {
-      priceMapError = e.message;
-    }
-
-    // Also try using app.locals.SupplierPrice directly
-    let appLocalsResult = {};
-    const SupplierPriceModel = req.app.locals.SupplierPrice;
-    if (SupplierPriceModel) {
-      const { Op } = require('sequelize');
-      const directPrices = await SupplierPriceModel.findAll({
-        where: {
-          supplierId: { [Op.in]: sampleIds },
-          isValid: true,
-          expiresAt: { [Op.gt]: new Date() },
-          sourceType: { [Op.ne]: 'aggregator_signal' }
-        },
-        order: [['scrapedAt', 'DESC']]
-      });
-      for (const p of directPrices) {
-        if (!appLocalsResult[p.supplierId]) {
-          appLocalsResult[p.supplierId] = p.toJSON();
-        }
-      }
-    }
-
     // Check total suppliers with prices
     const [stats] = await sequelize.query(`
       SELECT
@@ -863,54 +816,17 @@ router.get('/debug/supplier-prices', async (req, res) => {
       WHERE is_valid = true AND expires_at > NOW() AND source_type != 'aggregator_signal'
     `);
 
-    // Get sample of supplier IDs that DO have valid prices
-    const [withPrices] = await sequelize.query(`
-      SELECT DISTINCT supplier_id, s.name, sp.price_per_gallon
-      FROM supplier_prices sp
-      JOIN suppliers s ON s.id = sp.supplier_id
-      WHERE sp.is_valid = true AND sp.expires_at > NOW() AND sp.source_type != 'aggregator_signal'
-      LIMIT 10
-    `);
-
     const modelStatus = getSupplierPriceModel();
 
-    // Check what's in app.locals
-    const appLocalsKeys = Object.keys(req.app.locals);
-
-    // Check if supplier_prices table exists
-    let tableExists = false;
-    try {
-      const [tables] = await sequelize.query(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables
-          WHERE table_name = 'supplier_prices'
-        )
-      `);
-      tableExists = tables[0]?.exists || false;
-    } catch (e) {
-      tableExists = 'error: ' + e.message;
-    }
-
     res.json({
-      checkedIds: sampleIds,
-      pricesForCheckedIds: prices,
-      priceMapFromFunction: priceMapResult,
-      priceMapError,
-      priceMapKeys: Object.keys(priceMapResult || {}),
-      priceMapType: typeof priceMapResult,
+      suppliersWithPrices: stats[0]?.suppliers_with_prices,
+      totalSuppliers: stats[0]?.total_suppliers,
       modelInitialized: !!modelStatus,
-      modelName: modelStatus?.name || 'N/A',
-      appLocalsKeys,
-      appLocalsModelAvailable: !!req.app.locals.SupplierPrice,
-      supplierPricesTableExists: tableExists,
-      appLocalsResult,
-      appLocalsResultKeys: Object.keys(appLocalsResult),
-      sequelizeAvailable: !!sequelize,
-      stats: stats[0],
-      sampleSuppliersWithPrices: withPrices
+      usingRawSqlFallback: !modelStatus,
+      serverTime: new Date().toISOString()
     });
   } catch (error) {
-    res.status(500).json({ error: error.message, stack: error.stack });
+    res.status(500).json({ error: error.message });
   }
 });
 

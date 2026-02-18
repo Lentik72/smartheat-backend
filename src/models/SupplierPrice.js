@@ -5,14 +5,12 @@ const { DataTypes } = require('sequelize');
 let SupplierPrice;
 
 const initSupplierPriceModel = (sequelize) => {
-  console.log('[SupplierPrice] initSupplierPriceModel called, sequelize:', !!sequelize);
   if (!sequelize) {
     console.log('⚠️  No database connection - SupplierPrice model not initialized');
     return null;
   }
 
   try {
-    console.log('[SupplierPrice] Defining model...');
     SupplierPrice = sequelize.define('SupplierPrice', {
       id: {
         type: DataTypes.UUID,
@@ -103,7 +101,7 @@ const initSupplierPriceModel = (sequelize) => {
       }
     });
 
-    console.log('✅ SupplierPrice model initialized, SupplierPrice:', !!SupplierPrice);
+    console.log('✅ SupplierPrice model initialized');
     return SupplierPrice;
   } catch (error) {
     console.error('❌ Failed to initialize SupplierPrice model:', error.message);
@@ -143,15 +141,10 @@ const getLatestPrice = async (supplierId) => {
 // V2.35.15: Auto-heal expired prices if recent scrapes exist
 // V2.35.16: Accept optional sequelize param for raw SQL fallback
 const getLatestPrices = async (supplierIds, sequelizeInstance = null) => {
-  console.log('[getLatestPrices] SupplierPrice defined:', !!SupplierPrice);
-  console.log('[getLatestPrices] supplierIds:', supplierIds?.length);
-  console.log('[getLatestPrices] sequelizeInstance provided:', !!sequelizeInstance);
-
   if (!supplierIds || supplierIds.length === 0) return {};
 
   // V2.35.16: Use raw SQL if model not available but sequelize is
   if (!SupplierPrice && sequelizeInstance) {
-    console.log('[getLatestPrices] Using raw SQL fallback');
     try {
       const [prices] = await sequelizeInstance.query(`
         SELECT supplier_id, price_per_gallon, min_gallons, source_type, scraped_at, expires_at
@@ -178,7 +171,7 @@ const getLatestPrices = async (supplierIds, sequelizeInstance = null) => {
       }
       return priceMap;
     } catch (error) {
-      console.error('[getLatestPrices] Raw SQL error:', error.message);
+      console.error('Error in getLatestPrices raw SQL fallback:', error.message);
       return {};
     }
   }
