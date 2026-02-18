@@ -320,7 +320,8 @@ if (API_KEYS.DATABASE_URL) {
             logger.error('❌ Supplier model failed to initialize');
           }
         } catch (err) {
-          logger.error('❌ Supplier model sync failed:', err.message);
+          logger.error('❌ Supplier model sync failed:', err.message || err);
+          logger.error('Supplier sync error details:', JSON.stringify({ name: err.name, sql: err.sql, original: err.original?.message }));
         }
 
         // V18.0: Initialize CommunityDelivery model for benchmarking
