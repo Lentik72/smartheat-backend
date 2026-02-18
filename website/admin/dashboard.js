@@ -3968,3 +3968,11 @@ if (authToken) {
 
 // Initialize activity controls (filters, pagination)
 initActivityControls();
+
+// Initialize form event listeners (CSP-compliant)
+document.addEventListener('DOMContentLoaded', function() {
+  const addSupplierForm = document.getElementById('add-supplier-form');
+  if (addSupplierForm) {
+    addSupplierForm.addEventListener('submit', createSupplier);
+  }
+});
