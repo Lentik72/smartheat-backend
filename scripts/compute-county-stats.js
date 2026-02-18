@@ -141,20 +141,26 @@ async function runValidation(sequelize) {
   });
 
   // 3. Sanity check: Direct query vs stored stats
+  // Uses CTE to prevent row explosion (same pattern as CountyStatsComputer)
   console.log('\n  🧪 Direct Query Sanity Check:');
 
   const [directQuery] = await sequelize.query(`
+    WITH county_suppliers AS (
+      SELECT DISTINCT s.id as supplier_id
+      FROM suppliers s
+      JOIN jsonb_array_elements_text(s.postal_codes_served) AS zip ON true
+      JOIN zip_to_county ztc ON ztc.zip_code = zip
+      WHERE ztc.county_name = 'Westchester'
+        AND ztc.state_code = 'NY'
+        AND s.active = true
+    )
     SELECT
       PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sp.price_per_gallon::numeric)::numeric(5,3) as direct_median,
-      COUNT(DISTINCT s.id) as direct_supplier_count,
+      COUNT(DISTINCT cs.supplier_id) as direct_supplier_count,
       COUNT(*) as direct_data_points
     FROM supplier_prices sp
-    JOIN suppliers s ON sp.supplier_id = s.id
-    JOIN jsonb_array_elements_text(s.postal_codes_served) AS zip ON true
-    JOIN zip_to_county ztc ON ztc.zip_code = zip
-    WHERE ztc.county_name = 'Westchester'
-      AND ztc.state_code = 'NY'
-      AND sp.is_valid = true
+    JOIN county_suppliers cs ON cs.supplier_id = sp.supplier_id
+    WHERE sp.is_valid = true
       AND sp.created_at >= DATE_TRUNC('week', NOW())
   `);
 

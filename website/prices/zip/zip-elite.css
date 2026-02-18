@@ -1,0 +1,414 @@
+/* ZIP Elite Page Styles */
+
+.zip-elite-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px;
+}
+
+.zip-meta {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 12px;
+}
+
+.confidence-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.confidence-high {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.confidence-moderate {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.confidence-limited {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Price Summary */
+.price-summary {
+  background: linear-gradient(135deg, #FEF3EB 0%, #fff 100%);
+  border: 1px solid #E5D8D0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.price-main {
+  margin-bottom: 20px;
+}
+
+.price-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: #FF6B35;
+  display: block;
+}
+
+.price-unit {
+  font-size: 16px;
+  color: #6b7280;
+}
+
+.price-label {
+  display: block;
+  font-size: 14px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.price-range {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.range-item {
+  text-align: center;
+}
+
+.range-value {
+  display: block;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.range-label {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.price-pending {
+  padding: 32px;
+}
+
+.price-pending p {
+  color: #6b7280;
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Trend Alert */
+.trend-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.trend-up {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+}
+
+.trend-down {
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+}
+
+.trend-stable {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+}
+
+.trend-icon {
+  font-size: 24px;
+}
+
+.trend-text {
+  font-size: 15px;
+  color: #1a1a1a;
+}
+
+/* Chart Section */
+.chart-section {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.chart-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  color: #1a1a1a;
+}
+
+.chart-container {
+  height: 250px;
+  position: relative;
+}
+
+.chart-caption {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+  margin: 12px 0 0;
+}
+
+/* Coverage Section */
+.coverage-section {
+  background: #FEF3EB;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.coverage-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  color: #1a1a1a;
+}
+
+.coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.coverage-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.coverage-label {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.coverage-value {
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+/* Community Section */
+.community-section {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.community-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  color: #1a1a1a;
+}
+
+.community-grid {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.community-item {
+  text-align: center;
+  flex: 1;
+  min-width: 120px;
+}
+
+.community-value {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.community-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* FAQ Section */
+.faq-section {
+  margin-bottom: 24px;
+}
+
+.faq-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  color: #1a1a1a;
+}
+
+.faq-item {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.faq-item summary {
+  padding: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::before {
+  content: '+';
+  float: right;
+  font-size: 20px;
+  color: #FF6B35;
+}
+
+.faq-item[open] summary::before {
+  content: '-';
+}
+
+.faq-item p {
+  padding: 0 16px 16px;
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+/* App CTA */
+.app-cta {
+  background: linear-gradient(135deg, #FF6B35 0%, #E55A2B 100%);
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.app-cta h3 {
+  font-size: 22px;
+  margin: 0 0 8px;
+}
+
+.app-cta p {
+  margin: 0 0 20px;
+  opacity: 0.9;
+}
+
+.cta-button {
+  display: inline-block;
+  background: white;
+  color: #FF6B35;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.cta-button:hover {
+  transform: scale(1.02);
+}
+
+.cta-micro {
+  font-size: 12px;
+  opacity: 0.8;
+  margin: 12px 0 0;
+}
+
+/* Related Section */
+.related-section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.related-section h3 {
+  font-size: 18px;
+  margin: 0 0 8px;
+  color: #1a1a1a;
+}
+
+.related-section p {
+  margin: 0 0 16px;
+  color: #6b7280;
+}
+
+.cta-button-secondary {
+  display: inline-block;
+  background: #FF6B35;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cta-button-secondary:hover {
+  background: #E55A2B;
+}
+
+/* Trust Footer */
+.trust-footer {
+  text-align: center;
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 24px 0 0;
+}
+
+.trust-footer a {
+  color: #FF6B35;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .price-value {
+    font-size: 40px;
+  }
+
+  .price-range {
+    gap: 20px;
+  }
+
+  .coverage-grid {
+    grid-template-columns: 1fr;
+  }
+}

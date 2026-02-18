@@ -1,0 +1,405 @@
+/* County Elite Page Styles - V1.0.0 */
+/* Extends base styles from style.min.css */
+
+.county-elite-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.breadcrumb {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.breadcrumb a {
+  color: #FF6B35;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.county-meta {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Confidence Badges - Never show numeric */
+.confidence-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: help;
+}
+
+.confidence-high {
+  background: #d4edda;
+  color: #155724;
+}
+
+.confidence-good {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.confidence-moderate {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.confidence-limited {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Price Summary */
+.price-summary {
+  background: linear-gradient(135deg, #fff5f0 0%, #fff 100%);
+  border: 1px solid #ffe5d9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.price-main {
+  margin-bottom: 1rem;
+}
+
+.price-value {
+  display: block;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #FF6B35;
+  line-height: 1;
+}
+
+.price-unit {
+  display: block;
+  font-size: 1rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.price-label {
+  display: block;
+  font-size: 0.875rem;
+  color: #999;
+  margin-top: 0.25rem;
+}
+
+.price-range {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.range-item {
+  text-align: center;
+}
+
+.range-value {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.range-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+}
+
+/* Trend Alert */
+.trend-alert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.trend-up {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.trend-down {
+  background: #d4edda;
+  color: #155724;
+}
+
+.trend-stable {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.trend-icon {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Chart Section */
+.chart-section {
+  margin-bottom: 2rem;
+}
+
+.chart-section h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.chart-container {
+  height: 250px;
+  position: relative;
+}
+
+.chart-caption {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+/* Market Snapshot */
+.market-snapshot {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.market-snapshot h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  text-align: center;
+}
+
+.snapshot-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.snapshot-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.coverage-depth {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+/* ZIP Breakdown */
+.zip-breakdown {
+  margin-bottom: 2rem;
+}
+
+.zip-breakdown h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.zip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.zip-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.zip-card:hover {
+  border-color: #FF6B35;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.15);
+}
+
+.zip-prefix {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.zip-price {
+  font-size: 1rem;
+  color: #FF6B35;
+  font-weight: 500;
+  margin: 0.25rem 0;
+}
+
+.zip-suppliers {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* FAQ Section */
+.faq-section {
+  margin-bottom: 2rem;
+}
+
+.faq-section h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.faq-item {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.faq-item summary {
+  padding: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  background: #f8f9fa;
+}
+
+.faq-item summary:hover {
+  background: #e9ecef;
+}
+
+.faq-item p {
+  padding: 1rem;
+  margin: 0;
+  background: #fff;
+  line-height: 1.6;
+}
+
+/* App CTA */
+.app-cta {
+  background: linear-gradient(135deg, #FF6B35 0%, #e55a28 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.app-cta h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.app-cta p {
+  margin-bottom: 1rem;
+  opacity: 0.95;
+}
+
+.cta-button {
+  display: inline-block;
+  background: white;
+  color: #FF6B35;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform 0.2s;
+}
+
+.cta-button:hover {
+  transform: translateY(-2px);
+}
+
+.cta-micro {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+/* Trust Footer */
+.trust-footer {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #999;
+  padding: 1rem 0;
+}
+
+.trust-footer a {
+  color: #FF6B35;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .page-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .price-value {
+    font-size: 2.5rem;
+  }
+
+  .price-range {
+    gap: 1rem;
+  }
+
+  .snapshot-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .snapshot-value {
+    font-size: 1.25rem;
+  }
+
+  .zip-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

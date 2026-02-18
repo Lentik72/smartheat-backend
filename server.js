@@ -27,6 +27,7 @@ const { monthlyReset } = require('./src/services/scrapeBackoff');
 
 // V2.32.0: Import ZIP stats computer for pre-computed aggregates
 const ZipStatsComputer = require('./src/services/ZipStatsComputer');
+const CountyStatsComputer = require('./src/services/CountyStatsComputer');
 
 // V2.4.0: Import Activity Analytics
 const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsService');
@@ -941,13 +942,23 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       } else {
         logger.warn('⚠️  ZIP stats computation failed:', statsResult.error);
       }
+
+      // V2.33.0: Compute County price stats after ZIP stats
+      logger.info('📊 Computing County price statistics...');
+      const countyStatsComputer = new CountyStatsComputer(sequelize, logger);
+      const countyResult = await countyStatsComputer.compute();
+      if (countyResult.success) {
+        logger.info(`✅ County stats computed: ${countyResult.updated} counties updated in ${countyResult.durationMs}ms`);
+      } else {
+        logger.warn('⚠️  County stats computation failed:', countyResult.error);
+      }
     } catch (error) {
       logger.error('❌ Afternoon scrape failed:', error.message);
     }
   }, {
     timezone: 'UTC' // 21:00 UTC = 4:00 PM EST
   });
-  logger.info('⏰ Afternoon scrape scheduled: daily at 4:00 PM EST (+ ZIP stats)');
+  logger.info('⏰ Afternoon scrape scheduled: daily at 4:00 PM EST (+ ZIP/County stats)');
 
   // V2.17.0: Schedule SEO + Supplier page generation at 11:00 PM EST (low traffic period)
   // Generates static HTML pages directly on Railway for Google indexability
@@ -1014,10 +1025,30 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     } catch (error) {
       logger.error('❌ ZIP Elite page generation failed:', error.message);
     }
+
+    // V2.33.0: Generate County Elite pages (auto-promotes when quality threshold met)
+    try {
+      const { generateCountyElitePages } = require('./scripts/generate-county-elite-pages');
+
+      const result = await generateCountyElitePages({
+        sequelize,
+        logger,
+        outputDir: websiteDir,
+        dryRun: false
+      });
+
+      if (result.success) {
+        logger.info(`✅ County Elite pages generated: ${result.generated} pages`);
+      } else {
+        logger.error(`❌ County Elite page generation failed`);
+      }
+    } catch (error) {
+      logger.error('❌ County Elite page generation failed:', error.message);
+    }
   }, {
     timezone: 'America/New_York'
   });
-  logger.info('📄 SEO + Supplier + ZIP Elite page generator scheduled: daily at 11:00 PM EST');
+  logger.info('📄 SEO + Supplier + ZIP/County Elite page generator scheduled: daily at 11:00 PM EST');
 
   // Regenerate all pages on startup (after healthcheck passes)
   // Generated pages live on the filesystem but git has stale versions.

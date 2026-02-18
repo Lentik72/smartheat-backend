@@ -25,12 +25,18 @@ class CountyStatsComputer {
     this.USER_COUNT_THRESHOLD = 10;
     this.DELIVERY_COUNT_THRESHOLD = 20;
 
-    // Quality score weights (higher for county due to larger dataset)
+    // Quality score weights - calibrated for county-level data density
+    // Design principles:
+    //   - Leave ceiling room (don't saturate early)
+    //   - Flagship counties → 0.75-0.90
+    //   - Mid counties → 0.50-0.70
+    //   - Weak counties → <0.40
+    //   - Weeks is hardest to game, weighted heavily
     this.QUALITY_WEIGHTS = {
-      supplierCount: { target: 50, weight: 0.4 },
-      dataPoints: { target: 1000, weight: 0.3 },
-      weeksAvailable: { target: 12, weight: 0.2 },
-      recency: { weight: 0.1 }
+      supplierCount: { target: 20, weight: 0.35 },   // 20 suppliers = 1.0 (best county has 20)
+      dataPoints: { target: 300, weight: 0.25 },     // 300 data points = 1.0 (multi-week density)
+      weeksAvailable: { target: 10, weight: 0.30 },  // 10 weeks = 1.0 (maturity signal)
+      recency: { weight: 0.10 }
     };
   }
 
@@ -88,11 +94,40 @@ class CountyStatsComputer {
   /**
    * Compute weekly aggregates for all counties
    * Aggregates from raw supplier_prices via zip_to_county
+   *
+   * CRITICAL: Uses CTE to prevent row explosion bug.
+   * Without CTE, joining ZIP expansion before aggregation causes each price
+   * to be counted N times (once per ZIP the supplier serves in the county).
+   * The CTE first maps suppliers to counties, then joins prices ONCE per supplier.
    */
   async computeWeeklyStats() {
     this.logger.info('[CountyStatsComputer] Computing weekly stats for last 12 weeks...');
 
     await this.sequelize.query(`
+      WITH supplier_counties AS (
+        -- Map each supplier to all counties they serve (via their ZIP coverage)
+        -- This is computed ONCE, not per-price
+        SELECT DISTINCT
+          s.id as supplier_id,
+          ztc.county_name,
+          ztc.state_code
+        FROM suppliers s
+        JOIN jsonb_array_elements_text(s.postal_codes_served) AS zip ON true
+        JOIN zip_to_county ztc ON ztc.zip_code = zip
+        WHERE s.active = true
+      ),
+      county_zip_counts AS (
+        -- Pre-compute ZIP counts per county for the zip_count field
+        SELECT
+          ztc.county_name,
+          ztc.state_code,
+          COUNT(DISTINCT ztc.zip_code) as zip_count
+        FROM suppliers s
+        JOIN jsonb_array_elements_text(s.postal_codes_served) AS zip ON true
+        JOIN zip_to_county ztc ON ztc.zip_code = zip
+        WHERE s.active = true
+        GROUP BY ztc.county_name, ztc.state_code
+      )
       INSERT INTO county_price_stats (
         id, county_name, state_code, fuel_type, week_start,
         median_price, min_price, max_price, avg_price,
@@ -100,26 +135,24 @@ class CountyStatsComputer {
       )
       SELECT
         gen_random_uuid(),
-        ztc.county_name,
-        ztc.state_code,
+        sc.county_name,
+        sc.state_code,
         'heating_oil' as fuel_type,
         DATE_TRUNC('week', sp.created_at)::date as week_start,
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sp.price_per_gallon::numeric)::numeric(5,3) as median_price,
         MIN(sp.price_per_gallon::numeric)::numeric(5,3) as min_price,
         MAX(sp.price_per_gallon::numeric)::numeric(5,3) as max_price,
         AVG(sp.price_per_gallon::numeric)::numeric(5,3) as avg_price,
-        COUNT(DISTINCT s.id)::integer as supplier_count,
+        COUNT(DISTINCT sc.supplier_id)::integer as supplier_count,
         COUNT(*)::integer as data_points,
-        COUNT(DISTINCT ztc.zip_code)::integer as zip_count,
+        COALESCE(czc.zip_count, 0)::integer as zip_count,
         NOW()
       FROM supplier_prices sp
-      JOIN suppliers s ON sp.supplier_id = s.id
-      JOIN jsonb_array_elements_text(s.postal_codes_served) AS zip ON true
-      JOIN zip_to_county ztc ON ztc.zip_code = zip
+      JOIN supplier_counties sc ON sc.supplier_id = sp.supplier_id
+      LEFT JOIN county_zip_counts czc ON czc.county_name = sc.county_name AND czc.state_code = sc.state_code
       WHERE sp.is_valid = true
         AND sp.created_at >= DATE_TRUNC('week', NOW()) - INTERVAL '12 weeks'
-        AND s.active = true
-      GROUP BY ztc.county_name, ztc.state_code, DATE_TRUNC('week', sp.created_at)::date
+      GROUP BY sc.county_name, sc.state_code, czc.zip_count, DATE_TRUNC('week', sp.created_at)::date
       ON CONFLICT (county_name, state_code, week_start, fuel_type)
       DO UPDATE SET
         median_price = EXCLUDED.median_price,
