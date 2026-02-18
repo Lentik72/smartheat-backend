@@ -432,8 +432,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
 
     <!-- App Hook 1: Track deliveries -->
     <p class="app-hook">
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_compare&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">Log your next delivery to compare prices →</a>
-      <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Log your next delivery to compare prices →</a>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_compare&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">Track deliveries in the free iPhone app →</a>
+      <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Add HomeHeat to your home screen →</a>
     </p>
     ` : `
     <section class="price-summary price-pending">
@@ -507,8 +507,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
 
     <!-- App Hook 2: Price alerts -->
     <p class="app-hook">
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_alerts&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">Get notified when prices drop in your ZIP →</a>
-      <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Get notified when prices drop in your ZIP →</a>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_alerts&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">Get price alerts in the free iPhone app →</a>
+      <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat for quick access →</a>
     </p>
     ` : ''}
 
@@ -548,10 +548,10 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
     </section>
     ` : ''}
 
-    <!-- Social Proof (gated by threshold) -->
+    <!-- Social Proof (gated by threshold, explicit iPhone) -->
     ${showUserCount ? `
     <p class="social-proof">
-      ${userCount} homeowners in ${escapeHtml(countyName)} County are tracking deliveries and price alerts with <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=social_proof&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="ios-only">HomeHeat</a><a href="/prices" class="android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">HomeHeat</a>.
+      ${userCount} homeowners in ${escapeHtml(countyName)} County track deliveries with <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=social_proof&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}">HomeHeat for iPhone</a>.
     </p>
     ` : ''}
 
@@ -580,8 +580,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
     <section class="app-cta">
       <h3>Track Your Oil Usage</h3>
       <p>Get personalized run-out predictions and price alerts for ${escapeHtml(countyName)} County.</p>
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="cta-button ios-only">Get HomeHeat Free &rarr;</a>
-      <a href="/prices" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat &rarr;</a>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="cta-button ios-only">Download Free for iPhone &rarr;</a>
+      <a href="/prices" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Add to Home Screen &rarr;</a>
       <p class="cta-micro ios-only">Free app. No hardware. No ads.</p>
       <p class="cta-micro android-only" style="display:none">Works like an app — no download needed.</p>
     </section>
