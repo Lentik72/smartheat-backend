@@ -1009,6 +1009,7 @@ async function loadMap() {
     const demandData = data.demandHeatmap || [];
     const maxDemand = Math.max(...demandData.map(c => c.count), 1);
     demandData.forEach(c => {
+      if (!c.lat || !c.lng) return; // Skip points without coordinates
       const radius = 6 + (c.count / maxDemand) * 18;
       L.circleMarker([c.lat, c.lng], {
         radius: radius,
@@ -1025,6 +1026,7 @@ async function loadMap() {
     // Add coverage gaps (red circles) on top
     const gapData = data.coverageGaps || [];
     gapData.forEach(c => {
+      if (!c.lat || !c.lng) return; // Skip points without coordinates
       const radius = 8 + (c.count / maxDemand) * 16;
       L.circleMarker([c.lat, c.lng], {
         radius: radius,
@@ -1039,7 +1041,7 @@ async function loadMap() {
     });
 
     // Fit bounds if we have points
-    const allPoints = [...demandData, ...gapData];
+    const allPoints = [...demandData, ...gapData].filter(c => c.lat && c.lng);
     if (allPoints.length > 0) {
       const bounds = allPoints.map(c => [c.lat, c.lng]);
       map.fitBounds(bounds, { padding: [20, 20] });
