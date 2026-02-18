@@ -383,6 +383,7 @@ function generateCountyPageHTML(stats, history, zipDetails) {
     <header class="page-header">
       <h1>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode}</h1>
       <p class="county-meta">${supplierCount} suppliers · ${zipPrefixes.length} ZIP areas · Updated ${lastUpdate}</p>
+      ${zipPrefixes.length > 0 ? `<p class="geographic-context">Covering ${formatZipPrefixRange(zipPrefixes)} across ${zipCount} ZIP codes</p>` : ''}
       <span class="confidence-badge ${confidenceClass}" title="${confidenceTooltip}">${confidenceLabel} Confidence</span>
     </header>
 
@@ -680,6 +681,25 @@ function slugify(str) {
     .replace(/^-|-$/g, '');
 }
 
+function formatZipPrefixRange(prefixes) {
+  if (!prefixes || prefixes.length === 0) return '';
+
+  // Sort prefixes numerically
+  const sorted = [...prefixes].sort((a, b) => parseInt(a) - parseInt(b));
+
+  if (sorted.length === 1) {
+    return `${sorted[0]}xx`;
+  } else if (sorted.length === 2) {
+    return `${sorted[0]}xx and ${sorted[1]}xx`;
+  } else if (sorted.length <= 4) {
+    // List all: 070xx, 074xx, 078xx, 079xx
+    return sorted.map(p => `${p}xx`).join(', ');
+  } else {
+    // Use range format for many prefixes: 100xx–108xx
+    return `${sorted[0]}xx–${sorted[sorted.length - 1]}xx`;
+  }
+}
+
 function getStateName(code) {
   const states = {
     'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
@@ -741,7 +761,14 @@ function generateCountyEliteCSS() {
 .county-meta {
   color: #666;
   font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.geographic-context {
+  color: #888;
+  font-size: 0.85rem;
   margin-bottom: 0.75rem;
+  font-style: italic;
 }
 
 /* Confidence Badges - Never show numeric */
