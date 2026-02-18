@@ -728,6 +728,37 @@ router.get('/version', async (req, res) => {
   res.json({ ...payload, signature });
 });
 
+// Diagnostic: Check price expiration status (temporary - for debugging)
+router.get('/debug/prices', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const [result] = await sequelize.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE expires_at > NOW() AND is_valid = true AND source_type != 'aggregator_signal') as displayable,
+        COUNT(*) FILTER (WHERE expires_at <= NOW() AND is_valid = true) as expired,
+        COUNT(*) FILTER (WHERE source_type = 'aggregator_signal') as aggregator_only,
+        MAX(scraped_at) as most_recent,
+        MAX(expires_at) FILTER (WHERE expires_at > NOW()) as latest_valid_expiry
+      FROM supplier_prices
+      WHERE scraped_at > NOW() - INTERVAL '7 days'
+    `);
+
+    res.json({
+      priceStatus: result[0],
+      serverTime: new Date().toISOString(),
+      diagnosis: parseInt(result[0]?.displayable) === 0
+        ? 'NO_DISPLAYABLE_PRICES'
+        : 'PRICES_AVAILABLE'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Diagnostic: Check if ZIP is in database
 router.get('/debug/zip/:zip', async (req, res) => {
   const { zipDatabase } = require('../services/supplierMatcher');
