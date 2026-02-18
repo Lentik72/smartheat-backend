@@ -872,6 +872,9 @@ router.get('/debug/supplier-prices', async (req, res) => {
 
     const modelStatus = getSupplierPriceModel();
 
+    // Check what's in app.locals
+    const appLocalsKeys = Object.keys(req.app.locals);
+
     res.json({
       checkedIds: sampleIds,
       pricesForCheckedIds: prices,
@@ -881,9 +884,11 @@ router.get('/debug/supplier-prices', async (req, res) => {
       priceMapType: typeof priceMapResult,
       modelInitialized: !!modelStatus,
       modelName: modelStatus?.name || 'N/A',
+      appLocalsKeys,
       appLocalsModelAvailable: !!req.app.locals.SupplierPrice,
       appLocalsResult,
       appLocalsResultKeys: Object.keys(appLocalsResult),
+      sequelizeAvailable: !!sequelize,
       stats: stats[0],
       sampleSuppliersWithPrices: withPrices
     });
