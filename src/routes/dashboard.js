@@ -3297,15 +3297,17 @@ router.get('/leaderboard', async (req, res) => {
       ),
       engagement_data AS (
         -- Orders and quotes from supplier_engagements
+        -- Match by supplier_id OR by supplier_name when id is NULL
         SELECT
-          se.supplier_id,
+          COALESCE(se.supplier_id, s.id) as supplier_id,
           COUNT(*) FILTER (WHERE se.engagement_type = 'order_placed') as orders,
           COUNT(*) FILTER (WHERE se.engagement_type = 'request_quote') as quotes
         FROM supplier_engagements se
-        JOIN suppliers s ON se.supplier_id = s.id
+        LEFT JOIN suppliers s ON se.supplier_id = s.id
+           OR (se.supplier_id IS NULL AND LOWER(TRIM(se.supplier_name)) = LOWER(TRIM(s.name)))
         WHERE se.created_at > NOW() - INTERVAL '${days} days'
           AND s.active = true
-        GROUP BY se.supplier_id
+        GROUP BY COALESCE(se.supplier_id, s.id)
       ),
       -- All suppliers with ANY engagement (clicks OR orders/quotes)
       all_engaged_suppliers AS (
