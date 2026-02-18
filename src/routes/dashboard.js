@@ -1435,6 +1435,21 @@ router.post('/suppliers', async (req, res) => {
       return res.status(400).json({ error: 'Name and state are required' });
     }
 
+    // Check for duplicate by name (case-insensitive)
+    const [existing] = await sequelize.query(`
+      SELECT id, name, city, state FROM suppliers
+      WHERE LOWER(TRIM(name)) = LOWER(TRIM($1))
+      LIMIT 1
+    `, { bind: [name] });
+
+    if (existing.length > 0) {
+      const dup = existing[0];
+      return res.status(409).json({
+        error: `Duplicate: "${dup.name}" already exists in ${dup.city || ''}, ${dup.state}`,
+        existingId: dup.id
+      });
+    }
+
     // Generate slug from name
     const slug = name.toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
