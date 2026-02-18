@@ -2005,6 +2005,56 @@ async function deleteAlias(aliasId, aliasName) {
   }
 }
 
+// Create new supplier
+async function createSupplier(event) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+
+  const fuelType = formData.get('fuelType');
+  const fuelTypes = fuelType === 'both'
+    ? ['heating_oil', 'propane']
+    : [fuelType];
+
+  const supplierData = {
+    name: formData.get('name'),
+    state: formData.get('state').toUpperCase(),
+    city: formData.get('city') || null,
+    phone: formData.get('phone') || null,
+    website: formData.get('website') || null,
+    email: formData.get('email') || null,
+    addressLine1: formData.get('addressLine1') || null,
+    notes: formData.get('notes') || null,
+    fuelTypes: fuelTypes,
+    source: 'web_research'
+  };
+
+  try {
+    const response = await fetch('/api/dashboard/suppliers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminPassword}`
+      },
+      body: JSON.stringify(supplierData)
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert(`Supplier created: ${result.supplier.name} (${result.supplier.state})`);
+      form.reset();
+      // Refresh missing suppliers list
+      await loadMissingSuppliers();
+    } else {
+      alert('Failed to create supplier: ' + (result.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Create supplier failed:', error);
+    alert('Failed to create supplier');
+  }
+}
+
 // Show coverage gap ZIP details
 async function showCoverageDetails(type) {
   const modal = document.getElementById('zip-details-modal');

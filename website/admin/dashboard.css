@@ -1047,6 +1047,53 @@ legend {
 
 .form-row {
   margin-bottom: 0.75rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.form-row .form-group {
+  flex: 1;
+  min-width: 150px;
+}
+
+.form-row .form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 0.25rem;
+}
+
+.form-row .form-group input,
+.form-row .form-group select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.form-row .form-group button {
+  margin-top: 1.5rem;
+}
+
+#add-supplier-form {
+  max-width: 900px;
+}
+
+#add-supplier-form .btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+#add-supplier-form .btn-primary:hover {
+  background: var(--primary-dark);
 }
 
 .form-row label {
