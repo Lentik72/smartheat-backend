@@ -1898,6 +1898,126 @@ router.get('/ios-app', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/missing-suppliers - Suppliers users mention that we don't have
+router.get('/missing-suppliers', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const days = parseDays(req, 90); // Look back further for supplier leads
+
+    // Find suppliers mentioned by users that aren't in our database
+    // Also find near-matches to identify name variations
+    const [missingSuppliers] = await sequelize.query(`
+      WITH user_suppliers AS (
+        -- From app_events (deliveries, saves, views)
+        SELECT
+          event_data->>'supplier_name' as supplier_name,
+          event_data->>'from_directory' as from_directory,
+          device_id_hash as user_id,
+          created_at
+        FROM app_events
+        WHERE event_data->>'supplier_name' IS NOT NULL
+          AND created_at > NOW() - INTERVAL '${days} days'
+        UNION ALL
+        -- From supplier_engagements (orders, quotes)
+        SELECT
+          supplier_name,
+          'false' as from_directory,
+          ip_hash as user_id,
+          created_at
+        FROM supplier_engagements
+        WHERE supplier_name IS NOT NULL
+          AND created_at > NOW() - INTERVAL '${days} days'
+      ),
+      aggregated AS (
+        SELECT
+          supplier_name,
+          COUNT(*) as mentions,
+          COUNT(DISTINCT user_id) as unique_users,
+          MAX(created_at) as last_mentioned,
+          BOOL_OR(from_directory = 'true') as was_from_directory
+        FROM user_suppliers
+        GROUP BY supplier_name
+      )
+      SELECT
+        a.supplier_name,
+        a.mentions,
+        a.unique_users,
+        a.last_mentioned,
+        a.was_from_directory,
+        s.name as matched_supplier,
+        s.city as matched_city,
+        s.state as matched_state,
+        CASE
+          WHEN s.id IS NOT NULL THEN 'exact_match'
+          WHEN EXISTS (
+            SELECT 1 FROM suppliers s2
+            WHERE LOWER(s2.name) LIKE '%' || LOWER(SUBSTRING(a.supplier_name, 1, 10)) || '%'
+          ) THEN 'near_match'
+          ELSE 'not_found'
+        END as match_status
+      FROM aggregated a
+      LEFT JOIN suppliers s ON LOWER(TRIM(a.supplier_name)) = LOWER(TRIM(s.name))
+      ORDER BY
+        CASE WHEN s.id IS NULL THEN 0 ELSE 1 END,  -- Missing first
+        a.mentions DESC
+    `, { type: sequelize.QueryTypes.SELECT });
+
+    // Separate into categories
+    const missing = missingSuppliers.filter(s => s.match_status === 'not_found');
+    const nearMatches = missingSuppliers.filter(s => s.match_status === 'near_match');
+    const exact = missingSuppliers.filter(s => s.match_status === 'exact_match');
+
+    // For near matches, find the actual near-match suggestions
+    const nearMatchesWithSuggestions = await Promise.all(nearMatches.map(async (nm) => {
+      const [suggestions] = await sequelize.query(`
+        SELECT name, city, state
+        FROM suppliers
+        WHERE LOWER(name) LIKE '%' || LOWER(:pattern) || '%'
+        LIMIT 3
+      `, {
+        replacements: { pattern: nm.supplier_name.substring(0, 10) },
+        type: sequelize.QueryTypes.SELECT
+      });
+      return { ...nm, suggestions };
+    }));
+
+    res.json({
+      period: `${days}d`,
+      summary: {
+        totalMissing: missing.length,
+        totalNearMatches: nearMatches.length,
+        totalMentions: missingSuppliers.reduce((sum, s) => sum + parseInt(s.mentions), 0)
+      },
+      missing: missing.map(s => ({
+        name: s.supplier_name,
+        mentions: parseInt(s.mentions),
+        uniqueUsers: parseInt(s.unique_users),
+        lastMentioned: s.last_mentioned,
+        wasFromDirectory: s.was_from_directory,
+        type: 'new_lead'  // Could be contract-only, out of area, etc.
+      })),
+      nearMatches: nearMatchesWithSuggestions.map(s => ({
+        name: s.supplier_name,
+        mentions: parseInt(s.mentions),
+        uniqueUsers: parseInt(s.unique_users),
+        lastMentioned: s.last_mentioned,
+        suggestions: s.suggestions || [],
+        type: 'alias_needed'
+      })),
+      inDatabase: exact.length
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Missing suppliers error:', error.message);
+    res.status(500).json({ error: 'Failed to load missing suppliers', details: error.message });
+  }
+});
+
 // GET /api/dashboard/price-alerts - Significant price changes
 router.get('/price-alerts', async (req, res) => {
   const logger = req.app.locals.logger;

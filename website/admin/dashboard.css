@@ -4271,3 +4271,45 @@ legend {
 .flagged-row:hover {
   background: #fef3c7 !important;
 }
+
+/* Badge styles */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--primary);
+  color: white;
+  margin-left: 8px;
+}
+
+.badge.warning {
+  background: var(--warning);
+}
+
+.panel-description {
+  color: var(--gray-500);
+  font-size: 13px;
+  margin: -8px 0 16px 0;
+}
+
+.btn-small {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-small:hover {
+  background: var(--gray-200);
+}
+
+.flag-badge.warning {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}

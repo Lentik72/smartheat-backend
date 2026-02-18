@@ -1739,6 +1739,43 @@
               <tbody id="ios-suppliers-body"></tbody>
             </table>
           </div>
+
+          <!-- Missing Suppliers - User-mentioned suppliers not in our DB -->
+          <div class="panel full-width">
+            <h3>Missing Suppliers <span class="badge" id="missing-count">0</span></h3>
+            <p class="panel-description">Suppliers users mention that we don't have. Could be new leads or contract-only companies.</p>
+            <table id="missing-suppliers-table">
+              <thead>
+                <tr>
+                  <th>Supplier Name</th>
+                  <th>Mentions</th>
+                  <th>Users</th>
+                  <th>Last Seen</th>
+                  <th>Type</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="missing-suppliers-body"></tbody>
+            </table>
+          </div>
+
+          <!-- Near Matches - Possible alias/name variations -->
+          <div class="panel full-width" id="near-matches-panel" style="display: none;">
+            <h3>Name Variations <span class="badge warning" id="near-match-count">0</span></h3>
+            <p class="panel-description">Users entered these names but we have similar suppliers. May need aliases.</p>
+            <table id="near-matches-table">
+              <thead>
+                <tr>
+                  <th>User Entered</th>
+                  <th>Mentions</th>
+                  <th>Possible Match</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="near-matches-body"></tbody>
+            </table>
+          </div>
+
           <!-- Firebase Setup Guide (shown when not configured) -->
           <div class="panel full-width" id="ios-firebase-setup" style="display: none;">
             <div class="setup-guide">

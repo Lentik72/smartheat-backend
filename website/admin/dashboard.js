@@ -1800,9 +1800,82 @@ async function loadIOSApp() {
       tbody.innerHTML = '<tr><td colspan="8" class="no-data">No app engagement data yet</td></tr>';
     }
 
+    // Load missing suppliers
+    await loadMissingSuppliers();
+
   } catch (error) {
     console.error('Failed to load iOS app data:', error);
   }
+}
+
+// Load missing suppliers - suppliers users mention that we don't have
+async function loadMissingSuppliers() {
+  try {
+    const data = await api(`/missing-suppliers?days=${currentDays}`);
+
+    // Update counts
+    document.getElementById('missing-count').textContent = data.summary.totalMissing;
+    document.getElementById('near-match-count').textContent = data.summary.totalNearMatches;
+
+    // Missing suppliers table
+    const missingBody = document.getElementById('missing-suppliers-body');
+    missingBody.innerHTML = '';
+
+    if (data.missing.length > 0) {
+      data.missing.forEach(s => {
+        const row = document.createElement('tr');
+        const typeLabel = s.wasFromDirectory
+          ? '<span class="flag-badge warning" title="Was marked from_directory but not found">Bug?</span>'
+          : '<span class="flag-badge">New Lead</span>';
+        row.innerHTML = `
+          <td><strong>${s.name}</strong></td>
+          <td>${s.mentions}</td>
+          <td>${s.uniqueUsers}</td>
+          <td>${timeAgo(s.lastMentioned)}</td>
+          <td>${typeLabel}</td>
+          <td><button class="btn-small" onclick="searchSupplier('${s.name.replace(/'/g, "\\'")}')">Search</button></td>
+        `;
+        missingBody.appendChild(row);
+      });
+    } else {
+      missingBody.innerHTML = '<tr><td colspan="6" class="no-data">No missing suppliers</td></tr>';
+    }
+
+    // Near matches table
+    const nearMatchPanel = document.getElementById('near-matches-panel');
+    const nearMatchBody = document.getElementById('near-matches-body');
+    nearMatchBody.innerHTML = '';
+
+    if (data.nearMatches.length > 0) {
+      nearMatchPanel.style.display = 'block';
+      data.nearMatches.forEach(s => {
+        const row = document.createElement('tr');
+        const suggestions = s.suggestions.map(sg => `${sg.name} (${sg.city}, ${sg.state})`).join('<br>');
+        row.innerHTML = `
+          <td><strong>${s.name}</strong></td>
+          <td>${s.mentions}</td>
+          <td>${suggestions || 'No suggestions'}</td>
+          <td><button class="btn-small" onclick="addAlias('${s.name.replace(/'/g, "\\'")}')">Add Alias</button></td>
+        `;
+        nearMatchBody.appendChild(row);
+      });
+    } else {
+      nearMatchPanel.style.display = 'none';
+    }
+
+  } catch (error) {
+    console.error('Failed to load missing suppliers:', error);
+  }
+}
+
+// Helper to search for supplier (opens Google search)
+function searchSupplier(name) {
+  window.open(`https://www.google.com/search?q=${encodeURIComponent(name + ' heating oil')}`, '_blank');
+}
+
+// Placeholder for alias functionality
+function addAlias(name) {
+  alert('Alias functionality coming soon. For now, note: ' + name);
 }
 
 // Show coverage gap ZIP details
