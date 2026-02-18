@@ -1915,6 +1915,9 @@ async function addAliasManual() {
   await addAlias(aliasName.trim());
 }
 
+// V2.35.22: Attach event listener (CSP blocks inline onclick)
+document.getElementById('add-alias-btn')?.addEventListener('click', addAliasManual);
+
 // Add alias - prompts for supplier ID then creates alias
 async function addAlias(aliasName, suggestedSupplierId = null) {
   // First, search for possible suppliers
