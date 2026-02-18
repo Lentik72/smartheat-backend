@@ -617,7 +617,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
   </footer>
 
   <script src="${assetPath}js/nav.js"></script>
-  <script src="${assetPath}js/platform-detection.js"></script>
+  <script src="${assetPath}js/platform-detection.js?v=1"></script>
 </body>
 </html>`;
 }
