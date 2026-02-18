@@ -606,6 +606,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  ZIP price stats migration:', err.message);
         });
 
+        // V2.32.0: Add ZIP to County reference table (geographic backbone)
+        const { up: runZipCountyMigration } = require('./src/migrations/058-add-zip-to-county-table');
+        runZipCountyMigration(sequelize).catch(err => {
+          logger.warn('⚠️  ZIP to County migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
