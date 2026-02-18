@@ -3017,7 +3017,16 @@ legend {
 .enhanced-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
+
+/* Suppliers table column widths */
+#suppliers-table th:nth-child(1) { width: 25%; } /* Supplier */
+#suppliers-table th:nth-child(2) { width: 10%; } /* Price */
+#suppliers-table th:nth-child(3) { width: 12%; } /* Updated */
+#suppliers-table th:nth-child(4) { width: 10%; } /* Clicks */
+#suppliers-table th:nth-child(5) { width: 18%; } /* Status */
+#suppliers-table th:nth-child(6) { width: 10%; } /* Actions */
 
 .enhanced-table th {
   text-align: left;
@@ -3165,7 +3174,8 @@ legend {
   white-space: nowrap;
 }
 
-.btn-edit {
+.btn-edit,
+.btn-small.btn-edit {
   background: var(--primary);
   color: white;
   border: none;
@@ -3176,7 +3186,8 @@ legend {
   transition: background-color 0.2s;
 }
 
-.btn-edit:hover {
+.btn-edit:hover,
+.btn-small.btn-edit:hover {
   background: var(--primary-dark);
 }
 
