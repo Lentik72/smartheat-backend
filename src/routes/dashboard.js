@@ -3297,17 +3297,37 @@ router.get('/leaderboard', async (req, res) => {
       ),
       engagement_data AS (
         -- Orders and quotes from supplier_engagements
-        -- Match by supplier_id OR by supplier_name when id is NULL
+        -- First try supplier_id, then fallback to name matching
         SELECT
-          COALESCE(se.supplier_id, s.id) as supplier_id,
-          COUNT(*) FILTER (WHERE se.engagement_type = 'order_placed') as orders,
-          COUNT(*) FILTER (WHERE se.engagement_type = 'request_quote') as quotes
-        FROM supplier_engagements se
-        LEFT JOIN suppliers s ON se.supplier_id = s.id
-           OR (se.supplier_id IS NULL AND LOWER(TRIM(se.supplier_name)) = LOWER(TRIM(s.name)))
-        WHERE se.created_at > NOW() - INTERVAL '${days} days'
-          AND s.active = true
-        GROUP BY COALESCE(se.supplier_id, s.id)
+          supplier_id,
+          SUM(orders) as orders,
+          SUM(quotes) as quotes
+        FROM (
+          -- Match by supplier_id
+          SELECT
+            se.supplier_id,
+            COUNT(*) FILTER (WHERE se.engagement_type = 'order_placed') as orders,
+            COUNT(*) FILTER (WHERE se.engagement_type = 'request_quote') as quotes
+          FROM supplier_engagements se
+          JOIN suppliers s ON se.supplier_id = s.id
+          WHERE se.created_at > NOW() - INTERVAL '${days} days'
+            AND s.active = true
+            AND se.supplier_id IS NOT NULL
+          GROUP BY se.supplier_id
+          UNION ALL
+          -- Match by supplier_name when supplier_id is NULL
+          SELECT
+            s.id as supplier_id,
+            COUNT(*) FILTER (WHERE se.engagement_type = 'order_placed') as orders,
+            COUNT(*) FILTER (WHERE se.engagement_type = 'request_quote') as quotes
+          FROM supplier_engagements se
+          JOIN suppliers s ON LOWER(TRIM(se.supplier_name)) = LOWER(TRIM(s.name))
+          WHERE se.created_at > NOW() - INTERVAL '${days} days'
+            AND s.active = true
+            AND se.supplier_id IS NULL
+          GROUP BY s.id
+        ) combined
+        GROUP BY supplier_id
       ),
       -- All suppliers with ANY engagement (clicks OR orders/quotes)
       all_engaged_suppliers AS (
