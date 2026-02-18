@@ -797,6 +797,60 @@ router.get('/debug/fix-prices', async (req, res) => {
   }
 });
 
+// Diagnostic: Check prices for specific suppliers
+router.get('/debug/supplier-prices', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  // Sample supplier IDs from ZIP 10549
+  const sampleIds = [
+    'c6615844-06fd-4a6a-be62-01854ed4b428',  // Chrysalis Fuel
+    'c776d8ee-bb46-4370-80e1-60edca96ada3',  // Hunter's Heating Oil
+    '688141f6-0601-4ad5-b7bb-f5e81846cc24'   // Buy Rite Fuel
+  ];
+
+  try {
+    // Check if these suppliers have any prices at all
+    const [prices] = await sequelize.query(`
+      SELECT supplier_id, price_per_gallon, source_type, expires_at,
+             CASE WHEN expires_at > NOW() THEN 'valid' ELSE 'expired' END as status
+      FROM supplier_prices
+      WHERE supplier_id IN (:ids)
+      ORDER BY scraped_at DESC
+      LIMIT 20
+    `, { replacements: { ids: sampleIds } });
+
+    // Check total suppliers with prices
+    const [stats] = await sequelize.query(`
+      SELECT
+        COUNT(DISTINCT supplier_id) as suppliers_with_prices,
+        (SELECT COUNT(*) FROM suppliers) as total_suppliers
+      FROM supplier_prices
+      WHERE is_valid = true AND expires_at > NOW() AND source_type != 'aggregator_signal'
+    `);
+
+    // Get sample of supplier IDs that DO have valid prices
+    const [withPrices] = await sequelize.query(`
+      SELECT DISTINCT supplier_id, s.name, sp.price_per_gallon
+      FROM supplier_prices sp
+      JOIN suppliers s ON s.id = sp.supplier_id
+      WHERE sp.is_valid = true AND sp.expires_at > NOW() AND sp.source_type != 'aggregator_signal'
+      LIMIT 10
+    `);
+
+    res.json({
+      checkedIds: sampleIds,
+      pricesForCheckedIds: prices,
+      stats: stats[0],
+      sampleSuppliersWithPrices: withPrices
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Diagnostic: Check if ZIP is in database
 router.get('/debug/zip/:zip', async (req, res) => {
   const { zipDatabase } = require('../services/supplierMatcher');
