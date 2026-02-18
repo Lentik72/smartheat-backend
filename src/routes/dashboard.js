@@ -3297,7 +3297,7 @@ router.get('/leaderboard', async (req, res) => {
       ),
       engagement_data AS (
         -- Orders and quotes from supplier_engagements
-        -- First try supplier_id, then fallback to name matching
+        -- First try supplier_id, then fallback to name matching, then alias matching
         SELECT
           supplier_id,
           SUM(orders) as orders,
@@ -3326,21 +3326,46 @@ router.get('/leaderboard', async (req, res) => {
             AND s.active = true
             AND se.supplier_id IS NULL
           GROUP BY s.id
+          UNION ALL
+          -- Match by alias_name when supplier_id is NULL and direct name match fails
+          SELECT
+            sa.supplier_id,
+            COUNT(*) FILTER (WHERE se.engagement_type = 'order_placed') as orders,
+            COUNT(*) FILTER (WHERE se.engagement_type = 'request_quote') as quotes
+          FROM supplier_engagements se
+          JOIN supplier_aliases sa ON LOWER(TRIM(se.supplier_name)) = LOWER(TRIM(sa.alias_name))
+          JOIN suppliers s ON sa.supplier_id = s.id
+          WHERE se.created_at > NOW() - INTERVAL '${days} days'
+            AND s.active = true
+            AND se.supplier_id IS NULL
+          GROUP BY sa.supplier_id
         ) combined
         GROUP BY supplier_id
       ),
       saves_data AS (
         -- Saves from app_events (supplier_saved)
-        -- Match by supplier_name since app_events doesn't have supplier_id
-        SELECT
-          s.id as supplier_id,
-          COUNT(*) as saves
-        FROM app_events ae
-        JOIN suppliers s ON LOWER(TRIM(ae.event_data->>'supplier_name')) = LOWER(TRIM(s.name))
-        WHERE ae.event_name = 'supplier_saved'
-          AND ae.created_at > NOW() - INTERVAL '${days} days'
-          AND s.active = true
-        GROUP BY s.id
+        -- Match by supplier_name OR alias_name since app_events doesn't have supplier_id
+        SELECT supplier_id, SUM(saves) as saves FROM (
+          -- Direct name match
+          SELECT s.id as supplier_id, COUNT(*) as saves
+          FROM app_events ae
+          JOIN suppliers s ON LOWER(TRIM(ae.event_data->>'supplier_name')) = LOWER(TRIM(s.name))
+          WHERE ae.event_name = 'supplier_saved'
+            AND ae.created_at > NOW() - INTERVAL '${days} days'
+            AND s.active = true
+          GROUP BY s.id
+          UNION ALL
+          -- Alias match
+          SELECT sa.supplier_id, COUNT(*) as saves
+          FROM app_events ae
+          JOIN supplier_aliases sa ON LOWER(TRIM(ae.event_data->>'supplier_name')) = LOWER(TRIM(sa.alias_name))
+          JOIN suppliers s ON sa.supplier_id = s.id
+          WHERE ae.event_name = 'supplier_saved'
+            AND ae.created_at > NOW() - INTERVAL '${days} days'
+            AND s.active = true
+          GROUP BY sa.supplier_id
+        ) combined
+        GROUP BY supplier_id
       ),
       -- All suppliers with ANY engagement (clicks OR orders/quotes OR saves)
       all_engaged_suppliers AS (
