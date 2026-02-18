@@ -338,6 +338,7 @@ if (API_KEYS.DATABASE_URL) {
         const SupplierPrice = initSupplierPriceModel(sequelize);
         if (SupplierPrice) {
           await SupplierPrice.sync({ alter: false });
+          app.locals.SupplierPrice = SupplierPrice;  // Store for route access
           logger.info('✅ SupplierPrice model synced');
         } else {
           logger.error('❌ SupplierPrice model failed to initialize');

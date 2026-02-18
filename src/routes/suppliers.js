@@ -831,6 +831,27 @@ router.get('/debug/supplier-prices', async (req, res) => {
       priceMapError = e.message;
     }
 
+    // Also try using app.locals.SupplierPrice directly
+    let appLocalsResult = {};
+    const SupplierPriceModel = req.app.locals.SupplierPrice;
+    if (SupplierPriceModel) {
+      const { Op } = require('sequelize');
+      const directPrices = await SupplierPriceModel.findAll({
+        where: {
+          supplierId: { [Op.in]: sampleIds },
+          isValid: true,
+          expiresAt: { [Op.gt]: new Date() },
+          sourceType: { [Op.ne]: 'aggregator_signal' }
+        },
+        order: [['scrapedAt', 'DESC']]
+      });
+      for (const p of directPrices) {
+        if (!appLocalsResult[p.supplierId]) {
+          appLocalsResult[p.supplierId] = p.toJSON();
+        }
+      }
+    }
+
     // Check total suppliers with prices
     const [stats] = await sequelize.query(`
       SELECT
@@ -860,6 +881,9 @@ router.get('/debug/supplier-prices', async (req, res) => {
       priceMapType: typeof priceMapResult,
       modelInitialized: !!modelStatus,
       modelName: modelStatus?.name || 'N/A',
+      appLocalsModelAvailable: !!req.app.locals.SupplierPrice,
+      appLocalsResult,
+      appLocalsResultKeys: Object.keys(appLocalsResult),
       stats: stats[0],
       sampleSuppliersWithPrices: withPrices
     });
