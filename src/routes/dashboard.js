@@ -4397,4 +4397,130 @@ router.get('/platforms', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/price-diagnostic - Debug price expiration issues
+// Shows the actual state of prices to understand why ZIP search shows no prices
+router.get('/price-diagnostic', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const now = new Date();
+
+    // Count prices by expiration status
+    const [expirationCounts] = await sequelize.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE expires_at > NOW() AND is_valid = true) as valid_not_expired,
+        COUNT(*) FILTER (WHERE expires_at <= NOW() AND is_valid = true) as valid_but_expired,
+        COUNT(*) FILTER (WHERE is_valid = false) as invalid,
+        COUNT(*) as total,
+        MIN(expires_at) FILTER (WHERE expires_at > NOW()) as next_expiration,
+        MAX(expires_at) as latest_expiration,
+        MAX(scraped_at) as most_recent_scrape
+      FROM supplier_prices
+      WHERE scraped_at > NOW() - INTERVAL '7 days'
+    `);
+
+    // Get sample of expired but recently scraped prices
+    const [expiredRecent] = await sequelize.query(`
+      SELECT
+        s.name as supplier_name,
+        sp.price_per_gallon,
+        sp.scraped_at,
+        sp.expires_at,
+        sp.source_type,
+        EXTRACT(EPOCH FROM (NOW() - sp.expires_at))/3600 as hours_since_expired
+      FROM supplier_prices sp
+      JOIN suppliers s ON sp.supplier_id = s.id
+      WHERE sp.is_valid = true
+        AND sp.scraped_at > NOW() - INTERVAL '7 days'
+        AND sp.expires_at <= NOW()
+      ORDER BY sp.scraped_at DESC
+      LIMIT 10
+    `);
+
+    // Get sample of valid non-expired prices
+    const [validPrices] = await sequelize.query(`
+      SELECT
+        s.name as supplier_name,
+        sp.price_per_gallon,
+        sp.scraped_at,
+        sp.expires_at,
+        sp.source_type,
+        EXTRACT(EPOCH FROM (sp.expires_at - NOW()))/3600 as hours_until_expiration
+      FROM supplier_prices sp
+      JOIN suppliers s ON sp.supplier_id = s.id
+      WHERE sp.is_valid = true
+        AND sp.expires_at > NOW()
+        AND sp.source_type != 'aggregator_signal'
+      ORDER BY sp.scraped_at DESC
+      LIMIT 10
+    `);
+
+    // Check scrape runs
+    const [lastScrapeRuns] = await sequelize.query(`
+      SELECT
+        run_at,
+        success_count,
+        failed_count,
+        skipped_count,
+        duration_ms
+      FROM scrape_runs
+      ORDER BY run_at DESC
+      LIMIT 5
+    `);
+
+    // Check distributed scheduler status (from most recent prices)
+    const [pricesByHour] = await sequelize.query(`
+      SELECT
+        EXTRACT(HOUR FROM scraped_at AT TIME ZONE 'America/New_York') as hour_est,
+        COUNT(*) as count,
+        MAX(scraped_at) as latest
+      FROM supplier_prices
+      WHERE scraped_at > NOW() - INTERVAL '24 hours'
+        AND is_valid = true
+      GROUP BY EXTRACT(HOUR FROM scraped_at AT TIME ZONE 'America/New_York')
+      ORDER BY hour_est
+    `);
+
+    const counts = expirationCounts[0] || {};
+
+    res.json({
+      serverTime: now.toISOString(),
+      summary: {
+        validNotExpired: parseInt(counts.valid_not_expired) || 0,
+        validButExpired: parseInt(counts.valid_but_expired) || 0,
+        invalid: parseInt(counts.invalid) || 0,
+        total: parseInt(counts.total) || 0,
+        mostRecentScrape: counts.most_recent_scrape,
+        nextExpiration: counts.next_expiration,
+        latestExpiration: counts.latest_expiration
+      },
+      diagnosis: {
+        issue: parseInt(counts.valid_not_expired) === 0
+          ? 'NO_VALID_PRICES: All prices have expired'
+          : parseInt(counts.valid_not_expired) < 10
+            ? 'LOW_PRICE_COUNT: Very few valid prices'
+            : 'PRICES_EXIST: Valid prices available',
+        possibleCauses: parseInt(counts.valid_not_expired) === 0 ? [
+          'Scraper has not run in the last 24 hours',
+          'All scraped prices have reached their 24-hour expiration',
+          'Distributed scheduler may be stuck or erroring'
+        ] : []
+      },
+      expiredButRecentlyScrapped: expiredRecent,
+      validPrices: validPrices,
+      lastScrapeRuns: lastScrapeRuns,
+      scrapingByHourToday: pricesByHour
+    });
+
+  } catch (error) {
+    logger.error('[Dashboard] Price diagnostic error:', error.message);
+    res.status(500).json({ error: 'Failed to run price diagnostic', details: error.message });
+  }
+});
+
 module.exports = router;

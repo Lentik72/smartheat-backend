@@ -219,7 +219,7 @@ async function scrapeSupplierPriceOnce(supplier, config) {
       sourceType,
       sourceUrl: url,
       scrapedAt: new Date(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days (was 24h)
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       duration: Date.now() - startTime,
       // V2.1.0: Include displayable flag for logging/debugging
       isAggregator: config.displayable === false
