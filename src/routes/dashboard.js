@@ -1736,6 +1736,7 @@ router.get('/conversion', async (req, res) => {
 });
 
 // GET /api/dashboard/ios-app - iOS app engagement data
+// Combines supplier_engagements (orders, quotes) + app_events (saves, views)
 router.get('/ios-app', async (req, res) => {
   const logger = req.app.locals.logger;
   const sequelize = req.app.locals.sequelize;
@@ -1747,60 +1748,115 @@ router.get('/ios-app', async (req, res) => {
   try {
     const days = parseDays(req, 30);
 
-    const [engagement, bySupplier, daily] = await Promise.all([
-      // Total engagement stats
+    const [engagement, bySupplier, daily, appStats] = await Promise.all([
+      // Engagement stats from supplier_engagements (order_placed, request_quote)
       sequelize.query(`
         SELECT
           COUNT(*) as total,
           COUNT(DISTINCT ip_hash) as unique_users,
-          COUNT(*) FILTER (WHERE engagement_type = 'call') as calls,
-          COUNT(*) FILTER (WHERE engagement_type = 'view') as views,
-          COUNT(*) FILTER (WHERE engagement_type = 'save') as saves
+          COUNT(*) FILTER (WHERE engagement_type = 'order_placed') as orders,
+          COUNT(*) FILTER (WHERE engagement_type = 'request_quote') as quotes,
+          COUNT(*) FILTER (WHERE engagement_type = 'call') as calls
         FROM supplier_engagements
         WHERE created_at > NOW() - INTERVAL '${days} days'
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // Top suppliers by app engagement
+      // Top suppliers by ALL engagement (supplier_engagements + app_events)
       sequelize.query(`
+        WITH all_supplier_actions AS (
+          -- From supplier_engagements (orders, quotes)
+          SELECT
+            COALESCE(s.name, se.supplier_name) as supplier_name,
+            se.engagement_type as action_type,
+            se.ip_hash as user_hash
+          FROM supplier_engagements se
+          LEFT JOIN suppliers s ON se.supplier_id = s.id
+          WHERE se.created_at > NOW() - INTERVAL '${days} days'
+          UNION ALL
+          -- From app_events (saves, views)
+          SELECT
+            event_data->>'supplier_name' as supplier_name,
+            CASE
+              WHEN event_name = 'supplier_saved' THEN 'saved'
+              WHEN event_name = 'directory_supplier_viewed' THEN 'viewed'
+            END as action_type,
+            device_id_hash as user_hash
+          FROM app_events
+          WHERE event_name IN ('supplier_saved', 'directory_supplier_viewed')
+            AND created_at > NOW() - INTERVAL '${days} days'
+            AND event_data->>'supplier_name' IS NOT NULL
+        )
         SELECT
-          COALESCE(s.name, se.supplier_name, 'Unknown') as name,
-          COUNT(*) as engagements,
-          COUNT(*) FILTER (WHERE se.engagement_type = 'call') as calls,
-          COUNT(*) FILTER (WHERE se.engagement_type = 'view') as views
-        FROM supplier_engagements se
-        LEFT JOIN suppliers s ON se.supplier_id = s.id
-        WHERE se.created_at > NOW() - INTERVAL '${days} days'
-        GROUP BY COALESCE(s.name, se.supplier_name, 'Unknown')
-        ORDER BY engagements DESC
+          supplier_name as name,
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE action_type = 'saved') as saved,
+          COUNT(*) FILTER (WHERE action_type = 'viewed') as viewed,
+          COUNT(*) FILTER (WHERE action_type = 'order_placed') as orders,
+          COUNT(*) FILTER (WHERE action_type = 'request_quote') as quotes,
+          COUNT(*) FILTER (WHERE action_type = 'call') as calls
+        FROM all_supplier_actions
+        WHERE supplier_name IS NOT NULL
+        GROUP BY supplier_name
+        ORDER BY total DESC
         LIMIT 20
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // Daily app engagement
+      // Daily engagement trend (combined)
       sequelize.query(`
-        SELECT DATE(created_at) as date, COUNT(*) as engagements
-        FROM supplier_engagements
-        WHERE created_at > NOW() - INTERVAL '${days} days'
-        GROUP BY DATE(created_at)
+        WITH daily_actions AS (
+          SELECT DATE(created_at) as date, 'engagement' as source
+          FROM supplier_engagements
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+          UNION ALL
+          SELECT DATE(created_at) as date, 'app_event' as source
+          FROM app_events
+          WHERE event_name IN ('supplier_saved', 'directory_supplier_viewed')
+            AND created_at > NOW() - INTERVAL '${days} days'
+        )
+        SELECT date, COUNT(*) as engagements
+        FROM daily_actions
+        GROUP BY date
         ORDER BY date
+      `, { type: sequelize.QueryTypes.SELECT }),
+
+      // App-level stats from app_events
+      sequelize.query(`
+        SELECT
+          COUNT(*) FILTER (WHERE event_name = 'supplier_saved') as saves,
+          COUNT(*) FILTER (WHERE event_name = 'directory_supplier_viewed') as views,
+          COUNT(*) FILTER (WHERE event_name = 'directory_searched') as searches,
+          COUNT(*) FILTER (WHERE event_name = 'delivery_logged') as deliveries_logged,
+          COUNT(DISTINCT device_id_hash) as unique_devices
+        FROM app_events
+        WHERE created_at > NOW() - INTERVAL '${days} days'
       `, { type: sequelize.QueryTypes.SELECT })
     ]);
 
     const stats = engagement[0] || {};
+    const appEventStats = appStats[0] || {};
 
     res.json({
       period: `${days}d`,
       summary: {
-        totalEngagements: parseInt(stats.total) || 0,
+        totalEngagements: (parseInt(stats.total) || 0) + (parseInt(appEventStats.saves) || 0) + (parseInt(appEventStats.views) || 0),
         uniqueUsers: parseInt(stats.unique_users) || 0,
+        uniqueDevices: parseInt(appEventStats.unique_devices) || 0,
+        orders: parseInt(stats.orders) || 0,
+        quotes: parseInt(stats.quotes) || 0,
         calls: parseInt(stats.calls) || 0,
-        views: parseInt(stats.views) || 0,
-        saves: parseInt(stats.saves) || 0
+        saves: parseInt(appEventStats.saves) || 0,
+        views: parseInt(appEventStats.views) || 0,
+        searches: parseInt(appEventStats.searches) || 0,
+        deliveriesLogged: parseInt(appEventStats.deliveries_logged) || 0
       },
       bySupplier: bySupplier.map(s => ({
         name: s.name,
-        engagements: parseInt(s.engagements),
-        calls: parseInt(s.calls),
-        views: parseInt(s.views)
+        total: parseInt(s.total),
+        saved: parseInt(s.saved) || 0,
+        viewed: parseInt(s.viewed) || 0,
+        orders: parseInt(s.orders) || 0,
+        quotes: parseInt(s.quotes) || 0,
+        calls: parseInt(s.calls) || 0
       })),
       daily: daily.map(d => ({
         date: d.date,

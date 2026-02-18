@@ -1730,12 +1730,6 @@ async function loadIOSApp() {
       iosDeliveriesSharedEl.textContent = iosDeliveriesShared || '--';
     }
 
-    // Event breakdown from our database
-    document.getElementById('ios-event-supplier').textContent = app.views || '--';
-    document.getElementById('ios-event-price').textContent = '--'; // Not tracked separately
-    document.getElementById('ios-event-search').textContent = '--'; // Would need Firebase
-    document.getElementById('ios-event-noresults').textContent = '--'; // Would need Firebase
-
     // Also try to get local iOS engagement data
     let localData = null;
     try {
@@ -1743,6 +1737,15 @@ async function loadIOSApp() {
     } catch (e) {
       console.log('Local iOS data not available');
     }
+
+    // Event breakdown from our database
+    const summary = localData?.summary || {};
+    document.getElementById('ios-event-saves').textContent = summary.saves || '0';
+    document.getElementById('ios-event-views').textContent = summary.views || '0';
+    document.getElementById('ios-event-orders').textContent = summary.orders || '0';
+    document.getElementById('ios-event-quotes').textContent = summary.quotes || '0';
+    document.getElementById('ios-event-searches').textContent = summary.searches || '0';
+    document.getElementById('ios-event-deliveries').textContent = summary.deliveriesLogged || '0';
 
     // Daily chart
     const ctx = document.getElementById('ios-chart').getContext('2d');
@@ -1779,14 +1782,16 @@ async function loadIOSApp() {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${s.name}</td>
-          <td>${s.views}</td>
-          <td>${s.calls}</td>
-          <td>${s.engagements}</td>
+          <td>${s.saved || 0}</td>
+          <td>${s.viewed || 0}</td>
+          <td>${s.orders || 0}</td>
+          <td>${s.quotes || 0}</td>
+          <td>${s.total}</td>
         `;
         tbody.appendChild(row);
       });
     } else {
-      tbody.innerHTML = '<tr><td colspan="4" class="no-data">No app engagement data yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">No app engagement data yet</td></tr>';
     }
 
   } catch (error) {
