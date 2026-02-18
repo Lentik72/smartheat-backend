@@ -642,6 +642,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Fix expired prices migration:', err.message);
         });
 
+        // V2.35.26: Add Dragon Fuel LLC (Stratford, CT)
+        const { up: runDragonFuelMigration } = require('./src/migrations/061-add-dragon-fuel-llc');
+        runDragonFuelMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Dragon Fuel LLC migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
