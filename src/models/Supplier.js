@@ -176,8 +176,11 @@ const initSupplierModel = (sequelize) => {
         comment: 'yes, no, unknown'
       },
       // V2.31.3: Delivery model for future contract company support
+      // V2.35.20: Changed from ENUM to STRING to avoid type name mismatch
+      // (migration created 'delivery_model_enum', Sequelize expects 'enum_suppliers_delivery_model')
+      // Database still enforces valid values via the enum type in the column definition
       deliveryModel: {
-        type: DataTypes.ENUM('cod', 'contract'),
+        type: DataTypes.STRING(20),
         field: 'delivery_model',
         defaultValue: 'cod',
         comment: 'cod = will-call/COD, contract = full-service/auto-delivery'
