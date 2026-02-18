@@ -15,7 +15,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const { getSupplierModel } = require('../models/Supplier');
-const { getLatestPrices } = require('../models/SupplierPrice');
+const { getLatestPrices, getSupplierPriceModel } = require('../models/SupplierPrice');
 const { Op } = require('sequelize');
 const { findSuppliersForZip, getZipInfo } = require('../services/supplierMatcher');
 const { getZipsForCity, getZipsForCounty, normalizeLocation } = require('../services/locationResolver');
@@ -823,7 +823,13 @@ router.get('/debug/supplier-prices', async (req, res) => {
     `, { replacements: { ids: sampleIds } });
 
     // Test the getLatestPrices function directly
-    const priceMapResult = await getLatestPrices(sampleIds);
+    let priceMapResult;
+    let priceMapError = null;
+    try {
+      priceMapResult = await getLatestPrices(sampleIds);
+    } catch (e) {
+      priceMapError = e.message;
+    }
 
     // Check total suppliers with prices
     const [stats] = await sequelize.query(`
@@ -843,11 +849,17 @@ router.get('/debug/supplier-prices', async (req, res) => {
       LIMIT 10
     `);
 
+    const modelStatus = getSupplierPriceModel();
+
     res.json({
       checkedIds: sampleIds,
       pricesForCheckedIds: prices,
       priceMapFromFunction: priceMapResult,
+      priceMapError,
       priceMapKeys: Object.keys(priceMapResult || {}),
+      priceMapType: typeof priceMapResult,
+      modelInitialized: !!modelStatus,
+      modelName: modelStatus?.name || 'N/A',
       stats: stats[0],
       sampleSuppliersWithPrices: withPrices
     });
