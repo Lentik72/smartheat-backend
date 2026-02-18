@@ -331,9 +331,29 @@ router.get('/', async (req, res) => {
     if (searchType === 'name') {
       const nameLower = searchName.toLowerCase();
 
-      // Filter suppliers by name match
+      // V2.35: Check supplier_aliases table for matching aliases
+      // If user searches "Castle Fuel", we check aliases and return "Castle Fuel Inc." (canonical)
+      const sequelize = req.app.locals.sequelize;
+      let aliasSupplierIds = [];
+      if (sequelize) {
+        try {
+          const [aliasMatches] = await sequelize.query(`
+            SELECT supplier_id FROM supplier_aliases
+            WHERE LOWER(alias_name) LIKE $1
+          `, {
+            bind: [`%${nameLower}%`]
+          });
+          aliasSupplierIds = aliasMatches.map(a => a.supplier_id);
+        } catch (err) {
+          console.error('Alias lookup error:', err.message);
+          // Continue without alias matches - table may not exist yet
+        }
+      }
+
+      // Filter suppliers by name match OR alias match
       const matchingSuppliers = suppliersJson.filter(s =>
-        (s.name || '').toLowerCase().includes(nameLower)
+        (s.name || '').toLowerCase().includes(nameLower) ||
+        aliasSupplierIds.includes(s.id)
       );
 
       // Limit and sort alphabetically
@@ -387,10 +407,16 @@ router.get('/', async (req, res) => {
         return result;
       });
 
+      // V2.35: Track how many were found via alias
+      const aliasMatchCount = responseData.filter(s =>
+        aliasSupplierIds.includes(s.id) && !(s.name || '').toLowerCase().includes(nameLower)
+      ).length;
+
       const meta = {
         searchType: 'name',
         query: searchName,
         count: responseData.length,
+        aliasMatches: aliasMatchCount,  // V2.35: suppliers found via alias
         version: directoryMeta.version,
       supplierCount: directoryMeta.supplierCount,
         signatureVersion: SIGNATURE_VERSION,
@@ -403,8 +429,8 @@ router.get('/', async (req, res) => {
       const signature = signPayload({ data: signedData, meta });
 
       // Observability log
-      console.info(`[suppliers] searchType=${meta.searchType} count=${responseData.length}`);
-      logger?.info(`[Suppliers] Returned ${responseData.length} suppliers for name search '${searchName}'`);
+      console.info(`[suppliers] searchType=${meta.searchType} count=${responseData.length} aliasMatches=${aliasMatchCount}`);
+      logger?.info(`[Suppliers] Returned ${responseData.length} suppliers for name search '${searchName}' (${aliasMatchCount} via alias)`);
 
       return res.json({ data: responseData, meta, signature });
     }

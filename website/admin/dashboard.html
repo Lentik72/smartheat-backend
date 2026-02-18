@@ -1762,7 +1762,7 @@
           <!-- Near Matches - Possible alias/name variations -->
           <div class="panel full-width" id="near-matches-panel" style="display: none;">
             <h3>Name Variations <span class="badge warning" id="near-match-count">0</span></h3>
-            <p class="panel-description">Users entered these names but we have similar suppliers. May need aliases.</p>
+            <p class="panel-description">Users entered these names but we have similar suppliers. Click "Add Alias" to link them.</p>
             <table id="near-matches-table">
               <thead>
                 <tr>
@@ -1773,6 +1773,24 @@
                 </tr>
               </thead>
               <tbody id="near-matches-body"></tbody>
+            </table>
+          </div>
+
+          <!-- Supplier Aliases - Configured name mappings -->
+          <div class="panel full-width" id="aliases-panel">
+            <h3>Supplier Aliases <span class="badge" id="alias-count">0</span></h3>
+            <p class="panel-description">Alternate names that map to canonical supplier names. E.g., "Castle Fuel" → "Castle Fuel Inc."</p>
+            <table id="aliases-table">
+              <thead>
+                <tr>
+                  <th>Alias (Search Term)</th>
+                  <th>Canonical Name</th>
+                  <th>Supplier Location</th>
+                  <th>Scope</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="aliases-body"></tbody>
             </table>
           </div>
 

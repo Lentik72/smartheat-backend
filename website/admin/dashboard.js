@@ -1800,8 +1800,9 @@ async function loadIOSApp() {
       tbody.innerHTML = '<tr><td colspan="8" class="no-data">No app engagement data yet</td></tr>';
     }
 
-    // Load missing suppliers
+    // Load missing suppliers and aliases
     await loadMissingSuppliers();
+    await loadAliases();
 
   } catch (error) {
     console.error('Failed to load iOS app data:', error);
@@ -1873,9 +1874,135 @@ function searchSupplier(name) {
   window.open(`https://www.google.com/search?q=${encodeURIComponent(name + ' heating oil')}`, '_blank');
 }
 
-// Placeholder for alias functionality
-function addAlias(name) {
-  alert('Alias functionality coming soon. For now, note: ' + name);
+// Load supplier aliases
+async function loadAliases() {
+  try {
+    const data = await api('/aliases');
+
+    document.getElementById('alias-count').textContent = data.count;
+
+    const aliasBody = document.getElementById('aliases-body');
+    aliasBody.innerHTML = '';
+
+    if (data.aliases.length > 0) {
+      data.aliases.forEach(a => {
+        const row = document.createElement('tr');
+        const scope = a.scopeState || a.scopeZipPrefix
+          ? `${a.scopeState || ''}${a.scopeZipPrefix ? ' ' + a.scopeZipPrefix + 'xx' : ''}`
+          : 'Global';
+        row.innerHTML = `
+          <td><strong>${a.aliasName}</strong></td>
+          <td>${a.canonicalName}</td>
+          <td>${a.supplierCity || ''}, ${a.supplierState || ''}</td>
+          <td>${scope}</td>
+          <td><button class="btn-small danger" onclick="deleteAlias('${a.id}', '${a.aliasName.replace(/'/g, "\\'")}')">Delete</button></td>
+        `;
+        aliasBody.appendChild(row);
+      });
+    } else {
+      aliasBody.innerHTML = '<tr><td colspan="5" class="no-data">No aliases configured</td></tr>';
+    }
+  } catch (error) {
+    console.error('Failed to load aliases:', error);
+    document.getElementById('aliases-body').innerHTML = '<tr><td colspan="5" class="no-data">Failed to load aliases</td></tr>';
+  }
+}
+
+// Add alias - prompts for supplier ID then creates alias
+async function addAlias(aliasName, suggestedSupplierId = null) {
+  // First, search for possible suppliers
+  let supplierId = suggestedSupplierId;
+
+  if (!supplierId) {
+    // Prompt for supplier name to search
+    const searchTerm = prompt(`Search for supplier to link "${aliasName}" to:\n\n(Enter partial name to search)`, aliasName.substring(0, 10));
+    if (!searchTerm) return;
+
+    try {
+      // Search for suppliers
+      const response = await fetch(`/api/v1/suppliers?name=${encodeURIComponent(searchTerm)}`);
+      const result = await response.json();
+
+      if (!result.data || result.data.length === 0) {
+        alert(`No suppliers found matching "${searchTerm}"`);
+        return;
+      }
+
+      // Show supplier options
+      const options = result.data.slice(0, 5).map((s, i) =>
+        `${i + 1}. ${s.name} (${s.city || ''}, ${s.state || ''})`
+      ).join('\n');
+
+      const selection = prompt(`Select supplier for alias "${aliasName}":\n\n${options}\n\nEnter number (1-${Math.min(5, result.data.length)}):`);
+
+      if (!selection || isNaN(parseInt(selection))) return;
+
+      const index = parseInt(selection) - 1;
+      if (index < 0 || index >= result.data.length) {
+        alert('Invalid selection');
+        return;
+      }
+
+      supplierId = result.data[index].id;
+    } catch (error) {
+      console.error('Supplier search failed:', error);
+      alert('Failed to search suppliers');
+      return;
+    }
+  }
+
+  // Create the alias
+  try {
+    const response = await fetch('/api/dashboard/aliases', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('dashboardToken')}`
+      },
+      body: JSON.stringify({
+        aliasName: aliasName,
+        supplierId: supplierId
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert(`Created alias: "${aliasName}" → "${result.alias.canonicalName}"`);
+      await loadAliases();
+      await loadMissingSuppliers(); // Refresh near-matches
+    } else {
+      alert('Failed to create alias: ' + (result.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Create alias failed:', error);
+    alert('Failed to create alias');
+  }
+}
+
+// Delete alias
+async function deleteAlias(aliasId, aliasName) {
+  if (!confirm(`Delete alias "${aliasName}"?`)) return;
+
+  try {
+    const response = await fetch(`/api/dashboard/aliases/${aliasId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${sessionStorage.getItem('dashboardToken')}`
+      }
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      await loadAliases();
+    } else {
+      alert('Failed to delete alias: ' + (result.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Delete alias failed:', error);
+    alert('Failed to delete alias');
+  }
 }
 
 // Show coverage gap ZIP details

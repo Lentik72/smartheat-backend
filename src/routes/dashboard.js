@@ -2018,6 +2018,141 @@ router.get('/missing-suppliers', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/aliases - List all supplier aliases
+router.get('/aliases', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const [aliases] = await sequelize.query(`
+      SELECT
+        a.id,
+        a.alias_name,
+        a.scope_state,
+        a.scope_zip_prefix,
+        a.created_at,
+        s.name as canonical_name,
+        s.city as supplier_city,
+        s.state as supplier_state,
+        s.id as supplier_id
+      FROM supplier_aliases a
+      JOIN suppliers s ON a.supplier_id = s.id
+      ORDER BY a.created_at DESC
+    `);
+
+    res.json({
+      count: aliases.length,
+      aliases: aliases.map(a => ({
+        id: a.id,
+        aliasName: a.alias_name,
+        canonicalName: a.canonical_name,
+        supplierId: a.supplier_id,
+        supplierCity: a.supplier_city,
+        supplierState: a.supplier_state,
+        scopeState: a.scope_state,
+        scopeZipPrefix: a.scope_zip_prefix,
+        createdAt: a.created_at
+      }))
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Aliases list error:', error.message);
+    res.status(500).json({ error: 'Failed to load aliases', details: error.message });
+  }
+});
+
+// POST /api/dashboard/aliases - Create a supplier alias
+// Use when near-match identified: "Castle Fuel" → "Castle Fuel Inc."
+router.post('/aliases', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  const { aliasName, supplierId, scopeState, scopeZipPrefix } = req.body;
+
+  if (!aliasName || !supplierId) {
+    return res.status(400).json({ error: 'aliasName and supplierId are required' });
+  }
+
+  try {
+    // Verify supplier exists
+    const [suppliers] = await sequelize.query(`
+      SELECT id, name FROM suppliers WHERE id = :supplierId
+    `, { replacements: { supplierId } });
+
+    if (suppliers.length === 0) {
+      return res.status(404).json({ error: 'Supplier not found' });
+    }
+
+    // Insert alias
+    await sequelize.query(`
+      INSERT INTO supplier_aliases (supplier_id, alias_name, scope_state, scope_zip_prefix)
+      VALUES (:supplierId, :aliasName, :scopeState, :scopeZipPrefix)
+    `, {
+      replacements: {
+        supplierId,
+        aliasName: aliasName.trim(),
+        scopeState: scopeState || null,
+        scopeZipPrefix: scopeZipPrefix || null
+      }
+    });
+
+    logger.info(`[Dashboard] Created alias: "${aliasName}" → "${suppliers[0].name}"`);
+
+    res.json({
+      success: true,
+      alias: {
+        aliasName: aliasName.trim(),
+        canonicalName: suppliers[0].name,
+        supplierId,
+        scopeState: scopeState || null,
+        scopeZipPrefix: scopeZipPrefix || null
+      }
+    });
+  } catch (error) {
+    if (error.message.includes('unique constraint')) {
+      return res.status(409).json({ error: 'This alias already exists' });
+    }
+    logger.error('[Dashboard] Create alias error:', error.message);
+    res.status(500).json({ error: 'Failed to create alias', details: error.message });
+  }
+});
+
+// DELETE /api/dashboard/aliases/:id - Remove a supplier alias
+router.delete('/aliases/:id', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  const { id } = req.params;
+
+  try {
+    const [result] = await sequelize.query(`
+      DELETE FROM supplier_aliases WHERE id = :id RETURNING alias_name
+    `, { replacements: { id } });
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Alias not found' });
+    }
+
+    logger.info(`[Dashboard] Deleted alias: "${result[0].alias_name}"`);
+
+    res.json({ success: true, deleted: result[0].alias_name });
+  } catch (error) {
+    logger.error('[Dashboard] Delete alias error:', error.message);
+    res.status(500).json({ error: 'Failed to delete alias', details: error.message });
+  }
+});
+
 // GET /api/dashboard/price-alerts - Significant price changes
 router.get('/price-alerts', async (req, res) => {
   const logger = req.app.locals.logger;

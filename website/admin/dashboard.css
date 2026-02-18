@@ -2092,6 +2092,16 @@ legend {
   cursor: not-allowed;
 }
 
+.btn-small.danger {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-small.danger:hover:not(:disabled) {
+  background: #dc3545;
+  color: white;
+}
+
 #activity-page-info {
   font-size: 0.875rem;
   color: var(--gray-500);
