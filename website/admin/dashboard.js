@@ -1781,8 +1781,8 @@ async function loadIOSApp() {
       localData.bySupplier.forEach(s => {
         const row = document.createElement('tr');
         if (s.flag) row.classList.add('flagged-row');
-        const flagBadge = s.flag === 'test_suspected'
-          ? '<span class="flag-badge test">Test?</span>'
+        const flagBadge = s.flag === 'rapid_orders'
+          ? '<span class="flag-badge test" title="3+ orders from single user in short period">Rapid Orders</span>'
           : '';
         row.innerHTML = `
           <td>${s.name}</td>

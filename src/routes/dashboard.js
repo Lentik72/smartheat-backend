@@ -1817,10 +1817,10 @@ router.get('/ios-app', async (req, res) => {
         )
         SELECT
           name, total, unique_users, saved, viewed, orders, quotes, calls,
-          -- Flag as suspicious if: single user with 5+ actions, or 3+ orders
+          -- Flag rapid orders as test (3+ orders from single user is not normal)
+          -- Deliveries/saves/views are OK - users often backfill history
           CASE
-            WHEN unique_users = 1 AND total >= 5 THEN 'test_suspected'
-            WHEN orders >= 3 AND unique_users = 1 THEN 'test_suspected'
+            WHEN orders >= 3 AND unique_users = 1 THEN 'rapid_orders'
             ELSE NULL
           END as flag
         FROM supplier_stats
