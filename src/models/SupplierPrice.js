@@ -141,10 +141,49 @@ const getLatestPrice = async (supplierId) => {
 // Helper function to get latest prices for multiple suppliers
 // V2.1.0: Excludes aggregator_signal prices (those are for market intelligence only)
 // V2.35.15: Auto-heal expired prices if recent scrapes exist
-const getLatestPrices = async (supplierIds) => {
+// V2.35.16: Accept optional sequelize param for raw SQL fallback
+const getLatestPrices = async (supplierIds, sequelizeInstance = null) => {
   console.log('[getLatestPrices] SupplierPrice defined:', !!SupplierPrice);
   console.log('[getLatestPrices] supplierIds:', supplierIds?.length);
-  if (!SupplierPrice || !supplierIds || supplierIds.length === 0) return {};
+  console.log('[getLatestPrices] sequelizeInstance provided:', !!sequelizeInstance);
+
+  if (!supplierIds || supplierIds.length === 0) return {};
+
+  // V2.35.16: Use raw SQL if model not available but sequelize is
+  if (!SupplierPrice && sequelizeInstance) {
+    console.log('[getLatestPrices] Using raw SQL fallback');
+    try {
+      const [prices] = await sequelizeInstance.query(`
+        SELECT supplier_id, price_per_gallon, min_gallons, source_type, scraped_at, expires_at
+        FROM supplier_prices
+        WHERE supplier_id IN (:ids)
+          AND is_valid = true
+          AND expires_at > NOW()
+          AND source_type != 'aggregator_signal'
+        ORDER BY scraped_at DESC
+      `, { replacements: { ids: supplierIds } });
+
+      const priceMap = {};
+      for (const p of prices) {
+        if (!priceMap[p.supplier_id]) {
+          priceMap[p.supplier_id] = {
+            supplierId: p.supplier_id,
+            pricePerGallon: p.price_per_gallon,
+            minGallons: p.min_gallons,
+            sourceType: p.source_type,
+            scrapedAt: p.scraped_at,
+            expiresAt: p.expires_at
+          };
+        }
+      }
+      return priceMap;
+    } catch (error) {
+      console.error('[getLatestPrices] Raw SQL error:', error.message);
+      return {};
+    }
+  }
+
+  if (!SupplierPrice) return {};
 
   const { Op } = require('sequelize');
 
