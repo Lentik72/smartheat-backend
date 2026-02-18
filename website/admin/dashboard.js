@@ -2607,7 +2607,7 @@ function formatThresholdKey(key) {
 // SCOPE 18: NEW TAB LOAD FUNCTIONS
 // ========================================
 
-// Load Leaderboard tab (default tab) - Consolidated from unified endpoint
+// Load Leaderboard tab (default tab) - Uses weighted engagement scoring
 async function loadLeaderboard() {
   const loadingEl = document.getElementById('leaderboard-loading');
   const contentEl = document.getElementById('leaderboard-content');
@@ -2616,75 +2616,70 @@ async function loadLeaderboard() {
   contentEl.classList.add('hidden');
 
   try {
-    // Use unified endpoint which combines web + app data
-    const data = await api(`/unified?days=${currentDays}`);
-    const suppliers = data.topSuppliers || [];
+    // Use leaderboard endpoint with weighted engagement scoring
+    const data = await api(`/leaderboard?days=${currentDays}`);
+    const suppliers = data.leaderboard || [];
 
     // Summary stats
-    const totalCalls = suppliers.reduce((sum, s) => sum + (s.calls || 0), 0);
-    const totalSiteClicks = suppliers.reduce((sum, s) => sum + (s.websiteClicks || 0), 0);
-    const totalFromWeb = suppliers.reduce((sum, s) => sum + (s.fromWeb || 0), 0);
-    const totalFromApp = suppliers.reduce((sum, s) => sum + (s.fromApp || 0), 0);
-    const totalClicks = suppliers.reduce((sum, s) => sum + (s.totalClicks || 0), 0);
-    const marketAvg = suppliers.length > 0 && suppliers[0].marketAvg
-      ? suppliers[0].marketAvg
-      : 0;
-    const top3Clicks = suppliers.slice(0, 3).reduce((sum, s) => sum + (s.totalClicks || 0), 0);
-    const top3Pct = totalClicks > 0 ? ((top3Clicks / totalClicks) * 100).toFixed(0) : 0;
+    const totalScore = suppliers.reduce((sum, s) => sum + (s.engagementScore || 0), 0);
+    const totalOrders = suppliers.reduce((sum, s) => sum + (s.conversions?.orders || 0), 0);
+    const totalQuotes = suppliers.reduce((sum, s) => sum + (s.conversions?.quotes || 0), 0);
+    const marketAvg = data.summary?.marketAvg || 0;
+    const top3Score = suppliers.slice(0, 3).reduce((sum, s) => sum + (s.engagementScore || 0), 0);
+    const top3Pct = totalScore > 0 ? ((top3Score / totalScore) * 100).toFixed(0) : 0;
 
     document.getElementById('lb-total-suppliers').textContent = suppliers.length;
-    document.getElementById('lb-total-clicks').textContent = `${totalClicks} (📞${totalCalls} + 🔗${totalSiteClicks})`;
+    document.getElementById('lb-total-clicks').textContent = `${totalScore} pts (${totalOrders} orders, ${totalQuotes} quotes)`;
     document.getElementById('lb-market-avg').textContent = marketAvg > 0 ? formatPrice(marketAvg) : '--';
     document.getElementById('lb-top3-pct').textContent = `${top3Pct}%`;
 
-    // Quick wins
+    // Quick wins from API
     const quickWinsList = document.getElementById('quick-wins-list');
     quickWinsList.innerHTML = '';
 
-    const dataGaps = suppliers.filter(s => s.signal === 'data_gap').slice(0, 3);
-    const visibilityIssues = suppliers.filter(s => s.signal === 'visibility_issue').slice(0, 3);
-
-    if (dataGaps.length > 0) {
-      quickWinsList.innerHTML += `<div class="quick-win">⚠️ <strong>${dataGaps.length} suppliers</strong> getting clicks but no price data - add scraping</div>`;
-    }
-    if (visibilityIssues.length > 0) {
-      quickWinsList.innerHTML += `<div class="quick-win">👀 <strong>${visibilityIssues.length} suppliers</strong> have competitive prices but low visibility</div>`;
-    }
-    if (dataGaps.length === 0 && visibilityIssues.length === 0) {
+    if (data.quickWins && data.quickWins.length > 0) {
+      data.quickWins.forEach(win => {
+        const priorityClass = win.priority === 'high' ? 'urgent' : '';
+        quickWinsList.innerHTML += `<div class="quick-win ${priorityClass}">${win.title}: ${win.insight}</div>`;
+      });
+    } else {
       quickWinsList.innerHTML = '<div class="quick-win success">✅ No urgent issues detected</div>';
     }
 
-    // Leaderboard table - consolidated with web + app data
+    // Leaderboard table with weighted engagement scoring
     const tbody = document.getElementById('leaderboard-body');
     tbody.innerHTML = '';
 
     if (suppliers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--gray-500);padding:2rem;">No engagement data for this period</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--gray-500);padding:2rem;">No engagement data for this period</td></tr>';
     } else {
       suppliers.forEach((s) => {
-        const vsMarket = s.priceDelta != null ? (s.priceDelta > 0 ? '+' : '') + formatPrice(s.priceDelta) : '--';
+        const vsMarket = s.price?.delta != null ? (s.price.delta > 0 ? '+' : '') + formatPrice(s.price.delta) : '--';
 
-        const signalBadge = {
-          brand_strength: '<span class="signal brand">💪 Brand</span>',
-          visibility_issue: '<span class="signal visibility">👀 Hidden</span>',
-          data_gap: '<span class="signal data-gap">⚠️ No Price</span>',
-          normal: '<span class="signal normal">—</span>'
+        // Signal badge based on primarySignal
+        const signalBadges = {
+          converter: '<span class="signal converter">✅ Converter</span>',
+          missing_price: '<span class="signal data-gap">⚠️ No Price</span>',
+          brand_power: '<span class="signal brand">🔥 Brand</span>',
+          price_leader: '<span class="signal price-leader">💰 Price Leader</span>',
+          rising_star: '<span class="signal rising">🆕 Rising</span>',
+          local_favorite: '<span class="signal local">📍 Local</span>',
+          underperformer: '<span class="signal underperformer">📉 Hidden</span>',
+          standard: '<span class="signal normal">—</span>'
         };
 
         const row = document.createElement('tr');
         row.innerHTML = `
           <td class="rank">${s.rank}</td>
-          <td>${s.name}</td>
-          <td>${s.location || '--'}</td>
-          <td class="users-col">${s.uniqueUsers ?? '--'}</td>
-          <td>${s.calls > 0 ? s.calls : '-'}</td>
-          <td>${s.websiteClicks > 0 ? s.websiteClicks : '-'}</td>
-          <td class="total-col">${s.totalClicks}</td>
-          <td class="web-col">${s.fromWeb > 0 ? s.fromWeb : '-'}</td>
-          <td class="app-col">${s.fromApp > 0 ? s.fromApp : '-'}</td>
-          <td>${s.price ? formatPrice(s.price) : '--'}</td>
-          <td class="${s.priceDelta > 0 ? 'above-market' : s.priceDelta < 0 ? 'below-market' : ''}">${vsMarket}</td>
-          <td>${signalBadge[s.signal] || signalBadge.normal}</td>
+          <td><strong>${s.name}</strong><br><span class="supplier-location">${s.city || ''}, ${s.state || ''}</span></td>
+          <td class="score-col"><strong>${s.engagementScore}</strong></td>
+          <td>${s.clicks?.calls > 0 ? s.clicks.calls : '-'}</td>
+          <td>${s.clicks?.websites > 0 ? s.clicks.websites : '-'}</td>
+          <td>${s.conversions?.quotes > 0 ? s.conversions.quotes : '-'}</td>
+          <td class="${s.conversions?.orders > 0 ? 'has-orders' : ''}">${s.conversions?.orders > 0 ? s.conversions.orders : '-'}</td>
+          <td>${s.price ? formatPrice(s.price.current) : '--'}</td>
+          <td class="${s.price?.delta > 0 ? 'above-market' : s.price?.delta < 0 ? 'below-market' : ''}">${vsMarket}</td>
+          <td>${signalBadges[s.primarySignal] || signalBadges.standard}</td>
         `;
         tbody.appendChild(row);
       });
@@ -2692,9 +2687,9 @@ async function loadLeaderboard() {
 
     // Export CSV button
     document.getElementById('lb-export-csv').onclick = () => {
-      const csv = ['Rank,Supplier,Location,Unique Users,Calls,Site Clicks,Total,From Web,From App,Price,vs Market,Signal'];
+      const csv = ['Rank,Supplier,City,State,Score,Calls,Clicks,Quotes,Orders,Price,vs Market,Signal'];
       suppliers.forEach((s) => {
-        csv.push(`${s.rank},"${s.name}","${s.location || ''}",${s.uniqueUsers || 0},${s.calls || 0},${s.websiteClicks || 0},${s.totalClicks || 0},${s.fromWeb || 0},${s.fromApp || 0},${s.price || ''},${s.priceDelta || ''},${s.signal || ''}`);
+        csv.push(`${s.rank},"${s.name}","${s.city || ''}","${s.state || ''}",${s.engagementScore || 0},${s.clicks?.calls || 0},${s.clicks?.websites || 0},${s.conversions?.quotes || 0},${s.conversions?.orders || 0},${s.price?.current || ''},${s.price?.delta || ''},${s.primarySignal || ''}`);
       });
       const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);

@@ -3274,7 +3274,8 @@ router.get('/leaderboard', async (req, res) => {
   const logger = req.app.locals.logger || console;
 
   try {
-    // Get supplier clicks with price data
+    // Get supplier engagement with weighted scoring
+    // Weights: view=1, call=2, quote=4, order=5
     const [suppliers] = await sequelize.query(`
       WITH click_data AS (
         SELECT
@@ -3296,6 +3297,18 @@ router.get('/leaderboard', async (req, res) => {
           AND s.active = true
         GROUP BY sc.supplier_id, s.name, s.state, s.city
       ),
+      engagement_data AS (
+        -- Orders and quotes from supplier_engagements (website actions)
+        SELECT
+          se.supplier_id,
+          COUNT(*) FILTER (WHERE se.engagement_type = 'order_placed') as orders,
+          COUNT(*) FILTER (WHERE se.engagement_type = 'request_quote') as quotes
+        FROM supplier_engagements se
+        JOIN suppliers s ON se.supplier_id = s.id
+        WHERE se.created_at > NOW() - INTERVAL '${days} days'
+          AND s.active = true
+        GROUP BY se.supplier_id
+      ),
       price_data AS (
         SELECT DISTINCT ON (supplier_id)
           supplier_id,
@@ -3315,6 +3328,8 @@ router.get('/leaderboard', async (req, res) => {
       )
       SELECT
         cd.*,
+        COALESCE(ed.orders, 0) as orders,
+        COALESCE(ed.quotes, 0) as quotes,
         pd.current_price,
         pd.price_updated,
         ma.avg_price as market_avg,
@@ -3322,6 +3337,8 @@ router.get('/leaderboard', async (req, res) => {
           THEN pd.current_price - ma.avg_price
           ELSE NULL
         END as price_delta,
+        -- Weighted engagement score: website=1, call=2, quote=4, order=5
+        (cd.websites * 1 + cd.calls * 2 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) as engagement_score,
         -- Revenue risk calculation: clicks * 3% conversion * $500 order * 5% fee
         ROUND((cd.total_clicks * 0.03 * 500 * 0.05)::numeric, 0) as est_revenue,
         -- Week-over-week growth
@@ -3330,9 +3347,11 @@ router.get('/leaderboard', async (req, res) => {
           ELSE NULL
         END as wow_growth
       FROM click_data cd
+      LEFT JOIN engagement_data ed ON cd.supplier_id = ed.supplier_id
       LEFT JOIN price_data pd ON cd.supplier_id = pd.supplier_id
       CROSS JOIN market_avg ma
-      ORDER BY cd.total_clicks DESC
+      ORDER BY (cd.websites * 1 + cd.calls * 2 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) DESC,
+               cd.total_clicks DESC
       LIMIT 50
     `);
 
@@ -3377,6 +3396,19 @@ router.get('/leaderboard', async (req, res) => {
           priority: 2
         });
         if (!primarySignal) primarySignal = 'price_leader';
+      }
+
+      // High converter (has orders/quotes)
+      const totalConversions = parseInt(s.orders || 0) + parseInt(s.quotes || 0);
+      if (totalConversions >= 1) {
+        signals.push({
+          type: 'converter',
+          icon: '✅',
+          label: 'Converter',
+          description: `${s.orders || 0} orders, ${s.quotes || 0} quotes`,
+          priority: 1  // High priority - actual conversions
+        });
+        if (!primarySignal) primarySignal = 'converter';
       }
 
       // Rising star (>50% week-over-week growth)
@@ -3430,12 +3462,17 @@ router.get('/leaderboard', async (req, res) => {
         name: s.supplier_name,
         state: s.state,
         city: s.city,
+        engagementScore: parseInt(s.engagement_score) || 0,
         clicks: {
           total: parseInt(s.total_clicks),
           calls: parseInt(s.calls),
           websites: parseInt(s.websites),
           last7Days: parseInt(s.clicks_7d),
           wowGrowth: s.wow_growth ? parseFloat(s.wow_growth) : null
+        },
+        conversions: {
+          orders: parseInt(s.orders) || 0,
+          quotes: parseInt(s.quotes) || 0
         },
         price: s.current_price ? {
           current: parseFloat(s.current_price),

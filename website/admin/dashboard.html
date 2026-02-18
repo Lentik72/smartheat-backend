@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1770245438">
+  <link rel="stylesheet" href="dashboard.css?v=1770245439">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -279,13 +279,11 @@
                   <tr>
                     <th>#</th>
                     <th>Supplier</th>
-                    <th>Location</th>
-                    <th>👥 Users</th>
+                    <th>Score</th>
                     <th>📞 Calls</th>
-                    <th>🔗 Site</th>
-                    <th>Total</th>
-                    <th>🌐 Web</th>
-                    <th>📱 App</th>
+                    <th>🔗 Clicks</th>
+                    <th>📝 Quotes</th>
+                    <th>🛒 Orders</th>
                     <th>Price</th>
                     <th>vs Mkt</th>
                     <th>Signal</th>
@@ -293,6 +291,7 @@
                 </thead>
                 <tbody id="leaderboard-body"></tbody>
               </table>
+              <p class="table-footnote">Score = Clicks×1 + Calls×2 + Quotes×4 + Orders×5</p>
             </div>
           </div>
         </div>
