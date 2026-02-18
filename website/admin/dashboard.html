@@ -1788,14 +1788,26 @@
                 </div>
               </div>
               <div class="form-row">
-                <div class="form-group" style="flex: 3;">
+                <div class="form-group" style="flex: 2;">
                   <label>Notes</label>
                   <input type="text" name="notes" placeholder="Optional notes about this supplier">
                 </div>
                 <div class="form-group">
-                  <button type="submit" class="btn-primary">Add Supplier</button>
+                  <label>Options</label>
+                  <div style="display: flex; gap: 1rem; padding-top: 0.25rem;">
+                    <label style="font-weight: normal; display: flex; align-items: center; gap: 0.25rem;">
+                      <input type="checkbox" name="active" checked> Active
+                    </label>
+                    <label style="font-weight: normal; display: flex; align-items: center; gap: 0.25rem;">
+                      <input type="checkbox" name="allowPriceDisplay" checked> Show Price
+                    </label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <button type="submit" class="btn-primary" id="add-supplier-btn">Add Supplier</button>
                 </div>
               </div>
+              <div id="add-supplier-status" style="margin-top: 0.5rem; display: none;"></div>
             </form>
           </div>
 

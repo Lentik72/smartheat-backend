@@ -2017,6 +2017,14 @@ async function createSupplier(event) {
   event.preventDefault();
   const form = event.target;
   const formData = new FormData(form);
+  const statusDiv = document.getElementById('add-supplier-status');
+  const submitBtn = document.getElementById('add-supplier-btn');
+
+  // Show loading state
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Adding...';
+  statusDiv.style.display = 'block';
+  statusDiv.innerHTML = '<span style="color: var(--gray-500);">Creating supplier...</span>';
 
   const fuelType = formData.get('fuelType');
   const fuelTypes = fuelType === 'both'
@@ -2033,7 +2041,8 @@ async function createSupplier(event) {
     addressLine1: formData.get('addressLine1') || null,
     notes: formData.get('notes') || null,
     fuelTypes: fuelTypes,
-    source: 'web_research'
+    active: formData.get('active') === 'on',
+    allowPriceDisplay: formData.get('allowPriceDisplay') === 'on'
   };
 
   try {
@@ -2049,16 +2058,24 @@ async function createSupplier(event) {
     const result = await response.json();
 
     if (result.success) {
-      alert(`Supplier created: ${result.supplier.name} (${result.supplier.state})`);
+      statusDiv.innerHTML = `<span style="color: var(--success);">✓ Created: ${result.supplier.name} (${result.supplier.state})</span>`;
       form.reset();
-      // Refresh missing suppliers list
-      await loadMissingSuppliers();
+      // Re-check the default checkboxes
+      form.querySelector('[name="active"]').checked = true;
+      form.querySelector('[name="allowPriceDisplay"]').checked = true;
+      // Refresh suppliers list if on that tab
+      if (typeof loadSuppliers === 'function') {
+        await loadSuppliers();
+      }
     } else {
-      alert('Failed to create supplier: ' + (result.error || 'Unknown error'));
+      statusDiv.innerHTML = `<span style="color: var(--danger);">✗ Failed: ${result.error || 'Unknown error'}</span>`;
     }
   } catch (error) {
     console.error('Create supplier failed:', error);
-    alert('Failed to create supplier');
+    statusDiv.innerHTML = `<span style="color: var(--danger);">✗ Error: ${error.message}</span>`;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Add Supplier';
   }
 }
 

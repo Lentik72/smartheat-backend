@@ -1427,7 +1427,7 @@ router.post('/suppliers', async (req, res) => {
     const {
       name, phone, email, website, addressLine1, city, state,
       postalCodesServed, serviceCounties, serviceCities,
-      fuelTypes, source, notes
+      fuelTypes, notes, active, allowPriceDisplay
     } = req.body;
 
     // Validate required fields
@@ -1445,11 +1445,11 @@ router.post('/suppliers', async (req, res) => {
       INSERT INTO suppliers (
         id, name, phone, email, website, address_line1, city, state,
         postal_codes_served, service_counties, service_cities,
-        fuel_types, source, notes, slug, active, verified, created_at, updated_at
+        fuel_types, notes, slug, active, allow_price_display, verified, created_at, updated_at
       ) VALUES (
         gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7,
         $8::jsonb, $9::jsonb, $10::jsonb,
-        $11::jsonb, $12, $13, $14, true, false, NOW(), NOW()
+        $11::jsonb, $12, $13, $14, $15, false, NOW(), NOW()
       )
       RETURNING id, name, state, city, slug
     `, {
@@ -1465,9 +1465,10 @@ router.post('/suppliers', async (req, res) => {
         JSON.stringify(serviceCounties || []),
         JSON.stringify(serviceCities || []),
         JSON.stringify(fuelTypes || ['heating_oil']),
-        source || 'web_research',
         notes || null,
-        slug
+        slug,
+        active !== false,  // default true
+        allowPriceDisplay !== false  // default true
       ]
     });
 
