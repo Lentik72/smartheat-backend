@@ -2058,7 +2058,7 @@ router.get('/missing-suppliers', async (req, res) => {
       ORDER BY
         CASE WHEN s.id IS NULL THEN 0 ELSE 1 END,  -- Missing first
         a.mentions DESC
-    `, { type: sequelize.QueryTypes.SELECT });
+    `);
 
     // Separate into categories
     const missing = missingSuppliers.filter(s => s.match_status === 'not_found');
