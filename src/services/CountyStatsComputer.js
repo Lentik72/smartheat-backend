@@ -32,8 +32,9 @@ class CountyStatsComputer {
     //   - Mid counties → 0.50-0.70
     //   - Weak counties → <0.40
     //   - Weeks is hardest to game, weighted heavily
+    //   - supplierCount target lowered from 20 to 12 to fairly score rural counties
     this.QUALITY_WEIGHTS = {
-      supplierCount: { target: 20, weight: 0.35 },   // 20 suppliers = 1.0 (best county has 20)
+      supplierCount: { target: 12, weight: 0.35 },   // 12 suppliers = 1.0 (rural-fair)
       dataPoints: { target: 300, weight: 0.25 },     // 300 data points = 1.0 (multi-week density)
       weeksAvailable: { target: 10, weight: 0.30 },  // 10 weeks = 1.0 (maturity signal)
       recency: { weight: 0.10 }

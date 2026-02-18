@@ -21,8 +21,10 @@ class ZipStatsComputer {
     this.DELIVERY_COUNT_THRESHOLD = 20;
 
     // Quality score weights
+    // Note: supplierCount target lowered from 30 to 10 to fairly score rural areas
+    // A rural ZIP with 5-10 suppliers may have 100% market coverage
     this.QUALITY_WEIGHTS = {
-      supplierCount: { target: 30, weight: 0.4 },
+      supplierCount: { target: 10, weight: 0.4 },
       dataPoints: { target: 500, weight: 0.3 },
       weeksAvailable: { target: 12, weight: 0.2 },
       recency: { weight: 0.1 }
