@@ -2073,8 +2073,7 @@ router.get('/missing-suppliers', async (req, res) => {
         WHERE LOWER(name) LIKE '%' || LOWER(:pattern) || '%'
         LIMIT 3
       `, {
-        replacements: { pattern: nm.supplier_name.substring(0, 10) },
-        type: sequelize.QueryTypes.SELECT
+        replacements: { pattern: nm.supplier_name.substring(0, 10) }
       });
       return { ...nm, suggestions };
     }));
