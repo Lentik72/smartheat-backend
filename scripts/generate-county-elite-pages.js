@@ -430,10 +430,10 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
       ${stateComparison ? `<p class="state-comparison ${stateComparison.class}">${stateComparison.text}</p>` : ''}
     </section>
 
-    <!-- App Hook 1: Compare your delivery -->
+    <!-- App Hook 1: Track deliveries -->
     <p class="app-hook">
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_compare&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">See how your last delivery compares →</a>
-      <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">See how your last delivery compares →</a>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_compare&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">Log your next delivery to compare prices →</a>
+      <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Log your next delivery to compare prices →</a>
     </p>
     ` : `
     <section class="price-summary price-pending">
