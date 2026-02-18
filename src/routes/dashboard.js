@@ -3414,24 +3414,25 @@ router.get('/leaderboard', async (req, res) => {
       }
 
       // Brand power (above market but high clicks)
-      if (s.current_price && s.price_delta > 0.10 && s.total_clicks >= 20) {
+      const priceDelta = s.price_delta ? parseFloat(s.price_delta) : null;
+      if (s.current_price && priceDelta && priceDelta > 0.10 && s.total_clicks >= 20) {
         signals.push({
           type: 'brand_power',
           icon: '🔥',
           label: 'Brand power',
-          description: `High clicks despite +$${s.price_delta.toFixed(2)} above market`,
+          description: `High clicks despite +$${priceDelta.toFixed(2)} above market`,
           priority: 2
         });
         if (!primarySignal) primarySignal = 'brand_power';
       }
 
       // Price leader (below market and high clicks)
-      if (s.current_price && s.price_delta < -0.15 && s.total_clicks >= 15) {
+      if (s.current_price && priceDelta && priceDelta < -0.15 && s.total_clicks >= 15) {
         signals.push({
           type: 'price_leader',
           icon: '💰',
           label: 'Price leader',
-          description: `Lowest price (-$${Math.abs(s.price_delta).toFixed(2)}) drives volume`,
+          description: `Lowest price (-$${Math.abs(priceDelta).toFixed(2)}) drives volume`,
           priority: 2
         });
         if (!primarySignal) primarySignal = 'price_leader';
