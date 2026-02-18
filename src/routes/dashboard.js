@@ -1414,6 +1414,71 @@ router.get('/suppliers/:id', async (req, res) => {
   }
 });
 
+// POST /api/dashboard/suppliers - Create new supplier
+router.post('/suppliers', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const {
+      name, phone, email, website, addressLine1, city, state,
+      postalCodesServed, serviceCounties, serviceCities,
+      fuelTypes, source, notes
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !state) {
+      return res.status(400).json({ error: 'Name and state are required' });
+    }
+
+    // Generate slug from name
+    const slug = name.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 100);
+
+    const [result] = await sequelize.query(`
+      INSERT INTO suppliers (
+        id, name, phone, email, website, address_line1, city, state,
+        postal_codes_served, service_counties, service_cities,
+        fuel_types, source, notes, slug, active, verified, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7,
+        $8::jsonb, $9::jsonb, $10::jsonb,
+        $11::jsonb, $12, $13, $14, true, false, NOW(), NOW()
+      )
+      RETURNING id, name, state, city, slug
+    `, {
+      bind: [
+        name,
+        phone || null,
+        email || null,
+        website || null,
+        addressLine1 || null,
+        city || null,
+        state,
+        JSON.stringify(postalCodesServed || []),
+        JSON.stringify(serviceCounties || []),
+        JSON.stringify(serviceCities || []),
+        JSON.stringify(fuelTypes || ['heating_oil']),
+        source || 'web_research',
+        notes || null,
+        slug
+      ]
+    });
+
+    logger.info(`[Dashboard] Created supplier: ${name} (${state})`);
+    res.json({ success: true, supplier: result[0] });
+  } catch (error) {
+    logger.error('[Dashboard] Create supplier error:', error.message);
+    res.status(500).json({ error: 'Failed to create supplier', details: error.message });
+  }
+});
+
 // PUT /api/dashboard/suppliers/:id - Update supplier
 router.put('/suppliers/:id', async (req, res) => {
   const logger = req.app.locals.logger;
