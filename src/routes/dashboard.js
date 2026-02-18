@@ -3276,13 +3276,11 @@ router.get('/leaderboard', async (req, res) => {
   try {
     // Get supplier engagement with weighted scoring
     // Weights: view=1, call=2, quote=4, order=5
+    // Uses FULL OUTER JOIN to include suppliers with clicks OR orders/quotes
     const [suppliers] = await sequelize.query(`
       WITH click_data AS (
         SELECT
           sc.supplier_id,
-          s.name as supplier_name,
-          s.state,
-          s.city,
           COUNT(*) as total_clicks,
           COUNT(*) FILTER (WHERE sc.action_type = 'call') as calls,
           COUNT(*) FILTER (WHERE sc.action_type = 'website') as websites,
@@ -3295,10 +3293,10 @@ router.get('/leaderboard', async (req, res) => {
         JOIN suppliers s ON sc.supplier_id = s.id
         WHERE sc.created_at > NOW() - INTERVAL '${days} days'
           AND s.active = true
-        GROUP BY sc.supplier_id, s.name, s.state, s.city
+        GROUP BY sc.supplier_id
       ),
       engagement_data AS (
-        -- Orders and quotes from supplier_engagements (website actions)
+        -- Orders and quotes from supplier_engagements
         SELECT
           se.supplier_id,
           COUNT(*) FILTER (WHERE se.engagement_type = 'order_placed') as orders,
@@ -3308,6 +3306,12 @@ router.get('/leaderboard', async (req, res) => {
         WHERE se.created_at > NOW() - INTERVAL '${days} days'
           AND s.active = true
         GROUP BY se.supplier_id
+      ),
+      -- All suppliers with ANY engagement (clicks OR orders/quotes)
+      all_engaged_suppliers AS (
+        SELECT supplier_id FROM click_data
+        UNION
+        SELECT supplier_id FROM engagement_data
       ),
       price_data AS (
         SELECT DISTINCT ON (supplier_id)
@@ -3327,7 +3331,17 @@ router.get('/leaderboard', async (req, res) => {
           AND s.active = true
       )
       SELECT
-        cd.*,
+        aes.supplier_id,
+        s.name as supplier_name,
+        s.state,
+        s.city,
+        COALESCE(cd.total_clicks, 0) as total_clicks,
+        COALESCE(cd.calls, 0) as calls,
+        COALESCE(cd.websites, 0) as websites,
+        COALESCE(cd.unique_zips, 0) as unique_zips,
+        cd.top_zip,
+        COALESCE(cd.clicks_7d, 0) as clicks_7d,
+        COALESCE(cd.clicks_prev_7d, 0) as clicks_prev_7d,
         COALESCE(ed.orders, 0) as orders,
         COALESCE(ed.quotes, 0) as quotes,
         pd.current_price,
@@ -3338,20 +3352,23 @@ router.get('/leaderboard', async (req, res) => {
           ELSE NULL
         END as price_delta,
         -- Weighted engagement score: website=1, call=2, quote=4, order=5
-        (cd.websites * 1 + cd.calls * 2 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) as engagement_score,
+        (COALESCE(cd.websites, 0) * 1 + COALESCE(cd.calls, 0) * 2 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) as engagement_score,
         -- Revenue risk calculation: clicks * 3% conversion * $500 order * 5% fee
-        ROUND((cd.total_clicks * 0.03 * 500 * 0.05)::numeric, 0) as est_revenue,
+        ROUND((COALESCE(cd.total_clicks, 0) * 0.03 * 500 * 0.05)::numeric, 0) as est_revenue,
         -- Week-over-week growth
         CASE WHEN cd.clicks_prev_7d > 0
           THEN ROUND(((cd.clicks_7d - cd.clicks_prev_7d)::numeric / cd.clicks_prev_7d * 100), 1)
           ELSE NULL
         END as wow_growth
-      FROM click_data cd
-      LEFT JOIN engagement_data ed ON cd.supplier_id = ed.supplier_id
-      LEFT JOIN price_data pd ON cd.supplier_id = pd.supplier_id
+      FROM all_engaged_suppliers aes
+      JOIN suppliers s ON aes.supplier_id = s.id
+      LEFT JOIN click_data cd ON aes.supplier_id = cd.supplier_id
+      LEFT JOIN engagement_data ed ON aes.supplier_id = ed.supplier_id
+      LEFT JOIN price_data pd ON aes.supplier_id = pd.supplier_id
       CROSS JOIN market_avg ma
-      ORDER BY (cd.websites * 1 + cd.calls * 2 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) DESC,
-               cd.total_clicks DESC
+      WHERE s.active = true
+      ORDER BY (COALESCE(cd.websites, 0) * 1 + COALESCE(cd.calls, 0) * 2 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) DESC,
+               COALESCE(cd.total_clicks, 0) DESC
       LIMIT 50
     `);
 
