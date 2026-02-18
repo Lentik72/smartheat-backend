@@ -430,11 +430,6 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
       ${stateComparison ? `<p class="state-comparison ${stateComparison.class}">${stateComparison.text}</p>` : ''}
     </section>
 
-    <!-- App Hook 1: Track deliveries -->
-    <p class="app-hook">
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_compare&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">Track deliveries in the free iPhone app →</a>
-      <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Add HomeHeat to your home screen →</a>
-    </p>
     ` : `
     <section class="price-summary price-pending">
       <p>Price data is being collected for this county. Check back soon!</p>
@@ -618,6 +613,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
 
   <script src="${assetPath}js/nav.js"></script>
   <script src="${assetPath}js/platform-detection.js?v=1"></script>
+  <script src="${assetPath}js/widgets.js"></script>
 </body>
 </html>`;
 }
