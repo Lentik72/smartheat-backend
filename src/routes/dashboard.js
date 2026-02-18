@@ -3329,11 +3329,26 @@ router.get('/leaderboard', async (req, res) => {
         ) combined
         GROUP BY supplier_id
       ),
-      -- All suppliers with ANY engagement (clicks OR orders/quotes)
+      saves_data AS (
+        -- Saves from app_events (supplier_saved)
+        -- Match by supplier_name since app_events doesn't have supplier_id
+        SELECT
+          s.id as supplier_id,
+          COUNT(*) as saves
+        FROM app_events ae
+        JOIN suppliers s ON LOWER(TRIM(ae.event_data->>'supplier_name')) = LOWER(TRIM(s.name))
+        WHERE ae.event_name = 'supplier_saved'
+          AND ae.created_at > NOW() - INTERVAL '${days} days'
+          AND s.active = true
+        GROUP BY s.id
+      ),
+      -- All suppliers with ANY engagement (clicks OR orders/quotes OR saves)
       all_engaged_suppliers AS (
         SELECT supplier_id FROM click_data
         UNION
         SELECT supplier_id FROM engagement_data
+        UNION
+        SELECT supplier_id FROM saves_data
       ),
       price_data AS (
         SELECT DISTINCT ON (supplier_id)
@@ -3366,6 +3381,7 @@ router.get('/leaderboard', async (req, res) => {
         COALESCE(cd.clicks_prev_7d, 0) as clicks_prev_7d,
         COALESCE(ed.orders, 0) as orders,
         COALESCE(ed.quotes, 0) as quotes,
+        COALESCE(sv.saves, 0) as saves,
         pd.current_price,
         pd.price_updated,
         ma.avg_price as market_avg,
@@ -3373,8 +3389,8 @@ router.get('/leaderboard', async (req, res) => {
           THEN pd.current_price - ma.avg_price
           ELSE NULL
         END as price_delta,
-        -- Weighted engagement score: website=1, call=2, quote=4, order=5
-        (COALESCE(cd.websites, 0) * 1 + COALESCE(cd.calls, 0) * 2 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) as engagement_score,
+        -- Weighted engagement score: website=1, call=2, save=3, quote=4, order=5
+        (COALESCE(cd.websites, 0) * 1 + COALESCE(cd.calls, 0) * 2 + COALESCE(sv.saves, 0) * 3 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) as engagement_score,
         -- Revenue risk calculation: clicks * 3% conversion * $500 order * 5% fee
         ROUND((COALESCE(cd.total_clicks, 0) * 0.03 * 500 * 0.05)::numeric, 0) as est_revenue,
         -- Week-over-week growth
@@ -3386,10 +3402,11 @@ router.get('/leaderboard', async (req, res) => {
       JOIN suppliers s ON aes.supplier_id = s.id
       LEFT JOIN click_data cd ON aes.supplier_id = cd.supplier_id
       LEFT JOIN engagement_data ed ON aes.supplier_id = ed.supplier_id
+      LEFT JOIN saves_data sv ON aes.supplier_id = sv.supplier_id
       LEFT JOIN price_data pd ON aes.supplier_id = pd.supplier_id
       CROSS JOIN market_avg ma
       WHERE s.active = true
-      ORDER BY (COALESCE(cd.websites, 0) * 1 + COALESCE(cd.calls, 0) * 2 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) DESC,
+      ORDER BY (COALESCE(cd.websites, 0) * 1 + COALESCE(cd.calls, 0) * 2 + COALESCE(sv.saves, 0) * 3 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) DESC,
                COALESCE(cd.total_clicks, 0) DESC
       LIMIT 50
     `);
@@ -3512,7 +3529,8 @@ router.get('/leaderboard', async (req, res) => {
         },
         conversions: {
           orders: parseInt(s.orders) || 0,
-          quotes: parseInt(s.quotes) || 0
+          quotes: parseInt(s.quotes) || 0,
+          saves: parseInt(s.saves) || 0
         },
         price: s.current_price ? {
           current: parseFloat(s.current_price),

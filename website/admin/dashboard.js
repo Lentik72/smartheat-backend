@@ -2624,12 +2624,13 @@ async function loadLeaderboard() {
     const totalScore = suppliers.reduce((sum, s) => sum + (s.engagementScore || 0), 0);
     const totalOrders = suppliers.reduce((sum, s) => sum + (s.conversions?.orders || 0), 0);
     const totalQuotes = suppliers.reduce((sum, s) => sum + (s.conversions?.quotes || 0), 0);
+    const totalSaves = suppliers.reduce((sum, s) => sum + (s.conversions?.saves || 0), 0);
     const marketAvg = data.summary?.marketAvg || 0;
     const top3Score = suppliers.slice(0, 3).reduce((sum, s) => sum + (s.engagementScore || 0), 0);
     const top3Pct = totalScore > 0 ? ((top3Score / totalScore) * 100).toFixed(0) : 0;
 
     document.getElementById('lb-total-suppliers').textContent = suppliers.length;
-    document.getElementById('lb-total-clicks').textContent = `${totalScore} pts (${totalOrders} orders, ${totalQuotes} quotes)`;
+    document.getElementById('lb-total-clicks').textContent = `${totalScore} pts (${totalOrders} orders, ${totalQuotes} quotes, ${totalSaves} saves)`;
     document.getElementById('lb-market-avg').textContent = marketAvg > 0 ? formatPrice(marketAvg) : '--';
     document.getElementById('lb-top3-pct').textContent = `${top3Pct}%`;
 
@@ -2675,6 +2676,7 @@ async function loadLeaderboard() {
           <td class="score-col"><strong>${s.engagementScore}</strong></td>
           <td>${s.clicks?.calls > 0 ? s.clicks.calls : '-'}</td>
           <td>${s.clicks?.websites > 0 ? s.clicks.websites : '-'}</td>
+          <td>${s.conversions?.saves > 0 ? s.conversions.saves : '-'}</td>
           <td>${s.conversions?.quotes > 0 ? s.conversions.quotes : '-'}</td>
           <td class="${s.conversions?.orders > 0 ? 'has-orders' : ''}">${s.conversions?.orders > 0 ? s.conversions.orders : '-'}</td>
           <td>${s.price ? formatPrice(s.price.current) : '--'}</td>
@@ -2687,9 +2689,9 @@ async function loadLeaderboard() {
 
     // Export CSV button
     document.getElementById('lb-export-csv').onclick = () => {
-      const csv = ['Rank,Supplier,City,State,Score,Calls,Clicks,Quotes,Orders,Price,vs Market,Signal'];
+      const csv = ['Rank,Supplier,City,State,Score,Calls,Clicks,Saves,Quotes,Orders,Price,vs Market,Signal'];
       suppliers.forEach((s) => {
-        csv.push(`${s.rank},"${s.name}","${s.city || ''}","${s.state || ''}",${s.engagementScore || 0},${s.clicks?.calls || 0},${s.clicks?.websites || 0},${s.conversions?.quotes || 0},${s.conversions?.orders || 0},${s.price?.current || ''},${s.price?.delta || ''},${s.primarySignal || ''}`);
+        csv.push(`${s.rank},"${s.name}","${s.city || ''}","${s.state || ''}",${s.engagementScore || 0},${s.clicks?.calls || 0},${s.clicks?.websites || 0},${s.conversions?.saves || 0},${s.conversions?.quotes || 0},${s.conversions?.orders || 0},${s.price?.current || ''},${s.price?.delta || ''},${s.primarySignal || ''}`);
       });
       const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
