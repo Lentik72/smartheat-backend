@@ -737,14 +737,19 @@ router.get('/geographic', async (req, res) => {
       };
     });
 
+    // V2.35.24: Filter out entries without coordinates (ZIPs not in zip-database.json)
+    const coverageGapsWithCoords = coverageGaps.filter(g => g.lat && g.lng);
+    const limitedCoverageWithCoords = limitedCoverage.filter(l => l.lat && l.lng);
+
     res.json({
-      demandHeatmap,    // Blue circles - user search demand
-      coverageGaps,     // Red circles - searches with no supplier coverage (0 suppliers)
-      limitedCoverage,  // Yellow circles - limited coverage (1-2 suppliers)
+      demandHeatmap,    // Blue circles - user search demand (already filtered)
+      coverageGaps: coverageGapsWithCoords,     // Red circles - only those with coords
+      limitedCoverage: limitedCoverageWithCoords,  // Yellow circles - only those with coords
       allClicks,        // Table data - supplier clicks
       stats: {
         totalDemandZips: demandHeatmap.length,
-        totalGapZips: coverageGaps.length,
+        totalGapZips: coverageGaps.length,  // Keep original count for stats
+        totalGapZipsWithCoords: coverageGapsWithCoords.length,
         totalLimitedZips: limitedCoverage.length,
         coveredZips: zipSupplierCount.size
       }
