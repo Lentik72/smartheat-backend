@@ -613,6 +613,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  ZIP to County migration:', err.message);
         });
 
+        // V2.35.14: Fix expired prices (one-time recovery after timezone bug + Railway incident)
+        const { up: runFixExpiredPricesMigration } = require('./src/migrations/060-fix-expired-prices');
+        runFixExpiredPricesMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Fix expired prices migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {

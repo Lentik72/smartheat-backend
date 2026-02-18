@@ -59,9 +59,14 @@ function getJitter() {
 function getNextScrapeTime(supplierId) {
   const now = new Date();
 
-  // Start with today at WINDOW_START_HOUR EST
+  // V2.35.14: Fix timezone - convert EST hours to UTC
+  // EST is UTC-5, so 8 AM EST = 13:00 UTC
+  const EST_OFFSET = 5; // hours behind UTC
+  const windowStartUtc = WINDOW_START_HOUR + EST_OFFSET; // 8 AM EST = 13:00 UTC
+
+  // Start with today at window start in UTC
   const base = new Date(now);
-  base.setHours(WINDOW_START_HOUR, 0, 0, 0);
+  base.setUTCHours(windowStartUtc, 0, 0, 0);
 
   // Add stable offset for this supplier
   const offset = getStableScrapeOffset(supplierId);
@@ -100,11 +105,15 @@ function getSchedulePreview(suppliers) {
 
 /**
  * Check if we're within the scraping window
- * @returns {boolean} True if within 8AM-6PM
+ * V2.35.14: Fix timezone - check against EST hours, not UTC
+ * @returns {boolean} True if within 8AM-6PM EST
  */
 function isWithinWindow() {
-  const hour = new Date().getHours();
-  return hour >= WINDOW_START_HOUR && hour < WINDOW_END_HOUR;
+  // Get current hour in EST (UTC-5)
+  const now = new Date();
+  const utcHour = now.getUTCHours();
+  const estHour = (utcHour - 5 + 24) % 24; // Handle wraparound
+  return estHour >= WINDOW_START_HOUR && estHour < WINDOW_END_HOUR;
 }
 
 /**
