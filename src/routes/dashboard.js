@@ -1435,17 +1435,28 @@ router.post('/suppliers', async (req, res) => {
       return res.status(400).json({ error: 'Name and state are required' });
     }
 
-    // Check for duplicate by name (case-insensitive)
+    // Check for duplicate by name (case-insensitive) or phone number
+    const phoneDigits = phone ? phone.replace(/\D/g, '') : null;
+
     const [existing] = await sequelize.query(`
-      SELECT id, name, city, state FROM suppliers
+      SELECT id, name, phone, city, state,
+        CASE
+          WHEN LOWER(TRIM(name)) = LOWER(TRIM($1)) THEN 'name'
+          WHEN $2 IS NOT NULL AND REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $2 THEN 'phone'
+        END as match_type
+      FROM suppliers
       WHERE LOWER(TRIM(name)) = LOWER(TRIM($1))
+         OR ($2 IS NOT NULL AND REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $2)
       LIMIT 1
-    `, { bind: [name] });
+    `, { bind: [name, phoneDigits] });
 
     if (existing.length > 0) {
       const dup = existing[0];
+      const matchReason = dup.match_type === 'phone'
+        ? `same phone ${dup.phone}`
+        : 'same name';
       return res.status(409).json({
-        error: `Duplicate: "${dup.name}" already exists in ${dup.city || ''}, ${dup.state}`,
+        error: `Duplicate (${matchReason}): "${dup.name}" already exists in ${dup.city || ''}, ${dup.state}`,
         existingId: dup.id
       });
     }
