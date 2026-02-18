@@ -211,6 +211,10 @@ function generateCountyPageHTML(stats, history, zipDetails) {
   const dataQuality = parseFloat(stats.data_quality_score) || 0;
   const zipPrefixes = stats.zip_prefixes || [];
 
+  // Community engagement data (for social proof)
+  const userCount = parseInt(stats.user_count) || 0;
+  const showUserCount = stats.show_user_count === true;
+
   // Confidence badge - NEVER show numeric score
   const confidenceLabel = getConfidenceLabel(dataQuality);
   const confidenceClass = getConfidenceClass(dataQuality);
@@ -405,6 +409,12 @@ function generateCountyPageHTML(stats, history, zipDetails) {
         </div>
       </div>
     </section>
+
+    <!-- App Hook 1: Compare your delivery -->
+    <p class="app-hook">
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_compare&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">See how your last delivery compares →</a>
+      <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">See how your last delivery compares →</a>
+    </p>
     ` : `
     <section class="price-summary price-pending">
       <p>Price data is being collected for this county. Check back soon!</p>
@@ -474,6 +484,12 @@ function generateCountyPageHTML(stats, history, zipDetails) {
         });
       });
     </script>
+
+    <!-- App Hook 2: Price alerts -->
+    <p class="app-hook">
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_alerts&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">Get notified when prices drop in your ZIP →</a>
+      <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Get notified when prices drop in your ZIP →</a>
+    </p>
     ` : ''}
 
     <!-- Market Snapshot -->
@@ -510,6 +526,13 @@ function generateCountyPageHTML(stats, history, zipDetails) {
         `).join('')}
       </div>
     </section>
+    ` : ''}
+
+    <!-- Social Proof (gated by threshold) -->
+    ${showUserCount ? `
+    <p class="social-proof">
+      ${userCount} homeowners in ${escapeHtml(countyName)} County are tracking deliveries and price alerts with <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=social_proof&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="ios-only">HomeHeat</a><a href="/prices" class="android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">HomeHeat</a>.
+    </p>
     ` : ''}
 
     <!-- FAQ Section -->
@@ -1044,6 +1067,45 @@ function generateCountyEliteCSS() {
   opacity: 0.8;
   margin-top: 0.75rem;
   margin-bottom: 0;
+}
+
+/* App Hooks - Contextual, lightweight */
+.app-hook {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666;
+  margin: 1rem 0 1.5rem;
+}
+
+.hook-link {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.hook-link:hover {
+  text-decoration: underline;
+}
+
+/* Social Proof */
+.social-proof {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+  margin: 1.5rem 0;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.social-proof a {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.social-proof a:hover {
+  text-decoration: underline;
 }
 
 /* Trust Footer */
