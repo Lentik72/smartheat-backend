@@ -1837,7 +1837,10 @@
 
           <!-- Supplier Aliases - Configured name mappings -->
           <div class="panel full-width" id="aliases-panel">
-            <h3>Supplier Aliases <span class="badge" id="alias-count">0</span></h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <h3 style="margin: 0;">Supplier Aliases <span class="badge" id="alias-count">0</span></h3>
+              <button class="btn-small btn-primary" onclick="addAliasManual()">+ Add Alias</button>
+            </div>
             <p class="panel-description">Alternate names that map to canonical supplier names. E.g., "Castle Fuel" → "Castle Fuel Inc."</p>
             <table id="aliases-table">
               <thead>

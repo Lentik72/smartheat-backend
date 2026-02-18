@@ -1908,6 +1908,13 @@ async function loadAliases() {
   }
 }
 
+// Add alias manually - prompts for alias name first
+async function addAliasManual() {
+  const aliasName = prompt('Enter the alias name (what users type):\n\nExample: "Castle Fuel"');
+  if (!aliasName || !aliasName.trim()) return;
+  await addAlias(aliasName.trim());
+}
+
 // Add alias - prompts for supplier ID then creates alias
 async function addAlias(aliasName, suggestedSupplierId = null) {
   // First, search for possible suppliers
