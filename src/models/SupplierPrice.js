@@ -5,12 +5,14 @@ const { DataTypes } = require('sequelize');
 let SupplierPrice;
 
 const initSupplierPriceModel = (sequelize) => {
+  console.log('[SupplierPrice] initSupplierPriceModel called, sequelize:', !!sequelize);
   if (!sequelize) {
     console.log('⚠️  No database connection - SupplierPrice model not initialized');
     return null;
   }
 
   try {
+    console.log('[SupplierPrice] Defining model...');
     SupplierPrice = sequelize.define('SupplierPrice', {
       id: {
         type: DataTypes.UUID,
@@ -101,7 +103,7 @@ const initSupplierPriceModel = (sequelize) => {
       }
     });
 
-    console.log('✅ SupplierPrice model initialized');
+    console.log('✅ SupplierPrice model initialized, SupplierPrice:', !!SupplierPrice);
     return SupplierPrice;
   } catch (error) {
     console.error('❌ Failed to initialize SupplierPrice model:', error.message);
@@ -140,6 +142,8 @@ const getLatestPrice = async (supplierId) => {
 // V2.1.0: Excludes aggregator_signal prices (those are for market intelligence only)
 // V2.35.15: Auto-heal expired prices if recent scrapes exist
 const getLatestPrices = async (supplierIds) => {
+  console.log('[getLatestPrices] SupplierPrice defined:', !!SupplierPrice);
+  console.log('[getLatestPrices] supplierIds:', supplierIds?.length);
   if (!SupplierPrice || !supplierIds || supplierIds.length === 0) return {};
 
   const { Op } = require('sequelize');

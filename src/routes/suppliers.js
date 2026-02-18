@@ -875,6 +875,20 @@ router.get('/debug/supplier-prices', async (req, res) => {
     // Check what's in app.locals
     const appLocalsKeys = Object.keys(req.app.locals);
 
+    // Check if supplier_prices table exists
+    let tableExists = false;
+    try {
+      const [tables] = await sequelize.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables
+          WHERE table_name = 'supplier_prices'
+        )
+      `);
+      tableExists = tables[0]?.exists || false;
+    } catch (e) {
+      tableExists = 'error: ' + e.message;
+    }
+
     res.json({
       checkedIds: sampleIds,
       pricesForCheckedIds: prices,
@@ -886,6 +900,7 @@ router.get('/debug/supplier-prices', async (req, res) => {
       modelName: modelStatus?.name || 'N/A',
       appLocalsKeys,
       appLocalsModelAvailable: !!req.app.locals.SupplierPrice,
+      supplierPricesTableExists: tableExists,
       appLocalsResult,
       appLocalsResultKeys: Object.keys(appLocalsResult),
       sequelizeAvailable: !!sequelize,
