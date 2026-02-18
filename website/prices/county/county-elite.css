@@ -137,6 +137,27 @@
   text-transform: uppercase;
 }
 
+/* State Comparison */
+.state-comparison {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ffe5d9;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.comparison-above {
+  color: #b45309;
+}
+
+.comparison-below {
+  color: #047857;
+}
+
+.comparison-neutral {
+  color: #666;
+}
+
 /* Trend Alert */
 .trend-alert {
   display: flex;

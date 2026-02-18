@@ -105,6 +105,20 @@ async function generateCountyElitePages(options = {}) {
 
     log(`📊 Found ${countyStats.length} counties meeting quality threshold (>= ${MIN_QUALITY_SCORE})`);
 
+    // Get state-level medians for comparison
+    const [stateMedians] = await sequelize.query(`
+      SELECT
+        state_code,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY median_price) as state_median
+      FROM county_current_stats
+      WHERE fuel_type = 'heating_oil' AND median_price IS NOT NULL
+      GROUP BY state_code
+    `);
+    const stateMedianMap = {};
+    stateMedians.forEach(s => {
+      stateMedianMap[s.state_code] = parseFloat(s.state_median);
+    });
+
     // Generate pages
     let generated = 0;
     for (const stats of countyStats) {
@@ -137,7 +151,8 @@ async function generateCountyElitePages(options = {}) {
         `, { replacements: { prefixes: zipPrefixes } });
       }
 
-      const html = generateCountyPageHTML(stats, history, zipDetails);
+      const stateMedian = stateMedianMap[stats.state_code] || null;
+      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian);
 
       // Create state subdirectory
       const stateDir = path.join(COUNTY_DIR, stats.state_code.toLowerCase());
@@ -197,7 +212,7 @@ async function generateCountyElitePages(options = {}) {
 /**
  * Generate HTML for a County Elite page
  */
-function generateCountyPageHTML(stats, history, zipDetails) {
+function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) {
   const countyName = stats.county_name;
   const stateCode = stats.state_code;
   const stateName = getStateName(stateCode);
@@ -214,6 +229,9 @@ function generateCountyPageHTML(stats, history, zipDetails) {
   // Community engagement data (for social proof)
   const userCount = parseInt(stats.user_count) || 0;
   const showUserCount = stats.show_user_count === true;
+
+  // State comparison (e.g., "Westchester is 4% above NY average")
+  const stateComparison = getStateComparison(medianPrice, stateMedian, countyName, stateCode);
 
   // Confidence badge - NEVER show numeric score
   const confidenceLabel = getConfidenceLabel(dataQuality);
@@ -409,6 +427,7 @@ function generateCountyPageHTML(stats, history, zipDetails) {
           <span class="range-label">Suppliers</span>
         </div>
       </div>
+      ${stateComparison ? `<p class="state-comparison ${stateComparison.class}">${stateComparison.text}</p>` : ''}
     </section>
 
     <!-- App Hook 1: Compare your delivery -->
@@ -700,6 +719,33 @@ function formatZipPrefixRange(prefixes) {
   }
 }
 
+function getStateComparison(countyMedian, stateMedian, countyName, stateCode) {
+  if (!countyMedian || !stateMedian) return null;
+
+  const diff = ((countyMedian - stateMedian) / stateMedian) * 100;
+  const absDiff = Math.abs(diff);
+
+  // Only show if difference is meaningful (>= 1%)
+  if (absDiff < 1) {
+    return {
+      text: `${countyName} County prices are in line with the ${stateCode} average`,
+      class: 'comparison-neutral'
+    };
+  }
+
+  if (diff > 0) {
+    return {
+      text: `${countyName} County is ${absDiff.toFixed(0)}% above the ${stateCode} average`,
+      class: 'comparison-above'
+    };
+  } else {
+    return {
+      text: `${countyName} County is ${absDiff.toFixed(0)}% below the ${stateCode} average`,
+      class: 'comparison-below'
+    };
+  }
+}
+
 function getStateName(code) {
   const states = {
     'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
@@ -860,6 +906,27 @@ function generateCountyEliteCSS() {
   font-size: 0.75rem;
   color: #666;
   text-transform: uppercase;
+}
+
+/* State Comparison */
+.state-comparison {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ffe5d9;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.comparison-above {
+  color: #b45309;
+}
+
+.comparison-below {
+  color: #047857;
+}
+
+.comparison-neutral {
+  color: #666;
 }
 
 /* Trend Alert */
