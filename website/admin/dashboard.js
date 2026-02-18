@@ -1834,7 +1834,7 @@ async function loadMissingSuppliers() {
           <td>${s.uniqueUsers}</td>
           <td>${timeAgo(s.lastMentioned)}</td>
           <td>${typeLabel}</td>
-          <td><button class="btn-small" onclick="searchSupplier('${s.name.replace(/'/g, "\\'")}')">Search</button></td>
+          <td><button class="btn-small btn-search-supplier" data-name="${s.name.replace(/"/g, '&quot;')}">Search</button></td>
         `;
         missingBody.appendChild(row);
       });
@@ -1856,7 +1856,7 @@ async function loadMissingSuppliers() {
           <td><strong>${s.name}</strong></td>
           <td>${s.mentions}</td>
           <td>${suggestions || 'No suggestions'}</td>
-          <td><button class="btn-small" onclick="addAlias('${s.name.replace(/'/g, "\\'")}')">Add Alias</button></td>
+          <td><button class="btn-small btn-add-alias" data-name="${s.name.replace(/"/g, '&quot;')}">Add Alias</button></td>
         `;
         nearMatchBody.appendChild(row);
       });
@@ -1895,7 +1895,7 @@ async function loadAliases() {
           <td>${a.canonicalName}</td>
           <td>${a.supplierCity || ''}, ${a.supplierState || ''}</td>
           <td>${scope}</td>
-          <td><button class="btn-small danger" onclick="deleteAlias('${a.id}', '${a.aliasName.replace(/'/g, "\\'")}')">Delete</button></td>
+          <td><button class="btn-small danger btn-delete-alias" data-id="${a.id}" data-name="${a.aliasName.replace(/"/g, '&quot;')}">Delete</button></td>
         `;
         aliasBody.appendChild(row);
       });
@@ -1915,8 +1915,32 @@ async function addAliasManual() {
   await addAlias(aliasName.trim());
 }
 
-// V2.35.22: Attach event listener (CSP blocks inline onclick)
+// V2.35.22: Attach event listeners (CSP blocks inline onclick)
 document.getElementById('add-alias-btn')?.addEventListener('click', addAliasManual);
+
+// Event delegation for dynamically created buttons
+document.addEventListener('click', (e) => {
+  // Search supplier button (missing suppliers table)
+  if (e.target.classList.contains('btn-search-supplier')) {
+    const name = e.target.dataset.name;
+    if (name) searchSupplier(name);
+  }
+  // Add alias button (near matches table)
+  if (e.target.classList.contains('btn-add-alias')) {
+    const name = e.target.dataset.name;
+    if (name) addAlias(name);
+  }
+  // Delete alias button (aliases table)
+  if (e.target.classList.contains('btn-delete-alias')) {
+    const id = e.target.dataset.id;
+    const name = e.target.dataset.name;
+    if (id && name) deleteAlias(id, name);
+  }
+  // Show settings tab button (coverage gaps)
+  if (e.target.classList.contains('btn-show-settings')) {
+    showTab('settings');
+  }
+});
 
 // Add alias - prompts for supplier ID then creates alias
 async function addAlias(aliasName, suggestedSupplierId = null) {
@@ -3739,7 +3763,7 @@ async function loadCoverage() {
           <td>${g.zip}</td>
           <td>${g.city || '--'}, ${g.state || '--'}</td>
           <td>${g.count}</td>
-          <td><button class="btn-small" onclick="showTab('settings')">Add Supplier</button></td>
+          <td><button class="btn-small btn-show-settings">Add Supplier</button></td>
         `;
         gapsBody.appendChild(row);
       });
