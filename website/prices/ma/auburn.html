@@ -23,6 +23,7 @@
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices"},{"@type":"ListItem","position":3,"name":"Massachusetts","item":"https://www.gethomeheat.com/prices/ma/"},{"@type":"ListItem","position":4,"name":"Worcester County","item":"https://www.gethomeheat.com/prices/ma/worcester-county"},{"@type":"ListItem","position":5,"name":"Auburn"}]}</script>
+  
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Auburn, MA","description":"Compare heating oil prices from local suppliers in Auburn, MA","numberOfItems":2,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from LeBlanc Oil","description":"Heating oil delivery service from LeBlanc Oil in Auburn, MA. Current price: $3.72 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Auburn, MA","provider":{"@type":"LocalBusiness","name":"LeBlanc Oil","@id":"https://www.gethomeheat.com/supplier/leblanc-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(508) 248-1444","priceRange":"$3.72/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.72","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":2,"item":{"@type":"Service","name":"Heating Oil Delivery from Midnight Oil Service","description":"Heating oil delivery service from Midnight Oil Service in Auburn, MA. Current price: $3.80 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Auburn, MA","provider":{"@type":"LocalBusiness","name":"Midnight Oil Service","@id":"https://www.gethomeheat.com/supplier/midnight-oil-service","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(508) 853-2539","priceRange":"$3.80/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.80","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
 </head>
 <body data-zip="01501">
@@ -58,7 +59,10 @@
       <p class="supplier-count">3 suppliers · Updated February 17, 2026</p>
     </header>
 
-    <!-- Market Intelligence Stats -->
+    <!-- V2.34.0: State Price Intelligence (state pages only) -->
+    
+
+    <!-- Market Intelligence Stats (non-state pages) -->
     
     <section class="market-stats-card">
       <div class="stat-item">
@@ -75,7 +79,10 @@
       </div>
     </section>
 
-    <!-- Elite Page Banner (County pages only) -->
+    <!-- Elite Page Banner (County directory pages only) -->
+    
+
+    <!-- V2.34.0: For state pages, show hub links (Elite county cards) BEFORE suppliers -->
     
 
     <!-- Supplier Table -->
@@ -135,7 +142,7 @@
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
 
-    <!-- Hub Links (Counties/Cities) -->
+    <!-- Hub Links (Counties/Cities) - for non-state pages -->
     
     <section class="hub-links">
       <h3>Other Cities in Worcester County</h3>

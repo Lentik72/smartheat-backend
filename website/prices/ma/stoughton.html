@@ -23,6 +23,7 @@
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices"},{"@type":"ListItem","position":3,"name":"Massachusetts","item":"https://www.gethomeheat.com/prices/ma/"},{"@type":"ListItem","position":4,"name":"Norfolk County","item":"https://www.gethomeheat.com/prices/ma/norfolk-county"},{"@type":"ListItem","position":5,"name":"Stoughton"}]}</script>
+  
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Stoughton, MA","description":"Compare heating oil prices from local suppliers in Stoughton, MA","numberOfItems":6,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from Cesar's Oil","description":"Heating oil delivery service from Cesar's Oil in Stoughton, MA. Current price: $3.70 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Stoughton, MA","provider":{"@type":"LocalBusiness","name":"Cesar's Oil","@id":"https://www.gethomeheat.com/supplier/cesar-s-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(781) 344-6116","priceRange":"$3.70/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.70","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":2,"item":{"@type":"Service","name":"Heating Oil Delivery from Carey Discount Oil","description":"Heating oil delivery service from Carey Discount Oil in Stoughton, MA. Current price: $3.84 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Stoughton, MA","provider":{"@type":"LocalBusiness","name":"Carey Discount Oil","@id":"https://www.gethomeheat.com/supplier/carey-discount-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(781) 447-4444","priceRange":"$3.84/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.84","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":3,"item":{"@type":"Service","name":"Heating Oil Delivery from Forni Brothers Oil","description":"Heating oil delivery service from Forni Brothers Oil in Stoughton, MA. Current price: $3.85 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Stoughton, MA","provider":{"@type":"LocalBusiness","name":"Forni Brothers Oil","@id":"https://www.gethomeheat.com/supplier/forni-brothers-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(508) 378-2652","priceRange":"$3.85/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.85","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":4,"item":{"@type":"Service","name":"Heating Oil Delivery from Freedom Fuel","description":"Heating oil delivery service from Freedom Fuel in Stoughton, MA. Current price: $3.85 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Stoughton, MA","provider":{"@type":"LocalBusiness","name":"Freedom Fuel","@id":"https://www.gethomeheat.com/supplier/freedom-fuel-ma","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(774) 501-3357","priceRange":"$3.85/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.85","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":5,"item":{"@type":"Service","name":"Heating Oil Delivery from Lapuma Fuel","description":"Heating oil delivery service from Lapuma Fuel in Stoughton, MA. Current price: $3.90 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Stoughton, MA","provider":{"@type":"LocalBusiness","name":"Lapuma Fuel","@id":"https://www.gethomeheat.com/supplier/lapuma-fuel","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(781) 461-2525","priceRange":"$3.90/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.90","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":6,"item":{"@type":"Service","name":"Heating Oil Delivery from Waverly Oil","description":"Heating oil delivery service from Waverly Oil in Stoughton, MA. Current price: $3.95 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Stoughton, MA","provider":{"@type":"LocalBusiness","name":"Waverly Oil","@id":"https://www.gethomeheat.com/supplier/waverly-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(508) 583-4440","priceRange":"$3.95/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.95","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
 </head>
 <body data-zip="02072">
@@ -58,7 +59,10 @@
       <p class="supplier-count">11 suppliers · Updated February 17, 2026</p>
     </header>
 
-    <!-- Market Intelligence Stats -->
+    <!-- V2.34.0: State Price Intelligence (state pages only) -->
+    
+
+    <!-- Market Intelligence Stats (non-state pages) -->
     
     <section class="market-stats-card">
       <div class="stat-item">
@@ -75,7 +79,10 @@
       </div>
     </section>
 
-    <!-- Elite Page Banner (County pages only) -->
+    <!-- Elite Page Banner (County directory pages only) -->
+    
+
+    <!-- V2.34.0: For state pages, show hub links (Elite county cards) BEFORE suppliers -->
     
 
     <!-- Supplier Table -->
@@ -199,7 +206,7 @@
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
 
-    <!-- Hub Links (Counties/Cities) -->
+    <!-- Hub Links (Counties/Cities) - for non-state pages -->
     
     <section class="hub-links">
       <h3>Other Cities in Norfolk County</h3>

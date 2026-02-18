@@ -23,6 +23,7 @@
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices"},{"@type":"ListItem","position":3,"name":"New Hampshire","item":"https://www.gethomeheat.com/prices/nh/"},{"@type":"ListItem","position":4,"name":"Strafford County"}]}</script>
+  
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Strafford County, New Hampshire","description":"Compare heating oil prices from local suppliers in Strafford County, NH","numberOfItems":6,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from Buxton Oil","description":"Heating oil delivery service from Buxton Oil in Strafford County, NH. Current price: $3.15 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Strafford County, NH","provider":{"@type":"LocalBusiness","name":"Buxton Oil","@id":"https://www.gethomeheat.com/supplier/buxton-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(603) 679-5600","priceRange":"$3.15/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.15","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":2,"item":{"@type":"Service","name":"Heating Oil Delivery from Cardinal & Glidden Oil","description":"Heating oil delivery service from Cardinal & Glidden Oil in Strafford County, NH. Current price: $3.60 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Strafford County, NH","provider":{"@type":"LocalBusiness","name":"Cardinal & Glidden Oil","@id":"https://www.gethomeheat.com/supplier/cardinal-glidden-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(603) 755-3663","priceRange":"$3.60/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.60","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":3,"item":{"@type":"Service","name":"Heating Oil Delivery from Just Oil and More","description":"Heating oil delivery service from Just Oil and More in Strafford County, NH. Current price: $3.69 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Strafford County, NH","provider":{"@type":"LocalBusiness","name":"Just Oil and More","@id":"https://www.gethomeheat.com/supplier/just-oil-and-more","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(603) 664-1080","priceRange":"$3.69/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.69","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":4,"item":{"@type":"Service","name":"Heating Oil Delivery from Granite State Oil","description":"Heating oil delivery service from Granite State Oil in Strafford County, NH. Current price: $3.70 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Strafford County, NH","provider":{"@type":"LocalBusiness","name":"Granite State Oil","@id":"https://www.gethomeheat.com/supplier/granite-state-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(603) 379-6633","priceRange":"$3.70/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.70","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":5,"item":{"@type":"Service","name":"Heating Oil Delivery from Local Pride Heating Oil","description":"Heating oil delivery service from Local Pride Heating Oil in Strafford County, NH. Current price: $3.70 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Strafford County, NH","provider":{"@type":"LocalBusiness","name":"Local Pride Heating Oil","@id":"https://www.gethomeheat.com/supplier/local-pride-heating-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(603) 343-4050","priceRange":"$3.70/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.70","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":6,"item":{"@type":"Service","name":"Heating Oil Delivery from Nibroc Oil","description":"Heating oil delivery service from Nibroc Oil in Strafford County, NH. Current price: $3.70 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Strafford County, NH","provider":{"@type":"LocalBusiness","name":"Nibroc Oil","@id":"https://www.gethomeheat.com/supplier/nibroc-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(603) 772-6532","priceRange":"$3.70/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.70","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
 </head>
 <body>
@@ -58,7 +59,10 @@
       <p class="supplier-count">11 suppliers · Updated February 17, 2026</p>
     </header>
 
-    <!-- Market Intelligence Stats -->
+    <!-- V2.34.0: State Price Intelligence (state pages only) -->
+    
+
+    <!-- Market Intelligence Stats (non-state pages) -->
     
     <section class="market-stats-card">
       <div class="stat-item">
@@ -75,7 +79,7 @@
       </div>
     </section>
 
-    <!-- Elite Page Banner (County pages only) -->
+    <!-- Elite Page Banner (County directory pages only) -->
     
     <section class="elite-banner">
       <div class="elite-banner-content">
@@ -87,6 +91,9 @@
         <a href="/prices/county/nh/strafford" class="elite-link">View Strafford County Heating Oil Prices →</a>
       </div>
     </section>
+
+    <!-- V2.34.0: For state pages, show hub links (Elite county cards) BEFORE suppliers -->
+    
 
     <!-- Supplier Table -->
     <section class="supplier-table-section">
@@ -209,7 +216,7 @@
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
 
-    <!-- Hub Links (Counties/Cities) -->
+    <!-- Hub Links (Counties/Cities) - for non-state pages -->
     
     <section class="hub-links">
       <h3>Cities in Strafford County</h3>

@@ -23,6 +23,7 @@
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices"},{"@type":"ListItem","position":3,"name":"Connecticut","item":"https://www.gethomeheat.com/prices/ct/"},{"@type":"ListItem","position":4,"name":"Middlesex County","item":"https://www.gethomeheat.com/prices/ct/middlesex-county"},{"@type":"ListItem","position":5,"name":"Chester"}]}</script>
+  
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Chester, CT","description":"Compare heating oil prices from local suppliers in Chester, CT","numberOfItems":4,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from Westbrook Oil","description":"Heating oil delivery service from Westbrook Oil in Chester, CT. Current price: $3.45 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Chester, CT","provider":{"@type":"LocalBusiness","name":"Westbrook Oil","@id":"https://www.gethomeheat.com/supplier/westbrook-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(860) 664-5116","priceRange":"$3.45/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.45","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":2,"item":{"@type":"Service","name":"Heating Oil Delivery from Purple Fuels","description":"Heating oil delivery service from Purple Fuels in Chester, CT. Current price: $3.54 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Chester, CT","provider":{"@type":"LocalBusiness","name":"Purple Fuels","@id":"https://www.gethomeheat.com/supplier/purple-fuels","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(860) 388-4876","priceRange":"$3.54/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.54","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":3,"item":{"@type":"Service","name":"Heating Oil Delivery from Advanced Heating Oil","description":"Heating oil delivery service from Advanced Heating Oil in Chester, CT. Current price: $3.69 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Chester, CT","provider":{"@type":"LocalBusiness","name":"Advanced Heating Oil","@id":"https://www.gethomeheat.com/supplier/advanced-heating-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(860) 859-9080","priceRange":"$3.69/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.69","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":4,"item":{"@type":"Service","name":"Heating Oil Delivery from Blue Flame Oil","description":"Heating oil delivery service from Blue Flame Oil in Chester, CT. Current price: $3.69 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Chester, CT","provider":{"@type":"LocalBusiness","name":"Blue Flame Oil","@id":"https://www.gethomeheat.com/supplier/blue-flame-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(203) 468-2176","priceRange":"$3.69/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.69","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
 </head>
 <body data-zip="06412">
@@ -58,7 +59,10 @@
       <p class="supplier-count">10 suppliers · Updated February 17, 2026</p>
     </header>
 
-    <!-- Market Intelligence Stats -->
+    <!-- V2.34.0: State Price Intelligence (state pages only) -->
+    
+
+    <!-- Market Intelligence Stats (non-state pages) -->
     
     <section class="market-stats-card">
       <div class="stat-item">
@@ -75,7 +79,10 @@
       </div>
     </section>
 
-    <!-- Elite Page Banner (County pages only) -->
+    <!-- Elite Page Banner (County directory pages only) -->
+    
+
+    <!-- V2.34.0: For state pages, show hub links (Elite county cards) BEFORE suppliers -->
     
 
     <!-- Supplier Table -->
@@ -191,7 +198,7 @@
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
 
-    <!-- Hub Links (Counties/Cities) -->
+    <!-- Hub Links (Counties/Cities) - for non-state pages -->
     
     <section class="hub-links">
       <h3>Other Cities in Middlesex County</h3>

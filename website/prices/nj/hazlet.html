@@ -23,6 +23,7 @@
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices"},{"@type":"ListItem","position":3,"name":"New Jersey","item":"https://www.gethomeheat.com/prices/nj/"},{"@type":"ListItem","position":4,"name":"Monmouth County","item":"https://www.gethomeheat.com/prices/nj/monmouth-county"},{"@type":"ListItem","position":5,"name":"Hazlet"}]}</script>
+  
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Hazlet, NJ","description":"Compare heating oil prices from local suppliers in Hazlet, NJ","numberOfItems":4,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from Eagle Petroleum","description":"Heating oil delivery service from Eagle Petroleum in Hazlet, NJ. Current price: $3.10 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Hazlet, NJ","provider":{"@type":"LocalBusiness","name":"Eagle Petroleum","@id":"https://www.gethomeheat.com/supplier/eagle-petroleum","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(609) 394-5078","priceRange":"$3.10/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.10","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":2,"item":{"@type":"Service","name":"Heating Oil Delivery from Central Jersey Heating Oil","description":"Heating oil delivery service from Central Jersey Heating Oil in Hazlet, NJ. Current price: $3.59 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Hazlet, NJ","provider":{"@type":"LocalBusiness","name":"Central Jersey Heating Oil","@id":"https://www.gethomeheat.com/supplier/central-jersey-heating-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(877) 274-0220","priceRange":"$3.59/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.59","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":3,"item":{"@type":"Service","name":"Heating Oil Delivery from Bacardi Oil Service","description":"Heating oil delivery service from Bacardi Oil Service in Hazlet, NJ. Current price: $3.64 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Hazlet, NJ","provider":{"@type":"LocalBusiness","name":"Bacardi Oil Service","@id":"https://www.gethomeheat.com/supplier/bacardi-oil-service","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(973) 227-1313","priceRange":"$3.64/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.64","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":4,"item":{"@type":"Service","name":"Heating Oil Delivery from Skylands Energy Online","description":"Heating oil delivery service from Skylands Energy Online in Hazlet, NJ. Current price: $3.96 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Hazlet, NJ","provider":{"@type":"LocalBusiness","name":"Skylands Energy Online","@id":"https://www.gethomeheat.com/supplier/skylands-energy-online","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(908) 483-9600","priceRange":"$3.96/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.96","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
 </head>
 <body data-zip="07730">
@@ -58,7 +59,10 @@
       <p class="supplier-count">7 suppliers · Updated February 17, 2026</p>
     </header>
 
-    <!-- Market Intelligence Stats -->
+    <!-- V2.34.0: State Price Intelligence (state pages only) -->
+    
+
+    <!-- Market Intelligence Stats (non-state pages) -->
     
     <section class="market-stats-card">
       <div class="stat-item">
@@ -75,7 +79,10 @@
       </div>
     </section>
 
-    <!-- Elite Page Banner (County pages only) -->
+    <!-- Elite Page Banner (County directory pages only) -->
+    
+
+    <!-- V2.34.0: For state pages, show hub links (Elite county cards) BEFORE suppliers -->
     
 
     <!-- Supplier Table -->
@@ -167,7 +174,7 @@
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
 
-    <!-- Hub Links (Counties/Cities) -->
+    <!-- Hub Links (Counties/Cities) - for non-state pages -->
     
     <section class="hub-links">
       <h3>Other Cities in Monmouth County</h3>

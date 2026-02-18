@@ -23,6 +23,7 @@
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices"},{"@type":"ListItem","position":3,"name":"New Jersey","item":"https://www.gethomeheat.com/prices/nj/"},{"@type":"ListItem","position":4,"name":"Gloucester County","item":"https://www.gethomeheat.com/prices/nj/gloucester-county"},{"@type":"ListItem","position":5,"name":"Thorofare"}]}</script>
+  
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Thorofare, NJ","description":"Compare heating oil prices from local suppliers in Thorofare, NJ","numberOfItems":1,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from Riggins Oil","description":"Heating oil delivery service from Riggins Oil in Thorofare, NJ. Current price: $3.50 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Thorofare, NJ","provider":{"@type":"LocalBusiness","name":"Riggins Oil","@id":"https://www.gethomeheat.com/supplier/riggins-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(856) 825-7600","priceRange":"$3.50/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.50","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
 </head>
 <body data-zip="08086">
@@ -58,7 +59,10 @@
       <p class="supplier-count">4 suppliers · Updated February 17, 2026</p>
     </header>
 
-    <!-- Market Intelligence Stats -->
+    <!-- V2.34.0: State Price Intelligence (state pages only) -->
+    
+
+    <!-- Market Intelligence Stats (non-state pages) -->
     
     <section class="market-stats-card">
       <div class="stat-item">
@@ -75,7 +79,10 @@
       </div>
     </section>
 
-    <!-- Elite Page Banner (County pages only) -->
+    <!-- Elite Page Banner (County directory pages only) -->
+    
+
+    <!-- V2.34.0: For state pages, show hub links (Elite county cards) BEFORE suppliers -->
     
 
     <!-- Supplier Table -->
@@ -143,7 +150,7 @@
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
 
-    <!-- Hub Links (Counties/Cities) -->
+    <!-- Hub Links (Counties/Cities) - for non-state pages -->
     
     <section class="hub-links">
       <h3>Other Cities in Gloucester County</h3>

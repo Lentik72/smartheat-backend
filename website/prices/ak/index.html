@@ -23,6 +23,7 @@
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices"},{"@type":"ListItem","position":3,"name":"Alaska"}]}</script>
+  
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Alaska","description":"Compare heating oil prices from local suppliers in Alaska","numberOfItems":0,"itemListElement":[]}</script>
 </head>
 <body>
@@ -58,15 +59,27 @@
       <p class="supplier-count">7 suppliers · Updated February 17, 2026</p>
     </header>
 
-    <!-- Market Intelligence Stats -->
+    <!-- V2.34.0: State Price Intelligence (state pages only) -->
     
 
-    <!-- Elite Page Banner (County pages only) -->
+    <!-- Market Intelligence Stats (non-state pages) -->
     
+
+    <!-- Elite Page Banner (County directory pages only) -->
+    
+
+    <!-- V2.34.0: For state pages, show hub links (Elite county cards) BEFORE suppliers -->
+    
+    <section class="hub-links supplier-directory-links">
+      <h3>Find Suppliers by County</h3>
+      <div class="link-grid">
+        <a href="fairbanks-north-star-county">Fairbanks North Star County <span class="count">(5)</span></a>
+      </div>
+    </section>
 
     <!-- Supplier Table -->
     <section class="supplier-table-section">
-      <h2>Compare Suppliers</h2>
+      <h2>Compare All Suppliers</h2>
       <table class="supplier-table">
         <thead>
           <tr>
@@ -153,14 +166,8 @@
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
 
-    <!-- Hub Links (Counties/Cities) -->
+    <!-- Hub Links (Counties/Cities) - for non-state pages -->
     
-    <section class="hub-links">
-      <h3>Counties in Alaska</h3>
-      <div class="link-grid">
-        <a href="fairbanks-north-star-county">Fairbanks North Star County <span class="count">(5)</span></a>
-      </div>
-    </section>
 
     <!-- ZIP Lookup CTA -->
     <section class="zip-cta">

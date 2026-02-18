@@ -23,6 +23,7 @@
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices"},{"@type":"ListItem","position":3,"name":"New Jersey","item":"https://www.gethomeheat.com/prices/nj/"},{"@type":"ListItem","position":4,"name":"Burlington County"}]}</script>
+  
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Burlington County, New Jersey","description":"Compare heating oil prices from local suppliers in Burlington County, NJ","numberOfItems":3,"itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Service","name":"Heating Oil Delivery from Eagle Petroleum","description":"Heating oil delivery service from Eagle Petroleum in Burlington County, NJ. Current price: $3.10 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Burlington County, NJ","provider":{"@type":"LocalBusiness","name":"Eagle Petroleum","@id":"https://www.gethomeheat.com/supplier/eagle-petroleum","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(609) 394-5078","priceRange":"$3.10/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.10","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":2,"item":{"@type":"Service","name":"Heating Oil Delivery from Bottom Dollar Heating Oil","description":"Heating oil delivery service from Bottom Dollar Heating Oil in Burlington County, NJ. Current price: $3.59 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Burlington County, NJ","provider":{"@type":"LocalBusiness","name":"Bottom Dollar Heating Oil","@id":"https://www.gethomeheat.com/supplier/bottom-dollar-heating-oil","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(856) 829-0100","priceRange":"$3.59/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.59","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}},{"@type":"ListItem","position":3,"item":{"@type":"Service","name":"Heating Oil Delivery from Princeton Fuel Online","description":"Heating oil delivery service from Princeton Fuel Online in Burlington County, NJ. Current price: $3.87 per gallon.","image":"https://www.gethomeheat.com/images/app-icon.png","serviceType":"Heating Oil Delivery","areaServed":"Burlington County, NJ","provider":{"@type":"LocalBusiness","name":"Princeton Fuel Online","@id":"https://www.gethomeheat.com/supplier/princeton-fuel-online","image":"https://www.gethomeheat.com/images/app-icon.png","telephone":"(800) 253-9001","priceRange":"$3.87/gal"},"priceSpecification":{"@type":"UnitPriceSpecification","price":"3.87","priceCurrency":"USD","unitCode":"GLL","unitText":"gallon"}}}]}</script>
 </head>
 <body>
@@ -58,7 +59,10 @@
       <p class="supplier-count">12 suppliers · Updated February 17, 2026</p>
     </header>
 
-    <!-- Market Intelligence Stats -->
+    <!-- V2.34.0: State Price Intelligence (state pages only) -->
+    
+
+    <!-- Market Intelligence Stats (non-state pages) -->
     
     <section class="market-stats-card">
       <div class="stat-item">
@@ -75,7 +79,7 @@
       </div>
     </section>
 
-    <!-- Elite Page Banner (County pages only) -->
+    <!-- Elite Page Banner (County directory pages only) -->
     
     <section class="elite-banner">
       <div class="elite-banner-content">
@@ -87,6 +91,9 @@
         <a href="/prices/county/nj/burlington" class="elite-link">View Burlington County Heating Oil Prices →</a>
       </div>
     </section>
+
+    <!-- V2.34.0: For state pages, show hub links (Elite county cards) BEFORE suppliers -->
+    
 
     <!-- Supplier Table -->
     <section class="supplier-table-section">
@@ -217,7 +224,7 @@
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
 
-    <!-- Hub Links (Counties/Cities) -->
+    <!-- Hub Links (Counties/Cities) - for non-state pages -->
     
     <section class="hub-links">
       <h3>Cities in Burlington County</h3>

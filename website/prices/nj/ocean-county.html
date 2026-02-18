@@ -23,6 +23,7 @@
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.gethomeheat.com/"},{"@type":"ListItem","position":2,"name":"Prices","item":"https://www.gethomeheat.com/prices"},{"@type":"ListItem","position":3,"name":"New Jersey","item":"https://www.gethomeheat.com/prices/nj/"},{"@type":"ListItem","position":4,"name":"Ocean County"}]}</script>
+  
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Heating Oil Prices in Ocean County, New Jersey","description":"Compare heating oil prices from local suppliers in Ocean County, NJ","numberOfItems":0,"itemListElement":[]}</script>
 </head>
 <body>
@@ -58,10 +59,13 @@
       <p class="supplier-count">3 suppliers · Updated February 17, 2026</p>
     </header>
 
-    <!-- Market Intelligence Stats -->
+    <!-- V2.34.0: State Price Intelligence (state pages only) -->
     
 
-    <!-- Elite Page Banner (County pages only) -->
+    <!-- Market Intelligence Stats (non-state pages) -->
+    
+
+    <!-- Elite Page Banner (County directory pages only) -->
     
     <section class="elite-banner">
       <div class="elite-banner-content">
@@ -73,6 +77,9 @@
         <a href="/prices/county/nj/ocean" class="elite-link">View Ocean County Heating Oil Prices →</a>
       </div>
     </section>
+
+    <!-- V2.34.0: For state pages, show hub links (Elite county cards) BEFORE suppliers -->
+    
 
     <!-- Supplier Table -->
     <section class="supplier-table-section">
@@ -131,7 +138,7 @@
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
 
-    <!-- Hub Links (Counties/Cities) -->
+    <!-- Hub Links (Counties/Cities) - for non-state pages -->
     
     <section class="hub-links">
       <h3>Cities in Ocean County</h3>

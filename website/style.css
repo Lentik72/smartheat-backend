@@ -2000,6 +2000,139 @@ body {
     margin-top: 0.25rem;
 }
 
+/* V2.34.0: State Intelligence Section */
+.state-intelligence {
+    margin-bottom: 2rem;
+}
+
+.state-price-hero {
+    background: linear-gradient(135deg, #fff5f0 0%, #fff 100%);
+    border: 1px solid #ffe5d9;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.state-price-hero .price-main {
+    margin-bottom: 0;
+}
+
+.state-price-hero .price-value {
+    display: block;
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary-orange, #FF6B35);
+    line-height: 1;
+}
+
+.state-price-hero .price-unit {
+    display: block;
+    font-size: 1rem;
+    color: var(--text-gray, #666);
+    margin-top: 0.25rem;
+}
+
+.state-price-hero .price-label {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--text-gray, #999);
+    margin-top: 0.5rem;
+}
+
+.state-price-hero .trend-up {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.state-price-hero .trend-down {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.state-price-hero .trend-stable {
+    color: var(--text-gray, #666);
+}
+
+/* V2.34.0: County Elite Grid */
+.county-elite-grid {
+    margin-bottom: 2rem;
+}
+
+.county-elite-grid h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    color: var(--text-dark);
+}
+
+.elite-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+}
+
+.elite-county-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    background: var(--background-card, #fff);
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.elite-county-card:hover {
+    border-color: var(--primary-orange, #FF6B35);
+    box-shadow: 0 2px 8px rgba(255,107,53,0.15);
+}
+
+.elite-county-card .county-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-dark, #333);
+    text-align: center;
+}
+
+.elite-county-card .county-price {
+    font-size: 1.1rem;
+    color: var(--primary-orange, #FF6B35);
+    font-weight: 500;
+    margin: 0.25rem 0;
+}
+
+.elite-county-card .county-suppliers {
+    font-size: 0.75rem;
+    color: var(--text-gray, #666);
+}
+
+.elite-county-card .trend-indicator {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.elite-county-card .trend-indicator.trend-up {
+    color: #dc3545;
+}
+
+.elite-county-card .trend-indicator.trend-down {
+    color: #28a745;
+}
+
+/* Supplier Directory Links (secondary) */
+.supplier-directory-links {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color, #ddd);
+}
+
+.supplier-directory-links h3 {
+    color: var(--text-gray, #666);
+    font-size: 1rem;
+}
+
 /* Supplier Table */
 .supplier-table-section {
     margin-bottom: 2.5rem;
