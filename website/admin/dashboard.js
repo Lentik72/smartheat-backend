@@ -1780,18 +1780,24 @@ async function loadIOSApp() {
     if (localData?.bySupplier?.length > 0) {
       localData.bySupplier.forEach(s => {
         const row = document.createElement('tr');
+        if (s.flag) row.classList.add('flagged-row');
+        const flagBadge = s.flag === 'test_suspected'
+          ? '<span class="flag-badge test">Test?</span>'
+          : '';
         row.innerHTML = `
           <td>${s.name}</td>
+          <td>${s.uniqueUsers || 1}</td>
           <td>${s.saved || 0}</td>
           <td>${s.viewed || 0}</td>
           <td>${s.orders || 0}</td>
           <td>${s.quotes || 0}</td>
           <td>${s.total}</td>
+          <td>${flagBadge}</td>
         `;
         tbody.appendChild(row);
       });
     } else {
-      tbody.innerHTML = '<tr><td colspan="6" class="no-data">No app engagement data yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="no-data">No app engagement data yet</td></tr>';
     }
 
   } catch (error) {

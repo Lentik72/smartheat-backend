@@ -1762,13 +1762,15 @@ router.get('/ios-app', async (req, res) => {
       `, { type: sequelize.QueryTypes.SELECT }),
 
       // Top suppliers by ALL engagement (supplier_engagements + app_events)
+      // Includes flags for unusual patterns (test data detection)
       sequelize.query(`
         WITH all_supplier_actions AS (
           -- From supplier_engagements (orders, quotes)
           SELECT
             COALESCE(s.name, se.supplier_name) as supplier_name,
             se.engagement_type as action_type,
-            se.ip_hash as user_hash
+            se.ip_hash as user_hash,
+            se.created_at
           FROM supplier_engagements se
           LEFT JOIN suppliers s ON se.supplier_id = s.id
           WHERE se.created_at > NOW() - INTERVAL '${days} days'
@@ -1780,23 +1782,48 @@ router.get('/ios-app', async (req, res) => {
               WHEN event_name = 'supplier_saved' THEN 'saved'
               WHEN event_name = 'directory_supplier_viewed' THEN 'viewed'
             END as action_type,
-            device_id_hash as user_hash
+            device_id_hash as user_hash,
+            created_at
           FROM app_events
           WHERE event_name IN ('supplier_saved', 'directory_supplier_viewed')
             AND created_at > NOW() - INTERVAL '${days} days'
             AND event_data->>'supplier_name' IS NOT NULL
+        ),
+        supplier_stats AS (
+          SELECT
+            supplier_name as name,
+            COUNT(*) as total,
+            COUNT(DISTINCT user_hash) as unique_users,
+            COUNT(*) FILTER (WHERE action_type = 'saved') as saved,
+            COUNT(*) FILTER (WHERE action_type = 'viewed') as viewed,
+            COUNT(*) FILTER (WHERE action_type = 'order_placed') as orders,
+            COUNT(*) FILTER (WHERE action_type = 'request_quote') as quotes,
+            COUNT(*) FILTER (WHERE action_type = 'call') as calls,
+            -- Detect rapid-fire actions (multiple in < 30 mins from same user)
+            MAX(CASE
+              WHEN action_type = 'order_placed' THEN 1 ELSE 0
+            END) as has_orders,
+            -- Check if most actions came from single user
+            MAX(user_count) as max_user_actions
+          FROM all_supplier_actions
+          LEFT JOIN (
+            SELECT supplier_name as sn, user_hash as uh, COUNT(*) as user_count
+            FROM all_supplier_actions
+            GROUP BY supplier_name, user_hash
+          ) user_counts ON all_supplier_actions.supplier_name = user_counts.sn
+                       AND all_supplier_actions.user_hash = user_counts.uh
+          WHERE supplier_name IS NOT NULL
+          GROUP BY supplier_name
         )
         SELECT
-          supplier_name as name,
-          COUNT(*) as total,
-          COUNT(*) FILTER (WHERE action_type = 'saved') as saved,
-          COUNT(*) FILTER (WHERE action_type = 'viewed') as viewed,
-          COUNT(*) FILTER (WHERE action_type = 'order_placed') as orders,
-          COUNT(*) FILTER (WHERE action_type = 'request_quote') as quotes,
-          COUNT(*) FILTER (WHERE action_type = 'call') as calls
-        FROM all_supplier_actions
-        WHERE supplier_name IS NOT NULL
-        GROUP BY supplier_name
+          name, total, unique_users, saved, viewed, orders, quotes, calls,
+          -- Flag as suspicious if: single user with 5+ actions, or 3+ orders
+          CASE
+            WHEN unique_users = 1 AND total >= 5 THEN 'test_suspected'
+            WHEN orders >= 3 AND unique_users = 1 THEN 'test_suspected'
+            ELSE NULL
+          END as flag
+        FROM supplier_stats
         ORDER BY total DESC
         LIMIT 20
       `, { type: sequelize.QueryTypes.SELECT }),
@@ -1852,9 +1879,11 @@ router.get('/ios-app', async (req, res) => {
       bySupplier: bySupplier.map(s => ({
         name: s.name,
         total: parseInt(s.total),
+        uniqueUsers: parseInt(s.unique_users) || 0,
         saved: parseInt(s.saved) || 0,
         viewed: parseInt(s.viewed) || 0,
         orders: parseInt(s.orders) || 0,
+        flag: s.flag || null,  // 'test_suspected' if unusual pattern detected
         quotes: parseInt(s.quotes) || 0,
         calls: parseInt(s.calls) || 0
       })),

@@ -4246,3 +4246,28 @@ legend {
 .transition-slow {
   transition: all 0.3s ease;
 }
+
+/* Flag badges for unusual data patterns */
+.flag-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.flag-badge.test {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.flagged-row {
+  background: #fffbeb !important;
+}
+
+.flagged-row:hover {
+  background: #fef3c7 !important;
+}
