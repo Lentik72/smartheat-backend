@@ -535,7 +535,7 @@ function generateZipPageHTML(stats, history, county = null) {
     <section class="county-link-section">
       <h3>County Price Overview</h3>
       <p>See the full ${escapeHtml(county.county_name)} County, ${county.state_code} price report with trends and market analysis.</p>
-      <a href="/prices/county/${county.state_code.toLowerCase()}/${slugify(county.county_name)}" class="cta-button-secondary">View ${escapeHtml(county.county_name)} County Report &rarr;</a>
+      <a href="/prices/county/${county.state_code.toLowerCase()}/${slugify(county.county_name)}" class="cta-button-secondary">See ${escapeHtml(county.county_name)} County Heating Oil Prices &rarr;</a>
     </section>
     ` : ''}
 

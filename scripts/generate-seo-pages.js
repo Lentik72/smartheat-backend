@@ -884,6 +884,7 @@ function generatePageHTML(data) {
 
   // Elite page link banner (for county pages with Elite coverage)
   // Links to /prices/county/{state}/{county} if county Elite page exists
+  // Anchor text includes target keywords for SEO intent signaling
   const countySlugForElite = county ? slugify(county) : null;
   const eliteBannerHtml = (type === 'county' && county && stateCode) ? `
     <section class="elite-banner">
@@ -893,7 +894,7 @@ function generatePageHTML(data) {
           <strong>Looking for price trends and market analysis?</strong>
           <span>View the ${escapeHtml(county)} County Price Report with charts, trends, and ZIP breakdown.</span>
         </div>
-        <a href="/prices/county/${stateCode.toLowerCase()}/${countySlugForElite}" class="elite-link">View Price Report →</a>
+        <a href="/prices/county/${stateCode.toLowerCase()}/${countySlugForElite}" class="elite-link">View ${escapeHtml(county)} County Heating Oil Prices →</a>
       </div>
     </section>` : '';
 
