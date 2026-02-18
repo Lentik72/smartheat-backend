@@ -362,9 +362,8 @@ router.get('/', async (req, res) => {
         .slice(0, maxLimit);
 
       // Fetch prices for matching suppliers
-      // V2.35.16: Pass sequelize for raw SQL fallback if model not initialized
       const supplierIds = limitedSuppliers.map(s => s.id);
-      const priceMap = await getLatestPrices(supplierIds, sequelize);
+      const priceMap = await getLatestPrices(supplierIds);
 
       // Build response with prices
       const responseData = limitedSuppliers.map(s => {
@@ -493,9 +492,8 @@ router.get('/', async (req, res) => {
       }));
 
     // Fetch prices for ALL matched suppliers (needed for price-first sort)
-    // V2.35.16: Pass sequelize for raw SQL fallback if model not initialized
     const allSupplierIds = unsortedSuppliers.map(s => s.id);
-    const priceMap = await getLatestPrices(allSupplierIds, sequelize);
+    const priceMap = await getLatestPrices(allSupplierIds);
 
     // V2.4.0: Price-first sorting with freshness tiers
     // Priced suppliers (fresh/recent) first, sorted by price ASC

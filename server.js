@@ -308,75 +308,58 @@ if (API_KEYS.DATABASE_URL) {
         }
 
         // V2.35.17: Each model wrapped in try/catch to prevent cascading failures
-        // V2.35.19: Added retry logic for transient database issues during startup
-
-        // Helper: retry model sync with exponential backoff
-        const syncWithRetry = async (model, modelName, options = {}, maxRetries = 3) => {
-          for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-              await model.sync(options);
-              logger.info(`✅ ${modelName} model synced`);
-              return true;
-            } catch (err) {
-              if (attempt === maxRetries) {
-                logger.error(`❌ ${modelName} model sync failed after ${maxRetries} attempts:`, err.message || err);
-                logger.error(`${modelName} sync error details:`, JSON.stringify({ name: err.name, sql: err.sql, original: err.original?.message }));
-                return false;
-              }
-              const delay = Math.pow(2, attempt) * 500; // 1s, 2s, 4s
-              logger.warn(`⚠️ ${modelName} sync attempt ${attempt} failed, retrying in ${delay}ms...`);
-              await new Promise(resolve => setTimeout(resolve, delay));
-            }
-          }
-        };
 
         // V1.3.0: Initialize Supplier model and sync table
         try {
           const Supplier = initSupplierModel(sequelize);
           if (Supplier) {
-            await syncWithRetry(Supplier, 'Supplier', { alter: false });
+            await Supplier.sync({ alter: false });
+            logger.info('✅ Supplier model synced');
           } else {
             logger.error('❌ Supplier model failed to initialize');
           }
         } catch (err) {
-          logger.error('❌ Supplier model error:', err.message || err);
+          logger.error('❌ Supplier model sync failed:', err.message || err);
         }
 
         // V18.0: Initialize CommunityDelivery model for benchmarking
         try {
           const CommunityDelivery = initCommunityDeliveryModel(sequelize);
           if (CommunityDelivery) {
-            await syncWithRetry(CommunityDelivery, 'CommunityDelivery', { alter: true });
+            await CommunityDelivery.sync({ alter: true });
+            logger.info('✅ CommunityDelivery model synced');
 
             // V2.3.1: Initialize CommunityDeliveryRaw model for exact telemetry data
             try {
               const CommunityDeliveryRaw = initCommunityDeliveryRawModel(sequelize, CommunityDelivery);
               if (CommunityDeliveryRaw) {
-                await syncWithRetry(CommunityDeliveryRaw, 'CommunityDeliveryRaw', { alter: true });
+                await CommunityDeliveryRaw.sync({ alter: true });
+                logger.info('✅ CommunityDeliveryRaw model synced');
               } else {
                 logger.warn('⚠️  CommunityDeliveryRaw model failed to initialize - raw telemetry disabled');
               }
             } catch (err) {
-              logger.error('❌ CommunityDeliveryRaw model error:', err.message);
+              logger.error('❌ CommunityDeliveryRaw model sync failed:', err.message);
             }
           } else {
             logger.error('❌ CommunityDelivery model failed to initialize');
           }
         } catch (err) {
-          logger.error('❌ CommunityDelivery model error:', err.message);
+          logger.error('❌ CommunityDelivery model sync failed:', err.message);
         }
 
         // V2.0.2: Initialize SupplierPrice model for price tracking
         try {
           const SupplierPrice = initSupplierPriceModel(sequelize);
           if (SupplierPrice) {
-            await syncWithRetry(SupplierPrice, 'SupplierPrice', { alter: false });
+            await SupplierPrice.sync({ alter: false });
+            logger.info('✅ SupplierPrice model synced');
             app.locals.SupplierPrice = SupplierPrice;  // Store for route access
           } else {
             logger.error('❌ SupplierPrice model failed to initialize');
           }
         } catch (err) {
-          logger.error('❌ SupplierPrice model error:', err.message);
+          logger.error('❌ SupplierPrice model sync failed:', err.message);
         }
 
         // V2.3.0: Initialize UserLocation model for Coverage Intelligence
@@ -384,7 +367,8 @@ if (API_KEYS.DATABASE_URL) {
           const { initUserLocationModel } = require('./src/models/UserLocation');
           const UserLocation = initUserLocationModel(sequelize);
           if (UserLocation) {
-            await syncWithRetry(UserLocation, 'UserLocation', { alter: false });
+            await UserLocation.sync({ alter: false });
+            logger.info('✅ UserLocation model synced');
           } else {
             logger.warn('⚠️  UserLocation model failed to initialize');
           }
