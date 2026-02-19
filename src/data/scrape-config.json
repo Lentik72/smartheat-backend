@@ -1024,6 +1024,20 @@
     "postalCodesServed": ["06492", "06410", "06450", "06451", "06405", "06471", "06473", "06437", "06443", "06514", "06517", "06518", "06524", "06413", "06416", "06422", "06455", "06457", "06037", "06489"]
   },
 
+  "midknightoilcompany.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: CT North Stonington/New London County - SSL certificate mismatch, site unreachable.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "brunellienergy.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: CT Bozrah/New London County - JS-rendered site, prices not in static HTML.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_MA": "=== MASSACHUSETTS ===",
 
   "georgesoil.com": {
@@ -1417,6 +1431,27 @@
     "enabled": false,
     "pattern": "direct",
     "notes": "DISABLED: MA Norton - Dynamic pricing. Discount oil since 1978. 100 gal min.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "midnightoilservice.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Shrewsbury/Worcester County - Cash Oil Price displayed on homepage. COD.",
+    "priceRegex": "Cash Oil Price \\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "leblancoil.org": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA Southbridge/Worcester County - Wix JS-rendered site, prices not in static HTML.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "metroenergyboston.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA Boston - Returns HTTP 403 (blocks automated requests).",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -1998,6 +2033,20 @@
     "pattern": "direct",
     "notes": "NH Lakes Region/Laconia - 10-day cash prices. Since 1930. Also delivers coal.",
     "priceRegex": "#2 FUEL=\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "leosfuelnh.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NH Plaistow/Rockingham County - JS-rendered site, prices not in static HTML.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "snhenergy.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NH Southern - Returns HTTP 403 (blocks automated requests).",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "_section_VT": "=== VERMONT ===",
