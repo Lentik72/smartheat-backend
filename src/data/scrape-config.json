@@ -15,6 +15,11 @@
     "oilforless.com": "Broker/aggregator - 1-800 number."
   },
 
+  "_future_contract_oil": {
+    "_comment": "Quality suppliers that are contract-only. Revisit if they add COD/will-call.",
+    "deerparkoil.com": "Deerpark Oil - Sparrowbush, NY. Full-service automatic delivery. Great tri-state coverage (Sullivan, Orange County NY; Pike County PA; Sussex County NJ). Phone: (845) 856-6565."
+  },
+
   "_section_NY": "=== NEW YORK ===",
 
   "acsoilservice.com": {
@@ -393,6 +398,34 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "wilson-fuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ Montague/Sussex County - COD tri-state (NJ/NY/PA). 150 gal min. Daily price on homepage.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})gal"
+  },
+
+  "beesfueloil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NY Walden/Orange-Ulster County - COD. Prices posted on Facebook only.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "quinnoilinc.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NY Goshen/Orange County - Will-call. Call for pricing.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "millerenergyco.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NY Chester/Orange County - Will-call. No prices on site.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_NJ": "=== NEW JERSEY ===",
 
   "lawmansoil.com": {
@@ -589,6 +622,34 @@
     "enabled": false,
     "pattern": "direct",
     "notes": "DISABLED: NJ West Deptford - No scrapable price. Keep in directory.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "eco-fuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ Netcong/Sussex-Warren County - COD price on homepage. Senior + military discounts.",
+    "priceRegex": "Today's C\\.O\\.D\\. Oil Price: \\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "advantage-oil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NJ Mountain Lakes/Morris County - COD company. Price on homepage. 100 gal min.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})/ Gallon"
+  },
+
+  "northeastoilcompany.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NJ Riverdale/Sussex-Morris-Passaic - COD only. Price loaded via JavaScript.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "fredericksfuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NJ Oak Ridge - Will-call. No prices on site. 4 locations, tri-state coverage.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 

@@ -654,6 +654,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Dragon Fuel LLC migration:', err.message);
         });
 
+        // V2.36.0: Add Port Jervis area suppliers (8 COD/will-call)
+        const { up: runPortJervisMigration } = require('./src/migrations/062-add-port-jervis-area-suppliers');
+        runPortJervisMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Port Jervis area migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
