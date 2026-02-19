@@ -642,6 +642,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Fix expired prices migration:', err.message);
         });
 
+        // V2.31.3: Cleanup duplicate supplier entries
+        const { up: runDuplicateCleanup } = require('./src/migrations/059-cleanup-duplicate-suppliers');
+        runDuplicateCleanup(sequelize).catch(err => {
+          logger.warn('⚠️  Duplicate supplier cleanup:', err.message);
+        });
+
         // V2.35.26: Add Dragon Fuel LLC (Stratford, CT)
         const { up: runDragonFuelMigration } = require('./src/migrations/061-add-dragon-fuel-llc');
         runDragonFuelMigration(sequelize).catch(err => {
