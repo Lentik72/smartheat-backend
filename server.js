@@ -676,6 +676,11 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Metro Energy migration:', err.message);
         });
 
+        const { up: runWerleyMigration } = require('./src/migrations/066-add-werley-energy');
+        runWerleyMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Werley Energy migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
