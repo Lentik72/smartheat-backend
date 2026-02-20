@@ -42,9 +42,9 @@
     return count;
   }
 
-  // Capture the install prompt (don't prevent default - allows native Chrome mini-infobar as fallback)
+  // Capture the install prompt and suppress Chrome's native mini-infobar
   window.addEventListener('beforeinstallprompt', (e) => {
-    // Store for custom banner, but let native UI show too
+    e.preventDefault();
     deferredPrompt = e;
 
     if (typeof gtag === 'function') {
@@ -115,20 +115,15 @@
   // Trigger: After ZIP search (called from prices.js or other code)
   window.showPwaInstallBanner = showBanner;
 
-  // Trigger: Return visitor (2nd+ visit) after 3 seconds
+  // Trigger: Return visitor (2nd+ visit) after 1 second
   const visitCount = incrementVisitCount();
   if (visitCount >= 2) {
     setTimeout(() => {
       showBanner();
-    }, 3000);
+    }, 1000);
   }
 
-  // Trigger: First-time visitor after 15 seconds of engagement
-  if (visitCount === 1) {
-    setTimeout(() => {
-      showBanner();
-    }, 15000);
-  }
+  // First-time visitors: banner shows only after ZIP search (via window.showPwaInstallBanner)
 
   // Trigger: User scrolls back up (indicates engagement)
   let lastScrollY = 0;
