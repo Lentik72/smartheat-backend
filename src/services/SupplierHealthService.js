@@ -113,28 +113,21 @@ class SupplierHealthService {
    */
   async _getFailureData(sequelize) {
     const [results] = await sequelize.query(`
+      WITH failure_entries AS (
+        SELECT s.id as supplier_id, d.val::timestamptz as failure_at
+        FROM suppliers s,
+        LATERAL jsonb_array_elements_text(
+          CASE WHEN jsonb_typeof(s.scrape_failure_dates) = 'array' THEN s.scrape_failure_dates ELSE '[]'::jsonb END
+        ) AS d(val)
+        WHERE s.active = true
+          AND s.website IS NOT NULL
+          AND s.website != ''
+      )
       SELECT
-        COUNT(*) FILTER (
-          WHERE scrape_failure_dates IS NOT NULL
-            AND jsonb_array_length(scrape_failure_dates) > 0
-            AND EXISTS (
-              SELECT 1 FROM jsonb_array_elements_text(scrape_failure_dates) d
-              WHERE d::timestamptz >= NOW() - INTERVAL '24 hours'
-            )
-        ) as suppliers_with_failures,
-        (
-          SELECT COUNT(*)
-          FROM suppliers s2,
-          LATERAL jsonb_array_elements_text(s2.scrape_failure_dates) d
-          WHERE s2.active = true
-            AND s2.website IS NOT NULL
-            AND s2.website != ''
-            AND d::timestamptz >= NOW() - INTERVAL '24 hours'
-        ) as total_failures
-      FROM suppliers
-      WHERE active = true
-        AND website IS NOT NULL
-        AND website != ''
+        COUNT(*) as total_failures,
+        COUNT(DISTINCT supplier_id) as suppliers_with_failures
+      FROM failure_entries
+      WHERE failure_at >= NOW() - INTERVAL '24 hours'
     `);
 
     const row = results[0] || {};
