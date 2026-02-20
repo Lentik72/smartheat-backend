@@ -11,6 +11,7 @@
  * - GET /api/dashboard/geographic - Geographic click distribution
  * - GET /api/dashboard/prices - Price trends over time
  * - GET /api/dashboard/scraper-health - Scraper status and failures
+ * - GET /api/dashboard/supplier-health - Comprehensive supplier health report
  * - GET /api/dashboard/waitlist - Android waitlist stats
  * - GET /api/dashboard/pwa - PWA install funnel
  * - GET /api/dashboard/suppliers - List all suppliers (for management)
@@ -26,6 +27,7 @@ const path = require('path');
 const fs = require('fs');
 const UnifiedAnalytics = require('../services/UnifiedAnalytics');
 const RecommendationsEngine = require('../services/RecommendationsEngine');
+const SupplierHealthService = require('../services/SupplierHealthService');
 
 // Apply protection to all dashboard routes
 router.use(dashboardProtection);
@@ -33,6 +35,7 @@ router.use(dashboardProtection);
 // Lazy-initialized service instances (created on first request)
 let unifiedAnalytics = null;
 let recommendationsEngine = null;
+const supplierHealthService = new SupplierHealthService();
 
 const getUnifiedAnalytics = (req) => {
   if (!unifiedAnalytics) {
@@ -945,6 +948,24 @@ router.get('/scraper-health', async (req, res) => {
   } catch (error) {
     logger.error('[Dashboard] Scraper health error:', error.message);
     res.status(500).json({ error: 'Failed to load scraper health', details: error.message });
+  }
+});
+
+// GET /api/dashboard/supplier-health - Comprehensive supplier health report
+router.get('/supplier-health', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const report = await supplierHealthService.generateHealthReport(sequelize);
+    res.json(report);
+  } catch (error) {
+    logger.error('[Dashboard] Supplier health error:', error.message);
+    res.status(500).json({ error: 'Failed to load supplier health', details: error.message });
   }
 });
 

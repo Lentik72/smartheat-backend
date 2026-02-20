@@ -2959,6 +2959,163 @@ legend {
   color: var(--gray-500);
 }
 
+/* ========================================
+   HEALTH TAB - Freshness Bar & Alerts
+   ======================================== */
+
+.health-cards {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.freshness-bar-container {
+  margin-top: 0.5rem;
+}
+
+.freshness-bar {
+  display: flex;
+  height: 32px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  gap: 2px;
+}
+
+.freshness-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-width: 28px;
+  transition: flex 0.3s ease;
+}
+
+.freshness-segment.empty {
+  background: var(--gray-200);
+  color: var(--gray-500);
+}
+
+.freshness-legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.freshness-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--gray-600);
+}
+
+.freshness-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.failure-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.failure-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.failure-row.subtle {
+  border-top: 1px solid var(--gray-200);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.failure-label {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+.failure-value {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.health-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.alert-item.alert-danger {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.alert-item.alert-warning {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.alert-icon {
+  flex-shrink: 0;
+}
+
+.alert-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  justify-content: center;
+  color: var(--gray-500);
+  font-size: 0.9rem;
+}
+
+.alert-check {
+  color: var(--success);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.badge {
+  display: inline-block;
+  background: var(--gray-200);
+  color: var(--gray-600);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-pill);
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .health-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .health-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .external-links {
   display: flex;
   gap: 1rem;

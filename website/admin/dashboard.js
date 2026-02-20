@@ -208,6 +208,7 @@ function handleTabSwitch(target) {
   if (target === 'app-analytics') loadAppAnalytics();
   if (target === 'growth') loadGrowth();
   if (target === 'coverage') loadCoverage();
+  if (target === 'health') loadHealth();
   if (target === 'settings') loadSettings();
   // Legacy tabs (kept for backward compatibility)
   if (target === 'recommendations') loadRecommendations();
@@ -3957,6 +3958,146 @@ function loadCoverageMapWithView(view) {
       statsEl.innerHTML += ' &nbsp; (Error loading suppliers)';
     });
   }
+}
+
+// Load Health tab
+async function loadHealth() {
+  const loadingEl = document.getElementById('health-loading');
+  const contentEl = document.getElementById('health-content');
+
+  try {
+    if (loadingEl) loadingEl.classList.remove('hidden');
+    if (contentEl) contentEl.classList.add('hidden');
+
+    const health = await api('/supplier-health');
+
+    // Stat cards
+    document.getElementById('h-active').textContent = health.backoff.active;
+    document.getElementById('h-cooldown').textContent = health.backoff.cooldown;
+    document.getElementById('h-phone-only').textContent = health.backoff.phoneOnly;
+    document.getElementById('h-success-rate').textContent = health.successRate + '%';
+    document.getElementById('h-scraped-today').textContent = health.scrapedToday;
+
+    // Color code cooldown/phone-only
+    const cooldownEl = document.getElementById('h-cooldown');
+    if (health.backoff.cooldown > 0) cooldownEl.style.color = 'var(--warning)';
+    else cooldownEl.style.color = '';
+    const phoneOnlyEl = document.getElementById('h-phone-only');
+    if (health.backoff.phoneOnly > 0) phoneOnlyEl.style.color = 'var(--danger)';
+    else phoneOnlyEl.style.color = '';
+
+    // Success rate color
+    const rateEl = document.getElementById('h-success-rate');
+    if (health.successRate >= 90) rateEl.style.color = 'var(--success)';
+    else if (health.successRate >= 70) rateEl.style.color = 'var(--warning)';
+    else rateEl.style.color = 'var(--danger)';
+
+    // Price freshness bar
+    renderFreshnessBar(health.priceFreshness);
+
+    // Failure breakdown
+    document.getElementById('h-total-failures').textContent = health.recentFailures.total;
+    document.getElementById('h-suppliers-affected').textContent = health.recentFailures.suppliersWithFailures;
+    document.getElementById('h-last-scrape').textContent = timeAgo(health.lastScrapeAt);
+
+    // Alerts
+    renderHealthAlerts(health.newCooldowns, health.atRisk);
+
+    // Stale suppliers table
+    renderStaleSuppliers(health.staleSuppliers);
+
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (contentEl) contentEl.classList.remove('hidden');
+  } catch (error) {
+    console.error('Failed to load health:', error);
+    if (loadingEl) loadingEl.innerHTML = 'Failed to load health data.';
+  }
+}
+
+function renderFreshnessBar(freshness) {
+  const bar = document.getElementById('freshness-bar');
+  const legend = document.getElementById('freshness-legend');
+  if (!bar || !legend) return;
+
+  const total = freshness.fresh + freshness.aging + freshness.stale + freshness.expired;
+  if (total === 0) {
+    bar.innerHTML = '<div class="freshness-segment empty" style="flex:1">No data</div>';
+    legend.innerHTML = '';
+    return;
+  }
+
+  const segments = [
+    { key: 'fresh', label: '<24h', count: freshness.fresh, color: 'var(--success)' },
+    { key: 'aging', label: '24-48h', count: freshness.aging, color: 'var(--warning)' },
+    { key: 'stale', label: '48h-7d', count: freshness.stale, color: '#f97316' },
+    { key: 'expired', label: '>7d', count: freshness.expired, color: 'var(--danger)' }
+  ];
+
+  bar.innerHTML = segments
+    .filter(s => s.count > 0)
+    .map(s => {
+      const pct = ((s.count / total) * 100).toFixed(1);
+      return `<div class="freshness-segment" style="flex:${s.count};background:${s.color}" title="${s.label}: ${s.count}">${s.count}</div>`;
+    })
+    .join('');
+
+  legend.innerHTML = segments
+    .map(s => `<span class="freshness-legend-item"><span class="freshness-dot" style="background:${s.color}"></span>${s.label}: ${s.count}</span>`)
+    .join('');
+}
+
+function renderHealthAlerts(cooldowns, atRisk) {
+  const container = document.getElementById('health-alerts');
+  if (!container) return;
+
+  const items = [];
+
+  if (cooldowns.length > 0) {
+    cooldowns.forEach(s => {
+      const statusLabel = s.status === 'phone_only' ? 'Phone-only' : 'Cooldown';
+      items.push(`<div class="alert-item alert-danger">
+        <span class="alert-icon">&#9888;</span>
+        <span><strong>${s.name}</strong> (${s.city}, ${s.state}) entered ${statusLabel} &mdash; ${s.consecutiveFailures} consecutive failures</span>
+      </div>`);
+    });
+  }
+
+  if (atRisk.length > 0) {
+    atRisk.forEach(s => {
+      items.push(`<div class="alert-item alert-warning">
+        <span class="alert-icon">&#9888;</span>
+        <span><strong>${s.name}</strong> (${s.city}, ${s.state}) at risk &mdash; 1 failure from cooldown</span>
+      </div>`);
+    });
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = '<div class="alert-empty"><span class="alert-check">&#10003;</span> All clear — no new cooldowns or at-risk suppliers</div>';
+  } else {
+    container.innerHTML = items.join('');
+  }
+}
+
+function renderStaleSuppliers(stale) {
+  const tbody = document.getElementById('stale-suppliers-body');
+  const countEl = document.getElementById('h-stale-count');
+  if (!tbody) return;
+
+  if (countEl) countEl.textContent = stale.length;
+
+  if (stale.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No stale suppliers</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = stale.map(s => `<tr>
+    <td>${s.name}</td>
+    <td>${s.city}, ${s.state}</td>
+    <td>${s.lastPrice ? '$' + s.lastPrice.toFixed(2) : '--'}</td>
+    <td>${formatDate(s.lastUpdated)}</td>
+    <td>${s.daysSinceUpdate}d</td>
+    <td>${s.website ? '<a href="' + s.website + '" target="_blank" rel="noopener">Visit</a>' : '--'}</td>
+  </tr>`).join('');
 }
 
 // Load Settings tab

@@ -62,6 +62,10 @@
             <span class="nav-item-icon">🗺️</span>
             <span class="nav-item-label">Coverage</span>
           </button>
+          <button class="nav-item" data-tab="health">
+            <span class="nav-item-icon">🩺</span>
+            <span class="nav-item-label">Health</span>
+          </button>
           <button class="nav-item" data-tab="suppliers">
             <span class="nav-item-icon">🏢</span>
             <span class="nav-item-label">Suppliers</span>
@@ -1056,6 +1060,101 @@
               </thead>
               <tbody id="coverage-gaps-body"></tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- HEALTH TAB - Supplier & Scraper Health -->
+      <!-- ============================================================ -->
+      <section id="tab-health" class="tab-panel">
+        <div class="health-container">
+          <div id="health-loading" class="loading">Loading health data...</div>
+          <div id="health-content" class="hidden">
+
+            <!-- Top row: Stat cards -->
+            <div class="cards health-cards">
+              <div class="card">
+                <div class="card-value" id="h-active">--</div>
+                <div class="card-label">Active</div>
+              </div>
+              <div class="card">
+                <div class="card-value" id="h-cooldown">--</div>
+                <div class="card-label">Cooldown</div>
+              </div>
+              <div class="card">
+                <div class="card-value" id="h-phone-only">--</div>
+                <div class="card-label">Phone-Only</div>
+              </div>
+              <div class="card">
+                <div class="card-value" id="h-success-rate">--</div>
+                <div class="card-label">Success Rate</div>
+              </div>
+              <div class="card">
+                <div class="card-value" id="h-scraped-today">--</div>
+                <div class="card-label">Scraped Today</div>
+              </div>
+            </div>
+
+            <!-- Price Freshness Bar -->
+            <div class="panel full-width">
+              <h3>Price Freshness</h3>
+              <div class="freshness-bar-container">
+                <div class="freshness-bar" id="freshness-bar"></div>
+                <div class="freshness-legend" id="freshness-legend"></div>
+              </div>
+            </div>
+
+            <!-- Two-column: Failures + Alerts -->
+            <div class="panel-grid two-col">
+              <div class="panel">
+                <h3>Failures (24h)</h3>
+                <div class="failure-breakdown" id="failure-breakdown">
+                  <div class="failure-row">
+                    <span class="failure-label">Total failures</span>
+                    <span class="failure-value" id="h-total-failures">--</span>
+                  </div>
+                  <div class="failure-row">
+                    <span class="failure-label">Suppliers affected</span>
+                    <span class="failure-value" id="h-suppliers-affected">--</span>
+                  </div>
+                  <div class="failure-row subtle">
+                    <span class="failure-label">Last scrape</span>
+                    <span class="failure-value" id="h-last-scrape">--</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <h3>Alerts</h3>
+                <div class="health-alerts" id="health-alerts">
+                  <div class="alert-empty">
+                    <span class="alert-icon">&#10003;</span> All clear
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stale Suppliers Table -->
+            <div class="panel full-width">
+              <h3>Stale Suppliers <span class="badge" id="h-stale-count">0</span></h3>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Location</th>
+                      <th>Last Price</th>
+                      <th>Last Updated</th>
+                      <th>Days Stale</th>
+                      <th>Website</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stale-suppliers-body"></tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
