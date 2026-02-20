@@ -660,6 +660,12 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Port Jervis area migration:', err.message);
         });
 
+        // V2.37.0: Add Quakertown PA area suppliers (2 COD/will-call)
+        const { up: runQuakertownMigration } = require('./src/migrations/063-add-quakertown-area-suppliers');
+        runQuakertownMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Quakertown area migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {

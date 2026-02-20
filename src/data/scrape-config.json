@@ -17,7 +17,11 @@
 
   "_future_contract_oil": {
     "_comment": "Quality suppliers that are contract-only. Revisit if they add COD/will-call.",
-    "deerparkoil.com": "Deerpark Oil - Sparrowbush, NY. Full-service automatic delivery. Great tri-state coverage (Sullivan, Orange County NY; Pike County PA; Sussex County NJ). Phone: (845) 856-6565."
+    "deerparkoil.com": "Deerpark Oil - Sparrowbush, NY. Full-service automatic delivery. Great tri-state coverage (Sullivan, Orange County NY; Pike County PA; Sussex County NJ). Phone: (845) 856-6565.",
+    "gblossoil.com": "G. Bloss Oil - Coopersburg/Quakertown, PA. Full-service automatic delivery. Bucks/Lehigh counties. Phone: (610) 282-1244.",
+    "walkerfuels.com": "Walker Fuels - Quakertown, PA. Full-service automatic delivery. Upper Bucks County. Phone: (215) 536-8712.",
+    "allseasonsfuelllc.com": "All Seasons Fuel - Quakertown, PA area. Contract-only delivery. Bucks County. Phone: (215) 529-5553.",
+    "bucksrunoil.com": "Bucks Run Oil - Hellertown, PA. Contract-only automatic delivery. Bucks/Northampton/Lehigh counties. Phone: (610) 838-7218."
   },
 
   "_section_NY": "=== NEW YORK ===",
@@ -1734,6 +1738,20 @@
     "pricePath": "/fuel-prices.html",
     "targetTier": 1,
     "notes": "PA Port Carbon/Schuylkill County - True COD. 3 tiers (100-124/125-299/300+). targetTier=1 = 125-299 gal ($3.799).",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "indianvalleyenergy.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: PA Sellersville/Bucks County - No public prices on site. Strictly COD, no contracts.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "apgaroil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: PA Allentown/Lehigh County - No public prices on site. Will-call option available.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
