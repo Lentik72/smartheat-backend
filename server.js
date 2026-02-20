@@ -666,6 +666,11 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Quakertown area migration:', err.message);
         });
 
+        const { up: runRecovered403Migration } = require('./src/migrations/064-add-recovered-403-suppliers');
+        runRecovered403Migration(sequelize).catch(err => {
+          logger.warn('⚠️  Recovered 403 suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {

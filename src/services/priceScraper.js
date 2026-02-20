@@ -21,6 +21,22 @@ const USER_AGENT = 'HomeHeatBot/1.0 (gethomeheat.com; published-price-aggregatio
 // Agent for sites with SSL certificate issues
 const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
+// V2.9.0: Lazy-load got-scraping (ESM) for 403 fallback with browser-like TLS fingerprints
+let _gotScraping = null;
+async function getGotScraping() {
+  if (_gotScraping === false) return null; // previously failed to load
+  if (_gotScraping) return _gotScraping;
+  try {
+    const mod = await import('got-scraping');
+    _gotScraping = mod.gotScraping;
+    return _gotScraping;
+  } catch (e) {
+    console.warn('⚠️ got-scraping not available:', e.message);
+    _gotScraping = false;
+    return null;
+  }
+}
+
 /**
  * Extract price from HTML using config selectors
  * @param {string} html - Raw HTML content
@@ -165,6 +181,49 @@ async function scrapeSupplierPriceOnce(supplier, config) {
     clearTimeout(timeout);
 
     if (!response.ok) {
+      // V2.9.0: For 403 blocks, try got-scraping with browser-like TLS fingerprint
+      if (response.status === 403) {
+        const gotScraping = await getGotScraping();
+        if (gotScraping) {
+          try {
+            const gotResponse = await gotScraping({
+              url,
+              timeout: { request: 10000 },
+              headers: {
+                'Accept': 'text/html,application/xhtml+xml',
+                'Accept-Language': 'en-US,en;q=0.9'
+              }
+            });
+
+            if (gotResponse.statusCode === 200) {
+              const gotHtml = gotResponse.body;
+              const gotPrice = extractPrice(gotHtml, config);
+
+              if (gotPrice !== null && gotPrice >= 2.00 && gotPrice <= 5.00) {
+                const sourceType = config.displayable === false ? 'aggregator_signal' : 'scraped';
+                return {
+                  supplierId: supplier.id,
+                  supplierName: supplier.name,
+                  success: true,
+                  pricePerGallon: gotPrice,
+                  minGallons: 150,
+                  fuelType: 'heating_oil',
+                  sourceType,
+                  sourceUrl: url,
+                  scrapedAt: new Date(),
+                  expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+                  duration: Date.now() - startTime,
+                  isAggregator: config.displayable === false,
+                  fallbackUsed: 'got-scraping'
+                };
+              }
+            }
+          } catch (gotError) {
+            // got-scraping also failed — fall through to original 403 error
+          }
+        }
+      }
+
       // 5xx errors are retryable, 4xx usually are not
       const retryable = response.status >= 500;
       return {
