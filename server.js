@@ -671,6 +671,11 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Recovered 403 suppliers migration:', err.message);
         });
 
+        const { up: runMetroEnergyMigration } = require('./src/migrations/065-add-metro-energy-boston');
+        runMetroEnergyMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Metro Energy migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
