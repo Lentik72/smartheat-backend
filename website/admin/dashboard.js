@@ -2753,9 +2753,6 @@ async function loadCommandCenter() {
     document.getElementById('cc-ns-value').textContent = ns.today ?? 0;
     document.getElementById('cc-ns-yesterday').textContent = ns.yesterday ?? 0;
     document.getElementById('cc-ns-avg7d').textContent = ns.avg7d ?? 0;
-    const avgSubEl = document.getElementById('cc-ns-avg-sub');
-    if (avgSubEl) avgSubEl.textContent = `avg ${ns.avg7d ?? 0}`;
-
     const changeEl = document.getElementById('cc-ns-change');
     if (ns.change > 0) {
       changeEl.textContent = `+${ns.change}% vs 7d avg`;
@@ -2785,14 +2782,6 @@ async function loadCommandCenter() {
 
     // ROW 6: Market Movers
     ccRenderMovers(movers);
-
-    // Active supplier count in card
-    document.getElementById('cc-active-count').textContent = lc.states?.active ?? '--';
-    document.getElementById('cc-active-sub').textContent = `of ${lc.total}`;
-
-    // Anomaly count
-    document.getElementById('cc-anomaly-count').textContent = anomalies.length;
-    document.getElementById('cc-anomaly-sub').textContent = anomalies.length === 0 ? 'all clear' : 'detected';
 
     // Timestamp
     const genEl = document.getElementById('cc-generated');
