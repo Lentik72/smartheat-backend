@@ -7,7 +7,7 @@
 // State
 let authToken = sessionStorage.getItem('dashboardToken') || '';
 let currentDays = 30;
-let currentTab = 'leaderboard';  // Track active tab for period refresh
+let currentTab = 'command-center';  // Track active tab for period refresh
 let suppliersPage = 0;
 const suppliersLimit = 50;
 
@@ -17,6 +17,7 @@ let pageSourceChart = null;
 let deviceChart = null;
 let priceChart = null;
 let spreadChart = null;
+let nsSparklineChart = null;
 let map = null;
 
 // API base
@@ -204,6 +205,7 @@ function handleTabSwitch(target) {
 
   // Load tab-specific data
   // Scope 18 tabs (new primary navigation)
+  if (target === 'command-center') loadCommandCenter();
   if (target === 'leaderboard') loadLeaderboard();
   if (target === 'app-analytics') loadAppAnalytics();
   if (target === 'growth') loadGrowth();
@@ -312,6 +314,7 @@ document.querySelectorAll('.period-btn').forEach(btn => {
 // Reload current tab (called when period changes)
 function reloadCurrentTab() {
   switch (currentTab) {
+    case 'command-center': loadCommandCenter(); break;
     case 'leaderboard': loadLeaderboard(); break;
     case 'app-analytics': loadAppAnalytics(); break;
     case 'growth': loadGrowth(); break;
@@ -2711,7 +2714,217 @@ function formatThresholdKey(key) {
 // SCOPE 18: NEW TAB LOAD FUNCTIONS
 // ========================================
 
-// Load Leaderboard tab (default tab) - Uses weighted engagement scoring
+// Load Command Center tab (default landing)
+async function loadCommandCenter() {
+  const loadingEl = document.getElementById('cc-loading');
+  const contentEl = document.getElementById('cc-content');
+
+  if (loadingEl) loadingEl.classList.remove('hidden');
+  if (contentEl) contentEl.classList.add('hidden');
+
+  try {
+    const data = await api('/command-center');
+
+    // --- North Star ---
+    const ns = data.northStar || {};
+    document.getElementById('cc-ns-value').textContent = ns.today ?? '--';
+    document.getElementById('cc-ns-yesterday').textContent = ns.yesterday ?? '--';
+    document.getElementById('cc-ns-avg7d').textContent = ns.avg7d ?? '--';
+
+    const changeEl = document.getElementById('cc-ns-change');
+    if (ns.change > 0) {
+      changeEl.innerHTML = `<span class="trend trend-up">&uarr; ${ns.change}% vs 7d avg</span>`;
+    } else if (ns.change < 0) {
+      changeEl.innerHTML = `<span class="trend trend-down">&darr; ${Math.abs(ns.change)}% vs 7d avg</span>`;
+    } else {
+      changeEl.innerHTML = `<span class="trend flat">&mdash; on par with 7d avg</span>`;
+    }
+
+    // Sparkline chart
+    renderNorthStarSparkline(ns.trend || []);
+
+    // --- Anomalies ---
+    renderAnomalies(data.anomalies || []);
+
+    // --- Lifecycle Pipeline ---
+    renderLifecycle(data.lifecycle || { states: {}, total: 0 });
+
+    // --- Action Items ---
+    renderActionItems(data.actionItems || []);
+
+    // --- Movers ---
+    renderMovers(data.movers || { up: [], down: [] });
+
+    // --- Timestamp ---
+    const genEl = document.getElementById('cc-generated');
+    if (genEl && data.generatedAt) {
+      genEl.textContent = 'Updated ' + timeAgo(data.generatedAt);
+    }
+
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (contentEl) contentEl.classList.remove('hidden');
+  } catch (error) {
+    console.error('Failed to load command center:', error);
+    if (loadingEl) loadingEl.innerHTML = 'Failed to load Command Center.';
+  }
+}
+
+function renderNorthStarSparkline(trend) {
+  const canvas = document.getElementById('cc-ns-sparkline');
+  if (!canvas || !trend.length) return;
+
+  if (nsSparklineChart) nsSparklineChart.destroy();
+
+  const labels = trend.map(d => {
+    const dt = new Date(d.date);
+    return dt.toLocaleDateString('en-US', { weekday: 'short' });
+  });
+  const values = trend.map(d => d.qualityConnections);
+
+  nsSparklineChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 2,
+        pointBackgroundColor: '#3b82f6',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: true } },
+      scales: {
+        x: { display: false },
+        y: { display: false, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderAnomalies(anomalies) {
+  const container = document.getElementById('cc-anomalies');
+  if (!container) return;
+
+  if (!anomalies.length) {
+    container.innerHTML = '<div class="cc-empty-state cc-all-clear">All metrics within normal range</div>';
+    return;
+  }
+
+  container.innerHTML = anomalies.map(a => {
+    const icon = a.direction === 'up' ? '&#9650;' : '&#9660;';
+    const cls = a.severity === 'high' ? 'cc-anomaly-high' : 'cc-anomaly-medium';
+    const dirCls = a.direction === 'up' ? 'anomaly-up' : 'anomaly-down';
+    return `
+      <div class="cc-anomaly-card ${cls}">
+        <div class="cc-anomaly-header">
+          <span class="cc-anomaly-cat">${a.title}</span>
+          <span class="cc-anomaly-dev ${dirCls}">${icon} ${Math.abs(a.deviation)}%</span>
+        </div>
+        <div class="cc-anomaly-values">
+          <span>Today: <strong>${a.today}</strong></span>
+          <span>7d avg: <strong>${a.avg7d}</strong></span>
+        </div>
+        <div class="cc-anomaly-insight">${a.insight}</div>
+        ${a.note ? `<div class="cc-anomaly-note">${a.note}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderLifecycle(lifecycle) {
+  const states = lifecycle.states || {};
+  const total = lifecycle.total || 0;
+
+  // Update counts
+  ['newLead', 'active', 'stale', 'atRisk', 'cooldown', 'dormant'].forEach(s => {
+    const el = document.getElementById(`cc-lc-${s}`);
+    if (el) el.textContent = states[s] || 0;
+  });
+
+  // Pipeline bar (proportional)
+  const bar = document.getElementById('cc-pipeline-bar');
+  if (!bar || total === 0) return;
+
+  const colors = {
+    newLead: '#60a5fa',
+    active: '#22c55e',
+    stale: '#f59e0b',
+    atRisk: '#f97316',
+    cooldown: '#ef4444',
+    dormant: '#9ca3af'
+  };
+
+  bar.innerHTML = Object.entries(colors)
+    .filter(([key]) => (states[key] || 0) > 0)
+    .map(([key, color]) => {
+      const pct = ((states[key] / total) * 100).toFixed(1);
+      return `<div class="cc-pipe-bar-seg" style="flex:${states[key]};background:${color}" title="${key}: ${states[key]} (${pct}%)"></div>`;
+    }).join('');
+}
+
+function renderActionItems(actions) {
+  const container = document.getElementById('cc-actions');
+  if (!container) return;
+
+  if (!actions.length) {
+    container.innerHTML = '<div class="cc-empty-state cc-all-clear">All clear — no actions needed</div>';
+    return;
+  }
+
+  container.innerHTML = actions.map(a => {
+    const prioClass = a.priority === 'high' ? 'cc-action-high' : a.priority === 'medium' ? 'cc-action-medium' : 'cc-action-low';
+    const prioLabel = a.priority === 'high' ? '!!!' : a.priority === 'medium' ? '!!' : '!';
+    return `
+      <div class="cc-action-item ${prioClass}">
+        <span class="cc-action-prio">${prioLabel}</span>
+        <span class="cc-action-text">${a.text}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderMovers(movers) {
+  const upEl = document.getElementById('cc-movers-up');
+  const downEl = document.getElementById('cc-movers-down');
+
+  if (upEl) {
+    if (movers.up.length) {
+      upEl.innerHTML = movers.up.map(m => `
+        <div class="cc-mover-item">
+          <span class="cc-mover-name">${m.name}</span>
+          <span class="cc-mover-loc">${m.city}, ${m.state}</span>
+          <span class="cc-mover-price price-up">+$${m.change.toFixed(2)}</span>
+          <span class="cc-mover-current">$${m.currentPrice.toFixed(2)}</span>
+        </div>
+      `).join('');
+    } else {
+      upEl.innerHTML = '<div class="cc-empty-state small">No increases</div>';
+    }
+  }
+
+  if (downEl) {
+    if (movers.down.length) {
+      downEl.innerHTML = movers.down.map(m => `
+        <div class="cc-mover-item">
+          <span class="cc-mover-name">${m.name}</span>
+          <span class="cc-mover-loc">${m.city}, ${m.state}</span>
+          <span class="cc-mover-price price-down">-$${Math.abs(m.change).toFixed(2)}</span>
+          <span class="cc-mover-current">$${m.currentPrice.toFixed(2)}</span>
+        </div>
+      `).join('');
+    } else {
+      downEl.innerHTML = '<div class="cc-empty-state small">No drops</div>';
+    }
+  }
+}
+
+// Load Leaderboard tab - Uses weighted engagement scoring
 async function loadLeaderboard() {
   const loadingEl = document.getElementById('leaderboard-loading');
   const contentEl = document.getElementById('leaderboard-content');
@@ -4119,7 +4332,7 @@ async function loadSettings() {
 async function loadDashboard() {
   await Promise.all([
     loadOverview(),
-    loadLeaderboard(),  // Load default tab
+    loadCommandCenter(),  // Load default tab
     loadSupplierSignals(),
     loadConversion(),
     loadPriceAlerts()

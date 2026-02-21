@@ -12,6 +12,7 @@
  * - GET /api/dashboard/prices - Price trends over time
  * - GET /api/dashboard/scraper-health - Scraper status and failures
  * - GET /api/dashboard/supplier-health - Comprehensive supplier health report
+ * - GET /api/dashboard/command-center - Intelligence hub (North Star, anomalies, lifecycle)
  * - GET /api/dashboard/waitlist - Android waitlist stats
  * - GET /api/dashboard/pwa - PWA install funnel
  * - GET /api/dashboard/suppliers - List all suppliers (for management)
@@ -28,6 +29,7 @@ const fs = require('fs');
 const UnifiedAnalytics = require('../services/UnifiedAnalytics');
 const RecommendationsEngine = require('../services/RecommendationsEngine');
 const SupplierHealthService = require('../services/SupplierHealthService');
+const CommandCenterService = require('../services/CommandCenterService');
 
 // Apply protection to all dashboard routes
 router.use(dashboardProtection);
@@ -36,6 +38,7 @@ router.use(dashboardProtection);
 let unifiedAnalytics = null;
 let recommendationsEngine = null;
 const supplierHealthService = new SupplierHealthService();
+const commandCenterService = new CommandCenterService();
 
 const getUnifiedAnalytics = (req) => {
   if (!unifiedAnalytics) {
@@ -966,6 +969,24 @@ router.get('/supplier-health', async (req, res) => {
   } catch (error) {
     logger.error('[Dashboard] Supplier health error:', error.message);
     res.status(500).json({ error: 'Failed to load supplier health', details: error.message });
+  }
+});
+
+// GET /api/dashboard/command-center - Intelligence hub data
+router.get('/command-center', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const data = await commandCenterService.getData(sequelize, logger);
+    res.json(data);
+  } catch (error) {
+    logger.error('[Dashboard] Command center error:', error.message);
+    res.status(500).json({ error: 'Failed to load command center', details: error.message });
   }
 });
 
