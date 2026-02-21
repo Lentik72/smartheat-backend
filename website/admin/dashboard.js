@@ -2743,42 +2743,60 @@ async function loadCommandCenter() {
 
   try {
     const data = await api('/command-center');
-
-    // --- North Star ---
     const ns = data.northStar || {};
-    document.getElementById('cc-ns-value').textContent = ns.today ?? '--';
-    document.getElementById('cc-ns-yesterday').textContent = ns.yesterday ?? '--';
-    document.getElementById('cc-ns-avg7d').textContent = ns.avg7d ?? '--';
+    const lc = data.lifecycle || { states: {}, total: 0 };
+    const anomalies = data.anomalies || [];
+    const actions = data.actionItems || [];
+    const movers = data.movers || { up: [], down: [] };
+
+    // ROW 1: North Star
+    document.getElementById('cc-ns-value').textContent = ns.today ?? 0;
+    document.getElementById('cc-ns-yesterday').textContent = ns.yesterday ?? 0;
+    document.getElementById('cc-ns-avg7d').textContent = ns.avg7d ?? 0;
+    const avgSubEl = document.getElementById('cc-ns-avg-sub');
+    if (avgSubEl) avgSubEl.textContent = `avg ${ns.avg7d ?? 0}`;
 
     const changeEl = document.getElementById('cc-ns-change');
     if (ns.change > 0) {
-      changeEl.innerHTML = `<span class="trend trend-up">&uarr; ${ns.change}% vs 7d avg</span>`;
+      changeEl.textContent = `+${ns.change}% vs 7d avg`;
+      changeEl.className = 'cc-ns-change up';
     } else if (ns.change < 0) {
-      changeEl.innerHTML = `<span class="trend trend-down">&darr; ${Math.abs(ns.change)}% vs 7d avg</span>`;
+      changeEl.textContent = `${ns.change}% vs 7d avg`;
+      changeEl.className = 'cc-ns-change down';
     } else {
-      changeEl.innerHTML = `<span class="trend flat">&mdash; on par with 7d avg</span>`;
+      changeEl.textContent = 'on par with 7d avg';
+      changeEl.className = 'cc-ns-change flat';
     }
 
-    // Sparkline chart
-    renderNorthStarSparkline(ns.trend || []);
+    // Tiny sparkline
+    ccRenderSparkline(ns.trend || []);
 
-    // --- Anomalies ---
-    renderAnomalies(data.anomalies || []);
+    // ROW 2: Status Grid
+    ccRenderStatusGrid(data);
 
-    // --- Lifecycle Pipeline ---
-    renderLifecycle(data.lifecycle || { states: {}, total: 0 });
+    // ROW 3: Alert Strip
+    ccRenderAlerts(anomalies);
 
-    // --- Action Items ---
-    renderActionItems(data.actionItems || []);
+    // ROW 4: Supplier Machine
+    ccRenderPipeline(lc);
 
-    // --- Movers ---
-    renderMovers(data.movers || { up: [], down: [] });
+    // ROW 5: Priority Actions (max 3)
+    ccRenderActions(actions.slice(0, 3));
 
-    // --- Timestamp ---
+    // ROW 6: Market Movers
+    ccRenderMovers(movers);
+
+    // Active supplier count in card
+    document.getElementById('cc-active-count').textContent = lc.states?.active ?? '--';
+    document.getElementById('cc-active-sub').textContent = `of ${lc.total}`;
+
+    // Anomaly count
+    document.getElementById('cc-anomaly-count').textContent = anomalies.length;
+    document.getElementById('cc-anomaly-sub').textContent = anomalies.length === 0 ? 'all clear' : 'detected';
+
+    // Timestamp
     const genEl = document.getElementById('cc-generated');
-    if (genEl && data.generatedAt) {
-      genEl.textContent = 'Updated ' + timeAgo(data.generatedAt);
-    }
+    if (genEl && data.generatedAt) genEl.textContent = 'Updated ' + timeAgo(data.generatedAt);
 
     if (loadingEl) loadingEl.classList.add('hidden');
     if (contentEl) contentEl.classList.remove('hidden');
@@ -2788,158 +2806,182 @@ async function loadCommandCenter() {
   }
 }
 
-function renderNorthStarSparkline(trend) {
+function ccRenderSparkline(trend) {
   const canvas = document.getElementById('cc-ns-sparkline');
   if (!canvas || !trend.length) return;
-
   if (nsSparklineChart) nsSparklineChart.destroy();
-
-  const labels = trend.map(d => {
-    const dt = new Date(d.date);
-    return dt.toLocaleDateString('en-US', { weekday: 'short' });
-  });
-  const values = trend.map(d => d.qualityConnections);
 
   nsSparklineChart = new Chart(canvas, {
     type: 'line',
     data: {
-      labels,
+      labels: trend.map(d => d.date),
       datasets: [{
-        data: values,
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59,130,246,0.1)',
-        fill: true,
-        tension: 0.4,
-        pointRadius: 2,
-        pointBackgroundColor: '#3b82f6',
-        borderWidth: 2
+        data: trend.map(d => d.qualityConnections),
+        borderColor: '#94a3b8',
+        backgroundColor: 'rgba(148,163,184,0.08)',
+        fill: true, tension: 0.4,
+        pointRadius: 0, borderWidth: 1.5
       }]
     },
     options: {
       responsive: false,
-      plugins: { legend: { display: false }, tooltip: { enabled: true } },
-      scales: {
-        x: { display: false },
-        y: { display: false, beginAtZero: true }
-      }
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false, beginAtZero: true } }
     }
   });
 }
 
-function renderAnomalies(anomalies) {
-  const container = document.getElementById('cc-anomalies');
-  if (!container) return;
+function ccRenderStatusGrid(data) {
+  const anomalies = data.anomalies || [];
+  const lc = data.lifecycle || { states: {}, total: 0 };
+  const ns = data.northStar || {};
+
+  // Demand
+  const demandAnomaly = anomalies.find(a => a.category === 'demand');
+  const demandVal = demandAnomaly ? demandAnomaly.today : '--';
+  document.getElementById('cc-stat-demand').textContent = demandVal;
+  document.getElementById('cc-detail-demand').textContent = demandAnomaly
+    ? `7d avg: ${demandAnomaly.avg7d}` : 'new locations today';
+  ccSetDot('cc-dot-demand', demandAnomaly);
+
+  // Supply
+  const supplyAnomaly = anomalies.find(a => a.category === 'supply');
+  const freshCount = (lc.states?.active || 0);
+  document.getElementById('cc-stat-supply').textContent = supplyAnomaly ? supplyAnomaly.today : freshCount;
+  document.getElementById('cc-detail-supply').textContent = supplyAnomaly
+    ? `7d avg: ${supplyAnomaly.avg7d}` : 'scraped today';
+  ccSetDot('cc-dot-supply', supplyAnomaly);
+
+  // Conversion
+  const convAnomaly = anomalies.find(a => a.category === 'conversion');
+  document.getElementById('cc-stat-conversion').textContent = convAnomaly ? convAnomaly.today : (ns.avg7d > 0 ? Math.round((ns.today / Math.max(1, ns.today + 1)) * 100) + '%' : '--%');
+  document.getElementById('cc-detail-conversion').textContent = convAnomaly
+    ? `7d avg: ${convAnomaly.avg7d}` : 'quality rate';
+  ccSetDot('cc-dot-conversion', convAnomaly);
+
+  // Data Health
+  const failAnomaly = anomalies.find(a => a.category === 'supplier');
+  const healthyPct = lc.total > 0 ? Math.round(((lc.states?.active || 0) / lc.total) * 100) : 0;
+  document.getElementById('cc-stat-health').textContent = failAnomaly ? failAnomaly.today + ' fails' : healthyPct + '%';
+  document.getElementById('cc-detail-health').textContent = failAnomaly
+    ? `7d avg: ${failAnomaly.avg7d}` : 'active rate';
+  ccSetDot('cc-dot-health', failAnomaly);
+}
+
+function ccSetDot(id, anomaly) {
+  const dot = document.getElementById(id);
+  if (!dot) return;
+  if (!anomaly) { dot.className = 'cc-status-dot green'; return; }
+  dot.className = 'cc-status-dot ' + (anomaly.severity === 'high' ? 'red' : 'yellow');
+}
+
+function ccRenderAlerts(anomalies) {
+  const strip = document.getElementById('cc-alert-strip');
+  if (!strip) return;
 
   if (!anomalies.length) {
-    container.innerHTML = '<div class="cc-empty-state cc-all-clear">All metrics within normal range</div>';
+    strip.innerHTML = '<div class="cc-alert-stable">All systems stable</div>';
     return;
   }
 
-  container.innerHTML = anomalies.map(a => {
-    const icon = a.direction === 'up' ? '&#9650;' : '&#9660;';
-    const cls = a.severity === 'high' ? 'cc-anomaly-high' : 'cc-anomaly-medium';
-    const dirCls = a.direction === 'up' ? 'anomaly-up' : 'anomaly-down';
+  // Show top 2 anomalies
+  strip.innerHTML = anomalies.slice(0, 2).map(a => {
+    const cls = a.severity === 'high' ? 'high' : 'medium';
+    const arrow = a.direction === 'up' ? '&uarr;' : '&darr;';
     return `
-      <div class="cc-anomaly-card ${cls}">
-        <div class="cc-anomaly-header">
-          <span class="cc-anomaly-cat">${a.title}</span>
-          <span class="cc-anomaly-dev ${dirCls}">${icon} ${Math.abs(a.deviation)}%</span>
+      <div class="cc-alert-item ${cls}">
+        <div class="cc-alert-dot"></div>
+        <div class="cc-alert-body">
+          <div class="cc-alert-title">${a.title} ${arrow}${Math.abs(a.deviation)}%</div>
+          <div class="cc-alert-detail">${a.insight}</div>
         </div>
-        <div class="cc-anomaly-values">
-          <span>Today: <strong>${a.today}</strong></span>
-          <span>7d avg: <strong>${a.avg7d}</strong></span>
-        </div>
-        <div class="cc-anomaly-insight">${a.insight}</div>
-        ${a.note ? `<div class="cc-anomaly-note">${a.note}</div>` : ''}
       </div>
     `;
   }).join('');
 }
 
-function renderLifecycle(lifecycle) {
+function ccRenderPipeline(lifecycle) {
   const states = lifecycle.states || {};
   const total = lifecycle.total || 0;
 
-  // Update counts
-  ['newLead', 'active', 'stale', 'atRisk', 'cooldown', 'dormant'].forEach(s => {
-    const el = document.getElementById(`cc-lc-${s}`);
-    if (el) el.textContent = states[s] || 0;
-  });
+  document.getElementById('cc-pipe-total').textContent = total + ' suppliers';
 
-  // Pipeline bar (proportional)
-  const bar = document.getElementById('cc-pipeline-bar');
-  if (!bar || total === 0) return;
+  const stages = [
+    { key: 'active', label: 'Active', color: '#22c55e' },
+    { key: 'newLead', label: 'New Lead', color: '#60a5fa' },
+    { key: 'stale', label: 'Stale', color: '#f59e0b' },
+    { key: 'atRisk', label: 'At Risk', color: '#f97316' },
+    { key: 'cooldown', label: 'Cooldown', color: '#ef4444' },
+    { key: 'dormant', label: 'Dormant', color: '#9ca3af' }
+  ];
 
-  const colors = {
-    newLead: '#60a5fa',
-    active: '#22c55e',
-    stale: '#f59e0b',
-    atRisk: '#f97316',
-    cooldown: '#ef4444',
-    dormant: '#9ca3af'
-  };
+  // Stacked bar
+  const bar = document.getElementById('cc-stacked-bar');
+  if (bar && total > 0) {
+    bar.innerHTML = stages
+      .filter(s => (states[s.key] || 0) > 0)
+      .map(s => {
+        const count = states[s.key] || 0;
+        const pct = ((count / total) * 100).toFixed(0);
+        const label = count > total * 0.05 ? count : '';
+        return `<div class="cc-bar-seg" style="flex:${count};background:${s.color}" title="${s.label}: ${count} (${pct}%)"><span>${label}</span></div>`;
+      }).join('');
+  }
 
-  bar.innerHTML = Object.entries(colors)
-    .filter(([key]) => (states[key] || 0) > 0)
-    .map(([key, color]) => {
-      const pct = ((states[key] / total) * 100).toFixed(1);
-      return `<div class="cc-pipe-bar-seg" style="flex:${states[key]};background:${color}" title="${key}: ${states[key]} (${pct}%)"></div>`;
+  // Legend
+  const legend = document.getElementById('cc-stacked-legend');
+  if (legend) {
+    legend.innerHTML = stages.map(s => {
+      const count = states[s.key] || 0;
+      return `<div class="cc-legend-item"><div class="cc-legend-dot" style="background:${s.color}"></div>${s.label}: <span class="cc-legend-count">${count}</span></div>`;
     }).join('');
+  }
 }
 
-function renderActionItems(actions) {
-  const container = document.getElementById('cc-actions');
-  if (!container) return;
+function ccRenderActions(actions) {
+  const list = document.getElementById('cc-priority-list');
+  if (!list) return;
 
   if (!actions.length) {
-    container.innerHTML = '<div class="cc-empty-state cc-all-clear">All clear — no actions needed</div>';
+    list.innerHTML = '<div class="cc-priority-clear">No actions needed</div>';
     return;
   }
 
-  container.innerHTML = actions.map(a => {
-    const prioClass = a.priority === 'high' ? 'cc-action-high' : a.priority === 'medium' ? 'cc-action-medium' : 'cc-action-low';
-    const prioLabel = a.priority === 'high' ? '!!!' : a.priority === 'medium' ? '!!' : '!';
+  list.innerHTML = actions.map(a => {
+    const dotCls = a.priority === 'high' ? 'red' : a.priority === 'medium' ? 'yellow' : 'gray';
     return `
-      <div class="cc-action-item ${prioClass}">
-        <span class="cc-action-prio">${prioLabel}</span>
-        <span class="cc-action-text">${a.text}</span>
+      <div class="cc-priority-item">
+        <div class="cc-priority-dot ${dotCls}"></div>
+        <span>${a.text}</span>
       </div>
     `;
   }).join('');
 }
 
-function renderMovers(movers) {
+function ccRenderMovers(movers) {
   const upEl = document.getElementById('cc-movers-up');
   const downEl = document.getElementById('cc-movers-down');
 
   if (upEl) {
-    if (movers.up.length) {
-      upEl.innerHTML = movers.up.map(m => `
-        <div class="cc-mover-item">
-          <span class="cc-mover-name">${m.name}</span>
-          <span class="cc-mover-loc">${m.city}, ${m.state}</span>
-          <span class="cc-mover-price price-up">+$${m.change.toFixed(2)}</span>
-          <span class="cc-mover-current">$${m.currentPrice.toFixed(2)}</span>
-        </div>
-      `).join('');
-    } else {
-      upEl.innerHTML = '<div class="cc-empty-state small">No increases</div>';
-    }
+    upEl.innerHTML = movers.up.length
+      ? movers.up.slice(0, 5).map(m => `
+          <div class="cc-mover-row">
+            <span class="cc-mover-name">${m.name}</span>
+            <span class="cc-mover-delta up">+$${m.change.toFixed(2)}</span>
+            <span class="cc-mover-price">$${m.currentPrice.toFixed(2)}</span>
+          </div>`).join('')
+      : '<div class="cc-movers-none">None</div>';
   }
 
   if (downEl) {
-    if (movers.down.length) {
-      downEl.innerHTML = movers.down.map(m => `
-        <div class="cc-mover-item">
-          <span class="cc-mover-name">${m.name}</span>
-          <span class="cc-mover-loc">${m.city}, ${m.state}</span>
-          <span class="cc-mover-price price-down">-$${Math.abs(m.change).toFixed(2)}</span>
-          <span class="cc-mover-current">$${m.currentPrice.toFixed(2)}</span>
-        </div>
-      `).join('');
-    } else {
-      downEl.innerHTML = '<div class="cc-empty-state small">No drops</div>';
-    }
+    downEl.innerHTML = movers.down.length
+      ? movers.down.slice(0, 5).map(m => `
+          <div class="cc-mover-row">
+            <span class="cc-mover-name">${m.name}</span>
+            <span class="cc-mover-delta down">-$${Math.abs(m.change).toFixed(2)}</span>
+            <span class="cc-mover-price">$${m.currentPrice.toFixed(2)}</span>
+          </div>`).join('')
+      : '<div class="cc-movers-none">None</div>';
   }
 }
 
