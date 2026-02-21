@@ -2803,9 +2803,9 @@ function ccRenderHeroChart(trend) {
 
   const ctx = canvas.getContext('2d');
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, 'rgba(59,130,246,0.25)');
-  gradient.addColorStop(0.6, 'rgba(59,130,246,0.08)');
-  gradient.addColorStop(1, 'rgba(59,130,246,0.01)');
+  gradient.addColorStop(0, 'rgba(59,130,246,0.32)');
+  gradient.addColorStop(0.5, 'rgba(59,130,246,0.12)');
+  gradient.addColorStop(1, 'rgba(59,130,246,0.02)');
 
   nsSparklineChart = new Chart(canvas, {
     type: 'line',
@@ -2881,18 +2881,22 @@ function ccRenderForecast(forecast) {
 
 function ccRenderStability(stability) {
   const scoreEl = document.getElementById('cc-stability-score');
+  const subEl = document.getElementById('cc-stab-sub');
   const compEl = document.getElementById('cc-stability-components');
   if (scoreEl) {
     scoreEl.textContent = stability.score;
     scoreEl.className = 'cc-stab-badge' +
       (stability.score >= 70 ? ' good' : stability.score >= 40 ? ' warn' : ' bad');
   }
+  if (subEl) {
+    subEl.textContent = stability.score + ' / 100';
+  }
   if (compEl && stability.components) {
     const c = stability.components;
     compEl.innerHTML = [
       { label: 'Supply', val: c.supplyFreshness },
       { label: 'Uptime', val: c.scraperUptime },
-      { label: 'Conversion', val: c.conversionRate },
+      { label: 'Conv', val: c.conversionRate },
       { label: 'Demand', val: c.demandVelocity }
     ].map(r => `<span class="cc-comp-pill">${r.label} <strong>${r.val ?? '--'}</strong></span>`).join('');
   }

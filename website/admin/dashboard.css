@@ -2969,17 +2969,18 @@ legend {
 /* ── HERO: 7-Day Momentum Chart ── */
 .cc-hero {
   position: relative;
-  background: #fff;
+  background: linear-gradient(180deg, #eef4ff 0%, #fff 60%);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--gray-200);
+  border: 1px solid #c7d8f0;
   overflow: hidden;
-  margin-bottom: 0.75rem;
-  min-height: 280px;
+  margin-bottom: 0;
+  min-height: 300px;
+  box-shadow: 0 2px 12px rgba(59,130,246,0.06);
 }
 .cc-hero-canvas {
   display: block;
   width: 100% !important;
-  height: 280px !important;
+  height: 300px !important;
 }
 .cc-hero-overlay {
   position: absolute; top: 0; left: 0; right: 0;
@@ -3022,26 +3023,31 @@ legend {
 
 /* Stability Badge */
 .cc-stab-badge {
-  width: 64px; height: 64px; border-radius: 50%;
+  width: 68px; height: 68px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem; font-weight: 800; color: #fff;
+  font-size: 1.6rem; font-weight: 800; color: #fff;
   font-variant-numeric: tabular-nums;
   background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-  box-shadow: 0 4px 14px rgba(59,130,246,0.3);
+  box-shadow: 0 4px 16px rgba(59,130,246,0.3);
 }
-.cc-stab-badge.good { background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); box-shadow: 0 4px 14px rgba(22,163,74,0.3); }
-.cc-stab-badge.warn { background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); box-shadow: 0 4px 14px rgba(217,119,6,0.3); }
-.cc-stab-badge.bad { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); box-shadow: 0 4px 14px rgba(220,38,38,0.3); }
+.cc-stab-badge.good { background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); box-shadow: 0 4px 16px rgba(22,163,74,0.3); }
+.cc-stab-badge.warn { background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); box-shadow: 0 4px 16px rgba(217,119,6,0.3); }
+.cc-stab-badge.bad { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); box-shadow: 0 4px 16px rgba(220,38,38,0.3); }
+.cc-stab-context { margin-top: 0.2rem; }
 .cc-stab-label {
-  font-size: 0.65rem; color: var(--gray-500); margin-top: 0.25rem;
+  display: block; font-size: 0.62rem; color: var(--gray-500);
   font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.cc-stab-sub {
+  display: block; font-size: 0.68rem; color: var(--gray-400);
+  font-weight: 500; margin-top: 0.05rem;
 }
 
 /* ── Diagnosis Banner ── */
 .cc-diagnosis {
   display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 0.85rem; border-radius: var(--radius-md);
-  margin-bottom: 0.75rem; font-size: 0.8rem;
+  padding: 0.35rem 0.75rem; border-radius: var(--radius-md);
+  margin-bottom: 0.5rem; font-size: 0.78rem;
 }
 .cc-diagnosis.normal { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
 .cc-diagnosis.warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
@@ -3065,42 +3071,41 @@ legend {
 /* ── STATUS TILES ── */
 .cc-tiles {
   display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem; margin-bottom: 0.75rem;
+  gap: 0.6rem; margin-bottom: 0.6rem;
+  margin-top: -1.25rem;
+  position: relative; z-index: 3;
+  padding: 0 0.5rem;
 }
 .cc-tile {
-  border-radius: var(--radius-md); padding: 0.85rem;
-  position: relative; overflow: hidden;
+  border-radius: var(--radius-md); padding: 0.65rem 0.75rem;
+  display: flex; align-items: center; gap: 0.6rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
-.cc-tile-blue { background: #eff6ff; border: 1px solid #bfdbfe; }
-.cc-tile-green { background: #f0fdf4; border: 1px solid #bbf7d0; }
-.cc-tile-amber { background: #fffbeb; border: 1px solid #fde68a; }
-.cc-tile-violet { background: #f5f3ff; border: 1px solid #ddd6fe; }
-.cc-tile-head {
-  display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.25rem;
-}
+.cc-tile-blue { background: rgba(239,246,255,0.95); border: 1px solid #bfdbfe; }
+.cc-tile-green { background: rgba(240,253,244,0.95); border: 1px solid #bbf7d0; }
+.cc-tile-amber { background: rgba(255,251,235,0.95); border: 1px solid #fde68a; }
+.cc-tile-violet { background: rgba(245,243,255,0.95); border: 1px solid #ddd6fe; }
 .cc-tile-dot {
-  width: 8px; height: 8px; border-radius: 50%;
+  width: 9px; height: 9px; border-radius: 50%;
   display: inline-block; flex-shrink: 0; background: var(--gray-300);
 }
 .cc-tile-dot.green { background: #16a34a; }
 .cc-tile-dot.yellow { background: #d97706; }
 .cc-tile-dot.red { background: #dc2626; }
+.cc-tile-body { flex: 1; min-width: 0; }
 .cc-tile-label {
-  font-size: 0.68rem; color: var(--gray-500);
+  font-size: 0.62rem; color: var(--gray-500);
   font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
 }
 .cc-tile-number {
-  font-size: 1.75rem; font-weight: 800; color: var(--gray-900);
+  font-size: 1.5rem; font-weight: 800; color: var(--gray-900);
   line-height: 1.1; font-variant-numeric: tabular-nums;
-}
-.cc-tile-spark {
-  display: block; width: 100%; margin-top: 0.4rem;
 }
 
 /* Stability Components (inline row) */
 .cc-stab-row {
-  display: flex; align-items: center; gap: 1.25rem;
-  margin-bottom: 0.75rem; padding: 0.4rem 0;
+  display: flex; align-items: center; gap: 1rem;
+  margin-bottom: 0.5rem; padding: 0.25rem 0;
 }
 .cc-comp-pill {
   display: flex; align-items: center; gap: 0.3rem;
@@ -3126,7 +3131,7 @@ legend {
 /* ── MIDDLE GRID: Machine + Diagnostics ── */
 .cc-mid-grid {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 0.75rem; margin-bottom: 0.75rem;
+  gap: 0.6rem; margin-bottom: 0.6rem;
 }
 
 /* Diagnostics Table */
@@ -3190,30 +3195,32 @@ legend {
 /* ── MARKET PULSE (inline sparklines) ── */
 .cc-pulse-row {
   display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem; margin-bottom: 0.75rem;
+  gap: 0.6rem; margin-bottom: 0.6rem;
 }
 .cc-pulse-item {
   background: #fff; border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md); padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-md); padding: 0.5rem 0.65rem;
 }
 .cc-pulse-head {
   display: flex; align-items: baseline; justify-content: space-between;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
 }
 .cc-pulse-label {
-  font-size: 0.65rem; color: var(--gray-500);
+  font-size: 0.62rem; color: var(--gray-500);
   font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
 }
 .cc-pulse-val {
   font-size: 0.82rem; font-weight: 700; color: var(--gray-800);
   font-variant-numeric: tabular-nums;
 }
-.cc-pulse-spark { display: block; width: 100%; }
+.cc-pulse-chart-wrap {
+  position: relative; height: 48px;
+}
 
 /* ── BOTTOM GRID: Command Board + Movers ── */
 .cc-bottom-grid {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 0.75rem; margin-bottom: 0.5rem;
+  gap: 0.6rem; margin-bottom: 0.4rem;
 }
 
 /* Command Board */
