@@ -155,6 +155,11 @@ function showLogin() {
 function showDashboard() {
   document.getElementById('login-modal').classList.add('hidden');
   document.getElementById('dashboard').classList.remove('hidden');
+  // Hide overview cards on Command Center (default tab)
+  const oc = document.getElementById('overview-cards');
+  if (oc) oc.style.display = 'none';
+  const ab = document.getElementById('alert-banner');
+  if (ab) ab.style.display = 'none';
   loadDashboard();
 }
 
@@ -199,6 +204,20 @@ function handleTabSwitch(target) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   const panel = document.getElementById(`tab-${target}`);
   if (panel) panel.classList.add('active');
+
+  // Hide overview cards and alert banner on Command Center (it has its own layout)
+  const overviewCards = document.getElementById('overview-cards');
+  const alertBanner = document.getElementById('alert-banner');
+  const dataSourceBanner = document.getElementById('data-source-warnings');
+  if (target === 'command-center') {
+    if (overviewCards) overviewCards.style.display = 'none';
+    if (alertBanner) alertBanner.style.display = 'none';
+    if (dataSourceBanner) dataSourceBanner.style.display = 'none';
+  } else {
+    if (overviewCards) overviewCards.style.display = '';
+    if (alertBanner) alertBanner.style.display = '';
+    if (dataSourceBanner) dataSourceBanner.style.display = '';
+  }
 
   // Close mobile sidebar after selection
   closeMobileSidebar();

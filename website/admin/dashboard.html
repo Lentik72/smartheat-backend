@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1771620000">
+  <link rel="stylesheet" href="dashboard.css?v=1771620100">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -135,7 +135,7 @@
         <div class="sticky-header-content">
           <div class="sticky-header-left">
             <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
-            <h1 class="page-title" id="page-title">Leaderboard</h1>
+            <h1 class="page-title" id="page-title">Command Center</h1>
           </div>
           <div class="header-metrics">
             <div class="header-metric">
@@ -187,7 +187,7 @@
       </div>
 
       <!-- Summary Cards (Combined Business Metrics) -->
-      <div class="cards">
+      <div class="cards" id="overview-cards">
         <div class="card" id="card-users">
           <div class="card-label">Total Users</div>
           <div class="card-value" id="total-users">--</div>
@@ -255,7 +255,7 @@
                 <div class="cc-ns-change" id="cc-ns-change"></div>
               </div>
               <div class="cc-ns-chart">
-                <canvas id="cc-ns-sparkline" width="200" height="60"></canvas>
+                <canvas id="cc-ns-sparkline" width="160" height="40"></canvas>
                 <div class="cc-ns-subtext">7-day trend</div>
               </div>
               <div class="cc-ns-details">
@@ -2459,6 +2459,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1771620000"></script>
+  <script src="dashboard.js?v=1771620100"></script>
 </body>
 </html>
