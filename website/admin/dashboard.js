@@ -2836,7 +2836,9 @@ function ccRenderHeroChart(trend) {
   if (nsSparklineChart) nsSparklineChart.destroy();
 
   const ctx = canvas.getContext('2d');
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  // Use container height for gradient (300px), not canvas.height which is unreliable before render
+  const containerH = canvas.parentElement ? canvas.parentElement.clientHeight : 300;
+  const gradient = ctx.createLinearGradient(0, 0, 0, containerH);
   gradient.addColorStop(0, 'rgba(59,130,246,0.32)');
   gradient.addColorStop(0.5, 'rgba(59,130,246,0.12)');
   gradient.addColorStop(1, 'rgba(59,130,246,0.02)');
@@ -3062,7 +3064,8 @@ function ccRenderMarketPulse(mp) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !data?.length) return null;
     const ctx = canvas.getContext('2d');
-    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    const containerH = canvas.parentElement ? canvas.parentElement.clientHeight : 56;
+    const grad = ctx.createLinearGradient(0, 0, 0, containerH);
     grad.addColorStop(0, color + '25');
     grad.addColorStop(1, color + '05');
     return new Chart(canvas, {
@@ -3086,9 +3089,10 @@ function ccRenderMarketPulse(mp) {
         },
         scales: {
           x: { display: false },
-          y: { display: false, min: yMin, max: yMax }
+          y: { display: false, min: yMin, max: yMax, grace: '15%' }
         },
-        elements: { point: { radius: 0 } }
+        elements: { point: { radius: 0 } },
+        layout: { padding: { top: 2, bottom: 2 } }
       }
     });
   };
