@@ -2973,7 +2973,7 @@ legend {
   border-radius: var(--radius-lg);
   border: 1px solid #c7d8f0;
   overflow: hidden;
-  margin-bottom: 0;
+  margin-bottom: 0.5rem;
   box-shadow: 0 2px 12px rgba(59,130,246,0.06);
 }
 .cc-hero-chart-wrap {
@@ -3093,7 +3093,6 @@ legend {
 .cc-tiles {
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 0.6rem; margin-bottom: 0.6rem;
-  position: relative; z-index: 3;
   padding: 0 0.5rem;
 }
 .cc-tile {
