@@ -2991,6 +2991,20 @@ legend {
 }
 .cc-hero-left { pointer-events: auto; }
 .cc-hero-right { pointer-events: auto; text-align: center; }
+
+/* System State Label */
+.cc-system-state {
+  display: inline-block;
+  font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem; border-radius: 3px;
+  margin-bottom: 0.3rem;
+}
+.cc-system-state.state-healthy { background: #dcfce7; color: #15803d; }
+.cc-system-state.state-warning { background: #fef3c7; color: #92400e; }
+.cc-system-state.state-critical { background: #fee2e2; color: #991b1b; }
+.cc-system-state:empty { display: none; }
+
 .cc-hero-number {
   font-size: 3.25rem; font-weight: 800; color: var(--gray-900);
   line-height: 1; letter-spacing: -0.02em;
@@ -3011,6 +3025,15 @@ legend {
 .cc-ns-change.up { color: #16a34a; }
 .cc-ns-change.down { color: #dc2626; }
 .cc-ns-change.flat { color: var(--gray-500); }
+
+/* Hero Insight Line */
+.cc-hero-insight {
+  font-size: 0.75rem; color: var(--gray-600); margin-top: 0.3rem;
+  font-weight: 500; line-height: 1.35;
+  max-width: 360px;
+}
+.cc-hero-insight:empty { display: none; }
+
 .cc-hero-sub {
   font-size: 0.72rem; color: var(--gray-500); margin-top: 0.15rem;
 }
@@ -3112,9 +3135,12 @@ legend {
   font-size: 0.72rem; color: var(--gray-500);
 }
 .cc-comp-pill strong {
-  font-weight: 700; color: var(--gray-700);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+.cc-comp-pill strong.comp-good { color: #16a34a; }
+.cc-comp-pill strong.comp-warn { color: #d97706; }
+.cc-comp-pill strong.comp-bad { color: #dc2626; }
 
 /* ── SHARED SECTION ── */
 .cc-section {

@@ -2769,6 +2769,8 @@ async function loadCommandCenter() {
       changeEl.textContent = 'on par';
       changeEl.className = 'cc-ns-change flat';
     }
+    ccRenderSystemState(diagnosis, anomalies);
+    ccRenderHeroInsight(diagnosis);
     ccRenderTrajectory(ns.trajectory);
     ccRenderForecast(ns.forecast);
     ccRenderHeroChart(ns.trend || []);
@@ -2794,6 +2796,38 @@ async function loadCommandCenter() {
     console.error('Failed to load command center:', error);
     if (loadingEl) loadingEl.innerHTML = 'Failed to load Command Center.';
   }
+}
+
+function ccRenderSystemState(diagnosis, anomalies) {
+  const el = document.getElementById('cc-system-state');
+  if (!el) return;
+  if (!diagnosis || diagnosis.status === 'normal') {
+    el.textContent = 'ALL SYSTEMS NORMAL';
+    el.className = 'cc-system-state state-healthy';
+    return;
+  }
+  // Derive label from primary anomaly category
+  const labels = {
+    supply: 'SUPPLY CONSTRAINED',
+    supplier: 'SUPPLIER DEGRADED',
+    demand: 'DEMAND SUPPRESSED',
+    traffic: 'TRAFFIC ANOMALY',
+    conversion: 'CONVERSION LEAK'
+  };
+  const cat = diagnosis.category || (anomalies[0] && anomalies[0].category);
+  const label = labels[cat] || 'SYSTEM DEGRADED';
+  el.textContent = label;
+  el.className = 'cc-system-state ' + (diagnosis.status === 'critical' ? 'state-critical' : 'state-warning');
+}
+
+function ccRenderHeroInsight(diagnosis) {
+  const el = document.getElementById('cc-hero-insight');
+  if (!el) return;
+  if (!diagnosis || diagnosis.status === 'normal') {
+    el.textContent = '';
+    return;
+  }
+  el.textContent = diagnosis.summary || '';
 }
 
 function ccRenderHeroChart(trend) {
@@ -2893,12 +2927,13 @@ function ccRenderStability(stability) {
   }
   if (compEl && stability.components) {
     const c = stability.components;
+    const compColor = (v) => v >= 70 ? 'comp-good' : v >= 40 ? 'comp-warn' : 'comp-bad';
     compEl.innerHTML = [
       { label: 'Supply', val: c.supplyFreshness },
       { label: 'Uptime', val: c.scraperUptime },
       { label: 'Conv', val: c.conversionRate },
       { label: 'Demand', val: c.demandVelocity }
-    ].map(r => `<span class="cc-comp-pill">${r.label} <strong>${r.val ?? '--'}</strong></span>`).join('');
+    ].map(r => `<span class="cc-comp-pill">${r.label} <strong class="${r.val != null ? compColor(r.val) : ''}">${r.val ?? '--'}</strong></span>`).join('');
   }
 }
 
