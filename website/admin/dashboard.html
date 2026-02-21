@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1771620500">
+  <link rel="stylesheet" href="dashboard.css?v=1771620600">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -240,75 +240,93 @@
     <main class="tab-content">
 
       <!-- ============================================================ -->
-      <!-- COMMAND CENTER TAB (Default) - Intelligence Hub -->
+      <!-- COMMAND CENTER TAB — Graphic-Forward Light Design -->
       <!-- ============================================================ -->
       <section id="tab-command-center" class="tab-panel active">
         <div class="cc-container">
           <div id="cc-loading" class="cc-loading">Loading Command Center...</div>
           <div id="cc-content" class="hidden">
 
-            <!-- ═══ EXECUTIVE LAYER ═══ -->
-            <div class="cc-executive">
-              <div class="cc-exec-left">
-                <div class="cc-ns-number" id="cc-ns-value">--</div>
-                <div class="cc-ns-label">QUALITY CONNECTIONS TODAY</div>
-                <div class="cc-ns-meta">
-                  <span class="cc-ns-change" id="cc-ns-change"></span>
-                  <span class="cc-ns-sep">|</span>
-                  <span>7d avg: <strong id="cc-ns-avg7d">--</strong></span>
-                  <span class="cc-ns-sep">|</span>
-                  <span>Yesterday: <strong id="cc-ns-yesterday">--</strong></span>
+            <!-- HERO: 7-Day Momentum Chart -->
+            <div class="cc-hero">
+              <div class="cc-hero-overlay">
+                <div class="cc-hero-left">
+                  <div class="cc-hero-number" id="cc-ns-value">--</div>
+                  <div class="cc-hero-label">Connections Today</div>
+                  <div class="cc-hero-meta">
+                    <span class="cc-ns-change" id="cc-ns-change"></span>
+                    <span class="cc-hero-sep">&middot;</span>
+                    <span>7d avg <strong id="cc-ns-avg7d">--</strong></span>
+                    <span class="cc-hero-sep">&middot;</span>
+                    <span>Yesterday <strong id="cc-ns-yesterday">--</strong></span>
+                  </div>
+                  <div class="cc-hero-sub" id="cc-ns-trajectory"></div>
+                  <div class="cc-hero-sub" id="cc-ns-forecast"></div>
                 </div>
-                <div class="cc-ns-trajectory" id="cc-ns-trajectory"></div>
-                <div class="cc-ns-forecast" id="cc-ns-forecast"></div>
-              </div>
-              <div class="cc-exec-right">
-                <div class="cc-stability">
-                  <div class="cc-stability-score" id="cc-stability-score">--</div>
-                  <div class="cc-stability-label">SYSTEM STABILITY</div>
-                  <div class="cc-stability-components" id="cc-stability-components"></div>
+                <div class="cc-hero-right">
+                  <div class="cc-stab-badge" id="cc-stability-score">--</div>
+                  <div class="cc-stab-label">Stability</div>
                 </div>
-                <canvas id="cc-ns-sparkline" width="120" height="36"></canvas>
               </div>
+              <canvas id="cc-ns-sparkline" class="cc-hero-canvas"></canvas>
             </div>
 
-            <!-- Diagnosis -->
+            <!-- Diagnosis Banner -->
             <div class="cc-diagnosis" id="cc-diagnosis">
-              <div class="cc-diagnosis-icon" id="cc-diagnosis-icon"></div>
-              <div class="cc-diagnosis-body">
-                <div class="cc-diagnosis-summary" id="cc-diagnosis-summary">All systems operating normally</div>
-              </div>
-              <div class="cc-diagnosis-confidence" id="cc-diagnosis-confidence"></div>
+              <span class="cc-diagnosis-icon" id="cc-diagnosis-icon"></span>
+              <span class="cc-diagnosis-summary" id="cc-diagnosis-summary">All systems operating normally</span>
+              <span class="cc-diagnosis-confidence" id="cc-diagnosis-confidence"></span>
             </div>
 
-            <!-- Integrity Row -->
-            <div class="cc-integrity-row">
-              <div class="cc-integrity-item">
-                <span class="cc-integrity-dot" id="cc-dot-demand"></span>
-                <span class="cc-integrity-label">DEMAND</span>
-                <span class="cc-integrity-val" id="cc-stat-demand">--</span>
+            <!-- STATUS TILES -->
+            <div class="cc-tiles">
+              <div class="cc-tile cc-tile-blue">
+                <div class="cc-tile-head">
+                  <span class="cc-tile-dot" id="cc-dot-demand"></span>
+                  <span class="cc-tile-label">Demand</span>
+                </div>
+                <div class="cc-tile-number" id="cc-stat-demand">--</div>
+                <canvas class="cc-tile-spark" id="cc-spark-demand" width="100" height="28"></canvas>
               </div>
-              <div class="cc-integrity-item">
-                <span class="cc-integrity-dot" id="cc-dot-supply"></span>
-                <span class="cc-integrity-label">SUPPLY</span>
-                <span class="cc-integrity-val" id="cc-stat-supply">--</span>
+              <div class="cc-tile cc-tile-green">
+                <div class="cc-tile-head">
+                  <span class="cc-tile-dot" id="cc-dot-supply"></span>
+                  <span class="cc-tile-label">Supply</span>
+                </div>
+                <div class="cc-tile-number" id="cc-stat-supply">--</div>
+                <canvas class="cc-tile-spark" id="cc-spark-supply" width="100" height="28"></canvas>
               </div>
-              <div class="cc-integrity-item">
-                <span class="cc-integrity-dot" id="cc-dot-conversion"></span>
-                <span class="cc-integrity-label">CONV</span>
-                <span class="cc-integrity-val" id="cc-stat-conversion">--</span>
+              <div class="cc-tile cc-tile-amber">
+                <div class="cc-tile-head">
+                  <span class="cc-tile-dot" id="cc-dot-conversion"></span>
+                  <span class="cc-tile-label">Conversion</span>
+                </div>
+                <div class="cc-tile-number" id="cc-stat-conversion">--</div>
+                <canvas class="cc-tile-spark" id="cc-spark-conversion" width="100" height="28"></canvas>
               </div>
-              <div class="cc-integrity-item">
-                <span class="cc-integrity-dot" id="cc-dot-health"></span>
-                <span class="cc-integrity-label">DATA</span>
-                <span class="cc-integrity-val" id="cc-stat-health">--</span>
+              <div class="cc-tile cc-tile-violet">
+                <div class="cc-tile-head">
+                  <span class="cc-tile-dot" id="cc-dot-health"></span>
+                  <span class="cc-tile-label">Health</span>
+                </div>
+                <div class="cc-tile-number" id="cc-stat-health">--</div>
+                <canvas class="cc-tile-spark" id="cc-spark-health" width="100" height="28"></canvas>
               </div>
             </div>
 
-            <!-- ═══ ANALYTICAL LAYER (3-column) ═══ -->
-            <div class="cc-analytical-grid">
-              <div class="cc-panel">
-                <div class="cc-panel-title">SYSTEM DIAGNOSTICS</div>
+            <!-- Stability Components (inline) -->
+            <div class="cc-stab-row" id="cc-stability-components"></div>
+
+            <!-- MIDDLE: Supplier Machine + Diagnostics -->
+            <div class="cc-mid-grid">
+              <div class="cc-section">
+                <div class="cc-section-title">Supplier Machine <span class="cc-section-sub" id="cc-pipe-total"></span></div>
+                <div class="cc-stacked-bar" id="cc-stacked-bar"></div>
+                <div class="cc-stacked-legend" id="cc-stacked-legend"></div>
+                <div class="cc-machine-transitions" id="cc-machine-transitions"></div>
+              </div>
+              <div class="cc-section">
+                <div class="cc-section-title">Diagnostics</div>
                 <table class="cc-diag-table">
                   <thead><tr><th>Metric</th><th>Today</th><th>7d Avg</th><th>&Delta;</th><th></th></tr></thead>
                   <tbody id="cc-diag-tbody">
@@ -316,39 +334,43 @@
                   </tbody>
                 </table>
               </div>
-              <div class="cc-panel">
-                <div class="cc-panel-title">SUPPLIER LIFECYCLE <span class="cc-panel-sub" id="cc-pipe-total">--</span></div>
-                <div class="cc-stacked-bar" id="cc-stacked-bar"></div>
-                <div class="cc-stacked-legend" id="cc-stacked-legend"></div>
-                <div class="cc-machine-transitions" id="cc-machine-transitions"></div>
+            </div>
+
+            <!-- MARKET PULSE (inline sparklines) -->
+            <div class="cc-pulse-row">
+              <div class="cc-pulse-item">
+                <div class="cc-pulse-head">
+                  <span class="cc-pulse-label">Median Price</span>
+                  <span class="cc-pulse-val" id="cc-pulse-price-val"></span>
+                </div>
+                <canvas id="cc-chart-price" class="cc-pulse-spark" height="32"></canvas>
               </div>
-              <div class="cc-panel">
-                <div class="cc-panel-title">MARKET SIGNALS</div>
-                <div class="cc-signal-chart">
-                  <div class="cc-signal-label">Median Price (30d)</div>
-                  <canvas id="cc-chart-price" height="50"></canvas>
+              <div class="cc-pulse-item">
+                <div class="cc-pulse-head">
+                  <span class="cc-pulse-label">Demand Volume</span>
+                  <span class="cc-pulse-val" id="cc-pulse-demand-val"></span>
                 </div>
-                <div class="cc-signal-chart">
-                  <div class="cc-signal-label">Demand Volume (30d)</div>
-                  <canvas id="cc-chart-demand" height="50"></canvas>
+                <canvas id="cc-chart-demand" class="cc-pulse-spark" height="32"></canvas>
+              </div>
+              <div class="cc-pulse-item">
+                <div class="cc-pulse-head">
+                  <span class="cc-pulse-label">Scraper Success</span>
+                  <span class="cc-pulse-val" id="cc-pulse-scraper-val"></span>
                 </div>
-                <div class="cc-signal-chart">
-                  <div class="cc-signal-label">Scraper Success (14d)</div>
-                  <canvas id="cc-chart-scraper" height="50"></canvas>
-                </div>
+                <canvas id="cc-chart-scraper" class="cc-pulse-spark" height="32"></canvas>
               </div>
             </div>
 
-            <!-- ═══ TACTICAL LAYER ═══ -->
-            <div class="cc-tactical">
-              <div class="cc-tactical-main">
-                <div class="cc-panel-title">COMMAND BOARD</div>
+            <!-- BOTTOM: Command Board + Market Movers -->
+            <div class="cc-bottom-grid">
+              <div class="cc-section">
+                <div class="cc-section-title">Command Board</div>
                 <div class="cc-command-list" id="cc-priority-list">
                   <div class="cc-command-empty">No actions needed</div>
                 </div>
               </div>
-              <div class="cc-tactical-side">
-                <div class="cc-panel-title">MARKET MOVERS</div>
+              <div class="cc-section">
+                <div class="cc-section-title">Market Movers</div>
                 <div class="cc-movers-split">
                   <div class="cc-movers-col">
                     <div class="cc-movers-colhead">INCREASES</div>
@@ -2474,6 +2496,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1771620500"></script>
+  <script src="dashboard.js?v=1771620600"></script>
 </body>
 </html>

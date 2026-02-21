@@ -158,8 +158,7 @@ function showLogin() {
 function showDashboard() {
   document.getElementById('login-modal').classList.add('hidden');
   document.getElementById('dashboard').classList.remove('hidden');
-  // Command Center is default — enable dark mode + hide overview cards
-  document.body.classList.add('cc-dark');
+  // Command Center is default — hide overview cards
   const oc = document.getElementById('overview-cards');
   if (oc) oc.style.display = 'none';
   const ab = document.getElementById('alert-banner');
@@ -209,17 +208,15 @@ function handleTabSwitch(target) {
   const panel = document.getElementById(`tab-${target}`);
   if (panel) panel.classList.add('active');
 
-  // Command Center: dark mode + hide overview cards
+  // Command Center: hide overview cards
   const overviewCards = document.getElementById('overview-cards');
   const alertBanner = document.getElementById('alert-banner');
   const dataSourceBanner = document.getElementById('data-source-warnings');
   if (target === 'command-center') {
-    document.body.classList.add('cc-dark');
     if (overviewCards) overviewCards.style.display = 'none';
     if (alertBanner) alertBanner.style.display = 'none';
     if (dataSourceBanner) dataSourceBanner.style.display = 'none';
   } else {
-    document.body.classList.remove('cc-dark');
     if (overviewCards) overviewCards.style.display = '';
     if (alertBanner) alertBanner.style.display = '';
     if (dataSourceBanner) dataSourceBanner.style.display = '';
@@ -2757,16 +2754,16 @@ async function loadCommandCenter() {
     const stability = data.stability || { score: 0, components: {} };
     const mp = data.marketPulse || {};
 
-    // ── EXECUTIVE ──
+    // ── HERO ──
     document.getElementById('cc-ns-value').textContent = ns.today ?? 0;
     document.getElementById('cc-ns-yesterday').textContent = ns.yesterday ?? 0;
     document.getElementById('cc-ns-avg7d').textContent = ns.avg7d ?? 0;
     const changeEl = document.getElementById('cc-ns-change');
     if (ns.change > 0) {
-      changeEl.textContent = `+${ns.change}% vs 7d`;
+      changeEl.textContent = `+${ns.change}%`;
       changeEl.className = 'cc-ns-change up';
     } else if (ns.change < 0) {
-      changeEl.textContent = `${ns.change}% vs 7d`;
+      changeEl.textContent = `${ns.change}%`;
       changeEl.className = 'cc-ns-change down';
     } else {
       changeEl.textContent = 'on par';
@@ -2774,18 +2771,18 @@ async function loadCommandCenter() {
     }
     ccRenderTrajectory(ns.trajectory);
     ccRenderForecast(ns.forecast);
-    ccRenderSparkline(ns.trend || []);
+    ccRenderHeroChart(ns.trend || []);
     ccRenderStability(stability);
     ccRenderDiagnosis(diagnosis);
-    ccRenderIntegrity(data);
+    ccRenderTiles(data);
 
-    // ── ANALYTICAL ──
+    // ── MIDDLE ──
     ccRenderDiagTable(anomalies);
     ccRenderPipeline(lc);
     ccRenderMarketPulse(mp);
 
-    // ── TACTICAL ──
-    ccRenderActions(actions.slice(0, 3));
+    // ── BOTTOM ──
+    ccRenderActions(actions.slice(0, 4));
     ccRenderMovers(movers);
 
     const genEl = document.getElementById('cc-generated');
@@ -2799,26 +2796,69 @@ async function loadCommandCenter() {
   }
 }
 
-function ccRenderSparkline(trend) {
+function ccRenderHeroChart(trend) {
   const canvas = document.getElementById('cc-ns-sparkline');
   if (!canvas || !trend.length) return;
   if (nsSparklineChart) nsSparklineChart.destroy();
+
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, 'rgba(59,130,246,0.25)');
+  gradient.addColorStop(0.6, 'rgba(59,130,246,0.08)');
+  gradient.addColorStop(1, 'rgba(59,130,246,0.01)');
+
   nsSparklineChart = new Chart(canvas, {
     type: 'line',
     data: {
-      labels: trend.map(d => d.date),
+      labels: trend.map(d => {
+        const dt = new Date(d.date);
+        return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }),
       datasets: [{
         data: trend.map(d => d.qualityConnections),
-        borderColor: '#475569',
-        backgroundColor: 'rgba(71,85,105,0.1)',
-        fill: true, tension: 0.4,
-        pointRadius: 0, borderWidth: 1
+        borderColor: '#3b82f6',
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#3b82f6',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+        borderWidth: 2.5
       }]
     },
     options: {
-      responsive: false,
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      scales: { x: { display: false }, y: { display: false, beginAtZero: true } }
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: true,
+          mode: 'index',
+          intersect: false,
+          backgroundColor: '#1e293b',
+          titleFont: { size: 11 },
+          bodyFont: { size: 12, weight: '600' },
+          padding: 8,
+          cornerRadius: 6,
+          callbacks: {
+            label: function(ctx) { return ctx.parsed.y + ' connections'; }
+          }
+        }
+      },
+      scales: {
+        x: {
+          display: true,
+          grid: { display: false },
+          ticks: { font: { size: 10 }, color: '#94a3b8', maxRotation: 0 }
+        },
+        y: {
+          display: false,
+          beginAtZero: true
+        }
+      },
+      interaction: { mode: 'index', intersect: false }
     }
   });
 }
@@ -2829,28 +2869,32 @@ function ccRenderTrajectory(trajectory) {
   const pct = Math.abs(trajectory.pct);
   const cls = trajectory.direction === 'up' ? 'up' : trajectory.direction === 'down' ? 'down' : 'flat';
   const sign = trajectory.direction === 'up' ? '+' : trajectory.direction === 'down' ? '-' : '';
-  el.innerHTML = `30-day trajectory: <strong class="${cls}">${sign}${pct}%</strong> <span class="cc-trajectory-detail">(${trajectory.recentAvg || '--'}/d vs ${trajectory.prevAvg || '--'}/d prev)</span>`;
+  el.innerHTML = `30d trend: <strong class="${cls}">${sign}${pct}%</strong> <span class="cc-trajectory-detail">(${trajectory.recentAvg || '--'}/d vs ${trajectory.prevAvg || '--'}/d)</span>`;
 }
 
 function ccRenderForecast(forecast) {
   const el = document.getElementById('cc-ns-forecast');
   if (!el) return;
   if (!forecast || forecast.projected === null) { el.textContent = ''; return; }
-  el.innerHTML = `Projected tomorrow: <strong>${forecast.projected}</strong> <span class="cc-forecast-conf">Confidence: ${forecast.confidence}</span>`;
+  el.innerHTML = `Tomorrow: <strong>${forecast.projected}</strong> <span class="cc-forecast-conf">${forecast.confidence} confidence</span>`;
 }
 
 function ccRenderStability(stability) {
   const scoreEl = document.getElementById('cc-stability-score');
   const compEl = document.getElementById('cc-stability-components');
-  if (scoreEl) scoreEl.textContent = stability.score;
+  if (scoreEl) {
+    scoreEl.textContent = stability.score;
+    scoreEl.className = 'cc-stab-badge' +
+      (stability.score >= 70 ? ' good' : stability.score >= 40 ? ' warn' : ' bad');
+  }
   if (compEl && stability.components) {
     const c = stability.components;
     compEl.innerHTML = [
       { label: 'Supply', val: c.supplyFreshness },
       { label: 'Uptime', val: c.scraperUptime },
-      { label: 'Conv', val: c.conversionRate },
+      { label: 'Conversion', val: c.conversionRate },
       { label: 'Demand', val: c.demandVelocity }
-    ].map(r => `<div class="cc-comp-row"><span>${r.label}</span><strong>${r.val ?? '--'}</strong></div>`).join('');
+    ].map(r => `<span class="cc-comp-pill">${r.label} <strong>${r.val ?? '--'}</strong></span>`).join('');
   }
 }
 
@@ -2870,13 +2914,13 @@ function ccRenderDiagnosis(diagnosis) {
   wrap.className = 'cc-diagnosis ' + diagnosis.status;
   if (iconEl) iconEl.textContent = diagnosis.status === 'critical' ? '!' : '\u26A0';
   if (summaryEl) summaryEl.textContent = diagnosis.summary;
-  if (confEl) confEl.innerHTML = diagnosis.confidence ? `<span class="cc-conf-label">Confidence</span><span class="cc-conf-val">${diagnosis.confidence}%</span>` : '';
+  if (confEl) confEl.innerHTML = diagnosis.confidence
+    ? `<span class="cc-conf-badge"><span class="conf-num">${diagnosis.confidence}%</span></span>` : '';
 }
 
-function ccRenderIntegrity(data) {
+function ccRenderTiles(data) {
   const anomalies = data.anomalies || [];
   const lc = data.lifecycle || { states: {}, total: 0 };
-  const ns = data.northStar || {};
 
   const demandAnomaly = anomalies.find(a => a.category === 'demand');
   document.getElementById('cc-stat-demand').textContent = demandAnomaly ? demandAnomaly.today : '--';
@@ -2899,8 +2943,8 @@ function ccRenderIntegrity(data) {
 function ccSetDot(id, anomaly) {
   const dot = document.getElementById(id);
   if (!dot) return;
-  if (!anomaly) { dot.className = 'cc-integrity-dot green'; return; }
-  dot.className = 'cc-integrity-dot ' + (anomaly.severity === 'high' ? 'red' : 'yellow');
+  if (!anomaly) { dot.className = 'cc-tile-dot green'; return; }
+  dot.className = 'cc-tile-dot ' + (anomaly.severity === 'high' ? 'red' : 'yellow');
 }
 
 function ccRenderDiagTable(anomalies) {
@@ -2928,15 +2972,16 @@ function ccRenderPipeline(lifecycle) {
   const states = lifecycle.states || {};
   const total = lifecycle.total || 0;
   const transitions = lifecycle.transitions || [];
-  document.getElementById('cc-pipe-total').textContent = total + ' suppliers';
+  const pipeEl = document.getElementById('cc-pipe-total');
+  if (pipeEl) pipeEl.textContent = total + ' suppliers';
 
   const stages = [
-    { key: 'active', label: 'Active', color: '#1f9d55' },
+    { key: 'active', label: 'Active', color: '#16a34a' },
     { key: 'newLead', label: 'New', color: '#3b82f6' },
-    { key: 'stale', label: 'Stale', color: '#f59e0b' },
-    { key: 'atRisk', label: 'Risk', color: '#f97316' },
-    { key: 'cooldown', label: 'Down', color: '#ef4444' },
-    { key: 'dormant', label: 'Dorm', color: '#475569' }
+    { key: 'stale', label: 'Stale', color: '#d97706' },
+    { key: 'atRisk', label: 'Risk', color: '#ea580c' },
+    { key: 'cooldown', label: 'Down', color: '#dc2626' },
+    { key: 'dormant', label: 'Dorm', color: '#6b7280' }
   ];
 
   const bar = document.getElementById('cc-stacked-bar');
@@ -2974,50 +3019,63 @@ function ccRenderPipeline(lifecycle) {
 }
 
 function ccRenderMarketPulse(mp) {
-  const chartOpts = (color) => ({
-    type: 'line',
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { enabled: true, mode: 'index', intersect: false, bodyFont: { size: 10 } } },
-      scales: {
-        x: { display: false },
-        y: { display: false, beginAtZero: false }
+  const makeSpark = (canvasId, data, color, yMin, yMax) => {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !data?.length) return null;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, color + '25');
+    grad.addColorStop(1, color + '05');
+    return new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: data.map(d => d.date),
+        datasets: [{
+          data: data.map(d => d.value),
+          borderColor: color,
+          backgroundColor: grad,
+          fill: true, tension: 0.3,
+          pointRadius: 0, pointHoverRadius: 3,
+          borderWidth: 1.5
+        }]
       },
-      elements: { point: { radius: 0, hoverRadius: 3 } }
-    },
-    data: { labels: [], datasets: [{ data: [], borderColor: color, backgroundColor: color + '15', fill: true, tension: 0.3, borderWidth: 1.5 }] }
-  });
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: true, mode: 'index', intersect: false, bodyFont: { size: 10 }, padding: 6, cornerRadius: 4 }
+        },
+        scales: {
+          x: { display: false },
+          y: { display: false, min: yMin, max: yMax }
+        },
+        elements: { point: { radius: 0 } }
+      }
+    });
+  };
 
-  // Median Price
-  const priceCanvas = document.getElementById('cc-chart-price');
-  if (priceCanvas && mp.medianPrice?.length) {
-    if (mpPriceChart) mpPriceChart.destroy();
-    const cfg = chartOpts('#3b82f6');
-    cfg.data.labels = mp.medianPrice.map(d => d.date);
-    cfg.data.datasets[0].data = mp.medianPrice.map(d => d.value);
-    mpPriceChart = new Chart(priceCanvas, cfg);
-  }
+  // Summary values
+  const setSummary = (id, data, prefix, suffix) => {
+    const el = document.getElementById(id);
+    if (!el || !data?.length) return;
+    const last = data[data.length - 1].value;
+    const first = data[0].value;
+    const diff = last - first;
+    const arrow = diff > 0 ? '\u2191' : diff < 0 ? '\u2193' : '\u2192';
+    el.textContent = prefix + (typeof last === 'number' ? last.toFixed(suffix === '%' ? 0 : 2) : last) + (suffix || '') + ' ' + arrow;
+  };
 
-  // Demand Volume
-  const demandCanvas = document.getElementById('cc-chart-demand');
-  if (demandCanvas && mp.demandVolume?.length) {
-    if (mpDemandChart) mpDemandChart.destroy();
-    const cfg = chartOpts('#f59e0b');
-    cfg.data.labels = mp.demandVolume.map(d => d.date);
-    cfg.data.datasets[0].data = mp.demandVolume.map(d => d.value);
-    mpDemandChart = new Chart(demandCanvas, cfg);
-  }
+  setSummary('cc-pulse-price-val', mp.medianPrice, '$', '');
+  setSummary('cc-pulse-demand-val', mp.demandVolume, '', '');
+  setSummary('cc-pulse-scraper-val', mp.scraperSuccess, '', '%');
 
-  // Scraper Success
-  const scraperCanvas = document.getElementById('cc-chart-scraper');
-  if (scraperCanvas && mp.scraperSuccess?.length) {
-    if (mpScraperChart) mpScraperChart.destroy();
-    const cfg = chartOpts('#1f9d55');
-    cfg.data.labels = mp.scraperSuccess.map(d => d.date);
-    cfg.data.datasets[0].data = mp.scraperSuccess.map(d => d.value);
-    cfg.options.scales.y = { display: false, min: 0, max: 100 };
-    mpScraperChart = new Chart(scraperCanvas, cfg);
-  }
+  if (mpPriceChart) mpPriceChart.destroy();
+  if (mpDemandChart) mpDemandChart.destroy();
+  if (mpScraperChart) mpScraperChart.destroy();
+
+  mpPriceChart = makeSpark('cc-chart-price', mp.medianPrice, '#3b82f6');
+  mpDemandChart = makeSpark('cc-chart-demand', mp.demandVolume, '#d97706');
+  mpScraperChart = makeSpark('cc-chart-scraper', mp.scraperSuccess, '#16a34a', 0, 100);
 }
 
 function ccRenderActions(actions) {
@@ -3028,10 +3086,13 @@ function ccRenderActions(actions) {
     return;
   }
   list.innerHTML = actions.map(a => {
+    const impactNum = a.impact ? a.impact.match(/[+\-]?\d+/) : null;
     return `<div class="cc-command-card ${a.priority}">
-      <div class="cc-command-label">${a.label || a.priority.toUpperCase()}</div>
-      <div class="cc-command-text">${a.text}</div>
-      ${a.impact ? `<div class="cc-command-impact">${a.impact}</div>` : ''}
+      ${impactNum ? `<div class="cc-command-impact-num">${impactNum[0]}</div>` : ''}
+      <div class="cc-command-body">
+        <div class="cc-command-text">${a.text}</div>
+        <span class="cc-command-label">${a.label || a.priority.toUpperCase()}</span>
+      </div>
     </div>`;
   }).join('');
 }
