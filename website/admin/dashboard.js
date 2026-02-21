@@ -2748,8 +2748,9 @@ async function loadCommandCenter() {
     const anomalies = data.anomalies || [];
     const actions = data.actionItems || [];
     const movers = data.movers || { up: [], down: [] };
+    const diagnosis = data.diagnosis || {};
 
-    // ROW 1: North Star
+    // EXECUTIVE: North Star
     document.getElementById('cc-ns-value').textContent = ns.today ?? 0;
     document.getElementById('cc-ns-yesterday').textContent = ns.yesterday ?? 0;
     document.getElementById('cc-ns-avg7d').textContent = ns.avg7d ?? 0;
@@ -2765,22 +2766,28 @@ async function loadCommandCenter() {
       changeEl.className = 'cc-ns-change flat';
     }
 
-    // Tiny sparkline
+    // Trajectory
+    ccRenderTrajectory(ns.trajectory);
+
+    // Sparkline
     ccRenderSparkline(ns.trend || []);
 
-    // ROW 2: Status Grid
+    // Diagnosis banner
+    ccRenderDiagnosis(diagnosis);
+
+    // ANALYTICAL: Diagnostic table
+    ccRenderDiagTable(anomalies);
+
+    // Status Grid
     ccRenderStatusGrid(data);
 
-    // ROW 3: Alert Strip
-    ccRenderAlerts(anomalies);
-
-    // ROW 4: Supplier Machine
+    // Supplier Machine + transitions
     ccRenderPipeline(lc);
 
-    // ROW 5: Priority Actions (max 3)
+    // TACTICAL: Priority Actions
     ccRenderActions(actions.slice(0, 3));
 
-    // ROW 6: Market Movers
+    // Market Movers
     ccRenderMovers(movers);
 
     // Timestamp
@@ -2864,34 +2871,65 @@ function ccSetDot(id, anomaly) {
   dot.className = 'cc-status-dot ' + (anomaly.severity === 'high' ? 'red' : 'yellow');
 }
 
-function ccRenderAlerts(anomalies) {
-  const strip = document.getElementById('cc-alert-strip');
-  if (!strip) return;
+function ccRenderTrajectory(trajectory) {
+  const el = document.getElementById('cc-ns-trajectory');
+  if (!el || !trajectory) { if (el) el.textContent = ''; return; }
 
-  if (!anomalies.length) {
-    strip.innerHTML = '<div class="cc-alert-stable">All systems stable</div>';
+  const arrow = trajectory.direction === 'up' ? '\u2197' : trajectory.direction === 'down' ? '\u2198' : '\u2192';
+  const cls = trajectory.direction === 'up' ? 'up' : trajectory.direction === 'down' ? 'down' : 'flat';
+  const pct = Math.abs(trajectory.pct);
+
+  el.innerHTML = `<span class="cc-trajectory-arrow ${cls}">${arrow}</span> 30-day trajectory: <strong class="${cls}">${trajectory.direction === 'flat' ? 'Flat' : (trajectory.direction === 'up' ? '+' : '-') + pct + '%'}</strong> <span class="cc-trajectory-detail">(recent 7d avg ${trajectory.recentAvg || '--'} vs prev 7d avg ${trajectory.prevAvg || '--'})</span>`;
+}
+
+function ccRenderDiagnosis(diagnosis) {
+  const wrap = document.getElementById('cc-diagnosis');
+  const iconEl = document.getElementById('cc-diagnosis-icon');
+  const summaryEl = document.getElementById('cc-diagnosis-summary');
+  const confEl = document.getElementById('cc-diagnosis-confidence');
+  if (!wrap) return;
+
+  if (!diagnosis || diagnosis.status === 'normal') {
+    wrap.className = 'cc-diagnosis normal';
+    if (iconEl) iconEl.textContent = '\u2713';
+    if (summaryEl) summaryEl.textContent = 'All systems operating normally';
+    if (confEl) confEl.textContent = '';
     return;
   }
 
-  // Show top 2 anomalies
-  strip.innerHTML = anomalies.slice(0, 2).map(a => {
-    const cls = a.severity === 'high' ? 'high' : 'medium';
-    const arrow = a.direction === 'up' ? '&uarr;' : '&darr;';
-    return `
-      <div class="cc-alert-item ${cls}">
-        <div class="cc-alert-dot"></div>
-        <div class="cc-alert-body">
-          <div class="cc-alert-title">${a.title} ${arrow}${Math.abs(a.deviation)}%</div>
-          <div class="cc-alert-detail">${a.insight}</div>
-        </div>
-      </div>
-    `;
+  wrap.className = 'cc-diagnosis ' + diagnosis.status;
+  if (iconEl) iconEl.textContent = diagnosis.status === 'critical' ? '!' : '\u26A0';
+  if (summaryEl) summaryEl.textContent = diagnosis.summary;
+  if (confEl) confEl.innerHTML = diagnosis.confidence ? `<span class="cc-conf-label">Confidence</span><span class="cc-conf-val">${diagnosis.confidence}%</span>` : '';
+}
+
+function ccRenderDiagTable(anomalies) {
+  const tbody = document.getElementById('cc-diag-tbody');
+  if (!tbody) return;
+
+  if (!anomalies.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="cc-diag-empty">No anomalies detected</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = anomalies.map(a => {
+    const arrow = a.direction === 'up' ? '\u2191' : '\u2193';
+    const sevCls = a.severity === 'high' ? 'red' : 'yellow';
+    const deltaCls = (a.category === 'supplier' ? (a.direction === 'up' ? 'bad' : 'good') : (a.direction === 'up' ? 'good' : 'bad'));
+    return `<tr>
+      <td class="cc-diag-metric">${a.title}</td>
+      <td class="cc-diag-val">${a.today}</td>
+      <td class="cc-diag-val muted">${a.avg7d}</td>
+      <td class="cc-diag-delta ${deltaCls}">${arrow} ${Math.abs(a.deviation)}%</td>
+      <td><span class="cc-sev-dot ${sevCls}"></span></td>
+    </tr>`;
   }).join('');
 }
 
 function ccRenderPipeline(lifecycle) {
   const states = lifecycle.states || {};
   const total = lifecycle.total || 0;
+  const transitions = lifecycle.transitions || [];
 
   document.getElementById('cc-pipe-total').textContent = total + ' suppliers';
 
@@ -2924,6 +2962,20 @@ function ccRenderPipeline(lifecycle) {
       const count = states[s.key] || 0;
       return `<div class="cc-legend-item"><div class="cc-legend-dot" style="background:${s.color}"></div>${s.label}: <span class="cc-legend-count">${count}</span></div>`;
     }).join('');
+  }
+
+  // Transitions (this week's movements)
+  const transEl = document.getElementById('cc-machine-transitions');
+  if (transEl) {
+    if (transitions.length) {
+      transEl.innerHTML = '<span class="cc-trans-label">This week:</span> ' +
+        transitions.map(t => {
+          const cls = t.direction === 'up' ? 'good' : 'bad';
+          return `<span class="cc-trans-pill ${cls}">${t.label}</span>`;
+        }).join(' ');
+    } else {
+      transEl.innerHTML = '<span class="cc-trans-label">This week:</span> <span class="cc-trans-none">No state changes</span>';
+    }
   }
 }
 

@@ -20,7 +20,9 @@ class CommandCenterService {
       anomalies,
       lifecycle,
       movers,
-      actionItems
+      actionItems,
+      trajectory,
+      transitions
     ] = await Promise.all([
       this._getNorthStar(sequelize).catch(e => {
         logger?.error('[CommandCenter] North Star error:', e.message);
@@ -32,7 +34,7 @@ class CommandCenterService {
       }),
       this._getSupplierLifecycle(sequelize).catch(e => {
         logger?.error('[CommandCenter] Lifecycle error:', e.message);
-        return { states: {}, transitions: [] };
+        return { states: {}, total: 0 };
       }),
       this._getKeyMovers(sequelize).catch(e => {
         logger?.error('[CommandCenter] Movers error:', e.message);
@@ -41,13 +43,25 @@ class CommandCenterService {
       this._getActionItems(sequelize).catch(e => {
         logger?.error('[CommandCenter] Actions error:', e.message);
         return [];
+      }),
+      this._getTrajectory(sequelize).catch(e => {
+        logger?.error('[CommandCenter] Trajectory error:', e.message);
+        return { direction: 'flat', pct: 0, days: 30 };
+      }),
+      this._getTransitions(sequelize).catch(e => {
+        logger?.error('[CommandCenter] Transitions error:', e.message);
+        return [];
       })
     ]);
 
+    // Build diagnosis from anomalies
+    const diagnosis = this._buildDiagnosis(anomalies, northStar);
+
     return {
-      northStar,
+      northStar: { ...northStar, trajectory },
       anomalies,
-      lifecycle,
+      diagnosis,
+      lifecycle: { ...lifecycle, transitions },
       movers,
       actionItems,
       generatedAt: new Date().toISOString()
@@ -581,6 +595,164 @@ class CommandCenterService {
       const p = { high: 0, medium: 1, low: 2 };
       return (p[a.priority] || 2) - (p[b.priority] || 2);
     });
+  }
+
+  /**
+   * 30-day trajectory: is the North Star trending up, down, or flat?
+   * Compares last 7d average vs previous 7d average within a 30d window
+   */
+  async _getTrajectory(sequelize) {
+    const [results] = await sequelize.query(`
+      WITH fresh_suppliers AS (
+        SELECT DISTINCT sp.supplier_id
+        FROM supplier_prices sp
+        JOIN suppliers s ON sp.supplier_id = s.id
+        WHERE sp.is_valid = true AND s.active = true
+          AND sp.scraped_at > NOW() - INTERVAL '48 hours'
+      ),
+      daily AS (
+        SELECT
+          sc.created_at::date as day,
+          COUNT(*) FILTER (WHERE fs.supplier_id IS NOT NULL) as qc
+        FROM supplier_clicks sc
+        LEFT JOIN fresh_suppliers fs ON sc.supplier_id = fs.supplier_id
+        WHERE sc.created_at > CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY sc.created_at::date
+      )
+      SELECT
+        AVG(qc) FILTER (WHERE day > CURRENT_DATE - INTERVAL '7 days') as recent_avg,
+        AVG(qc) FILTER (WHERE day <= CURRENT_DATE - INTERVAL '7 days'
+                           AND day > CURRENT_DATE - INTERVAL '14 days') as prev_avg,
+        AVG(qc) as month_avg
+      FROM daily
+    `);
+
+    const row = results[0] || {};
+    const recent = parseFloat(row.recent_avg) || 0;
+    const prev = parseFloat(row.prev_avg) || 0;
+    const monthAvg = parseFloat(row.month_avg) || 0;
+    const pct = prev > 0 ? Math.round(((recent - prev) / prev) * 100) : 0;
+
+    let direction = 'flat';
+    if (pct > 10) direction = 'up';
+    else if (pct < -10) direction = 'down';
+
+    return { direction, pct, recentAvg: Math.round(recent), prevAvg: Math.round(prev), monthAvg: Math.round(monthAvg) };
+  }
+
+  /**
+   * Supplier lifecycle transitions this week
+   * Counts how many suppliers changed state (approximated from current data)
+   */
+  async _getTransitions(sequelize) {
+    const transitions = [];
+
+    // New cooldowns this week
+    const [cooldowns] = await sequelize.query(`
+      SELECT COUNT(*) as cnt FROM suppliers
+      WHERE active = true AND scrape_status IN ('cooldown', 'phone_only')
+        AND last_scrape_failure_at >= NOW() - INTERVAL '7 days'
+    `);
+    const newCooldowns = parseInt(cooldowns[0]?.cnt) || 0;
+    if (newCooldowns > 0) {
+      transitions.push({ label: `${newCooldowns} entered cooldown`, direction: 'down', count: newCooldowns });
+    }
+
+    // Recently scraped (active with recent prices — proxy for "activated")
+    const [activated] = await sequelize.query(`
+      SELECT COUNT(DISTINCT sp.supplier_id) as cnt
+      FROM supplier_prices sp
+      JOIN suppliers s ON sp.supplier_id = s.id
+      WHERE sp.is_valid = true
+        AND s.active = true AND s.scrape_status = 'active'
+        AND sp.scraped_at > NOW() - INTERVAL '7 days'
+        AND NOT EXISTS (
+          SELECT 1 FROM supplier_prices sp2
+          WHERE sp2.supplier_id = sp.supplier_id
+            AND sp2.is_valid = true
+            AND sp2.scraped_at <= NOW() - INTERVAL '7 days'
+            AND sp2.scraped_at > NOW() - INTERVAL '14 days'
+        )
+    `);
+    const newActive = parseInt(activated[0]?.cnt) || 0;
+    if (newActive > 0) {
+      transitions.push({ label: `${newActive} newly active`, direction: 'up', count: newActive });
+    }
+
+    // Suppliers with stale prices that were fresh last week
+    const [newStale] = await sequelize.query(`
+      WITH latest AS (
+        SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
+        FROM supplier_prices WHERE is_valid = true
+        ORDER BY supplier_id, scraped_at DESC
+      )
+      SELECT COUNT(*) as cnt FROM latest l
+      JOIN suppliers s ON l.supplier_id = s.id
+      WHERE s.active = true AND s.website IS NOT NULL AND s.website != ''
+        AND l.scraped_at < NOW() - INTERVAL '48 hours'
+        AND l.scraped_at > NOW() - INTERVAL '9 days'
+    `);
+    const becameStale = parseInt(newStale[0]?.cnt) || 0;
+    if (becameStale > 0) {
+      transitions.push({ label: `${becameStale} became stale`, direction: 'down', count: becameStale });
+    }
+
+    return transitions;
+  }
+
+  /**
+   * Build diagnosis from anomalies — finds primary driver and confidence
+   */
+  _buildDiagnosis(anomalies, northStar) {
+    if (!anomalies.length) {
+      return {
+        status: 'normal',
+        primaryCause: null,
+        confidence: null,
+        summary: 'All systems operating normally'
+      };
+    }
+
+    // Sort by severity (high first) then by absolute deviation
+    const sorted = [...anomalies].sort((a, b) => {
+      if (a.severity !== b.severity) return a.severity === 'high' ? -1 : 1;
+      return Math.abs(b.deviation) - Math.abs(a.deviation);
+    });
+
+    const primary = sorted[0];
+
+    // Build causal chain
+    const causeMap = {
+      supply: 'Supply collapse (scraper failure or site changes)',
+      demand: 'Demand shift (user traffic change)',
+      traffic: 'Traffic anomaly',
+      supplier: 'Supplier infrastructure issues (scrape failures)',
+      conversion: 'Conversion degradation (stale or missing prices)'
+    };
+
+    // Confidence based on data completeness and anomaly clarity
+    let confidence = 70;
+    if (anomalies.length === 1) confidence += 15; // Clear single cause
+    if (Math.abs(primary.deviation) > 50) confidence += 10; // Strong signal
+    if (primary.severity === 'high') confidence += 5;
+    confidence = Math.min(confidence, 98);
+
+    // Check for linked anomalies (supply → conversion → connections)
+    const hasSupplyIssue = anomalies.some(a => a.category === 'supply' && a.deviation < -30);
+    const hasConversionIssue = anomalies.some(a => a.category === 'conversion');
+    let linkedExplanation = '';
+    if (hasSupplyIssue && hasConversionIssue) {
+      linkedExplanation = ' Supply failure is cascading to conversion quality.';
+      confidence = Math.min(confidence + 5, 98);
+    }
+
+    return {
+      status: primary.severity === 'high' ? 'critical' : 'warning',
+      primaryCause: causeMap[primary.category] || primary.title,
+      confidence,
+      summary: primary.insight + (linkedExplanation || ''),
+      category: primary.category
+    };
   }
 }
 

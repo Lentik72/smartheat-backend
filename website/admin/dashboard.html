@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1771620300">
+  <link rel="stylesheet" href="dashboard.css?v=1771620400">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -247,7 +247,7 @@
           <div id="cc-loading" class="loading">Loading Command Center...</div>
           <div id="cc-content" class="hidden">
 
-            <!-- ROW 1: NORTH STAR — dominant, breathing -->
+            <!-- ═══ EXECUTIVE LAYER: "Are we winning?" ═══ -->
             <div class="cc-north-star">
               <div class="cc-ns-left">
                 <div class="cc-ns-number" id="cc-ns-value">--</div>
@@ -259,13 +259,38 @@
                   <span class="cc-ns-sep">|</span>
                   <span class="cc-ns-context">Yesterday: <strong id="cc-ns-yesterday">--</strong></span>
                 </div>
+                <div class="cc-ns-trajectory" id="cc-ns-trajectory"></div>
               </div>
               <div class="cc-ns-spark">
                 <canvas id="cc-ns-sparkline" width="120" height="36"></canvas>
               </div>
             </div>
 
-            <!-- ROW 2: STATUS GRID — 4 equal quadrants -->
+            <!-- Diagnosis Banner -->
+            <div class="cc-diagnosis" id="cc-diagnosis">
+              <div class="cc-diagnosis-icon" id="cc-diagnosis-icon"></div>
+              <div class="cc-diagnosis-body">
+                <div class="cc-diagnosis-summary" id="cc-diagnosis-summary">All systems operating normally</div>
+              </div>
+              <div class="cc-diagnosis-confidence" id="cc-diagnosis-confidence"></div>
+            </div>
+
+            <!-- ═══ ANALYTICAL LAYER: "Why?" ═══ -->
+
+            <!-- Diagnostic Table: What Changed Today? -->
+            <div class="cc-diagnostics-section">
+              <h3>What Changed Today</h3>
+              <table class="cc-diag-table" id="cc-diag-table">
+                <thead>
+                  <tr><th>Metric</th><th>Today</th><th>7d Avg</th><th>Delta</th><th></th></tr>
+                </thead>
+                <tbody id="cc-diag-tbody">
+                  <tr><td colspan="5" class="cc-diag-empty">No anomalies detected</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Status Grid -->
             <div class="cc-status-grid">
               <div class="cc-status-cell">
                 <div class="cc-status-dot" id="cc-dot-demand"></div>
@@ -293,12 +318,7 @@
               </div>
             </div>
 
-            <!-- ROW 3: ALERT STRIP -->
-            <div class="cc-alert-strip" id="cc-alert-strip">
-              <div class="cc-alert-stable">All systems stable</div>
-            </div>
-
-            <!-- ROW 4: SUPPLIER MACHINE — stacked bar -->
+            <!-- Supplier Machine -->
             <div class="cc-supplier-machine">
               <div class="cc-machine-header">
                 <h3>Supplier Machine</h3>
@@ -309,7 +329,9 @@
               <div class="cc-machine-transitions" id="cc-machine-transitions"></div>
             </div>
 
-            <!-- ROW 5: PRIORITY ACTIONS — max 3 -->
+            <!-- ═══ TACTICAL LAYER: "What do I do?" ═══ -->
+
+            <!-- Priority Actions -->
             <div class="cc-priority-section" id="cc-priority-section">
               <h3>Priority Actions</h3>
               <div class="cc-priority-list" id="cc-priority-list">
@@ -317,7 +339,7 @@
               </div>
             </div>
 
-            <!-- ROW 6: MARKET MOVERS -->
+            <!-- Market Movers -->
             <div class="cc-movers-section">
               <h3>Market Movers</h3>
               <div class="cc-movers-split">
@@ -2448,6 +2470,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1771620300"></script>
+  <script src="dashboard.js?v=1771620400"></script>
 </body>
 </html>
