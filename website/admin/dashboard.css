@@ -912,8 +912,8 @@ th.sorted .sort-icon {
   overflow: hidden;
 }
 
-/* Charts */
-canvas {
+/* Charts — scoped to legacy tabs only; CC tab uses dedicated containers per Chart.js v4 rules */
+.tab-panel:not(#tab-command-center) canvas {
   min-height: 200px;
   max-height: 300px;
 }
@@ -3093,7 +3093,6 @@ legend {
 .cc-tiles {
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 0.6rem; margin-bottom: 0.6rem;
-  margin-top: -1.25rem;
   position: relative; z-index: 3;
   padding: 0 0.5rem;
 }

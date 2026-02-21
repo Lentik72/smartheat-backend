@@ -2891,7 +2891,8 @@ function ccRenderHeroChart(trend) {
         },
         y: {
           display: false,
-          beginAtZero: true
+          beginAtZero: true,
+          grace: '10%'
         }
       },
       interaction: { mode: 'index', intersect: false }
