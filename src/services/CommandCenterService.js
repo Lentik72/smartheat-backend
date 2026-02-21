@@ -22,7 +22,9 @@ class CommandCenterService {
       movers,
       actionItems,
       trajectory,
-      transitions
+      transitions,
+      stability,
+      marketPulse
     ] = await Promise.all([
       this._getNorthStar(sequelize).catch(e => {
         logger?.error('[CommandCenter] North Star error:', e.message);
@@ -51,19 +53,29 @@ class CommandCenterService {
       this._getTransitions(sequelize).catch(e => {
         logger?.error('[CommandCenter] Transitions error:', e.message);
         return [];
+      }),
+      this._getStabilityScore(sequelize).catch(e => {
+        logger?.error('[CommandCenter] Stability error:', e.message);
+        return { score: 0, components: {} };
+      }),
+      this._getMarketPulse(sequelize).catch(e => {
+        logger?.error('[CommandCenter] Market Pulse error:', e.message);
+        return { medianPrice: [], demandVolume: [], scraperSuccess: [] };
       })
     ]);
 
-    // Build diagnosis from anomalies
     const diagnosis = this._buildDiagnosis(anomalies, northStar);
+    const forecast = this._getForecast(northStar);
 
     return {
-      northStar: { ...northStar, trajectory },
+      northStar: { ...northStar, trajectory, forecast },
       anomalies,
       diagnosis,
+      stability,
       lifecycle: { ...lifecycle, transitions },
       movers,
       actionItems,
+      marketPulse,
       generatedAt: new Date().toISOString()
     };
   }
@@ -526,8 +538,10 @@ class CommandCenterService {
     if (cooldownCount > 0) {
       actions.push({
         priority: 'high',
+        label: 'CRITICAL',
         type: 'supplier',
-        text: `${cooldownCount} supplier${cooldownCount > 1 ? 's' : ''} in cooldown — review scrape configs`,
+        text: `Restore ${cooldownCount} cooldown supplier${cooldownCount > 1 ? 's' : ''}`,
+        impact: `+${cooldownCount * 2}\u2013${cooldownCount * 4} connections/day if restored`,
         metric: cooldownCount
       });
     }
@@ -543,8 +557,10 @@ class CommandCenterService {
     if (uncoveredCount > 0) {
       actions.push({
         priority: 'medium',
+        label: 'OPPORTUNITY',
         type: 'coverage',
-        text: `${uncoveredCount} new ZIP${uncoveredCount > 1 ? 's' : ''} with poor coverage this week`,
+        text: `Add suppliers for ${uncoveredCount} underserved ZIP${uncoveredCount > 1 ? 's' : ''}`,
+        impact: `${uncoveredCount} searches with no supply`,
         metric: uncoveredCount
       });
     }
@@ -568,8 +584,10 @@ class CommandCenterService {
     if (staleCount > 3) {
       actions.push({
         priority: 'medium',
+        label: 'MAINTENANCE',
         type: 'data',
-        text: `${staleCount} suppliers have stale prices (>48h) — check Health tab`,
+        text: `${staleCount} stale prices > 48h`,
+        impact: 'Likely suppressing conversion rate',
         metric: staleCount
       });
     }
@@ -585,8 +603,10 @@ class CommandCenterService {
     if (atRiskCount > 0) {
       actions.push({
         priority: 'low',
+        label: 'WARNING',
         type: 'supplier',
-        text: `${atRiskCount} supplier${atRiskCount > 1 ? 's' : ''} at risk of cooldown (1 failure away)`,
+        text: `${atRiskCount} supplier${atRiskCount > 1 ? 's' : ''} at risk (1 failure from cooldown)`,
+        impact: `Could lose ${atRiskCount} price sources`,
         metric: atRiskCount
       });
     }
@@ -752,6 +772,188 @@ class CommandCenterService {
       confidence,
       summary: primary.insight + (linkedExplanation || ''),
       category: primary.category
+    };
+  }
+  /**
+   * Stability Score: composite 0-100 from 4 weighted components
+   * Supply Freshness (30%): % of scrapable suppliers with price <48h
+   * Scraper Uptime (25%): % of suppliers in active status
+   * Conversion Rate (25%): quality connection rate today
+   * Demand Velocity (20%): today vs 7d daily avg
+   */
+  async _getStabilityScore(sequelize) {
+    const [[freshData], [uptimeData], [convData], [demandData]] = await Promise.all([
+      sequelize.query(`
+        WITH scrapable AS (
+          SELECT id FROM suppliers WHERE active = true AND website IS NOT NULL AND website != ''
+        ),
+        fresh AS (
+          SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
+          FROM supplier_prices WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        )
+        SELECT
+          (SELECT COUNT(*) FROM scrapable) as total,
+          COUNT(*) as fresh
+        FROM scrapable s
+        JOIN fresh f ON s.id = f.supplier_id
+        WHERE f.scraped_at > NOW() - INTERVAL '48 hours'
+      `),
+      sequelize.query(`
+        SELECT
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE scrape_status = 'active') as active
+        FROM suppliers
+        WHERE active = true AND website IS NOT NULL AND website != ''
+      `),
+      sequelize.query(`
+        WITH fresh_sup AS (
+          SELECT DISTINCT sp.supplier_id
+          FROM supplier_prices sp
+          JOIN suppliers s ON sp.supplier_id = s.id
+          WHERE sp.is_valid = true AND s.active = true
+            AND sp.scraped_at > NOW() - INTERVAL '48 hours'
+        )
+        SELECT
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE fs.supplier_id IS NOT NULL) as quality
+        FROM supplier_clicks sc
+        LEFT JOIN fresh_sup fs ON sc.supplier_id = fs.supplier_id
+        WHERE sc.created_at > CURRENT_DATE
+      `),
+      sequelize.query(`
+        SELECT
+          (SELECT COUNT(*) FROM user_locations WHERE first_seen_at::date = CURRENT_DATE) as today,
+          (SELECT COUNT(*)::float / 7 FROM user_locations
+           WHERE first_seen_at >= CURRENT_DATE - INTERVAL '7 days'
+             AND first_seen_at < CURRENT_DATE) as daily_avg
+      `)
+    ]);
+
+    const total = parseInt(freshData[0]?.total) || 1;
+    const fresh = parseInt(freshData[0]?.fresh) || 0;
+    const supplyFreshness = Math.round((fresh / total) * 100);
+
+    const uptimeTotal = parseInt(uptimeData[0]?.total) || 1;
+    const uptimeActive = parseInt(uptimeData[0]?.active) || 0;
+    const scraperUptime = Math.round((uptimeActive / uptimeTotal) * 100);
+
+    const convTotal = parseInt(convData[0]?.total) || 0;
+    const convQuality = parseInt(convData[0]?.quality) || 0;
+    const conversionRate = convTotal > 0 ? Math.round((convQuality / convTotal) * 100) : 50;
+
+    const demToday = parseInt(demandData[0]?.today) || 0;
+    const demAvg = parseFloat(demandData[0]?.daily_avg) || 0.5;
+    const demandVelocity = Math.min(100, Math.round((demToday / Math.max(demAvg, 0.5)) * 100));
+
+    const score = Math.round(
+      supplyFreshness * 0.30 +
+      scraperUptime * 0.25 +
+      conversionRate * 0.25 +
+      demandVelocity * 0.20
+    );
+
+    return {
+      score: Math.min(100, Math.max(0, score)),
+      components: { supplyFreshness, scraperUptime, conversionRate, demandVelocity }
+    };
+  }
+
+  /**
+   * Simple linear forecast from last 3 complete days
+   */
+  _getForecast(northStar) {
+    const trend = northStar.trend || [];
+    if (trend.length < 3) return null;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const complete = trend.filter(d => d.date !== todayStr);
+    const recent = complete.slice(-3);
+    if (recent.length < 2) return null;
+
+    const values = recent.map(d => d.qualityConnections);
+    const avg = values.reduce((s, v) => s + v, 0) / values.length;
+    const last = values[values.length - 1];
+    const first = values[0];
+    const dailyDelta = (last - first) / (values.length - 1);
+    const projected = Math.max(0, Math.round(last + dailyDelta));
+
+    const variance = values.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / values.length;
+    const cv = avg > 0 ? Math.sqrt(variance) / avg : 1;
+    const confidence = cv < 0.2 ? 'high' : cv < 0.5 ? 'medium' : 'low';
+
+    return { projected, confidence };
+  }
+
+  /**
+   * Market Pulse: 3 trend series for mini charts
+   * 1. Median price (30d), 2. Demand volume (30d), 3. Scraper success (14d)
+   */
+  async _getMarketPulse(sequelize) {
+    const [medianPrices, demandVolume, scraperSuccess] = await Promise.all([
+      sequelize.query(`
+        SELECT scraped_at::date as day,
+          PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY price_per_gallon) as median_price
+        FROM supplier_prices
+        WHERE is_valid = true AND scraped_at > CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY scraped_at::date
+        ORDER BY day ASC
+      `).then(([r]) => r),
+
+      sequelize.query(`
+        SELECT first_seen_at::date as day, COUNT(*) as count
+        FROM user_locations
+        WHERE first_seen_at > CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY first_seen_at::date
+        ORDER BY day ASC
+      `).then(([r]) => r),
+
+      sequelize.query(`
+        WITH daily_success AS (
+          SELECT scraped_at::date as day, COUNT(DISTINCT supplier_id) as successes
+          FROM supplier_prices
+          WHERE is_valid = true AND scraped_at > CURRENT_DATE - INTERVAL '14 days'
+          GROUP BY scraped_at::date
+        ),
+        daily_failures AS (
+          SELECT d.val::timestamptz::date as day, COUNT(*) as failures
+          FROM suppliers s,
+          LATERAL jsonb_array_elements_text(
+            CASE WHEN jsonb_typeof(s.scrape_failure_dates) = 'array'
+                 THEN s.scrape_failure_dates ELSE '[]'::jsonb END
+          ) AS d(val)
+          WHERE s.active = true
+            AND d.val::timestamptz > CURRENT_DATE - INTERVAL '14 days'
+          GROUP BY d.val::timestamptz::date
+        )
+        SELECT
+          COALESCE(s.day, f.day) as day,
+          COALESCE(s.successes, 0) as successes,
+          COALESCE(f.failures, 0) as failures
+        FROM daily_success s
+        FULL OUTER JOIN daily_failures f ON s.day = f.day
+        ORDER BY day ASC
+      `).then(([r]) => r)
+    ]);
+
+    return {
+      medianPrice: medianPrices.map(r => ({
+        date: new Date(r.day).toISOString().split('T')[0],
+        value: Math.round(parseFloat(r.median_price) * 100) / 100
+      })),
+      demandVolume: demandVolume.map(r => ({
+        date: new Date(r.day).toISOString().split('T')[0],
+        value: parseInt(r.count) || 0
+      })),
+      scraperSuccess: scraperSuccess.map(r => {
+        const s = parseInt(r.successes) || 0;
+        const f = parseInt(r.failures) || 0;
+        const total = s + f;
+        return {
+          date: new Date(r.day).toISOString().split('T')[0],
+          value: total > 0 ? Math.round((s / total) * 100) : 100
+        };
+      })
     };
   }
 }

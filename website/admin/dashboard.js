@@ -18,6 +18,9 @@ let deviceChart = null;
 let priceChart = null;
 let spreadChart = null;
 let nsSparklineChart = null;
+let mpPriceChart = null;
+let mpDemandChart = null;
+let mpScraperChart = null;
 let map = null;
 
 // API base
@@ -155,7 +158,8 @@ function showLogin() {
 function showDashboard() {
   document.getElementById('login-modal').classList.add('hidden');
   document.getElementById('dashboard').classList.remove('hidden');
-  // Hide overview cards on Command Center (default tab)
+  // Command Center is default — enable dark mode + hide overview cards
+  document.body.classList.add('cc-dark');
   const oc = document.getElementById('overview-cards');
   if (oc) oc.style.display = 'none';
   const ab = document.getElementById('alert-banner');
@@ -205,15 +209,17 @@ function handleTabSwitch(target) {
   const panel = document.getElementById(`tab-${target}`);
   if (panel) panel.classList.add('active');
 
-  // Hide overview cards and alert banner on Command Center (it has its own layout)
+  // Command Center: dark mode + hide overview cards
   const overviewCards = document.getElementById('overview-cards');
   const alertBanner = document.getElementById('alert-banner');
   const dataSourceBanner = document.getElementById('data-source-warnings');
   if (target === 'command-center') {
+    document.body.classList.add('cc-dark');
     if (overviewCards) overviewCards.style.display = 'none';
     if (alertBanner) alertBanner.style.display = 'none';
     if (dataSourceBanner) dataSourceBanner.style.display = 'none';
   } else {
+    document.body.classList.remove('cc-dark');
     if (overviewCards) overviewCards.style.display = '';
     if (alertBanner) alertBanner.style.display = '';
     if (dataSourceBanner) dataSourceBanner.style.display = '';
@@ -2737,7 +2743,6 @@ function formatThresholdKey(key) {
 async function loadCommandCenter() {
   const loadingEl = document.getElementById('cc-loading');
   const contentEl = document.getElementById('cc-content');
-
   if (loadingEl) loadingEl.classList.remove('hidden');
   if (contentEl) contentEl.classList.add('hidden');
 
@@ -2749,48 +2754,40 @@ async function loadCommandCenter() {
     const actions = data.actionItems || [];
     const movers = data.movers || { up: [], down: [] };
     const diagnosis = data.diagnosis || {};
+    const stability = data.stability || { score: 0, components: {} };
+    const mp = data.marketPulse || {};
 
-    // EXECUTIVE: North Star
+    // ── EXECUTIVE ──
     document.getElementById('cc-ns-value').textContent = ns.today ?? 0;
     document.getElementById('cc-ns-yesterday').textContent = ns.yesterday ?? 0;
     document.getElementById('cc-ns-avg7d').textContent = ns.avg7d ?? 0;
     const changeEl = document.getElementById('cc-ns-change');
     if (ns.change > 0) {
-      changeEl.textContent = `+${ns.change}% vs 7d avg`;
+      changeEl.textContent = `+${ns.change}% vs 7d`;
       changeEl.className = 'cc-ns-change up';
     } else if (ns.change < 0) {
-      changeEl.textContent = `${ns.change}% vs 7d avg`;
+      changeEl.textContent = `${ns.change}% vs 7d`;
       changeEl.className = 'cc-ns-change down';
     } else {
-      changeEl.textContent = 'on par with 7d avg';
+      changeEl.textContent = 'on par';
       changeEl.className = 'cc-ns-change flat';
     }
-
-    // Trajectory
     ccRenderTrajectory(ns.trajectory);
-
-    // Sparkline
+    ccRenderForecast(ns.forecast);
     ccRenderSparkline(ns.trend || []);
-
-    // Diagnosis banner
+    ccRenderStability(stability);
     ccRenderDiagnosis(diagnosis);
+    ccRenderIntegrity(data);
 
-    // ANALYTICAL: Diagnostic table
+    // ── ANALYTICAL ──
     ccRenderDiagTable(anomalies);
-
-    // Status Grid
-    ccRenderStatusGrid(data);
-
-    // Supplier Machine + transitions
     ccRenderPipeline(lc);
+    ccRenderMarketPulse(mp);
 
-    // TACTICAL: Priority Actions
+    // ── TACTICAL ──
     ccRenderActions(actions.slice(0, 3));
-
-    // Market Movers
     ccRenderMovers(movers);
 
-    // Timestamp
     const genEl = document.getElementById('cc-generated');
     if (genEl && data.generatedAt) genEl.textContent = 'Updated ' + timeAgo(data.generatedAt);
 
@@ -2806,17 +2803,16 @@ function ccRenderSparkline(trend) {
   const canvas = document.getElementById('cc-ns-sparkline');
   if (!canvas || !trend.length) return;
   if (nsSparklineChart) nsSparklineChart.destroy();
-
   nsSparklineChart = new Chart(canvas, {
     type: 'line',
     data: {
       labels: trend.map(d => d.date),
       datasets: [{
         data: trend.map(d => d.qualityConnections),
-        borderColor: '#94a3b8',
-        backgroundColor: 'rgba(148,163,184,0.08)',
+        borderColor: '#475569',
+        backgroundColor: 'rgba(71,85,105,0.1)',
         fill: true, tension: 0.4,
-        pointRadius: 0, borderWidth: 1.5
+        pointRadius: 0, borderWidth: 1
       }]
     },
     options: {
@@ -2827,59 +2823,35 @@ function ccRenderSparkline(trend) {
   });
 }
 
-function ccRenderStatusGrid(data) {
-  const anomalies = data.anomalies || [];
-  const lc = data.lifecycle || { states: {}, total: 0 };
-  const ns = data.northStar || {};
-
-  // Demand
-  const demandAnomaly = anomalies.find(a => a.category === 'demand');
-  const demandVal = demandAnomaly ? demandAnomaly.today : '--';
-  document.getElementById('cc-stat-demand').textContent = demandVal;
-  document.getElementById('cc-detail-demand').textContent = demandAnomaly
-    ? `7d avg: ${demandAnomaly.avg7d}` : 'new locations today';
-  ccSetDot('cc-dot-demand', demandAnomaly);
-
-  // Supply
-  const supplyAnomaly = anomalies.find(a => a.category === 'supply');
-  const freshCount = (lc.states?.active || 0);
-  document.getElementById('cc-stat-supply').textContent = supplyAnomaly ? supplyAnomaly.today : freshCount;
-  document.getElementById('cc-detail-supply').textContent = supplyAnomaly
-    ? `7d avg: ${supplyAnomaly.avg7d}` : 'scraped today';
-  ccSetDot('cc-dot-supply', supplyAnomaly);
-
-  // Conversion
-  const convAnomaly = anomalies.find(a => a.category === 'conversion');
-  document.getElementById('cc-stat-conversion').textContent = convAnomaly ? convAnomaly.today : (ns.avg7d > 0 ? Math.round((ns.today / Math.max(1, ns.today + 1)) * 100) + '%' : '--%');
-  document.getElementById('cc-detail-conversion').textContent = convAnomaly
-    ? `7d avg: ${convAnomaly.avg7d}` : 'quality rate';
-  ccSetDot('cc-dot-conversion', convAnomaly);
-
-  // Data Health
-  const failAnomaly = anomalies.find(a => a.category === 'supplier');
-  const healthyPct = lc.total > 0 ? Math.round(((lc.states?.active || 0) / lc.total) * 100) : 0;
-  document.getElementById('cc-stat-health').textContent = failAnomaly ? failAnomaly.today + ' fails' : healthyPct + '%';
-  document.getElementById('cc-detail-health').textContent = failAnomaly
-    ? `7d avg: ${failAnomaly.avg7d}` : 'active rate';
-  ccSetDot('cc-dot-health', failAnomaly);
-}
-
-function ccSetDot(id, anomaly) {
-  const dot = document.getElementById(id);
-  if (!dot) return;
-  if (!anomaly) { dot.className = 'cc-status-dot green'; return; }
-  dot.className = 'cc-status-dot ' + (anomaly.severity === 'high' ? 'red' : 'yellow');
-}
-
 function ccRenderTrajectory(trajectory) {
   const el = document.getElementById('cc-ns-trajectory');
   if (!el || !trajectory) { if (el) el.textContent = ''; return; }
-
-  const arrow = trajectory.direction === 'up' ? '\u2197' : trajectory.direction === 'down' ? '\u2198' : '\u2192';
-  const cls = trajectory.direction === 'up' ? 'up' : trajectory.direction === 'down' ? 'down' : 'flat';
   const pct = Math.abs(trajectory.pct);
+  const cls = trajectory.direction === 'up' ? 'up' : trajectory.direction === 'down' ? 'down' : 'flat';
+  const sign = trajectory.direction === 'up' ? '+' : trajectory.direction === 'down' ? '-' : '';
+  el.innerHTML = `30-day trajectory: <strong class="${cls}">${sign}${pct}%</strong> <span class="cc-trajectory-detail">(${trajectory.recentAvg || '--'}/d vs ${trajectory.prevAvg || '--'}/d prev)</span>`;
+}
 
-  el.innerHTML = `<span class="cc-trajectory-arrow ${cls}">${arrow}</span> 30-day trajectory: <strong class="${cls}">${trajectory.direction === 'flat' ? 'Flat' : (trajectory.direction === 'up' ? '+' : '-') + pct + '%'}</strong> <span class="cc-trajectory-detail">(recent 7d avg ${trajectory.recentAvg || '--'} vs prev 7d avg ${trajectory.prevAvg || '--'})</span>`;
+function ccRenderForecast(forecast) {
+  const el = document.getElementById('cc-ns-forecast');
+  if (!el) return;
+  if (!forecast || forecast.projected === null) { el.textContent = ''; return; }
+  el.innerHTML = `Projected tomorrow: <strong>${forecast.projected}</strong> <span class="cc-forecast-conf">Confidence: ${forecast.confidence}</span>`;
+}
+
+function ccRenderStability(stability) {
+  const scoreEl = document.getElementById('cc-stability-score');
+  const compEl = document.getElementById('cc-stability-components');
+  if (scoreEl) scoreEl.textContent = stability.score;
+  if (compEl && stability.components) {
+    const c = stability.components;
+    compEl.innerHTML = [
+      { label: 'Supply', val: c.supplyFreshness },
+      { label: 'Uptime', val: c.scraperUptime },
+      { label: 'Conv', val: c.conversionRate },
+      { label: 'Demand', val: c.demandVelocity }
+    ].map(r => `<div class="cc-comp-row"><span>${r.label}</span><strong>${r.val ?? '--'}</strong></div>`).join('');
+  }
 }
 
 function ccRenderDiagnosis(diagnosis) {
@@ -2888,7 +2860,6 @@ function ccRenderDiagnosis(diagnosis) {
   const summaryEl = document.getElementById('cc-diagnosis-summary');
   const confEl = document.getElementById('cc-diagnosis-confidence');
   if (!wrap) return;
-
   if (!diagnosis || diagnosis.status === 'normal') {
     wrap.className = 'cc-diagnosis normal';
     if (iconEl) iconEl.textContent = '\u2713';
@@ -2896,22 +2867,49 @@ function ccRenderDiagnosis(diagnosis) {
     if (confEl) confEl.textContent = '';
     return;
   }
-
   wrap.className = 'cc-diagnosis ' + diagnosis.status;
   if (iconEl) iconEl.textContent = diagnosis.status === 'critical' ? '!' : '\u26A0';
   if (summaryEl) summaryEl.textContent = diagnosis.summary;
   if (confEl) confEl.innerHTML = diagnosis.confidence ? `<span class="cc-conf-label">Confidence</span><span class="cc-conf-val">${diagnosis.confidence}%</span>` : '';
 }
 
+function ccRenderIntegrity(data) {
+  const anomalies = data.anomalies || [];
+  const lc = data.lifecycle || { states: {}, total: 0 };
+  const ns = data.northStar || {};
+
+  const demandAnomaly = anomalies.find(a => a.category === 'demand');
+  document.getElementById('cc-stat-demand').textContent = demandAnomaly ? demandAnomaly.today : '--';
+  ccSetDot('cc-dot-demand', demandAnomaly);
+
+  const supplyAnomaly = anomalies.find(a => a.category === 'supply');
+  document.getElementById('cc-stat-supply').textContent = supplyAnomaly ? supplyAnomaly.today : (lc.states?.active || '--');
+  ccSetDot('cc-dot-supply', supplyAnomaly);
+
+  const convAnomaly = anomalies.find(a => a.category === 'conversion');
+  document.getElementById('cc-stat-conversion').textContent = convAnomaly ? convAnomaly.today : '--';
+  ccSetDot('cc-dot-conversion', convAnomaly);
+
+  const failAnomaly = anomalies.find(a => a.category === 'supplier');
+  const healthyPct = lc.total > 0 ? Math.round(((lc.states?.active || 0) / lc.total) * 100) + '%' : '--';
+  document.getElementById('cc-stat-health').textContent = failAnomaly ? failAnomaly.today : healthyPct;
+  ccSetDot('cc-dot-health', failAnomaly);
+}
+
+function ccSetDot(id, anomaly) {
+  const dot = document.getElementById(id);
+  if (!dot) return;
+  if (!anomaly) { dot.className = 'cc-integrity-dot green'; return; }
+  dot.className = 'cc-integrity-dot ' + (anomaly.severity === 'high' ? 'red' : 'yellow');
+}
+
 function ccRenderDiagTable(anomalies) {
   const tbody = document.getElementById('cc-diag-tbody');
   if (!tbody) return;
-
   if (!anomalies.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="cc-diag-empty">No anomalies detected</td></tr>';
     return;
   }
-
   tbody.innerHTML = anomalies.map(a => {
     const arrow = a.direction === 'up' ? '\u2191' : '\u2193';
     const sevCls = a.severity === 'high' ? 'red' : 'yellow';
@@ -2930,19 +2928,17 @@ function ccRenderPipeline(lifecycle) {
   const states = lifecycle.states || {};
   const total = lifecycle.total || 0;
   const transitions = lifecycle.transitions || [];
-
   document.getElementById('cc-pipe-total').textContent = total + ' suppliers';
 
   const stages = [
-    { key: 'active', label: 'Active', color: '#22c55e' },
-    { key: 'newLead', label: 'New Lead', color: '#60a5fa' },
+    { key: 'active', label: 'Active', color: '#1f9d55' },
+    { key: 'newLead', label: 'New', color: '#3b82f6' },
     { key: 'stale', label: 'Stale', color: '#f59e0b' },
-    { key: 'atRisk', label: 'At Risk', color: '#f97316' },
-    { key: 'cooldown', label: 'Cooldown', color: '#ef4444' },
-    { key: 'dormant', label: 'Dormant', color: '#9ca3af' }
+    { key: 'atRisk', label: 'Risk', color: '#f97316' },
+    { key: 'cooldown', label: 'Down', color: '#ef4444' },
+    { key: 'dormant', label: 'Dorm', color: '#475569' }
   ];
 
-  // Stacked bar
   const bar = document.getElementById('cc-stacked-bar');
   if (bar && total > 0) {
     bar.innerHTML = stages
@@ -2955,7 +2951,6 @@ function ccRenderPipeline(lifecycle) {
       }).join('');
   }
 
-  // Legend
   const legend = document.getElementById('cc-stacked-legend');
   if (legend) {
     legend.innerHTML = stages.map(s => {
@@ -2964,7 +2959,6 @@ function ccRenderPipeline(lifecycle) {
     }).join('');
   }
 
-  // Transitions (this week's movements)
   const transEl = document.getElementById('cc-machine-transitions');
   if (transEl) {
     if (transitions.length) {
@@ -2974,35 +2968,77 @@ function ccRenderPipeline(lifecycle) {
           return `<span class="cc-trans-pill ${cls}">${t.label}</span>`;
         }).join(' ');
     } else {
-      transEl.innerHTML = '<span class="cc-trans-label">This week:</span> <span class="cc-trans-none">No state changes</span>';
+      transEl.innerHTML = '<span class="cc-trans-label">This week:</span> <span class="cc-trans-none">No changes</span>';
     }
+  }
+}
+
+function ccRenderMarketPulse(mp) {
+  const chartOpts = (color) => ({
+    type: 'line',
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: true, mode: 'index', intersect: false, bodyFont: { size: 10 } } },
+      scales: {
+        x: { display: false },
+        y: { display: false, beginAtZero: false }
+      },
+      elements: { point: { radius: 0, hoverRadius: 3 } }
+    },
+    data: { labels: [], datasets: [{ data: [], borderColor: color, backgroundColor: color + '15', fill: true, tension: 0.3, borderWidth: 1.5 }] }
+  });
+
+  // Median Price
+  const priceCanvas = document.getElementById('cc-chart-price');
+  if (priceCanvas && mp.medianPrice?.length) {
+    if (mpPriceChart) mpPriceChart.destroy();
+    const cfg = chartOpts('#3b82f6');
+    cfg.data.labels = mp.medianPrice.map(d => d.date);
+    cfg.data.datasets[0].data = mp.medianPrice.map(d => d.value);
+    mpPriceChart = new Chart(priceCanvas, cfg);
+  }
+
+  // Demand Volume
+  const demandCanvas = document.getElementById('cc-chart-demand');
+  if (demandCanvas && mp.demandVolume?.length) {
+    if (mpDemandChart) mpDemandChart.destroy();
+    const cfg = chartOpts('#f59e0b');
+    cfg.data.labels = mp.demandVolume.map(d => d.date);
+    cfg.data.datasets[0].data = mp.demandVolume.map(d => d.value);
+    mpDemandChart = new Chart(demandCanvas, cfg);
+  }
+
+  // Scraper Success
+  const scraperCanvas = document.getElementById('cc-chart-scraper');
+  if (scraperCanvas && mp.scraperSuccess?.length) {
+    if (mpScraperChart) mpScraperChart.destroy();
+    const cfg = chartOpts('#1f9d55');
+    cfg.data.labels = mp.scraperSuccess.map(d => d.date);
+    cfg.data.datasets[0].data = mp.scraperSuccess.map(d => d.value);
+    cfg.options.scales.y = { display: false, min: 0, max: 100 };
+    mpScraperChart = new Chart(scraperCanvas, cfg);
   }
 }
 
 function ccRenderActions(actions) {
   const list = document.getElementById('cc-priority-list');
   if (!list) return;
-
   if (!actions.length) {
-    list.innerHTML = '<div class="cc-priority-clear">No actions needed</div>';
+    list.innerHTML = '<div class="cc-command-empty">No actions needed</div>';
     return;
   }
-
   list.innerHTML = actions.map(a => {
-    const dotCls = a.priority === 'high' ? 'red' : a.priority === 'medium' ? 'yellow' : 'gray';
-    return `
-      <div class="cc-priority-item">
-        <div class="cc-priority-dot ${dotCls}"></div>
-        <span>${a.text}</span>
-      </div>
-    `;
+    return `<div class="cc-command-card ${a.priority}">
+      <div class="cc-command-label">${a.label || a.priority.toUpperCase()}</div>
+      <div class="cc-command-text">${a.text}</div>
+      ${a.impact ? `<div class="cc-command-impact">${a.impact}</div>` : ''}
+    </div>`;
   }).join('');
 }
 
 function ccRenderMovers(movers) {
   const upEl = document.getElementById('cc-movers-up');
   const downEl = document.getElementById('cc-movers-down');
-
   if (upEl) {
     upEl.innerHTML = movers.up.length
       ? movers.up.slice(0, 5).map(m => `
@@ -3013,7 +3049,6 @@ function ccRenderMovers(movers) {
           </div>`).join('')
       : '<div class="cc-movers-none">None</div>';
   }
-
   if (downEl) {
     downEl.innerHTML = movers.down.length
       ? movers.down.slice(0, 5).map(m => `
