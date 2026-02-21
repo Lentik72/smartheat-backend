@@ -2770,7 +2770,6 @@ async function loadCommandCenter() {
       changeEl.className = 'cc-ns-change flat';
     }
     ccRenderSystemState(diagnosis, anomalies);
-    ccRenderHeroInsight(diagnosis);
     ccRenderTrajectory(ns.trajectory);
     ccRenderForecast(ns.forecast);
     ccRenderHeroChart(ns.trend || []);
@@ -2818,16 +2817,6 @@ function ccRenderSystemState(diagnosis, anomalies) {
   const label = labels[cat] || 'SYSTEM DEGRADED';
   el.textContent = label;
   el.className = 'cc-system-state ' + (diagnosis.status === 'critical' ? 'state-critical' : 'state-warning');
-}
-
-function ccRenderHeroInsight(diagnosis) {
-  const el = document.getElementById('cc-hero-insight');
-  if (!el) return;
-  if (!diagnosis || diagnosis.status === 'normal') {
-    el.textContent = '';
-    return;
-  }
-  el.textContent = diagnosis.summary || '';
 }
 
 function ccRenderHeroChart(trend) {

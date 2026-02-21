@@ -3024,14 +3024,6 @@ legend {
 .cc-ns-change.down { color: #dc2626; }
 .cc-ns-change.flat { color: var(--gray-500); }
 
-/* Hero Insight Line */
-.cc-hero-insight {
-  font-size: 0.75rem; color: var(--gray-600); margin-top: 0.3rem;
-  font-weight: 500; line-height: 1.35;
-  max-width: 360px;
-}
-.cc-hero-insight:empty { display: none; }
-
 .cc-hero-sub {
   font-size: 0.72rem; color: var(--gray-500); margin-top: 0.15rem;
 }
