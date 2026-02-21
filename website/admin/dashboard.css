@@ -3240,7 +3240,10 @@ legend {
   font-variant-numeric: tabular-nums;
 }
 .cc-pulse-chart-wrap {
-  position: relative; height: 48px;
+  position: relative; height: 48px; overflow: hidden;
+}
+.cc-pulse-chart-wrap canvas {
+  position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important;
 }
 
 /* ── BOTTOM GRID: Command Board + Movers ── */
