@@ -34,6 +34,10 @@ module.exports = {
         fuel_types = :fuelTypes,
         minimum_gallons = 100,
         allow_price_display = true,
+        scrape_status = 'active',
+        consecutive_scrape_failures = 0,
+        last_scrape_failure_at = NULL,
+        scrape_failure_dates = NULL,
         updated_at = NOW()
       WHERE website LIKE '%tcfueloil.com%'
     `, {
@@ -289,6 +293,10 @@ module.exports = {
           minimum_gallons = EXCLUDED.minimum_gallons,
           allow_price_display = EXCLUDED.allow_price_display,
           active = EXCLUDED.active,
+          scrape_status = 'active',
+          consecutive_scrape_failures = 0,
+          last_scrape_failure_at = NULL,
+          scrape_failure_dates = NULL,
           updated_at = NOW()
       `, {
         replacements: supplier,
