@@ -1590,10 +1590,13 @@
   },
 
   "oilpatchfuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: Online ordering disabled, no price on site. PA.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "name": "Oil Patch Fuel",
+    "phone": "(215) 492-1900",
+    "notes": "PA Philadelphia/Delaware County - COD. 150 gal min. Divi/WordPress site.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})\\s*per\\s*gallon",
+    "postalCodesServed": ["19113","19142","19143","19145","19148","19150","19151","19153","19013","19014","19015","19018","19022","19023","19026","19029","19032","19036","19050","19063","19064","19070","19074","19076","19078","19079","19082"]
   },
 
   "pipelineonline.com": {
@@ -2057,7 +2060,8 @@
   "swanzeyoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NH Cheshire County - Will-call, online ordering 24/7. Since 1961.",
+    "pricePath": "/todayprice.htm",
+    "notes": "NH Cheshire County - Will-call, online ordering 24/7. Since 1961. Price in iframe page.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
