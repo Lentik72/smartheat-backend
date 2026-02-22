@@ -681,6 +681,11 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Werley Energy migration:', err.message);
         });
 
+        const { up: runKelleysMigration } = require('./src/migrations/067-enable-kelleys-oil');
+        runKelleysMigration(sequelize).catch(err => {
+          logger.warn("⚠️  Kelley's Oil migration:", err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
