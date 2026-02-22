@@ -696,6 +696,11 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Cooldown fix migration:', err.message);
         });
 
+        const { up: runStaleFixMigration } = require('./src/migrations/070-fix-stale-suppliers');
+        runStaleFixMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Stale suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
