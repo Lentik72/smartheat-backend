@@ -554,11 +554,11 @@ class CommandCenterService {
 
     // Uncovered demand — include actual ZIP codes
     const [uncovered] = await sequelize.query(`
-      SELECT zip_code, city, state, search_count
+      SELECT zip_code, city, state, request_count
       FROM user_locations
       WHERE coverage_quality IN ('none', 'low')
         AND first_seen_at > NOW() - INTERVAL '7 days'
-      ORDER BY search_count DESC
+      ORDER BY request_count DESC
       LIMIT 10
     `);
     if (uncovered.length > 0) {
@@ -572,7 +572,7 @@ class CommandCenterService {
         details: uncovered.map(r => ({
           name: r.zip_code,
           location: `${r.city || ''}, ${r.state || ''}`.replace(/^, |, $/, ''),
-          note: `${r.search_count || 1} searches`
+          note: `${r.request_count || 1} searches`
         }))
       });
     }
