@@ -84,7 +84,8 @@ class ScrapeConfigSync {
 
         // Check if supplier exists (match by website domain)
         const [existing] = await this.sequelize.query(`
-          SELECT id, name, phone, postal_codes_served, active
+          SELECT id, name, phone, postal_codes_served, active,
+                 allow_price_display, scrape_status, consecutive_scrape_failures
           FROM suppliers
           WHERE LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE $1
              OR LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE $2
@@ -114,6 +115,19 @@ class ScrapeConfigSync {
           if (cfg.phone) {
             updates.push(`phone = $${paramIndex++}`);
             values.push(cfg.phone);
+          }
+
+          // If config says enabled and DB has price display off, this is a re-enable.
+          // Reset failure counters so supplier doesn't show as "at risk" from stale data.
+          if (cfg.enabled === true && !existing.allow_price_display) {
+            updates.push(`allow_price_display = true`);
+            updates.push(`scrape_status = 'active'`);
+            updates.push(`consecutive_scrape_failures = 0`);
+            updates.push(`last_scrape_failure_at = NULL`);
+            updates.push(`scrape_failure_dates = NULL`);
+            updates.push(`scrape_cooldown_until = NULL`);
+            console.log(`[ScrapeConfigSync] Re-enabling ${cfg.name || domain}: resetting failure counters`);
+            stats.reEnabled = (stats.reEnabled || 0) + 1;
           }
 
           // Always update updated_at
