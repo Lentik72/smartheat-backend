@@ -2952,22 +2952,32 @@ function ccRenderDiagnosis(diagnosis) {
 function ccRenderTiles(data) {
   const anomalies = data.anomalies || [];
   const lc = data.lifecycle || { states: {}, total: 0 };
+  const ns = data.northStar || {};
+  const trend = ns.trend || [];
 
-  const demandAnomaly = anomalies.find(a => a.category === 'demand');
-  document.getElementById('cc-stat-demand').textContent = demandAnomaly ? demandAnomaly.today : '--';
-  ccSetDot('cc-dot-demand', demandAnomaly);
+  // Clicks Today — total clicks (from north star trend, today's entry)
+  const todayEntry = trend.find(d => d.date === new Date().toISOString().split('T')[0]);
+  const totalClicks = todayEntry ? todayEntry.totalClicks : 0;
+  document.getElementById('cc-stat-clicks').textContent = totalClicks;
+  const trafficAnomaly = anomalies.find(a => a.category === 'traffic');
+  ccSetDot('cc-dot-clicks', trafficAnomaly);
 
+  // Fresh Prices — active suppliers with prices <48h (lifecycle.states.active)
+  const activeSuppliers = lc.states?.active || 0;
+  document.getElementById('cc-stat-supply').textContent = activeSuppliers;
   const supplyAnomaly = anomalies.find(a => a.category === 'supply');
-  document.getElementById('cc-stat-supply').textContent = supplyAnomaly ? supplyAnomaly.today : (lc.states?.active || '--');
   ccSetDot('cc-dot-supply', supplyAnomaly);
 
-  const convAnomaly = anomalies.find(a => a.category === 'conversion');
-  document.getElementById('cc-stat-conversion').textContent = convAnomaly ? convAnomaly.today : '--';
-  ccSetDot('cc-dot-conversion', convAnomaly);
+  // Scraped Today — from supply anomaly data or lifecycle
+  const supplyData = anomalies.find(a => a.category === 'supply');
+  const scrapedToday = supplyData ? supplyData.today : (lc.states?.active || '--');
+  document.getElementById('cc-stat-scraped').textContent = scrapedToday;
+  ccSetDot('cc-dot-scraped', supplyData);
 
-  const failAnomaly = anomalies.find(a => a.category === 'supplier');
+  // Active Rate — % of suppliers in active status
   const healthyPct = lc.total > 0 ? Math.round(((lc.states?.active || 0) / lc.total) * 100) + '%' : '--';
-  document.getElementById('cc-stat-health').textContent = failAnomaly ? failAnomaly.today : healthyPct;
+  document.getElementById('cc-stat-health').textContent = healthyPct;
+  const failAnomaly = anomalies.find(a => a.category === 'supplier');
   ccSetDot('cc-dot-health', failAnomaly);
 }
 
@@ -3088,19 +3098,20 @@ function ccRenderMarketPulse(mp) {
   };
 
   // Summary values
-  const setSummary = (id, data, prefix, suffix) => {
+  const setSummary = (id, data, prefix, suffix, decimals) => {
     const el = document.getElementById(id);
     if (!el || !data?.length) return;
     const last = data[data.length - 1].value;
     const first = data[0].value;
     const diff = last - first;
     const arrow = diff > 0 ? '\u2191' : diff < 0 ? '\u2193' : '\u2192';
-    el.textContent = prefix + (typeof last === 'number' ? last.toFixed(suffix === '%' ? 0 : 2) : last) + (suffix || '') + ' ' + arrow;
+    const d = decimals ?? 2;
+    el.textContent = prefix + (typeof last === 'number' ? last.toFixed(d) : last) + (suffix || '') + ' ' + arrow;
   };
 
-  setSummary('cc-pulse-price-val', mp.medianPrice, '$', '');
-  setSummary('cc-pulse-demand-val', mp.demandVolume, '', '');
-  setSummary('cc-pulse-scraper-val', mp.scraperSuccess, '', '%');
+  setSummary('cc-pulse-price-val', mp.medianPrice, '$', '', 2);
+  setSummary('cc-pulse-demand-val', mp.demandVolume, '', '', 0);
+  setSummary('cc-pulse-scraper-val', mp.scraperSuccess, '', '%', 0);
 
   if (mpPriceChart) mpPriceChart.destroy();
   if (mpDemandChart) mpDemandChart.destroy();

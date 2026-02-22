@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1771621003">
+  <link rel="stylesheet" href="dashboard.css?v=1771621004">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -249,6 +249,9 @@
 
             <!-- HERO: 7-Day Momentum Chart -->
             <div class="cc-hero">
+              <div class="cc-hero-chart-wrap">
+                <canvas id="cc-ns-sparkline"></canvas>
+              </div>
               <div class="cc-hero-overlay">
                 <div class="cc-hero-left">
                   <div class="cc-system-state" id="cc-system-state"></div>
@@ -272,9 +275,6 @@
                   </div>
                 </div>
               </div>
-              <div class="cc-hero-chart-wrap">
-                <canvas id="cc-ns-sparkline"></canvas>
-              </div>
             </div>
 
             <!-- Diagnosis Banner -->
@@ -287,31 +287,31 @@
             <!-- STATUS TILES -->
             <div class="cc-tiles">
               <div class="cc-tile cc-tile-blue">
-                <span class="cc-tile-dot" id="cc-dot-demand"></span>
+                <span class="cc-tile-dot" id="cc-dot-clicks"></span>
                 <div class="cc-tile-body">
-                  <div class="cc-tile-number" id="cc-stat-demand">--</div>
-                  <div class="cc-tile-label">Demand</div>
+                  <div class="cc-tile-number" id="cc-stat-clicks">--</div>
+                  <div class="cc-tile-label">Clicks Today</div>
                 </div>
               </div>
               <div class="cc-tile cc-tile-green">
                 <span class="cc-tile-dot" id="cc-dot-supply"></span>
                 <div class="cc-tile-body">
                   <div class="cc-tile-number" id="cc-stat-supply">--</div>
-                  <div class="cc-tile-label">Supply</div>
+                  <div class="cc-tile-label">Fresh Prices</div>
                 </div>
               </div>
               <div class="cc-tile cc-tile-amber">
-                <span class="cc-tile-dot" id="cc-dot-conversion"></span>
+                <span class="cc-tile-dot" id="cc-dot-scraped"></span>
                 <div class="cc-tile-body">
-                  <div class="cc-tile-number" id="cc-stat-conversion">--</div>
-                  <div class="cc-tile-label">Conversion</div>
+                  <div class="cc-tile-number" id="cc-stat-scraped">--</div>
+                  <div class="cc-tile-label">Scraped Today</div>
                 </div>
               </div>
               <div class="cc-tile cc-tile-violet">
                 <span class="cc-tile-dot" id="cc-dot-health"></span>
                 <div class="cc-tile-body">
                   <div class="cc-tile-number" id="cc-stat-health">--</div>
-                  <div class="cc-tile-label">Health</div>
+                  <div class="cc-tile-label">Active Rate</div>
                 </div>
               </div>
             </div>
@@ -2498,6 +2498,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1771621003"></script>
+  <script src="dashboard.js?v=1771621004"></script>
 </body>
 </html>
