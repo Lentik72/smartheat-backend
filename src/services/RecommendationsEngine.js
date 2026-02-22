@@ -293,7 +293,7 @@ class RecommendationsEngine {
             COUNT(DISTINCT CASE WHEN lp.scraped_at < NOW() - INTERVAL '48 hours' THEN s.id END) as stale
           FROM suppliers s
           LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
-          WHERE s.active = true
+          WHERE s.active = true AND s.allow_price_display = true
         `, { type: this.sequelize.QueryTypes.SELECT }),
 
         // Stale suppliers (prioritize by clicks)
@@ -314,7 +314,7 @@ class RecommendationsEngine {
           FROM suppliers s
           LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
           LEFT JOIN recent_clicks rc ON s.id = rc.supplier_id
-          WHERE s.active = true
+          WHERE s.active = true AND s.allow_price_display = true
             AND lp.scraped_at < NOW() - INTERVAL '48 hours'
           ORDER BY COALESCE(rc.clicks, 0) DESC
           LIMIT 5

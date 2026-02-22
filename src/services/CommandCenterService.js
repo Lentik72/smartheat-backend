@@ -589,7 +589,7 @@ class CommandCenterService {
         ROUND(EXTRACT(EPOCH FROM (NOW() - l.scraped_at)) / 86400) as days_stale
       FROM suppliers s
       JOIN latest l ON s.id = l.supplier_id
-      WHERE s.active = true
+      WHERE s.active = true AND s.allow_price_display = true
         AND s.website IS NOT NULL AND s.website != ''
         AND l.scraped_at < NOW() - INTERVAL '48 hours'
       ORDER BY l.scraped_at ASC
@@ -733,7 +733,8 @@ class CommandCenterService {
       )
       SELECT COUNT(*) as cnt FROM latest l
       JOIN suppliers s ON l.supplier_id = s.id
-      WHERE s.active = true AND s.website IS NOT NULL AND s.website != ''
+      WHERE s.active = true AND s.allow_price_display = true
+        AND s.website IS NOT NULL AND s.website != ''
         AND l.scraped_at < NOW() - INTERVAL '48 hours'
         AND l.scraped_at > NOW() - INTERVAL '9 days'
     `);

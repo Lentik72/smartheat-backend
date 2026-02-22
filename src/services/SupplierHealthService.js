@@ -82,7 +82,7 @@ class SupplierHealthService {
       scrapable AS (
         SELECT s.id
         FROM suppliers s
-        WHERE s.active = true
+        WHERE s.active = true AND s.allow_price_display = true
           AND s.website IS NOT NULL
           AND s.website != ''
       )
@@ -186,7 +186,7 @@ class SupplierHealthService {
         EXTRACT(EPOCH FROM (NOW() - lp.scraped_at)) / 86400 as days_since_update
       FROM suppliers s
       INNER JOIN latest_prices lp ON s.id = lp.supplier_id
-      WHERE s.active = true
+      WHERE s.active = true AND s.allow_price_display = true
         AND s.website IS NOT NULL
         AND s.website != ''
         AND lp.scraped_at < NOW() - INTERVAL '48 hours'
