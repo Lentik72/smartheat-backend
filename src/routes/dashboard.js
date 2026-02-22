@@ -260,7 +260,7 @@ router.get('/overview', async (req, res) => {
           WHERE is_valid = true
           ORDER BY supplier_id, scraped_at DESC
         ) sp ON s.id = sp.supplier_id
-        WHERE s.active = true
+        WHERE s.active = true AND s.allow_price_display = true
       `),
 
       // Waitlist stats
@@ -893,7 +893,7 @@ router.get('/scraper-health', async (req, res) => {
           COUNT(*) as total
         FROM suppliers s
         LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
-        WHERE s.active = true
+        WHERE s.active = true AND s.allow_price_display = true
       `, { type: sequelize.QueryTypes.SELECT }),
 
       // Stale suppliers (price older than 48h)
@@ -914,7 +914,7 @@ router.get('/scraper-health', async (req, res) => {
           s.website
         FROM suppliers s
         INNER JOIN latest_prices lp ON s.id = lp.supplier_id
-        WHERE s.active = true
+        WHERE s.active = true AND s.allow_price_display = true
           AND lp.scraped_at < NOW() - INTERVAL '48 hours'
         ORDER BY lp.scraped_at ASC
         LIMIT 20
