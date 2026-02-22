@@ -528,44 +528,56 @@ class CommandCenterService {
   async _getActionItems(sequelize) {
     const actions = [];
 
-    // Check for cooldown suppliers that might be recoverable
+    // Cooldown suppliers — include names + websites for action
     const [cooldowns] = await sequelize.query(`
-      SELECT COUNT(*) as cnt
+      SELECT name, city, state, website, consecutive_scrape_failures as failures
       FROM suppliers
       WHERE active = true AND scrape_status = 'cooldown'
+      ORDER BY consecutive_scrape_failures DESC
     `);
-    const cooldownCount = parseInt(cooldowns[0]?.cnt) || 0;
-    if (cooldownCount > 0) {
+    if (cooldowns.length > 0) {
       actions.push({
         priority: 'high',
         label: 'CRITICAL',
         type: 'supplier',
-        text: `Restore ${cooldownCount} cooldown supplier${cooldownCount > 1 ? 's' : ''}`,
-        impact: `+${cooldownCount * 2}\u2013${cooldownCount * 4} connections/day if restored`,
-        metric: cooldownCount
+        text: `Restore ${cooldowns.length} cooldown supplier${cooldowns.length > 1 ? 's' : ''}`,
+        impact: `+${cooldowns.length * 2}\u2013${cooldowns.length * 4} quality clicks/day if restored`,
+        metric: cooldowns.length,
+        details: cooldowns.map(r => ({
+          name: r.name,
+          location: `${r.city}, ${r.state}`,
+          website: r.website,
+          note: `${r.failures} consecutive failures`
+        }))
       });
     }
 
-    // Check for uncovered demand
+    // Uncovered demand — include actual ZIP codes
     const [uncovered] = await sequelize.query(`
-      SELECT COUNT(*) as cnt
+      SELECT zip_code, city, state, search_count
       FROM user_locations
       WHERE coverage_quality IN ('none', 'low')
         AND first_seen_at > NOW() - INTERVAL '7 days'
+      ORDER BY search_count DESC
+      LIMIT 10
     `);
-    const uncoveredCount = parseInt(uncovered[0]?.cnt) || 0;
-    if (uncoveredCount > 0) {
+    if (uncovered.length > 0) {
       actions.push({
         priority: 'medium',
         label: 'OPPORTUNITY',
         type: 'coverage',
-        text: `Add suppliers for ${uncoveredCount} underserved ZIP${uncoveredCount > 1 ? 's' : ''}`,
-        impact: `${uncoveredCount} searches with no supply`,
-        metric: uncoveredCount
+        text: `Add suppliers for ${uncovered.length} underserved ZIP${uncovered.length > 1 ? 's' : ''}`,
+        impact: `${uncovered.length} searches with no supply`,
+        metric: uncovered.length,
+        details: uncovered.map(r => ({
+          name: r.zip_code,
+          location: `${r.city || ''}, ${r.state || ''}`.replace(/^, |, $/, ''),
+          note: `${r.search_count || 1} searches`
+        }))
       });
     }
 
-    // Check for stale prices
+    // Stale prices — include supplier names + how stale
     const [stale] = await sequelize.query(`
       WITH latest AS (
         SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
@@ -573,41 +585,54 @@ class CommandCenterService {
         WHERE is_valid = true
         ORDER BY supplier_id, scraped_at DESC
       )
-      SELECT COUNT(*) as cnt
+      SELECT s.name, s.city, s.state, s.website,
+        ROUND(EXTRACT(EPOCH FROM (NOW() - l.scraped_at)) / 86400) as days_stale
       FROM suppliers s
       JOIN latest l ON s.id = l.supplier_id
       WHERE s.active = true
         AND s.website IS NOT NULL AND s.website != ''
         AND l.scraped_at < NOW() - INTERVAL '48 hours'
+      ORDER BY l.scraped_at ASC
+      LIMIT 15
     `);
-    const staleCount = parseInt(stale[0]?.cnt) || 0;
-    if (staleCount > 3) {
+    if (stale.length > 3) {
       actions.push({
         priority: 'medium',
         label: 'MAINTENANCE',
         type: 'data',
-        text: `${staleCount} stale prices > 48h`,
-        impact: 'Likely suppressing conversion rate',
-        metric: staleCount
+        text: `${stale.length} stale prices > 48h`,
+        impact: 'Suppressing conversion rate',
+        metric: stale.length,
+        details: stale.map(r => ({
+          name: r.name,
+          location: `${r.city}, ${r.state}`,
+          website: r.website,
+          note: `${r.days_stale}d stale`
+        }))
       });
     }
 
-    // Check for at-risk suppliers
+    // At-risk suppliers — include names
     const [atRisk] = await sequelize.query(`
-      SELECT COUNT(*) as cnt
+      SELECT name, city, state, website, last_scrape_failure_at
       FROM suppliers
       WHERE active = true AND scrape_status = 'active'
         AND consecutive_scrape_failures = 1
+      ORDER BY last_scrape_failure_at DESC
     `);
-    const atRiskCount = parseInt(atRisk[0]?.cnt) || 0;
-    if (atRiskCount > 0) {
+    if (atRisk.length > 0) {
       actions.push({
         priority: 'low',
         label: 'WARNING',
         type: 'supplier',
-        text: `${atRiskCount} supplier${atRiskCount > 1 ? 's' : ''} at risk (1 failure from cooldown)`,
-        impact: `Could lose ${atRiskCount} price sources`,
-        metric: atRiskCount
+        text: `${atRisk.length} supplier${atRisk.length > 1 ? 's' : ''} at risk (1 failure from cooldown)`,
+        impact: `Could lose ${atRisk.length} price sources`,
+        metric: atRisk.length,
+        details: atRisk.map(r => ({
+          name: r.name,
+          location: `${r.city}, ${r.state}`,
+          website: r.website
+        }))
       });
     }
 

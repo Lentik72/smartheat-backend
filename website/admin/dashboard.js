@@ -3125,13 +3125,27 @@ function ccRenderActions(actions) {
     list.innerHTML = '<div class="cc-command-empty">No actions needed</div>';
     return;
   }
-  list.innerHTML = actions.map(a => {
-    const impactNum = a.impact ? a.impact.match(/[+\-]?\d+/) : null;
+  list.innerHTML = actions.map((a, i) => {
+    const details = a.details || [];
+    const detailRows = details.map(d => {
+      const link = d.website ? `<a href="${d.website}" target="_blank" class="cc-detail-link">${d.name}</a>` : `<span>${d.name}</span>`;
+      return `<div class="cc-detail-row">
+        ${link}
+        <span class="cc-detail-loc">${d.location || ''}</span>
+        ${d.note ? `<span class="cc-detail-note">${d.note}</span>` : ''}
+      </div>`;
+    }).join('');
+    const hasDetails = details.length > 0;
     return `<div class="cc-command-card ${a.priority}">
-      ${impactNum ? `<div class="cc-command-impact-num">${impactNum[0]}</div>` : ''}
       <div class="cc-command-body">
-        <div class="cc-command-text">${a.text}</div>
-        <span class="cc-command-label">${a.label || a.priority.toUpperCase()}</span>
+        <div class="cc-command-header" ${hasDetails ? `onclick="this.parentElement.classList.toggle('expanded')" style="cursor:pointer"` : ''}>
+          <div class="cc-command-text">${a.text}</div>
+          <div class="cc-command-meta">
+            <span class="cc-command-label">${a.label || a.priority.toUpperCase()}</span>
+            ${hasDetails ? '<span class="cc-command-toggle">&#9662;</span>' : ''}
+          </div>
+        </div>
+        ${hasDetails ? `<div class="cc-command-details">${detailRows}</div>` : ''}
       </div>
     </div>`;
   }).join('');
