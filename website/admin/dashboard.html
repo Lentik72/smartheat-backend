@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1771621005">
+  <link rel="stylesheet" href="dashboard.css?v=1771621006">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -294,24 +294,24 @@
                 </div>
               </div>
               <div class="cc-tile cc-tile-green">
-                <span class="cc-tile-dot" id="cc-dot-supply"></span>
+                <span class="cc-tile-dot" id="cc-dot-active"></span>
                 <div class="cc-tile-body">
-                  <div class="cc-tile-number" id="cc-stat-supply">--</div>
-                  <div class="cc-tile-label">Fresh Prices</div>
+                  <div class="cc-tile-number" id="cc-stat-active">--</div>
+                  <div class="cc-tile-label">Active Suppliers</div>
                 </div>
               </div>
               <div class="cc-tile cc-tile-amber">
-                <span class="cc-tile-dot" id="cc-dot-scraped"></span>
+                <span class="cc-tile-dot" id="cc-dot-issues"></span>
                 <div class="cc-tile-body">
-                  <div class="cc-tile-number" id="cc-stat-scraped">--</div>
-                  <div class="cc-tile-label">Scraped Today</div>
+                  <div class="cc-tile-number" id="cc-stat-issues">--</div>
+                  <div class="cc-tile-label">Stale / At Risk</div>
                 </div>
               </div>
               <div class="cc-tile cc-tile-violet">
-                <span class="cc-tile-dot" id="cc-dot-health"></span>
+                <span class="cc-tile-dot" id="cc-dot-cooldown"></span>
                 <div class="cc-tile-body">
-                  <div class="cc-tile-number" id="cc-stat-health">--</div>
-                  <div class="cc-tile-label">Active Rate</div>
+                  <div class="cc-tile-number" id="cc-stat-cooldown">--</div>
+                  <div class="cc-tile-label">In Cooldown</div>
                 </div>
               </div>
             </div>
@@ -2498,6 +2498,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1771621005"></script>
+  <script src="dashboard.js?v=1771621006"></script>
 </body>
 </html>

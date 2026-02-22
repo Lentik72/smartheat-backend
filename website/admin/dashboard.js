@@ -2915,7 +2915,8 @@ function ccRenderStability(stability) {
       (stability.score >= 70 ? ' good' : stability.score >= 40 ? ' warn' : ' bad');
   }
   if (subEl) {
-    subEl.textContent = stability.score + ' / 100';
+    const label = stability.score >= 70 ? 'Healthy' : stability.score >= 40 ? 'Degraded' : 'Critical';
+    subEl.textContent = label;
   }
   if (compEl && stability.components) {
     const c = stability.components;
@@ -2954,31 +2955,26 @@ function ccRenderTiles(data) {
   const lc = data.lifecycle || { states: {}, total: 0 };
   const ns = data.northStar || {};
   const trend = ns.trend || [];
+  const s = lc.states || {};
 
-  // Clicks Today — total clicks (from north star trend, today's entry)
+  // Clicks Today — total clicks from north star trend
   const todayEntry = trend.find(d => d.date === new Date().toISOString().split('T')[0]);
-  const totalClicks = todayEntry ? todayEntry.totalClicks : 0;
-  document.getElementById('cc-stat-clicks').textContent = totalClicks;
-  const trafficAnomaly = anomalies.find(a => a.category === 'traffic');
-  ccSetDot('cc-dot-clicks', trafficAnomaly);
+  document.getElementById('cc-stat-clicks').textContent = todayEntry ? todayEntry.totalClicks : 0;
+  ccSetDot('cc-dot-clicks', anomalies.find(a => a.category === 'traffic'));
 
-  // Fresh Prices — active suppliers with prices <48h (lifecycle.states.active)
-  const activeSuppliers = lc.states?.active || 0;
-  document.getElementById('cc-stat-supply').textContent = activeSuppliers;
-  const supplyAnomaly = anomalies.find(a => a.category === 'supply');
-  ccSetDot('cc-dot-supply', supplyAnomaly);
+  // Active Suppliers — lifecycle active (fresh <48h price, no failures)
+  document.getElementById('cc-stat-active').textContent = s.active || 0;
+  ccSetDot('cc-dot-active', anomalies.find(a => a.category === 'supply'));
 
-  // Scraped Today — from supply anomaly data or lifecycle
-  const supplyData = anomalies.find(a => a.category === 'supply');
-  const scrapedToday = supplyData ? supplyData.today : (lc.states?.active || '--');
-  document.getElementById('cc-stat-scraped').textContent = scrapedToday;
-  ccSetDot('cc-dot-scraped', supplyData);
+  // Stale / At Risk — suppliers with degraded prices or approaching cooldown
+  const issueCount = (s.stale || 0) + (s.atRisk || 0);
+  document.getElementById('cc-stat-issues').textContent = issueCount;
+  ccSetDot('cc-dot-issues', issueCount > 0 ? { severity: issueCount > 10 ? 'high' : 'medium' } : null);
 
-  // Active Rate — % of suppliers in active status
-  const healthyPct = lc.total > 0 ? Math.round(((lc.states?.active || 0) / lc.total) * 100) + '%' : '--';
-  document.getElementById('cc-stat-health').textContent = healthyPct;
-  const failAnomaly = anomalies.find(a => a.category === 'supplier');
-  ccSetDot('cc-dot-health', failAnomaly);
+  // In Cooldown — suppliers currently blocked from scraping
+  const cooldownCount = s.cooldown || 0;
+  document.getElementById('cc-stat-cooldown').textContent = cooldownCount;
+  ccSetDot('cc-dot-cooldown', cooldownCount > 0 ? { severity: cooldownCount > 5 ? 'high' : 'medium' } : null);
 }
 
 function ccSetDot(id, anomaly) {
