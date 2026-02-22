@@ -3138,7 +3138,7 @@ function ccRenderActions(actions) {
     const hasDetails = details.length > 0;
     return `<div class="cc-command-card ${a.priority}">
       <div class="cc-command-body">
-        <div class="cc-command-header" ${hasDetails ? `onclick="this.parentElement.classList.toggle('expanded')" style="cursor:pointer"` : ''}>
+        <div class="cc-command-header${hasDetails ? ' cc-expandable' : ''}">
           <div class="cc-command-text">${a.text}</div>
           <div class="cc-command-meta">
             <span class="cc-command-label">${a.label || a.priority.toUpperCase()}</span>
@@ -3149,6 +3149,14 @@ function ccRenderActions(actions) {
       </div>
     </div>`;
   }).join('');
+
+  // Attach expand/collapse listeners (CSP blocks inline onclick)
+  list.querySelectorAll('.cc-expandable').forEach(header => {
+    header.style.cursor = 'pointer';
+    header.addEventListener('click', () => {
+      header.parentElement.classList.toggle('expanded');
+    });
+  });
 }
 
 function ccRenderMovers(movers) {
