@@ -2868,7 +2868,7 @@ function ccRenderHeroChart(trend) {
           padding: 8,
           cornerRadius: 6,
           callbacks: {
-            label: function(ctx) { return ctx.parsed.y + ' connections'; }
+            label: function(ctx) { return ctx.parsed.y + ' quality clicks'; }
           }
         }
       },
@@ -2895,14 +2895,14 @@ function ccRenderTrajectory(trajectory) {
   const pct = Math.abs(trajectory.pct);
   const cls = trajectory.direction === 'up' ? 'up' : trajectory.direction === 'down' ? 'down' : 'flat';
   const sign = trajectory.direction === 'up' ? '+' : trajectory.direction === 'down' ? '-' : '';
-  el.innerHTML = `30d trend: <strong class="${cls}">${sign}${pct}%</strong> <span class="cc-trajectory-detail">(${trajectory.recentAvg || '--'}/d vs ${trajectory.prevAvg || '--'}/d)</span>`;
+  el.innerHTML = `30d: <strong class="${cls}">${sign}${pct}%</strong> <span class="cc-trajectory-detail">${trajectory.prevAvg || '--'} → ${trajectory.recentAvg || '--'}/day</span>`;
 }
 
 function ccRenderForecast(forecast) {
   const el = document.getElementById('cc-ns-forecast');
   if (!el) return;
   if (!forecast || forecast.projected === null) { el.textContent = ''; return; }
-  el.innerHTML = `Tomorrow: <strong>${forecast.projected}</strong> <span class="cc-forecast-conf">${forecast.confidence} confidence</span>`;
+  el.innerHTML = `Forecast: <strong>${forecast.projected}</strong> tomorrow <span class="cc-forecast-conf">(${forecast.confidence})</span>`;
 }
 
 function ccRenderStability(stability) {

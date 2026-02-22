@@ -2979,6 +2979,7 @@ legend {
 .cc-hero-chart-wrap {
   position: relative;
   height: 300px;
+  z-index: 1;
 }
 .cc-hero-overlay {
   position: absolute; top: 0; left: 0; right: 0;
@@ -2987,7 +2988,14 @@ legend {
   z-index: 2;
   pointer-events: none;
 }
-.cc-hero-left { pointer-events: auto; }
+.cc-hero-left {
+  pointer-events: auto;
+  background: rgba(238,244,255,0.85);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
 .cc-hero-right { pointer-events: auto; text-align: center; }
 
 /* System State Label */
