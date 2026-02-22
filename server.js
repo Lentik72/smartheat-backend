@@ -686,6 +686,11 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn("⚠️  Kelley's Oil migration:", err.message);
         });
 
+        const { up: runSevenSuppliersMigration } = require('./src/migrations/068-enable-seven-suppliers');
+        runSevenSuppliersMigration(sequelize).catch(err => {
+          logger.warn('⚠️  Seven suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
