@@ -701,6 +701,11 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Stale suppliers migration:', err.message);
         });
 
+        const { up: runRemainingStale } = require('./src/migrations/071-fix-remaining-stale');
+        runRemainingStale(sequelize).catch(err => {
+          logger.warn('⚠️  Remaining stale migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {
