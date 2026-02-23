@@ -3,7 +3,7 @@
  *
  * Re-enable 4 suppliers now scrapable:
  *   - Brunelli Energy (Bozrah, CT) — Wix SSR, $3.69/gallon
- *   - Thrifty Fuel (Allentown, PA) — $2.039 visible
+ *   - Thrifty Fuel (Allentown, PA) — JSONP API price $3.899, manual entry needed
  *   - Ace Oil Maine (Scarborough, ME) — $3.299 in Elementor
  *   - Desrochers Oil (Biddeford, ME) — $3.299 cash price
  *
@@ -29,7 +29,6 @@ module.exports = {
     // --- Re-enable 4 scrapable suppliers ---
     const reEnableDomains = [
       'brunellienergy.com',
-      'thriftyfuel.com',
       'aceoilmaine.com',
       'desrochersoil.com',
     ];
@@ -47,7 +46,7 @@ module.exports = {
         WHERE website LIKE :domain AND active = true
       `, { replacements: { domain: `%${domain}%` } });
     }
-    console.log('[Migration 071] Re-enabled: Brunelli, Thrifty, Ace Oil Maine, Desrochers');
+    console.log('[Migration 071] Re-enabled: Brunelli, Ace Oil Maine, Desrochers');
 
     // --- Reset SNH Energy cooldown (regex fix is in config) ---
     await sequelize.query(`
