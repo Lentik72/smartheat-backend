@@ -2957,24 +2957,24 @@ function ccRenderTiles(data) {
   const trend = ns.trend || [];
   const s = lc.states || {};
 
-  // Clicks Today — total clicks from north star trend
+  // Clicks Today
   const todayEntry = trend.find(d => d.date === new Date().toISOString().split('T')[0]);
   document.getElementById('cc-stat-clicks').textContent = todayEntry ? todayEntry.totalClicks : 0;
   ccSetDot('cc-dot-clicks', anomalies.find(a => a.category === 'traffic'));
 
-  // Active Suppliers — lifecycle active (fresh <48h price, no failures)
-  document.getElementById('cc-stat-active').textContent = s.active || 0;
-  ccSetDot('cc-dot-active', anomalies.find(a => a.category === 'supply'));
+  // Live Prices — pipeline suppliers with fresh <48h price
+  document.getElementById('cc-stat-live').textContent = s.live || 0;
+  ccSetDot('cc-dot-live', anomalies.find(a => a.category === 'supply'));
 
-  // Stale / At Risk — suppliers with degraded prices or approaching cooldown
-  const issueCount = (s.stale || 0) + (s.atRisk || 0);
+  // Stale / Failing — pipeline suppliers with degraded or failing scrapes
+  const issueCount = (s.stale || 0) + (s.failing || 0);
   document.getElementById('cc-stat-issues').textContent = issueCount;
   ccSetDot('cc-dot-issues', issueCount > 0 ? { severity: issueCount > 10 ? 'high' : 'medium' } : null);
 
-  // In Cooldown — suppliers currently blocked from scraping
-  const cooldownCount = s.cooldown || 0;
-  document.getElementById('cc-stat-cooldown').textContent = cooldownCount;
-  ccSetDot('cc-dot-cooldown', cooldownCount > 0 ? { severity: cooldownCount > 5 ? 'high' : 'medium' } : null);
+  // Blocked — pipeline suppliers not being scraped
+  const blockedCount = s.blocked || 0;
+  document.getElementById('cc-stat-blocked').textContent = blockedCount;
+  ccSetDot('cc-dot-blocked', blockedCount > 0 ? { severity: blockedCount > 5 ? 'high' : 'medium' } : null);
 }
 
 function ccSetDot(id, anomaly) {
@@ -3008,39 +3008,46 @@ function ccRenderDiagTable(anomalies) {
 function ccRenderPipeline(lifecycle) {
   const states = lifecycle.states || {};
   const total = lifecycle.total || 0;
+  const pipelineTotal = lifecycle.pipelineTotal || 0;
+  const directoryTotal = lifecycle.directoryTotal || 0;
+  const minimalTotal = lifecycle.minimalTotal || 0;
+  const healthPct = lifecycle.healthPct || 0;
   const transitions = lifecycle.transitions || [];
-  const pipeEl = document.getElementById('cc-pipe-total');
-  if (pipeEl) pipeEl.textContent = total + ' suppliers';
 
-  const stages = [
-    { key: 'active', label: 'Active', color: '#16a34a' },
-    { key: 'newLead', label: 'New', color: '#3b82f6' },
+  // Header: total + health badge
+  const totalEl = document.getElementById('cc-health-total');
+  if (totalEl) totalEl.textContent = total + ' suppliers';
+  const badge = document.getElementById('cc-health-badge');
+  if (badge) {
+    badge.textContent = healthPct + '%';
+    badge.className = 'cc-health-badge ' + (healthPct >= 80 ? 'good' : healthPct >= 50 ? 'warn' : 'bad');
+  }
+
+  // Pipeline bar (live/stale/failing/blocked)
+  const pipelineStages = [
+    { key: 'live', label: 'Live', color: '#16a34a' },
     { key: 'stale', label: 'Stale', color: '#d97706' },
-    { key: 'atRisk', label: 'Risk', color: '#ea580c' },
-    { key: 'cooldown', label: 'Down', color: '#dc2626' },
-    { key: 'dormant', label: 'Dorm', color: '#6b7280' }
+    { key: 'failing', label: 'Failing', color: '#ea580c' },
+    { key: 'blocked', label: 'Blocked', color: '#dc2626' }
   ];
+  ccRenderBar('cc-pipeline-bar', 'cc-pipeline-legend', pipelineStages, states, pipelineTotal);
+  const pipeCount = document.getElementById('cc-pipeline-count');
+  if (pipeCount) pipeCount.textContent = pipelineTotal;
 
-  const bar = document.getElementById('cc-stacked-bar');
-  if (bar && total > 0) {
-    bar.innerHTML = stages
-      .filter(s => (states[s.key] || 0) > 0)
-      .map(s => {
-        const count = states[s.key] || 0;
-        const pct = ((count / total) * 100).toFixed(0);
-        const label = count > total * 0.05 ? count : '';
-        return `<div class="cc-bar-seg" style="flex:${count};background:${s.color}" title="${s.label}: ${count} (${pct}%)"><span>${label}</span></div>`;
-      }).join('');
-  }
+  // Database bar (pipeline/directory/minimal)
+  const dbStages = [
+    { key: '_pipeline', label: 'Pipeline', color: '#3b82f6', count: pipelineTotal },
+    { key: '_directory', label: 'Directory', color: '#8b5cf6', count: directoryTotal },
+    { key: '_minimal', label: 'Minimal', color: '#9ca3af', count: minimalTotal }
+  ];
+  ccRenderBar('cc-database-bar', 'cc-database-legend', dbStages, {}, total, true);
+  const dbCount = document.getElementById('cc-database-count');
+  if (dbCount) dbCount.textContent = total;
 
-  const legend = document.getElementById('cc-stacked-legend');
-  if (legend) {
-    legend.innerHTML = stages.map(s => {
-      const count = states[s.key] || 0;
-      return `<div class="cc-legend-item"><div class="cc-legend-dot" style="background:${s.color}"></div>${s.label}: <span class="cc-legend-count">${count}</span></div>`;
-    }).join('');
-  }
+  // Attention items
+  ccRenderAttention(states);
 
+  // Transitions
   const transEl = document.getElementById('cc-machine-transitions');
   if (transEl) {
     if (transitions.length) {
@@ -3053,6 +3060,52 @@ function ccRenderPipeline(lifecycle) {
       transEl.innerHTML = '<span class="cc-trans-label">This week:</span> <span class="cc-trans-none">No changes</span>';
     }
   }
+}
+
+function ccRenderBar(barId, legendId, stages, states, total, useCountProp) {
+  const bar = document.getElementById(barId);
+  if (bar && total > 0) {
+    bar.innerHTML = stages
+      .filter(s => {
+        const count = useCountProp ? s.count : (states[s.key] || 0);
+        return count > 0;
+      })
+      .map(s => {
+        const count = useCountProp ? s.count : (states[s.key] || 0);
+        const pct = ((count / total) * 100).toFixed(0);
+        const label = count > total * 0.05 ? count : '';
+        return `<div class="cc-bar-seg" style="flex:${count};background:${s.color}" title="${s.label}: ${count} (${pct}%)"><span>${label}</span></div>`;
+      }).join('');
+  }
+  const legend = document.getElementById(legendId);
+  if (legend) {
+    legend.innerHTML = stages.map(s => {
+      const count = useCountProp ? s.count : (states[s.key] || 0);
+      return `<div class="cc-legend-item"><div class="cc-legend-dot" style="background:${s.color}"></div>${s.label}: <span class="cc-legend-count">${count}</span></div>`;
+    }).join('');
+  }
+}
+
+function ccRenderAttention(states) {
+  const el = document.getElementById('cc-attention');
+  if (!el) return;
+  const items = [];
+  if ((states.blocked || 0) > 0) {
+    items.push({ severity: 'red', icon: '\uD83D\uDD34', text: `${states.blocked} suppliers blocked from scraping`, action: 'Check scraper config or site changes' });
+  }
+  if ((states.failing || 0) > 0) {
+    items.push({ severity: 'orange', icon: '\uD83D\uDFE0', text: `${states.failing} suppliers failing to scrape`, action: 'Investigate before next scrape cycle' });
+  }
+  if ((states.stale || 0) > 5) {
+    items.push({ severity: 'yellow', icon: '\uD83D\uDFE1', text: `${states.stale} stale prices (>48h)`, action: 'May be suppressing conversions' });
+  }
+  if (items.length === 0) {
+    el.innerHTML = '<div class="cc-attn-clear">No issues detected</div>';
+    return;
+  }
+  el.innerHTML = items.map(i =>
+    `<div class="cc-attn-item cc-attn-${i.severity}"><span class="cc-attn-icon">${i.icon}</span> <span class="cc-attn-text">${i.text}</span> <span class="cc-attn-action">${i.action}</span></div>`
+  ).join('');
 }
 
 function ccRenderMarketPulse(mp) {

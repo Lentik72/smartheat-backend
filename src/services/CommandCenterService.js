@@ -36,7 +36,7 @@ class CommandCenterService {
       }),
       this._getSupplierLifecycle(sequelize).catch(e => {
         logger?.error('[CommandCenter] Lifecycle error:', e.message);
-        return { states: {}, total: 0 };
+        return { states: {}, total: 0, pipelineTotal: 0, directoryTotal: 0, minimalTotal: 0, healthPct: 0 };
       }),
       this._getKeyMovers(sequelize).catch(e => {
         logger?.error('[CommandCenter] Movers error:', e.message);
@@ -386,8 +386,10 @@ class CommandCenterService {
   }
 
   /**
-   * Supplier Lifecycle Pipeline
-   * States: newLead, active, stale, atRisk, cooldown, dormant
+   * Supplier Health — tier-based classification
+   * Pipeline (allow_price_display=true + website): live, stale, failing, blocked
+   * Directory (website but !allow_price_display): listed
+   * Minimal (no website): minimal
    */
   async _getSupplierLifecycle(sequelize) {
     const [results] = await sequelize.query(`
@@ -398,61 +400,59 @@ class CommandCenterService {
         FROM supplier_prices
         WHERE is_valid = true
         ORDER BY supplier_id, scraped_at DESC
-      ),
-      scrapable AS (
-        SELECT
-          s.id,
-          s.name,
-          s.city,
-          s.state,
-          s.scrape_status,
-          s.consecutive_scrape_failures,
-          s.created_at,
-          s.active,
-          s.website,
-          s.allow_price_display,
-          lp.scraped_at as last_price_at
-        FROM suppliers s
-        LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
-        WHERE s.active = true
       )
       SELECT
-        id, name, city, state, scrape_status,
-        consecutive_scrape_failures,
-        created_at, website, allow_price_display,
-        last_price_at,
+        s.id, s.name, s.city, s.state, s.scrape_status,
+        s.consecutive_scrape_failures, s.website, s.allow_price_display,
+        lp.scraped_at as last_price_at,
         CASE
-          WHEN scrape_status IN ('cooldown') THEN 'cooldown'
-          WHEN scrape_status = 'phone_only' THEN 'dormant'
-          WHEN website IS NULL OR website = '' THEN 'dormant'
-          WHEN consecutive_scrape_failures >= 1 AND scrape_status = 'active' THEN 'atRisk'
-          WHEN last_price_at IS NOT NULL AND last_price_at < NOW() - INTERVAL '48 hours' THEN 'stale'
-          WHEN last_price_at IS NOT NULL AND last_price_at >= NOW() - INTERVAL '48 hours' THEN 'active'
-          WHEN last_price_at IS NULL AND created_at > NOW() - INTERVAL '30 days' THEN 'newLead'
-          ELSE 'dormant'
+          WHEN s.allow_price_display = true AND s.website IS NOT NULL AND s.website != '' THEN
+            CASE
+              WHEN s.scrape_status IN ('cooldown', 'phone_only') THEN 'blocked'
+              WHEN s.consecutive_scrape_failures >= 1 AND s.scrape_status = 'active' THEN 'failing'
+              WHEN lp.scraped_at IS NOT NULL AND lp.scraped_at < NOW() - INTERVAL '48 hours' THEN 'stale'
+              WHEN lp.scraped_at IS NOT NULL AND lp.scraped_at >= NOW() - INTERVAL '48 hours' THEN 'live'
+              ELSE 'stale'
+            END
+          WHEN s.website IS NOT NULL AND s.website != '' THEN 'listed'
+          ELSE 'minimal'
         END as lifecycle_state
-      FROM scrapable
+      FROM suppliers s
+      LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
+      WHERE s.active = true
     `);
 
-    // Count by state
-    const states = { newLead: 0, active: 0, stale: 0, atRisk: 0, cooldown: 0, dormant: 0 };
-    const examples = { newLead: [], active: [], stale: [], atRisk: [], cooldown: [], dormant: [] };
+    // Count by state with richer examples
+    const states = { live: 0, stale: 0, failing: 0, blocked: 0, listed: 0, minimal: 0 };
+    const examples = { live: [], stale: [], failing: [], blocked: [], listed: [], minimal: [] };
 
     for (const r of results) {
       const state = r.lifecycle_state;
       states[state] = (states[state] || 0) + 1;
-      if (examples[state] && examples[state].length < 3) {
+      if (examples[state] && examples[state].length < 5) {
         examples[state].push({
           name: r.name,
           city: r.city,
-          state: r.state
+          state: r.state,
+          website: r.website || null,
+          failures: parseInt(r.consecutive_scrape_failures) || 0,
+          lastPrice: r.last_price_at || null
         });
       }
     }
 
+    const pipelineTotal = states.live + states.stale + states.failing + states.blocked;
+    const directoryTotal = states.listed;
+    const minimalTotal = states.minimal;
+    const healthPct = pipelineTotal > 0 ? Math.round((states.live / pipelineTotal) * 100) : 0;
+
     return {
       states,
       total: results.length,
+      pipelineTotal,
+      directoryTotal,
+      minimalTotal,
+      healthPct,
       examples
     };
   }
@@ -686,30 +686,32 @@ class CommandCenterService {
   }
 
   /**
-   * Supplier lifecycle transitions this week
-   * Counts how many suppliers changed state (approximated from current data)
+   * Pipeline transitions this week (pipeline-only: allow_price_display=true + website)
    */
   async _getTransitions(sequelize) {
     const transitions = [];
+    const pipelineFilter = `s.active = true AND s.allow_price_display = true AND s.website IS NOT NULL AND s.website != ''`;
 
-    // New cooldowns this week
-    const [cooldowns] = await sequelize.query(`
-      SELECT COUNT(*) as cnt FROM suppliers
-      WHERE active = true AND scrape_status IN ('cooldown', 'phone_only')
-        AND last_scrape_failure_at >= NOW() - INTERVAL '7 days'
+    // Became blocked this week (entered cooldown/phone_only)
+    const [blocked] = await sequelize.query(`
+      SELECT COUNT(*) as cnt FROM suppliers s
+      WHERE ${pipelineFilter}
+        AND s.scrape_status IN ('cooldown', 'phone_only')
+        AND s.last_scrape_failure_at >= NOW() - INTERVAL '7 days'
     `);
-    const newCooldowns = parseInt(cooldowns[0]?.cnt) || 0;
-    if (newCooldowns > 0) {
-      transitions.push({ label: `${newCooldowns} entered cooldown`, direction: 'down', count: newCooldowns });
+    const newBlocked = parseInt(blocked[0]?.cnt) || 0;
+    if (newBlocked > 0) {
+      transitions.push({ label: `${newBlocked} became blocked`, direction: 'down', count: newBlocked });
     }
 
-    // Recently scraped (active with recent prices — proxy for "activated")
-    const [activated] = await sequelize.query(`
+    // Went live this week (first price in last 7 days, no price before that)
+    const [wentLive] = await sequelize.query(`
       SELECT COUNT(DISTINCT sp.supplier_id) as cnt
       FROM supplier_prices sp
       JOIN suppliers s ON sp.supplier_id = s.id
       WHERE sp.is_valid = true
-        AND s.active = true AND s.scrape_status = 'active'
+        AND ${pipelineFilter}
+        AND s.scrape_status = 'active'
         AND sp.scraped_at > NOW() - INTERVAL '7 days'
         AND NOT EXISTS (
           SELECT 1 FROM supplier_prices sp2
@@ -719,13 +721,13 @@ class CommandCenterService {
             AND sp2.scraped_at > NOW() - INTERVAL '14 days'
         )
     `);
-    const newActive = parseInt(activated[0]?.cnt) || 0;
-    if (newActive > 0) {
-      transitions.push({ label: `${newActive} newly active`, direction: 'up', count: newActive });
+    const liveCount = parseInt(wentLive[0]?.cnt) || 0;
+    if (liveCount > 0) {
+      transitions.push({ label: `${liveCount} went live`, direction: 'up', count: liveCount });
     }
 
-    // Suppliers with stale prices that were fresh last week
-    const [newStale] = await sequelize.query(`
+    // Went stale this week (last price 48h–9d ago, meaning it was fresh last week)
+    const [wentStale] = await sequelize.query(`
       WITH latest AS (
         SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
         FROM supplier_prices WHERE is_valid = true
@@ -733,14 +735,13 @@ class CommandCenterService {
       )
       SELECT COUNT(*) as cnt FROM latest l
       JOIN suppliers s ON l.supplier_id = s.id
-      WHERE s.active = true AND s.allow_price_display = true
-        AND s.website IS NOT NULL AND s.website != ''
+      WHERE ${pipelineFilter}
         AND l.scraped_at < NOW() - INTERVAL '48 hours'
         AND l.scraped_at > NOW() - INTERVAL '9 days'
     `);
-    const becameStale = parseInt(newStale[0]?.cnt) || 0;
-    if (becameStale > 0) {
-      transitions.push({ label: `${becameStale} became stale`, direction: 'down', count: becameStale });
+    const staleCount = parseInt(wentStale[0]?.cnt) || 0;
+    if (staleCount > 0) {
+      transitions.push({ label: `${staleCount} went stale`, direction: 'down', count: staleCount });
     }
 
     return transitions;

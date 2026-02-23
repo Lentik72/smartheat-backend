@@ -3179,10 +3179,35 @@ legend {
 .cc-sev-dot.yellow { background: #d97706; }
 .cc-diag-empty { color: var(--gray-400); font-style: italic; text-align: center; }
 
-/* Supplier Machine / Stacked Bar */
+/* Supplier Health Header */
+.cc-health-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+.cc-health-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0.15rem 0.55rem; border-radius: var(--radius-pill);
+  font-size: 0.68rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.cc-health-badge.good { background: #16a34a; }
+.cc-health-badge.warn { background: #d97706; }
+.cc-health-badge.bad { background: #dc2626; }
+
+/* Bar Rows */
+.cc-bar-row { margin-bottom: 0.55rem; }
+.cc-bar-label {
+  font-size: 0.65rem; font-weight: 600; color: var(--gray-600);
+  margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.cc-bar-count {
+  font-weight: 400; color: var(--gray-400); margin-left: 0.3rem;
+}
+
+/* Stacked Bar (shared) */
 .cc-stacked-bar {
-  display: flex; height: 28px; border-radius: 4px;
-  overflow: hidden; margin-bottom: 0.4rem;
+  display: flex; height: 24px; border-radius: 4px;
+  overflow: hidden; margin-bottom: 0.3rem;
 }
 .cc-bar-seg {
   display: flex; align-items: center; justify-content: center;
@@ -3191,7 +3216,7 @@ legend {
 }
 .cc-bar-seg span { white-space: nowrap; }
 .cc-stacked-legend {
-  display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.35rem;
+  display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.2rem;
 }
 .cc-legend-item {
   display: flex; align-items: center; gap: 0.25rem;
@@ -3199,6 +3224,30 @@ legend {
 }
 .cc-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 .cc-legend-count { font-weight: 600; color: var(--gray-700); }
+
+/* Attention Section */
+.cc-attention-section {
+  padding-top: 0.45rem; margin-top: 0.25rem;
+  border-top: 1px solid var(--gray-100);
+  margin-bottom: 0.35rem;
+}
+.cc-attn-item {
+  display: flex; align-items: baseline; gap: 0.35rem;
+  font-size: 0.72rem; color: var(--gray-600);
+  padding: 0.2rem 0;
+}
+.cc-attn-icon { font-size: 0.65rem; flex-shrink: 0; }
+.cc-attn-text { font-weight: 600; }
+.cc-attn-action {
+  color: var(--gray-400); font-size: 0.65rem;
+}
+.cc-attn-action::before { content: '\2014\00a0'; }
+.cc-attn-clear {
+  font-size: 0.72rem; color: var(--gray-400);
+  font-style: italic; padding: 0.15rem 0;
+}
+
+/* Transitions */
 .cc-machine-transitions {
   font-size: 0.72rem; color: var(--gray-500);
   padding-top: 0.4rem; border-top: 1px solid var(--gray-100);

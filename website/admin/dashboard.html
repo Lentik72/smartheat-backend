@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1771621008">
+  <link rel="stylesheet" href="dashboard.css?v=1771621009">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -294,24 +294,24 @@
                 </div>
               </div>
               <div class="cc-tile cc-tile-green">
-                <span class="cc-tile-dot" id="cc-dot-active"></span>
+                <span class="cc-tile-dot" id="cc-dot-live"></span>
                 <div class="cc-tile-body">
-                  <div class="cc-tile-number" id="cc-stat-active">--</div>
-                  <div class="cc-tile-label">Active Suppliers</div>
+                  <div class="cc-tile-number" id="cc-stat-live">--</div>
+                  <div class="cc-tile-label">Live Prices</div>
                 </div>
               </div>
               <div class="cc-tile cc-tile-amber">
                 <span class="cc-tile-dot" id="cc-dot-issues"></span>
                 <div class="cc-tile-body">
                   <div class="cc-tile-number" id="cc-stat-issues">--</div>
-                  <div class="cc-tile-label">Stale / At Risk</div>
+                  <div class="cc-tile-label">Stale / Failing</div>
                 </div>
               </div>
               <div class="cc-tile cc-tile-violet">
-                <span class="cc-tile-dot" id="cc-dot-cooldown"></span>
+                <span class="cc-tile-dot" id="cc-dot-blocked"></span>
                 <div class="cc-tile-body">
-                  <div class="cc-tile-number" id="cc-stat-cooldown">--</div>
-                  <div class="cc-tile-label">In Cooldown</div>
+                  <div class="cc-tile-number" id="cc-stat-blocked">--</div>
+                  <div class="cc-tile-label">Blocked</div>
                 </div>
               </div>
             </div>
@@ -319,12 +319,24 @@
             <!-- Stability Components (inline) -->
             <div class="cc-stab-row" id="cc-stability-components"></div>
 
-            <!-- MIDDLE: Supplier Machine + Diagnostics -->
+            <!-- MIDDLE: Supplier Health + Diagnostics -->
             <div class="cc-mid-grid">
               <div class="cc-section">
-                <div class="cc-section-title">Supplier Machine <span class="cc-section-sub" id="cc-pipe-total"></span></div>
-                <div class="cc-stacked-bar" id="cc-stacked-bar"></div>
-                <div class="cc-stacked-legend" id="cc-stacked-legend"></div>
+                <div class="cc-health-header">
+                  <div class="cc-section-title">Supplier Health <span class="cc-section-sub" id="cc-health-total"></span></div>
+                  <span class="cc-health-badge" id="cc-health-badge">--%</span>
+                </div>
+                <div class="cc-bar-row">
+                  <div class="cc-bar-label">Price Pipeline <span class="cc-bar-count" id="cc-pipeline-count"></span></div>
+                  <div class="cc-stacked-bar" id="cc-pipeline-bar"></div>
+                  <div class="cc-stacked-legend" id="cc-pipeline-legend"></div>
+                </div>
+                <div class="cc-bar-row">
+                  <div class="cc-bar-label">Full Database <span class="cc-bar-count" id="cc-database-count"></span></div>
+                  <div class="cc-stacked-bar" id="cc-database-bar"></div>
+                  <div class="cc-stacked-legend" id="cc-database-legend"></div>
+                </div>
+                <div class="cc-attention-section" id="cc-attention"></div>
                 <div class="cc-machine-transitions" id="cc-machine-transitions"></div>
               </div>
               <div class="cc-section">
@@ -2498,6 +2510,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1771621008"></script>
+  <script src="dashboard.js?v=1771621009"></script>
 </body>
 </html>
