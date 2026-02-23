@@ -706,6 +706,11 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️  Remaining stale migration:', err.message);
         });
 
+        const { up: runWestchesterPutnam } = require('./src/migrations/072-add-westchester-putnam-suppliers');
+        runWestchesterPutnam(sequelize).catch(err => {
+          logger.warn('⚠️  Westchester/Putnam suppliers migration:', err.message);
+        });
+
         // V2.15.0: Sync scrape-config.json to suppliers table
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
         scrapeConfigSync.sync().then(result => {

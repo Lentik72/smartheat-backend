@@ -21,7 +21,11 @@
     "gblossoil.com": "G. Bloss Oil - Coopersburg/Quakertown, PA. Full-service automatic delivery. Bucks/Lehigh counties. Phone: (610) 282-1244.",
     "walkerfuels.com": "Walker Fuels - Quakertown, PA. Full-service automatic delivery. Upper Bucks County. Phone: (215) 536-8712.",
     "allseasonsfuelllc.com": "All Seasons Fuel - Quakertown, PA area. Contract-only delivery. Bucks County. Phone: (215) 529-5553.",
-    "bucksrunoil.com": "Bucks Run Oil - Hellertown, PA. Contract-only automatic delivery. Bucks/Northampton/Lehigh counties. Phone: (610) 838-7218."
+    "bucksrunoil.com": "Bucks Run Oil - Hellertown, PA. Contract-only automatic delivery. Bucks/Northampton/Lehigh counties. Phone: (610) 838-7218.",
+    "easternoilcompany.com": "Eastern Oil Company - Peekskill, NY. Full-service automatic delivery + budget plans. Westchester/Putnam counties. Heating oil, kerosene, off-road diesel. Phone: (914) 737-1583.",
+    "heritagefuel.com": "Heritage Fuel - Croton Falls, NY. Full-service contract/automatic delivery. Westchester/Putnam/Dutchess counties. Heating oil, diesel, propane. Phone: (914) 277-8088.",
+    "mtfuels.com": "MT Fuel Corp - Stony Brook, NY. Full-service delivery. Suffolk/Nassau counties. Heating oil, diesel. Phone: (631) 828-9179.",
+    "villageoilco.com": "Village Oil Co (Santa Energy) - Ridgefield, CT. On-demand but prepay by card only (no COD). Fairfield County CT. Phone: (203) 431-6560."
   },
 
   "_section_NY": "=== NEW YORK ===",
@@ -234,6 +238,20 @@
     "enabled": false,
     "pattern": "direct",
     "notes": "DISABLED: Timeout - site unreliable",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "checkoilllc.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NY Peekskill/Westchester/Putnam - COD confirmed. No prices on website (call for rates).",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "wp.marshalloilco.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NY Pound Ridge/Westchester/Fairfield CT - Will-call confirmed. No prices on website.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
