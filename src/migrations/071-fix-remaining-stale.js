@@ -11,13 +11,15 @@
  *
  * Re-enable Freedom Fuel (price in var price = '3.85')
  *
- * Disable 6 unfixable suppliers (set allow_price_display=false):
+ * Disable 5 unfixable suppliers (set allow_price_display=false):
  *   - T & M Fuel — no real oil price ($1.50 is a fee)
  *   - Eastern Petroleum — dynamic 0.00 placeholder
  *   - Leo's Fuel — JS redirect, no price
  *   - Hillside Oil — DNS failure, site down
  *   - RA Bair & Son — no price on site
- *   - LeBlanc Oil — price JS-rendered, not in static HTML
+ *
+ * Keep as manual-price (allow_price_display=true, on 6am email list):
+ *   - LeBlanc Oil — price $3.72 is JS-rendered, manual entry needed
  */
 
 module.exports = {
@@ -74,14 +76,14 @@ module.exports = {
     `);
     console.log('[Migration 071] Freedom Fuel re-enabled');
 
-    // --- Disable 6 unfixable suppliers ---
+    // --- Disable 5 unfixable suppliers ---
+    // LeBlanc Oil kept enabled for manual price entry via 6am email
     const disableDomains = [
       'tandmfuel.com',
       'easternpetroleumonline.com',
       'leosfuel.com',
       'hillsideoilheat.com',
       'rabairandson.com',
-      'leblancheating.com',   // price is JS-rendered, not in static HTML
     ];
 
     for (const domain of disableDomains) {
@@ -92,7 +94,7 @@ module.exports = {
         WHERE website LIKE :domain
       `, { replacements: { domain: `%${domain}%` } });
     }
-    console.log('[Migration 071] Disabled 7 unfixable suppliers');
+    console.log('[Migration 071] Disabled 5 unfixable suppliers');
   },
 
   async down(sequelize) {
@@ -106,7 +108,7 @@ module.exports = {
     }
 
     // Revert disabled
-    const disableDomains = ['tandmfuel.com','easternpetroleumonline.com','leosfuel.com','hillsideoilheat.com','rabairandson.com','leblancheating.com','freedomfuelma.com'];
+    const disableDomains = ['tandmfuel.com','easternpetroleumonline.com','leosfuel.com','hillsideoilheat.com','rabairandson.com'];
     for (const domain of disableDomains) {
       await sequelize.query(`
         UPDATE suppliers SET allow_price_display = true, updated_at = NOW()
