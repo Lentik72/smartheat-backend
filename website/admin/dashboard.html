@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1771621009">
+  <link rel="stylesheet" href="dashboard.css?v=1771621010">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -340,13 +340,21 @@
                 <div class="cc-machine-transitions" id="cc-machine-transitions"></div>
               </div>
               <div class="cc-section">
-                <div class="cc-section-title">Diagnostics</div>
-                <table class="cc-diag-table">
-                  <thead><tr><th>Metric</th><th>Today</th><th>7d Avg</th><th>&Delta;</th><th></th></tr></thead>
-                  <tbody id="cc-diag-tbody">
-                    <tr><td colspan="5" class="cc-diag-empty">No anomalies detected</td></tr>
-                  </tbody>
-                </table>
+                <div class="cc-liq-header">
+                  <div class="cc-section-title">Marketplace Pulse</div>
+                  <span class="cc-liq-stale-badge hidden" id="cc-liq-stale"></span>
+                </div>
+                <div class="cc-anomaly-strip" id="cc-anomaly-strip"></div>
+                <div class="cc-liq-grid" id="cc-liq-grid">
+                  <div class="cc-liq-metric"><div class="cc-liq-label">Utilization Soft 7d</div><div class="cc-liq-value" id="cc-liq-util-soft-7d">&mdash;</div></div>
+                  <div class="cc-liq-metric"><div class="cc-liq-label">Utilization Soft 30d</div><div class="cc-liq-value" id="cc-liq-util-soft-30d">&mdash;</div></div>
+                  <div class="cc-liq-metric"><div class="cc-liq-label">Utilization Hard 7d</div><div class="cc-liq-value" id="cc-liq-util-hard-7d">&mdash;</div></div>
+                  <div class="cc-liq-metric"><div class="cc-liq-label">Utilization Hard 30d</div><div class="cc-liq-value" id="cc-liq-util-hard-30d">&mdash;</div></div>
+                  <div class="cc-liq-metric"><div class="cc-liq-label">Match Rate Soft 7d</div><div class="cc-liq-value" id="cc-liq-match-soft">&mdash;</div></div>
+                  <div class="cc-liq-metric"><div class="cc-liq-label">Match Rate Hard 7d</div><div class="cc-liq-value" id="cc-liq-match-hard">&mdash;</div></div>
+                  <div class="cc-liq-metric"><div class="cc-liq-label">Call Share 7d</div><div class="cc-liq-value" id="cc-liq-call-share">&mdash;</div></div>
+                  <div class="cc-liq-metric"><div class="cc-liq-label">Liquidity Coverage 7d</div><div class="cc-liq-value" id="cc-liq-coverage">&mdash;</div></div>
+                </div>
               </div>
             </div>
 
@@ -372,6 +380,36 @@
                   <span class="cc-pulse-val" id="cc-pulse-scraper-val"></span>
                 </div>
                 <div class="cc-pulse-chart-wrap"><canvas id="cc-chart-scraper"></canvas></div>
+              </div>
+            </div>
+
+            <!-- DEMAND DENSITY + COMMUNITY DELIVERIES -->
+            <div class="cc-density-grid">
+              <div class="cc-section">
+                <div class="cc-section-title">Demand Density <span class="cc-section-sub">Top 25 ZIPs (7d)</span></div>
+                <div class="cc-density-table-wrap">
+                  <table class="cc-density-table">
+                    <thead>
+                      <tr><th>ZIP</th><th>Clicks</th><th>Calls</th><th>Score</th><th>Days</th><th>Suppliers</th><th>Fresh</th></tr>
+                    </thead>
+                    <tbody id="cc-density-tbody">
+                      <tr><td colspan="7" class="cc-diag-empty">Awaiting first snapshot</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="cc-section">
+                <div class="cc-section-title">Community Deliveries</div>
+                <div class="cc-community-metrics" id="cc-community-metrics">
+                  <div class="cc-comm-stat"><div class="cc-comm-label">7d</div><div class="cc-comm-value" id="cc-comm-7d">&mdash;</div></div>
+                  <div class="cc-comm-stat"><div class="cc-comm-label">30d</div><div class="cc-comm-value" id="cc-comm-30d">&mdash;</div></div>
+                  <div class="cc-comm-stat"><div class="cc-comm-label">Oil 30d</div><div class="cc-comm-value" id="cc-comm-oil">&mdash;</div></div>
+                  <div class="cc-comm-stat"><div class="cc-comm-label">Propane 30d</div><div class="cc-comm-value" id="cc-comm-propane">&mdash;</div></div>
+                </div>
+                <div class="cc-comm-growth" id="cc-comm-growth"></div>
+                <div class="cc-comm-sample hidden" id="cc-comm-sample">Low sample size</div>
+                <div class="cc-comm-topzips-title">Top ZIPs (30d)</div>
+                <div class="cc-comm-topzips" id="cc-comm-topzips"></div>
               </div>
             </div>
 
@@ -2510,6 +2548,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1771621009"></script>
+  <script src="dashboard.js?v=1771621010"></script>
 </body>
 </html>

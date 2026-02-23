@@ -2753,6 +2753,7 @@ async function loadCommandCenter() {
     const diagnosis = data.diagnosis || {};
     const stability = data.stability || { score: 0, components: {} };
     const mp = data.marketPulse || {};
+    const liquidity = data.liquidity || null;
 
     // ── HERO ──
     document.getElementById('cc-ns-value').textContent = ns.today ?? 0;
@@ -2778,9 +2779,11 @@ async function loadCommandCenter() {
     ccRenderTiles(data);
 
     // ── MIDDLE ──
-    ccRenderDiagTable(anomalies);
+    ccRenderMarketplacePulse(liquidity, anomalies);
     ccRenderPipeline(lc);
     ccRenderMarketPulse(mp);
+    ccRenderDemandDensity(liquidity);
+    ccRenderCommunityDeliveries(liquidity);
 
     // ── BOTTOM ──
     ccRenderActions(actions.slice(0, 4));
@@ -2982,6 +2985,134 @@ function ccSetDot(id, anomaly) {
   if (!dot) return;
   if (!anomaly) { dot.className = 'cc-tile-dot green'; return; }
   dot.className = 'cc-tile-dot ' + (anomaly.severity === 'high' ? 'red' : 'yellow');
+}
+
+function ccRenderMarketplacePulse(liquidity, anomalies) {
+  // Anomaly strip
+  const stripEl = document.getElementById('cc-anomaly-strip');
+  if (stripEl) {
+    if (anomalies && anomalies.length > 0) {
+      const a = anomalies[0];
+      const arrow = a.direction === 'up' ? '\u2191' : '\u2193';
+      const sevCls = a.severity === 'high' ? 'cc-anomaly-high' : 'cc-anomaly-med';
+      stripEl.innerHTML = `<span class="${sevCls}">${a.title} ${arrow} ${Math.abs(a.deviation)}% vs 7d avg` +
+        (a.severity === 'high' ? ' (high confidence)' : '') + '</span>';
+      stripEl.classList.remove('hidden');
+    } else {
+      stripEl.classList.add('hidden');
+    }
+  }
+
+  // Stale check
+  const staleEl = document.getElementById('cc-liq-stale');
+  if (staleEl && liquidity) {
+    const now = new Date();
+    const etStr = now.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const etDate = new Date(etStr + 'T00:00:00');
+    etDate.setDate(etDate.getDate() - 1);
+    const yesterdayET = etDate.toISOString().split('T')[0];
+    if (liquidity.day < yesterdayET) {
+      staleEl.textContent = 'stale data';
+      staleEl.classList.remove('hidden');
+    }
+  }
+
+  if (!liquidity) {
+    document.querySelectorAll('.cc-liq-value').forEach(function(el) { el.textContent = 'awaiting snapshot'; el.style.fontSize = '0.7rem'; });
+    return;
+  }
+
+  var p = liquidity.pulse;
+  var pipe = p.pipelineSuppliers;
+
+  function pct(num, den) { return den > 0 ? Math.round((num / den) * 100) + '%' : '\u2014'; }
+
+  document.getElementById('cc-liq-util-soft-7d').textContent = pct(p.suppliersClicked7d, pipe);
+  document.getElementById('cc-liq-util-soft-30d').textContent = pct(p.suppliersClicked30d, pipe);
+  document.getElementById('cc-liq-util-hard-7d').textContent = pct(p.suppliersCalled7d, pipe);
+  document.getElementById('cc-liq-util-hard-30d').textContent = pct(p.suppliersCalled30d, pipe);
+
+  var searchZipDays = p.searchZipDays;
+  var lowSample = searchZipDays < 5;
+  var matchSoftVal = pct(p.zipDaysWithClick7d, searchZipDays);
+  var matchHardVal = pct(p.zipDaysWithCall7d, searchZipDays);
+  document.getElementById('cc-liq-match-soft').textContent = matchSoftVal;
+  document.getElementById('cc-liq-match-hard').textContent = matchHardVal;
+  if (lowSample) {
+    document.getElementById('cc-liq-match-soft').classList.add('cc-liq-muted');
+    document.getElementById('cc-liq-match-hard').classList.add('cc-liq-muted');
+  }
+
+  var totalEngagements = p.calls7d + p.websiteClicks7d;
+  document.getElementById('cc-liq-call-share').textContent = pct(p.calls7d, totalEngagements);
+  document.getElementById('cc-liq-coverage').textContent = pct(p.zipsWithCall7d, p.searchZips);
+}
+
+function ccRenderDemandDensity(liquidity) {
+  var tbody = document.getElementById('cc-density-tbody');
+  if (!tbody) return;
+  if (!liquidity || !liquidity.demandDensity || !liquidity.demandDensity.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="cc-diag-empty">Awaiting first snapshot</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = liquidity.demandDensity.map(function(d) {
+    var freshPct = d.suppliers > 0 ? (d.fresh ? 100 : 0) : 0;
+    var freshCls = freshPct >= 70 ? 'cc-fresh-good' : (freshPct >= 40 ? 'cc-fresh-amber' : 'cc-fresh-bad');
+    var freshLabel = d.fresh ? 'Yes' : 'No';
+    return '<tr>' +
+      '<td class="cc-diag-metric">' + d.zip + '</td>' +
+      '<td>' + d.clicks + '</td>' +
+      '<td>' + d.calls + '</td>' +
+      '<td class="cc-density-score">' + d.score + '</td>' +
+      '<td>' + d.days + '</td>' +
+      '<td>' + d.suppliers + '</td>' +
+      '<td class="' + freshCls + '">' + freshLabel + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function ccRenderCommunityDeliveries(liquidity) {
+  if (!liquidity) return;
+  var c = liquidity.community;
+
+  document.getElementById('cc-comm-7d').textContent = c.deliveries7d;
+  document.getElementById('cc-comm-30d').textContent = c.deliveries30d;
+  document.getElementById('cc-comm-oil').textContent = c.oil30d;
+  document.getElementById('cc-comm-propane').textContent = c.propane30d;
+
+  // Propane growth
+  var growthEl = document.getElementById('cc-comm-growth');
+  if (growthEl) {
+    var prev = Math.max(1, c.propanePrev30d);
+    var growthPct = Math.round(((c.propane30d - c.propanePrev30d) / prev) * 100);
+    var arrow = growthPct > 0 ? '\u2191' : (growthPct < 0 ? '\u2193' : '');
+    var cls = growthPct > 0 ? 'cc-growth-up' : (growthPct < 0 ? 'cc-growth-down' : 'cc-growth-flat');
+    growthEl.innerHTML = '<span class="cc-comm-label">Propane Growth</span> ' +
+      '<span class="' + cls + '">' + arrow + ' ' + Math.abs(growthPct) + '%</span>';
+  }
+
+  // Low sample guard
+  var sampleEl = document.getElementById('cc-comm-sample');
+  if (sampleEl) {
+    if (c.deliveries30d < 10) {
+      sampleEl.classList.remove('hidden');
+    }
+  }
+
+  // Top ZIPs
+  var topEl = document.getElementById('cc-comm-topzips');
+  if (topEl && c.topZips && c.topZips.length) {
+    topEl.innerHTML = c.topZips.map(function(z) {
+      return '<div class="cc-comm-zip-row">' +
+        '<span class="cc-comm-zip-code">' + z.zip + '</span>' +
+        '<span class="cc-comm-zip-counts">' + z.oil + ' oil / ' + z.propane + ' propane</span>' +
+        '<span class="cc-comm-zip-total">' + z.total + '</span>' +
+        '</div>';
+    }).join('');
+  } else if (topEl) {
+    topEl.innerHTML = '<div class="cc-diag-empty">No deliveries</div>';
+  }
 }
 
 function ccRenderDiagTable(anomalies) {
