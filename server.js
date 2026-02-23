@@ -27,6 +27,9 @@ const { monthlyReset } = require('./src/services/scrapeBackoff');
 
 // V2.32.0: Import ZIP stats computer for pre-computed aggregates
 const ZipStatsComputer = require('./src/services/ZipStatsComputer');
+
+// Platform metrics for Command Center liquidity dashboard
+const PlatformMetricsService = require('./src/services/PlatformMetricsService');
 const CountyStatsComputer = require('./src/services/CountyStatsComputer');
 
 // V2.4.0: Import Activity Analytics
@@ -449,6 +452,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/071-fix-remaining-stale', label: 'Remaining stale fix' },
           { path: './src/migrations/072-add-westchester-putnam-suppliers', label: 'Westchester/Putnam suppliers' },
           { path: './src/migrations/073-cleanup-scrapeconfig-duplicates', label: 'ScrapeConfigSync duplicate cleanup' },
+          { path: './src/migrations/074-add-daily-platform-metrics', label: 'Daily platform metrics' },
         ];
 
         let migrationErrors = 0;
@@ -958,6 +962,23 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     timezone: 'UTC' // 11 AM UTC = 6 AM EST
   });
   logger.info('🔄 Monthly phone_only reset scheduled: 1st of each month at 6 AM EST');
+
+  // Platform metrics snapshot (2:15 AM ET daily)
+  cron.schedule('15 2 * * *', async () => {
+    logger.info('[PlatformMetrics] Starting daily computation...');
+    try {
+      const metricsService = new PlatformMetricsService(sequelize, logger);
+      const result = await metricsService.computeDaily();
+      if (result.success) {
+        logger.info(`[PlatformMetrics] Complete: ${result.day} (${result.durationMs}ms)`);
+      } else {
+        logger.info(`[PlatformMetrics] Skipped: ${result.reason}`);
+      }
+    } catch (error) {
+      logger.error('[PlatformMetrics] Cron failed:', error.message);
+    }
+  }, { timezone: 'America/New_York' });
+  logger.info('📊 Platform metrics scheduled: daily at 2:15 AM ET');
 
   // V2.6.0: Distributed scheduler - ACTIVE MODE
   // Spreads scrapes across 8AM-6PM to reduce detection risk
