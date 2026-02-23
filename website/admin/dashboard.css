@@ -5033,6 +5033,10 @@ legend {
   font-variant-numeric: tabular-nums;
 }
 .cc-liq-muted { color: var(--gray-400); font-size: 0.85rem; }
+.cc-liq-window {
+  font-weight: 400; color: var(--gray-400);
+  font-size: 0.85em; text-transform: none; letter-spacing: 0;
+}
 
 /* ── DEMAND DENSITY + COMMUNITY ── */
 .cc-density-grid {
