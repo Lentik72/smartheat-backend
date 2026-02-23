@@ -180,7 +180,7 @@ class CommandCenterService {
           AND is_valid = true
       ),
       baseline_supply AS (
-        SELECT COUNT(DISTINCT supplier_id)::float / 7 as avg_prices
+        SELECT COUNT(*)::float / 7 as avg_prices
         FROM (
           SELECT DISTINCT scraped_at::date as day, supplier_id
           FROM supplier_prices
