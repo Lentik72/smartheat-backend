@@ -321,7 +321,12 @@ class PlatformMetricsService {
         CASE
           WHEN latest_price_at >= ($1::date - INTERVAL '2 days') THEN true
           ELSE false
-        END AS is_fresh
+        END AS is_fresh,
+        CASE
+          WHEN supplier_count < 3 AND score >= 1 THEN 'undersupplied'
+          WHEN supplier_count >= 5 AND latest_price_at >= ($1::date - INTERVAL '2 days') THEN 'healthy'
+          ELSE NULL
+        END AS gap
       FROM scored
       ORDER BY score DESC
     `, { bind: [targetDay] });
@@ -333,7 +338,8 @@ class PlatformMetricsService {
       score: parseFloat(r.score) || 0,
       days: parseInt(r.active_days) || 0,
       suppliers: parseInt(r.supplier_count) || 0,
-      fresh: r.is_fresh === true || r.is_fresh === 't'
+      fresh: r.is_fresh === true || r.is_fresh === 't',
+      gap: r.gap || null
     }));
   }
 

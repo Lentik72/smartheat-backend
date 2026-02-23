@@ -20,7 +20,7 @@ let spreadChart = null;
 let nsSparklineChart = null;
 let mpPriceChart = null;
 let mpDemandChart = null;
-let mpScraperChart = null;
+let mpCallChart = null;
 let map = null;
 
 // API base
@@ -3046,13 +3046,48 @@ function ccRenderMarketplacePulse(liquidity, anomalies) {
   var totalEngagements = p.calls7d + p.websiteClicks7d;
   document.getElementById('cc-liq-call-share').textContent = pct(p.calls7d, totalEngagements);
   document.getElementById('cc-liq-coverage').textContent = pct(p.zipsWithCall7d, p.searchZips);
+
+  // WoW delta badges
+  if (liquidity.wow) {
+    var wowMap = [
+      ['cc-liq-util-soft-7d',  'utilizationSoft7d'],
+      ['cc-liq-util-soft-30d', 'utilizationSoft30d'],
+      ['cc-liq-util-hard-7d',  'utilizationHard7d'],
+      ['cc-liq-util-hard-30d', 'utilizationHard30d'],
+      ['cc-liq-match-soft',    'matchSoft7d'],
+      ['cc-liq-match-hard',    'matchHard7d'],
+      ['cc-liq-call-share',    'callShare7d'],
+      ['cc-liq-coverage',      'coverage7d']
+    ];
+    wowMap.forEach(function(pair) {
+      var el = document.getElementById(pair[0]);
+      if (!el) return;
+      var d = liquidity.wow[pair[1]];
+      if (!d) return;
+      var old = el.parentElement.querySelector('.cc-wow-delta');
+      if (old) old.remove();
+      var span = document.createElement('span');
+      span.className = 'cc-wow-delta ';
+      if (d.delta > 0.5) {
+        span.className += 'cc-wow-up';
+        span.textContent = '\u2191 +' + d.delta.toFixed(1) + 'pp';
+      } else if (d.delta < -0.5) {
+        span.className += 'cc-wow-down';
+        span.textContent = '\u2193 ' + d.delta.toFixed(1) + 'pp';
+      } else {
+        span.className += 'cc-wow-flat';
+        span.textContent = '0.0pp';
+      }
+      el.parentElement.appendChild(span);
+    });
+  }
 }
 
 function ccRenderDemandDensity(liquidity) {
   var tbody = document.getElementById('cc-density-tbody');
   if (!tbody) return;
   if (!liquidity || !liquidity.demandDensity || !liquidity.demandDensity.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="cc-diag-empty">Awaiting first snapshot</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="cc-diag-empty">Awaiting first snapshot</td></tr>';
     return;
   }
 
@@ -3060,6 +3095,12 @@ function ccRenderDemandDensity(liquidity) {
     var freshPct = d.suppliers > 0 ? (d.fresh ? 100 : 0) : 0;
     var freshCls = freshPct >= 70 ? 'cc-fresh-good' : (freshPct >= 40 ? 'cc-fresh-amber' : 'cc-fresh-bad');
     var freshLabel = d.fresh ? 'Yes' : 'No';
+    var gapHtml = '';
+    if (d.gap === 'undersupplied') {
+      gapHtml = '<span class="cc-gap-pill cc-gap-undersupplied">Undersupplied</span>';
+    } else if (d.gap === 'healthy') {
+      gapHtml = '<span class="cc-gap-pill cc-gap-healthy">Healthy</span>';
+    }
     return '<tr>' +
       '<td class="cc-diag-metric">' + d.zip + '</td>' +
       '<td>' + d.clicks + '</td>' +
@@ -3068,6 +3109,7 @@ function ccRenderDemandDensity(liquidity) {
       '<td>' + d.days + '</td>' +
       '<td>' + d.suppliers + '</td>' +
       '<td class="' + freshCls + '">' + freshLabel + '</td>' +
+      '<td>' + gapHtml + '</td>' +
       '</tr>';
   }).join('');
 }
@@ -3291,15 +3333,15 @@ function ccRenderMarketPulse(mp) {
 
   setSummary('cc-pulse-price-val', mp.medianPrice, '$', '', 2);
   setSummary('cc-pulse-demand-val', mp.demandVolume, '', '', 0);
-  setSummary('cc-pulse-scraper-val', mp.scraperSuccess, '', '%', 0);
+  setSummary('cc-pulse-calls-val', mp.callVolume, '', '', 0);
 
   if (mpPriceChart) mpPriceChart.destroy();
   if (mpDemandChart) mpDemandChart.destroy();
-  if (mpScraperChart) mpScraperChart.destroy();
+  if (mpCallChart) mpCallChart.destroy();
 
   mpPriceChart = makeSpark('cc-chart-price', mp.medianPrice, '#3b82f6');
   mpDemandChart = makeSpark('cc-chart-demand', mp.demandVolume, '#d97706');
-  mpScraperChart = makeSpark('cc-chart-scraper', mp.scraperSuccess, '#16a34a', 0, 100);
+  mpCallChart = makeSpark('cc-chart-calls', mp.callVolume, '#8b5cf6');
 }
 
 function ccRenderActions(actions) {

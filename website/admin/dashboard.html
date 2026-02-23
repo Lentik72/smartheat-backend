@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1771621011">
+  <link rel="stylesheet" href="dashboard.css?v=1771871185">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -376,10 +376,10 @@
               </div>
               <div class="cc-pulse-item">
                 <div class="cc-pulse-head">
-                  <span class="cc-pulse-label">Scraper Success</span>
-                  <span class="cc-pulse-val" id="cc-pulse-scraper-val"></span>
+                  <span class="cc-pulse-label">Call Volume</span>
+                  <span class="cc-pulse-val" id="cc-pulse-calls-val"></span>
                 </div>
-                <div class="cc-pulse-chart-wrap"><canvas id="cc-chart-scraper"></canvas></div>
+                <div class="cc-pulse-chart-wrap"><canvas id="cc-chart-calls"></canvas></div>
               </div>
             </div>
 
@@ -390,10 +390,10 @@
                 <div class="cc-density-table-wrap">
                   <table class="cc-density-table">
                     <thead>
-                      <tr><th>ZIP</th><th>Clicks</th><th>Calls</th><th>Score</th><th>Days</th><th>Suppliers</th><th>Fresh</th></tr>
+                      <tr><th>ZIP</th><th>Clicks</th><th>Calls</th><th>Score</th><th>Days</th><th>Suppliers</th><th>Fresh</th><th>Status</th></tr>
                     </thead>
                     <tbody id="cc-density-tbody">
-                      <tr><td colspan="7" class="cc-diag-empty">Awaiting first snapshot</td></tr>
+                      <tr><td colspan="8" class="cc-diag-empty">Awaiting first snapshot</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -2548,6 +2548,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1771621011"></script>
+  <script src="dashboard.js?v=1771871185"></script>
 </body>
 </html>

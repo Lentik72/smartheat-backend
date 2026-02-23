@@ -5063,6 +5063,21 @@ legend {
 .cc-fresh-amber { color: #d97706; font-weight: 600; }
 .cc-fresh-bad { color: #dc2626; font-weight: 600; }
 
+/* WoW delta badges */
+.cc-wow-delta { font-size: 0.62rem; font-weight: 600; display: block; margin-top: 0.1rem; }
+.cc-wow-up { color: #16a34a; }
+.cc-wow-down { color: #dc2626; }
+.cc-wow-flat { color: var(--gray-400); }
+
+/* Gap flags */
+.cc-gap-pill {
+  font-size: 0.58rem; font-weight: 600;
+  padding: 0.1rem 0.35rem; border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+.cc-gap-undersupplied { background: #fee2e2; color: #b91c1c; }
+.cc-gap-healthy { background: #dcfce7; color: #15803d; }
+
 /* Community Deliveries */
 .cc-community-metrics {
   display: grid; grid-template-columns: 1fr 1fr;

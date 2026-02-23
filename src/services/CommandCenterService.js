@@ -61,7 +61,7 @@ class CommandCenterService {
       }),
       this._getMarketPulse(sequelize).catch(e => {
         logger?.error('[CommandCenter] Market Pulse error:', e.message);
-        return { medianPrice: [], demandVolume: [], scraperSuccess: [] };
+        return { medianPrice: [], demandVolume: [], callVolume: [] };
       }),
       this._getLiquidityMetrics(sequelize).catch(e => {
         logger?.error('[CommandCenter] Liquidity error:', e.message);
@@ -953,10 +953,10 @@ class CommandCenterService {
 
   /**
    * Market Pulse: 3 trend series for mini charts
-   * 1. Median price (30d), 2. Demand volume (30d), 3. Scraper success (14d)
+   * 1. Median price (30d), 2. Demand volume (30d), 3. Call volume (30d)
    */
   async _getMarketPulse(sequelize) {
-    const [medianPrices, demandVolume, scraperSuccess] = await Promise.all([
+    const [medianPrices, demandVolume, callVolume] = await Promise.all([
       sequelize.query(`
         SELECT scraped_at::date as day,
           PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY price_per_gallon) as median_price
@@ -975,29 +975,12 @@ class CommandCenterService {
       `).then(([r]) => r),
 
       sequelize.query(`
-        WITH daily_success AS (
-          SELECT scraped_at::date as day, COUNT(DISTINCT supplier_id) as successes
-          FROM supplier_prices
-          WHERE is_valid = true AND scraped_at > CURRENT_DATE - INTERVAL '14 days'
-          GROUP BY scraped_at::date
-        ),
-        daily_failures AS (
-          SELECT d.val::timestamptz::date as day, COUNT(*) as failures
-          FROM suppliers s,
-          LATERAL jsonb_array_elements_text(
-            CASE WHEN jsonb_typeof(s.scrape_failure_dates) = 'array'
-                 THEN s.scrape_failure_dates ELSE '[]'::jsonb END
-          ) AS d(val)
-          WHERE s.active = true
-            AND d.val::timestamptz > CURRENT_DATE - INTERVAL '14 days'
-          GROUP BY d.val::timestamptz::date
-        )
-        SELECT
-          COALESCE(s.day, f.day) as day,
-          COALESCE(s.successes, 0) as successes,
-          COALESCE(f.failures, 0) as failures
-        FROM daily_success s
-        FULL OUTER JOIN daily_failures f ON s.day = f.day
+        SELECT (created_at AT TIME ZONE 'America/New_York')::date as day,
+               COUNT(*) as count
+        FROM supplier_clicks
+        WHERE action_type = 'call'
+          AND created_at >= (CURRENT_DATE - INTERVAL '29 days')
+        GROUP BY (created_at AT TIME ZONE 'America/New_York')::date
         ORDER BY day ASC
       `).then(([r]) => r)
     ]);
@@ -1011,15 +994,10 @@ class CommandCenterService {
         date: new Date(r.day).toISOString().split('T')[0],
         value: parseInt(r.count) || 0
       })),
-      scraperSuccess: scraperSuccess.map(r => {
-        const s = parseInt(r.successes) || 0;
-        const f = parseInt(r.failures) || 0;
-        const total = s + f;
-        return {
-          date: new Date(r.day).toISOString().split('T')[0],
-          value: total > 0 ? Math.round((s / total) * 100) : 100
-        };
-      })
+      callVolume: callVolume.map(r => ({
+        date: new Date(r.day).toISOString().split('T')[0],
+        value: parseInt(r.count) || 0
+      }))
     };
   }
 
@@ -1030,14 +1008,51 @@ class CommandCenterService {
   async _getLiquidityMetrics(sequelize) {
     const [rows] = await sequelize.query(`
       SELECT * FROM daily_platform_metrics
-      ORDER BY day DESC LIMIT 1
+      ORDER BY day DESC LIMIT 8
     `);
 
     if (!rows.length) return null;
 
-    const r = rows[0];
+    const current = rows[0];
+
+    // Find D-7 match with UTC-safe date math
+    const toStr = (d) => typeof d === 'string' ? d.slice(0, 10) : d.toISOString().slice(0, 10);
+    const subtractDays = (dateStr, days) => {
+      const dt = new Date(dateStr + 'T00:00:00Z');
+      dt.setUTCDate(dt.getUTCDate() - days);
+      return dt.toISOString().slice(0, 10);
+    };
+    const currentStr = toStr(current.day);
+    const targetStr = subtractDays(currentStr, 7);
+    const weekAgo = rows.find(r => toStr(r.day) === targetStr) || null;
+
+    // WoW delta computation on derived percentages
+    let wow = null;
+    if (weekAgo) {
+      const ci = (col) => parseInt(current[col]) || 0;
+      const wi = (col) => parseInt(weekAgo[col]) || 0;
+      const computeDelta = (curNum, curDen, prevNum, prevDen) => {
+        const cur = curDen > 0 ? +(curNum / curDen * 100).toFixed(1) : null;
+        const prev = prevDen > 0 ? +(prevNum / prevDen * 100).toFixed(1) : null;
+        if (cur === null || prev === null) return null;
+        return { current: cur, prev, delta: +(cur - prev).toFixed(1) };
+      };
+
+      wow = {
+        utilizationSoft7d:  computeDelta(ci('suppliers_clicked_7d'),   ci('pipeline_suppliers'),  wi('suppliers_clicked_7d'),   wi('pipeline_suppliers')),
+        utilizationSoft30d: computeDelta(ci('suppliers_clicked_30d'),  ci('pipeline_suppliers'),  wi('suppliers_clicked_30d'),  wi('pipeline_suppliers')),
+        utilizationHard7d:  computeDelta(ci('suppliers_called_7d'),    ci('pipeline_suppliers'),  wi('suppliers_called_7d'),    wi('pipeline_suppliers')),
+        utilizationHard30d: computeDelta(ci('suppliers_called_30d'),   ci('pipeline_suppliers'),  wi('suppliers_called_30d'),   wi('pipeline_suppliers')),
+        matchSoft7d:        computeDelta(ci('zip_days_with_click_7d'), ci('search_zip_days'),     wi('zip_days_with_click_7d'), wi('search_zip_days')),
+        matchHard7d:        computeDelta(ci('zip_days_with_call_7d'),  ci('search_zip_days'),     wi('zip_days_with_call_7d'),  wi('search_zip_days')),
+        callShare7d:        computeDelta(ci('calls_7d'), ci('calls_7d') + ci('website_clicks_7d'), wi('calls_7d'), wi('calls_7d') + wi('website_clicks_7d')),
+        coverage7d:         computeDelta(ci('zips_with_call_7d'),      ci('search_zips'),         wi('zips_with_call_7d'),      wi('search_zips'))
+      };
+    }
+
+    const r = current;
     return {
-      day: new Date(r.day).toISOString().split('T')[0],
+      day: toStr(r.day),
       computedAt: r.computed_at,
       pulse: {
         pipelineSuppliers: parseInt(r.pipeline_suppliers) || 0,
@@ -1065,7 +1080,8 @@ class CommandCenterService {
         topZips: typeof r.community_top_zips_30d === 'string'
           ? JSON.parse(r.community_top_zips_30d)
           : (r.community_top_zips_30d || [])
-      }
+      },
+      wow
     };
   }
 }
