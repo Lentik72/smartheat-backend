@@ -75,25 +75,29 @@ module.exports = {
     `);
     console.log('[Migration 071] Freedom Fuel re-enabled');
 
-    // --- Disable 5 unfixable suppliers ---
-    // LeBlanc Oil kept enabled for manual price entry via 6am email
-    const disableDomains = [
-      'tandmfuel.com',
-      'easternpetroleumonline.com',
-      'leosfuel.com',
-      'hillsideoilheat.com',
-      'rabairandson.com',
+    // --- Disable unfixable suppliers by name (website LIKE was unreliable) ---
+    // LeBlanc Oil + Thrifty Fuel kept enabled for manual price entry via 6am email
+    const disableNames = [
+      'T & M Fuel',
+      'T&M Fuel',
+      'Eastern Petroleum',
+      "Leo's Fuel",
+      'Leos Fuel',
+      'Hillside Oil%',
+      'RA Bair%',
+      'MidKnight Oil%',
+      'OnDemand Fuel%',
     ];
 
-    for (const domain of disableDomains) {
-      const [, meta] = await sequelize.query(`
+    for (const name of disableNames) {
+      await sequelize.query(`
         UPDATE suppliers SET
           allow_price_display = false,
           updated_at = NOW()
-        WHERE website LIKE :domain
-      `, { replacements: { domain: `%${domain}%` } });
+        WHERE name LIKE :name AND allow_price_display = true
+      `, { replacements: { name } });
     }
-    console.log('[Migration 071] Disabled 5 unfixable suppliers');
+    console.log('[Migration 071] Disabled unfixable suppliers by name');
   },
 
   async down(sequelize) {
@@ -107,12 +111,12 @@ module.exports = {
     }
 
     // Revert disabled
-    const disableDomains = ['tandmfuel.com','easternpetroleumonline.com','leosfuel.com','hillsideoilheat.com','rabairandson.com'];
-    for (const domain of disableDomains) {
+    const revertNames = ['T & M Fuel','T&M Fuel','Eastern Petroleum',"Leo's Fuel",'Leos Fuel','Hillside Oil%','RA Bair%','MidKnight Oil%','OnDemand Fuel%'];
+    for (const name of revertNames) {
       await sequelize.query(`
         UPDATE suppliers SET allow_price_display = true, updated_at = NOW()
-        WHERE website LIKE :domain
-      `, { replacements: { domain: `%${domain}%` } });
+        WHERE name LIKE :name
+      `, { replacements: { name } });
     }
 
     console.log('[Migration 071] Reverted');
