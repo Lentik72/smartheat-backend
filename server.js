@@ -387,341 +387,95 @@ if (API_KEYS.DATABASE_URL) {
         app.locals.coverageMailer = coverageMailer;
         logger.info('✅ Coverage Report Mailer initialized');
 
-        // Run migration for activity analytics tables (idempotent - won't fail if tables exist)
-        const { up: runActivityMigration } = require('./src/migrations/006-activity-analytics');
-        runActivityMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Activity analytics migration:', err.message);
-        });
+        // Run all migrations sequentially, then ScrapeConfigSync.
+        // Migrations must complete before ScrapeConfigSync starts to prevent
+        // duplicate supplier records (ScrapeConfigSync matches by domain and
+        // will create new records if migrations haven't inserted yet).
+        const migrations = [
+          { path: './src/migrations/006-activity-analytics', label: 'Activity analytics' },
+          { path: './src/migrations/008-add-device-id-tracking', label: 'Device ID tracking' },
+          { path: './src/migrations/009-add-waitlist', label: 'Waitlist' },
+          { path: './src/migrations/014-add-pwa-events', label: 'PWA events' },
+          { path: './src/migrations/015-add-tc-fuel-oil', label: 'TC Fuel Oil' },
+          { path: './src/migrations/016-add-tevis-energy', label: 'Tevis Energy' },
+          { path: './src/migrations/017-add-delaware-suppliers', label: 'Delaware suppliers' },
+          { path: './src/migrations/024-fix-abc-fuel-location', label: 'ABC Fuel location' },
+          { path: './src/migrations/025-add-sherman-ct-suppliers', label: 'Sherman CT suppliers' },
+          { path: './src/migrations/026-add-hometown-reliable-fuel', label: 'Hometown/Reliable' },
+          { path: './src/migrations/027-add-gaylordsville-suppliers', label: 'Gaylordsville suppliers' },
+          { path: './src/migrations/028-add-vernon-area-suppliers', label: 'Vernon area suppliers' },
+          { path: './src/migrations/029-add-portland-pa-suppliers', label: 'Portland PA suppliers' },
+          { path: './src/migrations/030-add-elizabethtown-pa-suppliers', label: 'Elizabethtown PA suppliers' },
+          { path: './src/migrations/031-add-york-pa-suppliers', label: 'York PA suppliers' },
+          { path: './src/migrations/032-add-dighton-ma-suppliers', label: 'Dighton MA suppliers' },
+          { path: './src/migrations/033-add-kent-county-de-suppliers', label: 'Kent County DE suppliers' },
+          { path: './src/migrations/034-add-western-ct-suppliers', label: 'Western CT suppliers' },
+          { path: './src/migrations/035-add-hudson-valley-ny-suppliers', label: 'Hudson Valley NY suppliers' },
+          { path: './src/migrations/036-add-sms-price-support', label: 'SMS price support' },
+          { path: './src/migrations/037-add-alaska-suppliers', label: 'Alaska suppliers' },
+          { path: './src/migrations/038-add-347-oil', label: '347 Oil' },
+          { path: './src/migrations/039-add-cod-suppliers', label: 'COD suppliers' },
+          { path: './src/migrations/040-add-jennison-fuels', label: 'Jennison Fuels' },
+          { path: './src/migrations/041-add-ace-fueling', label: 'Ace Fueling' },
+          { path: './src/migrations/042-add-regional-cod-suppliers', label: 'Regional COD suppliers' },
+          { path: './src/migrations/043-add-pa-regional-suppliers', label: 'PA regional suppliers' },
+          { path: './src/migrations/044-add-bangor-me-suppliers', label: 'Bangor ME suppliers' },
+          { path: './src/migrations/045-add-cn-brown-energy', label: 'CN Brown Energy' },
+          { path: './src/migrations/046-add-casco-me-suppliers', label: 'Casco ME suppliers' },
+          { path: './src/migrations/047-add-coverage-gap-suppliers', label: 'Coverage gap suppliers' },
+          { path: './src/migrations/048-add-ip-hash-to-user-locations', label: 'IP hash' },
+          { path: './src/migrations/049-add-cheshire-nh-suppliers', label: 'Cheshire NH suppliers' },
+          { path: './src/migrations/050-add-northern-nh-suppliers', label: 'Northern NH suppliers' },
+          { path: './src/migrations/051-add-fairfield-ct-suppliers', label: 'Fairfield CT suppliers' },
+          { path: './src/migrations/052-add-ct-coverage-suppliers', label: 'CT coverage suppliers' },
+          { path: './src/migrations/053-add-eastern-ct-suppliers', label: 'Eastern CT suppliers' },
+          { path: './src/migrations/054-add-ct-directory-suppliers', label: 'CT directory suppliers' },
+          { path: './src/migrations/055-add-ct-cod-suppliers', label: 'CT COD suppliers' },
+          { path: './src/migrations/056-add-delivery-model-column', label: 'Delivery model column' },
+          { path: './src/migrations/057-add-zip-price-stats-tables', label: 'ZIP price stats' },
+          { path: './src/migrations/058-add-zip-to-county-table', label: 'ZIP to County' },
+          { path: './src/migrations/059-cleanup-duplicate-suppliers', label: 'Duplicate cleanup' },
+          { path: './src/migrations/060-fix-expired-prices', label: 'Fix expired prices' },
+          { path: './src/migrations/061-add-dragon-fuel-llc', label: 'Dragon Fuel LLC' },
+          { path: './src/migrations/062-add-port-jervis-area-suppliers', label: 'Port Jervis area' },
+          { path: './src/migrations/063-add-quakertown-area-suppliers', label: 'Quakertown area' },
+          { path: './src/migrations/064-add-recovered-403-suppliers', label: 'Recovered 403 suppliers' },
+          { path: './src/migrations/065-add-metro-energy-boston', label: 'Metro Energy Boston' },
+          { path: './src/migrations/066-add-werley-energy', label: 'Werley Energy' },
+          { path: './src/migrations/067-enable-kelleys-oil', label: "Kelley's Oil" },
+          { path: './src/migrations/068-enable-seven-suppliers', label: 'Seven suppliers' },
+          { path: './src/migrations/069-fix-cooldown-suppliers', label: 'Cooldown fix' },
+          { path: './src/migrations/070-fix-stale-suppliers', label: 'Stale suppliers fix' },
+          { path: './src/migrations/071-fix-remaining-stale', label: 'Remaining stale fix' },
+          { path: './src/migrations/072-add-westchester-putnam-suppliers', label: 'Westchester/Putnam suppliers' },
+          { path: './src/migrations/073-cleanup-scrapeconfig-duplicates', label: 'ScrapeConfigSync duplicate cleanup' },
+        ];
 
-        // V2.8.0: Run migration for device ID tracking (adds device_id column)
-        const { up: runDeviceIdMigration } = require('./src/migrations/008-add-device-id-tracking');
-        runDeviceIdMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Device ID tracking migration:', err.message);
-        });
+        let migrationErrors = 0;
+        for (const { path: migPath, label } of migrations) {
+          try {
+            const { up } = require(migPath);
+            await up(sequelize);
+          } catch (err) {
+            migrationErrors++;
+            logger.warn(`⚠️  ${label} migration: ${err.message}`);
+          }
+        }
+        logger.info(`✅ Migrations complete (${migrations.length - migrationErrors}/${migrations.length} succeeded)`);
 
-        // V2.9.0: Run migration for Canada waitlist
-        const { up: runWaitlistMigration } = require('./src/migrations/009-add-waitlist');
-        runWaitlistMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Waitlist migration:', err.message);
-        });
-
-        // V2.13.0: Run migration for PWA events table
-        const { up: runPwaEventsMigration } = require('./src/migrations/014-add-pwa-events');
-        runPwaEventsMigration(sequelize).catch(err => {
-          logger.warn('⚠️  PWA events migration:', err.message);
-        });
-
-        // V2.16.0: Add Town & Country Fuel supplier
-        const { up: runTcFuelMigration } = require('./src/migrations/015-add-tc-fuel-oil');
-        runTcFuelMigration(sequelize).catch(err => {
-          logger.warn('⚠️  TC Fuel Oil migration:', err.message);
-        });
-
-        // V2.16.1: Add Tevis Energy supplier
-        const { up: runTevisEnergyMigration } = require('./src/migrations/016-add-tevis-energy');
-        runTevisEnergyMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Tevis Energy migration:', err.message);
-        });
-
-        // V2.16.2: Add Delaware area suppliers
-        const { up: runDelawareMigration } = require('./src/migrations/017-add-delaware-suppliers');
-        runDelawareMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Delaware suppliers migration:', err.message);
-        });
-
-        // V2.17.0: Fix ABC Fuel Oil location
-        const { up: runAbcFuelMigration } = require('./src/migrations/024-fix-abc-fuel-location');
-        runAbcFuelMigration(sequelize).catch(err => {
-          logger.warn('⚠️  ABC Fuel location migration:', err.message);
-        });
-
-        // V2.17.0: Add Sherman CT area COD suppliers
-        const { up: runShermanMigration } = require('./src/migrations/025-add-sherman-ct-suppliers');
-        runShermanMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Sherman CT suppliers migration:', err.message);
-        });
-
-        // V2.17.0: Add Hometown Fuel and Reliable Fuel
-        const { up: runHometownMigration } = require('./src/migrations/026-add-hometown-reliable-fuel');
-        runHometownMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Hometown/Reliable migration:', err.message);
-        });
-
-        // V2.17.1: Add Gaylordsville suppliers (Jennings Oil, Marandola Fuel)
-        const { up: runGaylordsville } = require('./src/migrations/027-add-gaylordsville-suppliers');
-        runGaylordsville(sequelize).catch(err => {
-          logger.warn('⚠️  Gaylordsville suppliers migration:', err.message);
-        });
-
-        // V2.17.2: Add Vernon/Tolland County suppliers (Gottier, Troiano, Ferguson, etc.)
-        const { up: runVernon } = require('./src/migrations/028-add-vernon-area-suppliers');
-        runVernon(sequelize).catch(err => {
-          logger.warn('⚠️  Vernon area suppliers migration:', err.message);
-        });
-
-        // V2.17.3: Add Portland PA suppliers (R.F. Ohl, Tolino's, Fuel Cell Petrol, Pennywise)
-        const { up: runPortland } = require('./src/migrations/029-add-portland-pa-suppliers');
-        runPortland(sequelize).catch(err => {
-          logger.warn('⚠️  Portland PA suppliers migration:', err.message);
-        });
-
-        // V2.17.4: Add Elizabethtown PA suppliers (Capitol City Oil, Rolling Hills Energy)
-        const { up: runElizabethtown } = require('./src/migrations/030-add-elizabethtown-pa-suppliers');
-        runElizabethtown(sequelize).catch(err => {
-          logger.warn('⚠️  Elizabethtown PA suppliers migration:', err.message);
-        });
-
-        // V2.17.5: Add York PA suppliers (Edris Oil, Marstellar, RA Bair, Best Price Oil)
-        const { up: runYork } = require('./src/migrations/031-add-york-pa-suppliers');
-        runYork(sequelize).catch(err => {
-          logger.warn('⚠️  York PA suppliers migration:', err.message);
-        });
-
-        // V2.17.6: Add Dighton MA suppliers (Affordable Fuel, Freedom Fuel, Forni Bros, T&M Fuel, Eastern Petroleum, Brodeur & Sons)
-        const { up: runDighton } = require('./src/migrations/032-add-dighton-ma-suppliers');
-        runDighton(sequelize).catch(err => {
-          logger.warn('⚠️  Dighton MA suppliers migration:', err.message);
-        });
-
-        // V2.17.7: Add Kent County DE suppliers (Terroco, PepUp, JC Eisenbrey, Barkley)
-        const { up: runKentDE } = require('./src/migrations/033-add-kent-county-de-suppliers');
-        runKentDE(sequelize).catch(err => {
-          logger.warn('⚠️  Kent County DE suppliers migration:', err.message);
-        });
-
-        const { up: runWesternCT } = require('./src/migrations/034-add-western-ct-suppliers');
-        runWesternCT(sequelize).catch(err => {
-          logger.warn('⚠️  Western CT suppliers migration:', err.message);
-        });
-
-        const { up: runHudsonValley } = require('./src/migrations/035-add-hudson-valley-ny-suppliers');
-        runHudsonValley(sequelize).catch(err => {
-          logger.warn('⚠️  Hudson Valley NY suppliers migration:', err.message);
-        });
-
-        // V2.18.0: SMS price update support (enum values, tracking table, supplier SMS columns)
-        const { up: runSmsMigration } = require('./src/migrations/036-add-sms-price-support');
-        runSmsMigration(sequelize).catch(err => {
-          logger.warn('⚠️  SMS price support migration:', err.message);
-        });
-
-        // V2.19.0: Add Alaska suppliers (Homerun Oil, Ike's Fuel, update Sourdough Fuel)
-        const { up: runAlaskaMigration } = require('./src/migrations/037-add-alaska-suppliers');
-        runAlaskaMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Alaska suppliers migration:', err.message);
-        });
-
-        // V2.20.0: Add 347 Oil (Northern Westchester, NY)
-        const { up: run347OilMigration } = require('./src/migrations/038-add-347-oil');
-        run347OilMigration(sequelize).catch(err => {
-          logger.warn('⚠️  347 Oil migration:', err.message);
-        });
-
-        // V2.21.0: Add 6 verified COD suppliers (NY + CT)
-        const { up: runCodSuppliersMigration } = require('./src/migrations/039-add-cod-suppliers');
-        runCodSuppliersMigration(sequelize).catch(err => {
-          logger.warn('⚠️  COD suppliers migration:', err.message);
-        });
-
-        // V2.22.0: Add Jennison Fuels (Central NY COD supplier)
-        const { up: runJennisonFuelsMigration } = require('./src/migrations/040-add-jennison-fuels');
-        runJennisonFuelsMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Jennison Fuels migration:', err.message);
-        });
-
-        // V2.23.0: Add Ace Fueling (Lower Bucks County, PA COD supplier)
-        const { up: runAceFuelingMigration } = require('./src/migrations/041-add-ace-fueling');
-        runAceFuelingMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Ace Fueling migration:', err.message);
-        });
-
-        // V2.24.0: Add regional COD suppliers (VA, Western NY, VT, Northern ME)
-        const { up: runRegionalCodMigration } = require('./src/migrations/042-add-regional-cod-suppliers');
-        runRegionalCodMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Regional COD suppliers migration:', err.message);
-        });
-
-        // V2.25.0: Add PA regional suppliers (Wayne, Northumberland, Schuylkill)
-        const { up: runPaRegionalMigration } = require('./src/migrations/043-add-pa-regional-suppliers');
-        runPaRegionalMigration(sequelize).catch(err => {
-          logger.warn('⚠️  PA regional suppliers migration:', err.message);
-        });
-
-        // V2.26.0: Add Bangor ME area suppliers (Penobscot County)
-        const { up: runBangorMeMigration } = require('./src/migrations/044-add-bangor-me-suppliers');
-        runBangorMeMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Bangor ME suppliers migration:', err.message);
-        });
-
-        // V2.26.1: Fix - Add CN Brown Energy (didn't insert in 044)
-        const { up: runCnBrownMigration } = require('./src/migrations/045-add-cn-brown-energy');
-        runCnBrownMigration(sequelize).catch(err => {
-          logger.warn('⚠️  CN Brown Energy migration:', err.message);
-        });
-
-        // V2.27.0: Add Casco ME (Lakes Region) suppliers
-        const { up: runCascoMeMigration } = require('./src/migrations/046-add-casco-me-suppliers');
-        runCascoMeMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Casco ME suppliers migration:', err.message);
-        });
-
-        // V2.28.0: Add coverage gap suppliers (Quakertown PA, Cromwell CT, Honesdale PA)
-        const { up: runCoverageGapMigration } = require('./src/migrations/047-add-coverage-gap-suppliers');
-        runCoverageGapMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Coverage gap suppliers migration:', err.message);
-        });
-
-        // V2.29.0: Add ip_hash column to user_locations for proper unique user counting
-        const { up: runIpHashMigration } = require('./src/migrations/048-add-ip-hash-to-user-locations');
-        runIpHashMigration(sequelize).catch(err => {
-          logger.warn('⚠️  IP hash migration:', err.message);
-        });
-
-        // V2.30.0: Add Cheshire County NH suppliers (West Chesterfield coverage gap)
-        const { up: runCheshireNHMigration } = require('./src/migrations/049-add-cheshire-nh-suppliers');
-        runCheshireNHMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Cheshire NH suppliers migration:', err.message);
-        });
-
-        // V2.30.1: Add Northern NH & Lakes Region suppliers
-        const { up: runNorthernNHMigration } = require('./src/migrations/050-add-northern-nh-suppliers');
-        runNorthernNHMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Northern NH suppliers migration:', err.message);
-        });
-
-        // V2.30.2: Add Fairfield County CT suppliers
-        const { up: runFairfieldCTMigration } = require('./src/migrations/051-add-fairfield-ct-suppliers');
-        runFairfieldCTMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Fairfield CT suppliers migration:', err.message);
-        });
-
-        const { up: runCTCoverageMigration } = require('./src/migrations/052-add-ct-coverage-suppliers');
-        runCTCoverageMigration(sequelize).catch(err => {
-          logger.warn('⚠️  CT coverage suppliers migration:', err.message);
-        });
-
-        // V2.31.0: Add Eastern CT suppliers (Windham + Tolland + New London)
-        const { up: runEasternCTMigration } = require('./src/migrations/053-add-eastern-ct-suppliers');
-        runEasternCTMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Eastern CT suppliers migration:', err.message);
-        });
-
-        // V2.31.1: Add CT directory suppliers (Sisters Oil, River Valley, Reliable Oil)
-        const { up: runCTDirectoryMigration } = require('./src/migrations/054-add-ct-directory-suppliers');
-        runCTDirectoryMigration(sequelize).catch(err => {
-          logger.warn('⚠️  CT directory suppliers migration:', err.message);
-        });
-
-        // V2.31.2: Add CT COD suppliers (Incredible Oil, Economy Fuel)
-        const { up: runCTCODMigration } = require('./src/migrations/055-add-ct-cod-suppliers');
-        runCTCODMigration(sequelize).catch(err => {
-          logger.warn('⚠️  CT COD suppliers migration:', err.message);
-        });
-
-        // V2.31.3: Add delivery_model column (future-proofs for contract companies)
-        const { up: runDeliveryModelMigration } = require('./src/migrations/056-add-delivery-model-column');
-        runDeliveryModelMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Delivery model column migration:', err.message);
-        });
-
-        // V2.32.0: Add ZIP price stats tables (pre-computed aggregation layer)
-        const { up: runZipStatsMigration } = require('./src/migrations/057-add-zip-price-stats-tables');
-        runZipStatsMigration(sequelize).catch(err => {
-          logger.warn('⚠️  ZIP price stats migration:', err.message);
-        });
-
-        // V2.32.0: Add ZIP to County reference table (geographic backbone)
-        const { up: runZipCountyMigration } = require('./src/migrations/058-add-zip-to-county-table');
-        runZipCountyMigration(sequelize).catch(err => {
-          logger.warn('⚠️  ZIP to County migration:', err.message);
-        });
-
-        // V2.35.14: Fix expired prices (one-time recovery after timezone bug + Railway incident)
-        const { up: runFixExpiredPricesMigration } = require('./src/migrations/060-fix-expired-prices');
-        runFixExpiredPricesMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Fix expired prices migration:', err.message);
-        });
-
-        // V2.31.3: Cleanup duplicate supplier entries
-        const { up: runDuplicateCleanup } = require('./src/migrations/059-cleanup-duplicate-suppliers');
-        runDuplicateCleanup(sequelize).catch(err => {
-          logger.warn('⚠️  Duplicate supplier cleanup:', err.message);
-        });
-
-        // V2.35.26: Add Dragon Fuel LLC (Stratford, CT)
-        const { up: runDragonFuelMigration } = require('./src/migrations/061-add-dragon-fuel-llc');
-        runDragonFuelMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Dragon Fuel LLC migration:', err.message);
-        });
-
-        // V2.36.0: Add Port Jervis area suppliers (8 COD/will-call)
-        const { up: runPortJervisMigration } = require('./src/migrations/062-add-port-jervis-area-suppliers');
-        runPortJervisMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Port Jervis area migration:', err.message);
-        });
-
-        // V2.37.0: Add Quakertown PA area suppliers (2 COD/will-call)
-        const { up: runQuakertownMigration } = require('./src/migrations/063-add-quakertown-area-suppliers');
-        runQuakertownMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Quakertown area migration:', err.message);
-        });
-
-        const { up: runRecovered403Migration } = require('./src/migrations/064-add-recovered-403-suppliers');
-        runRecovered403Migration(sequelize).catch(err => {
-          logger.warn('⚠️  Recovered 403 suppliers migration:', err.message);
-        });
-
-        const { up: runMetroEnergyMigration } = require('./src/migrations/065-add-metro-energy-boston');
-        runMetroEnergyMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Metro Energy migration:', err.message);
-        });
-
-        const { up: runWerleyMigration } = require('./src/migrations/066-add-werley-energy');
-        runWerleyMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Werley Energy migration:', err.message);
-        });
-
-        const { up: runKelleysMigration } = require('./src/migrations/067-enable-kelleys-oil');
-        runKelleysMigration(sequelize).catch(err => {
-          logger.warn("⚠️  Kelley's Oil migration:", err.message);
-        });
-
-        const { up: runSevenSuppliersMigration } = require('./src/migrations/068-enable-seven-suppliers');
-        runSevenSuppliersMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Seven suppliers migration:', err.message);
-        });
-
-        const { up: runCooldownFixMigration } = require('./src/migrations/069-fix-cooldown-suppliers');
-        runCooldownFixMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Cooldown fix migration:', err.message);
-        });
-
-        const { up: runStaleFixMigration } = require('./src/migrations/070-fix-stale-suppliers');
-        runStaleFixMigration(sequelize).catch(err => {
-          logger.warn('⚠️  Stale suppliers migration:', err.message);
-        });
-
-        const { up: runRemainingStale } = require('./src/migrations/071-fix-remaining-stale');
-        runRemainingStale(sequelize).catch(err => {
-          logger.warn('⚠️  Remaining stale migration:', err.message);
-        });
-
-        const { up: runWestchesterPutnam } = require('./src/migrations/072-add-westchester-putnam-suppliers');
-        runWestchesterPutnam(sequelize).catch(err => {
-          logger.warn('⚠️  Westchester/Putnam suppliers migration:', err.message);
-        });
-
-        // V2.15.0: Sync scrape-config.json to suppliers table
+        // ScrapeConfigSync runs AFTER all migrations to avoid creating
+        // duplicate records for suppliers that migrations already inserted
         const scrapeConfigSync = new ScrapeConfigSync(sequelize);
-        scrapeConfigSync.sync().then(result => {
+        try {
+          const result = await scrapeConfigSync.sync();
           if (result.success) {
             logger.info(`✅ ScrapeConfigSync: ${result.stats.created} created, ${result.stats.updated} updated`);
           } else {
             logger.warn('⚠️  ScrapeConfigSync:', result.reason);
           }
-        }).catch(err => {
+        } catch (err) {
           logger.warn('⚠️  ScrapeConfigSync error:', err.message);
-        });
+        }
 
         // V2.18.0: Initialize SMS Price Service
         const smsPriceService = new SmsPriceService(sequelize, logger);
