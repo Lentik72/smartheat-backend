@@ -247,7 +247,7 @@ class PlatformMetricsService {
           AND method = 'GET'
           AND created_at::date BETWEEN p.d7_start AND p.target_day
         GROUP BY zip_code
-        HAVING COUNT(DISTINCT created_at::date) >= 2
+        HAVING COUNT(DISTINCT created_at::date) >= 1
       ),
 
       -- Clicks and calls per ZIP
