@@ -9,14 +9,15 @@
  *
  * Fix SNH Energy regex (price is 3.43 without $ in DudaMobile data-binding)
  *
- * Disable 7 unfixable suppliers (set allow_price_display=false):
+ * Re-enable Freedom Fuel (price in var price = '3.85')
+ *
+ * Disable 6 unfixable suppliers (set allow_price_display=false):
  *   - T & M Fuel — no real oil price ($1.50 is a fee)
  *   - Eastern Petroleum — dynamic 0.00 placeholder
  *   - Leo's Fuel — JS redirect, no price
  *   - Hillside Oil — DNS failure, site down
  *   - RA Bair & Son — no price on site
- *   - LeBlanc Oil — no price visible
- *   - Freedom Fuel — price is server template (###PRICE_PER_GALLON###)
+ *   - LeBlanc Oil — price JS-rendered, not in static HTML
  */
 
 module.exports = {
@@ -59,15 +60,28 @@ module.exports = {
     `);
     console.log('[Migration 071] SNH Energy cooldown reset');
 
-    // --- Disable 7 unfixable suppliers ---
+    // --- Reset Freedom Fuel cooldown (price in var price = '3.85') ---
+    await sequelize.query(`
+      UPDATE suppliers SET
+        allow_price_display = true,
+        scrape_status = 'active',
+        consecutive_scrape_failures = 0,
+        last_scrape_failure_at = NULL,
+        scrape_failure_dates = NULL,
+        scrape_cooldown_until = NULL,
+        updated_at = NOW()
+      WHERE website LIKE '%freedomfuelma.com%'
+    `);
+    console.log('[Migration 071] Freedom Fuel re-enabled');
+
+    // --- Disable 6 unfixable suppliers ---
     const disableDomains = [
       'tandmfuel.com',
       'easternpetroleumonline.com',
       'leosfuel.com',
       'hillsideoilheat.com',
       'rabairandson.com',
-      'leblancheating.com',
-      'freedomfuelma.com',
+      'leblancheating.com',   // price is JS-rendered, not in static HTML
     ];
 
     for (const domain of disableDomains) {

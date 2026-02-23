@@ -1508,11 +1508,11 @@
   },
 
   "freedomfuelma.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
     "name": "Freedom Fuel",
     "phone": "(774) 501-3357",
-    "notes": "DISABLED: MA Raynham - Price is ###PRICE_PER_GALLON### server template, not in public HTML.",
+    "notes": "MA Raynham - Veteran-owned COD. Price in JS var in page source.",
     "priceRegex": "var price = '([0-9]+\\.[0-9]{2})'",
     "postalCodesServed": ["02048","02072","02301","02302","02303","02304","02305","02324","02333","02338","02343","02346","02347","02356","02357","02360","02368","02379","02702","02712","02715","02718","02764","02766","02767","02779","02780","02781"]
   },
