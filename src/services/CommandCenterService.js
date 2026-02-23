@@ -24,7 +24,8 @@ class CommandCenterService {
       trajectory,
       transitions,
       stability,
-      marketPulse
+      marketPulse,
+      liquidity
     ] = await Promise.all([
       this._getNorthStar(sequelize).catch(e => {
         logger?.error('[CommandCenter] North Star error:', e.message);
@@ -61,6 +62,10 @@ class CommandCenterService {
       this._getMarketPulse(sequelize).catch(e => {
         logger?.error('[CommandCenter] Market Pulse error:', e.message);
         return { medianPrice: [], demandVolume: [], scraperSuccess: [] };
+      }),
+      this._getLiquidityMetrics(sequelize).catch(e => {
+        logger?.error('[CommandCenter] Liquidity error:', e.message);
+        return null;
       })
     ]);
 
@@ -76,6 +81,7 @@ class CommandCenterService {
       movers,
       actionItems,
       marketPulse,
+      liquidity,
       generatedAt: new Date().toISOString()
     };
   }
@@ -148,120 +154,143 @@ class CommandCenterService {
 
   /**
    * Anomaly Detection across 5 categories
-   * Compare today vs 7-day avg. Weather-normalize traffic using HDD.
+   * Uses rolling 24h windows (not calendar-day boundaries) to avoid
+   * early-in-day zeros. Recent = last 24h, Baseline = previous 7 days.
    *
    * Categories: Traffic, Supply, Demand, Supplier, Conversion
    */
   async _getAnomalies(sequelize, logger) {
-    const [dailyMetrics] = await sequelize.query(`
-      WITH dates AS (
-        SELECT generate_series(CURRENT_DATE - INTERVAL '7 days', CURRENT_DATE, '1 day')::date as day
-      ),
-      traffic AS (
-        SELECT created_at::date as day, COUNT(*) as clicks
+    // Two-window approach: recent 24h vs 7-day baseline
+    const [windowMetrics] = await sequelize.query(`
+      WITH recent_traffic AS (
+        SELECT COUNT(*) as clicks
         FROM supplier_clicks
-        WHERE created_at > CURRENT_DATE - INTERVAL '8 days'
-        GROUP BY created_at::date
+        WHERE created_at > NOW() - INTERVAL '24 hours'
       ),
-      supply AS (
-        SELECT scraped_at::date as day, COUNT(DISTINCT supplier_id) as prices_scraped
+      baseline_traffic AS (
+        SELECT COUNT(*)::float / 7 as avg_clicks
+        FROM supplier_clicks
+        WHERE created_at > NOW() - INTERVAL '8 days'
+          AND created_at <= NOW() - INTERVAL '24 hours'
+      ),
+      recent_supply AS (
+        SELECT COUNT(DISTINCT supplier_id) as prices_scraped
         FROM supplier_prices
-        WHERE scraped_at > CURRENT_DATE - INTERVAL '8 days'
+        WHERE scraped_at > NOW() - INTERVAL '24 hours'
           AND is_valid = true
-        GROUP BY scraped_at::date
       ),
-      demand AS (
-        SELECT first_seen_at::date as day, COUNT(*) as new_locations
+      baseline_supply AS (
+        SELECT COUNT(DISTINCT supplier_id)::float / 7 as avg_prices
+        FROM (
+          SELECT DISTINCT scraped_at::date as day, supplier_id
+          FROM supplier_prices
+          WHERE scraped_at > NOW() - INTERVAL '8 days'
+            AND scraped_at <= NOW() - INTERVAL '24 hours'
+            AND is_valid = true
+        ) sub
+      ),
+      recent_demand AS (
+        SELECT COUNT(*) as new_locations
         FROM user_locations
-        WHERE first_seen_at > CURRENT_DATE - INTERVAL '8 days'
-        GROUP BY first_seen_at::date
+        WHERE first_seen_at > NOW() - INTERVAL '24 hours'
       ),
-      supplier_issues AS (
-        SELECT
-          d.val::timestamptz::date as day,
-          COUNT(*) as failures
+      baseline_demand AS (
+        SELECT COUNT(*)::float / 7 as avg_locations
+        FROM user_locations
+        WHERE first_seen_at > NOW() - INTERVAL '8 days'
+          AND first_seen_at <= NOW() - INTERVAL '24 hours'
+      ),
+      recent_failures AS (
+        SELECT COUNT(*) as failures
         FROM suppliers s,
         LATERAL jsonb_array_elements_text(
           CASE WHEN jsonb_typeof(s.scrape_failure_dates) = 'array'
                THEN s.scrape_failure_dates ELSE '[]'::jsonb END
         ) AS d(val)
         WHERE s.active = true
-          AND d.val::timestamptz > CURRENT_DATE - INTERVAL '8 days'
-        GROUP BY d.val::timestamptz::date
+          AND d.val::timestamptz > NOW() - INTERVAL '24 hours'
       ),
-      weather AS (
+      baseline_failures AS (
+        SELECT COUNT(*)::float / 7 as avg_failures
+        FROM suppliers s,
+        LATERAL jsonb_array_elements_text(
+          CASE WHEN jsonb_typeof(s.scrape_failure_dates) = 'array'
+               THEN s.scrape_failure_dates ELSE '[]'::jsonb END
+        ) AS d(val)
+        WHERE s.active = true
+          AND d.val::timestamptz > NOW() - INTERVAL '8 days'
+          AND d.val::timestamptz <= NOW() - INTERVAL '24 hours'
+      ),
+      recent_weather AS (
+        SELECT temp_avg
+        FROM weather_history
+        ORDER BY date DESC
+        LIMIT 1
+      ),
+      baseline_weather AS (
         SELECT date as day, temp_avg
         FROM weather_history
-        WHERE date > CURRENT_DATE - INTERVAL '8 days'
+        WHERE date > (NOW() - INTERVAL '8 days')::date
+          AND date <= (NOW() - INTERVAL '24 hours')::date
       )
       SELECT
-        d.day,
-        COALESCE(t.clicks, 0) as clicks,
-        COALESCE(s.prices_scraped, 0) as prices_scraped,
-        COALESCE(dm.new_locations, 0) as new_locations,
-        COALESCE(si.failures, 0) as scrape_failures,
-        w.temp_avg
-      FROM dates d
-      LEFT JOIN traffic t ON d.day = t.day
-      LEFT JOIN supply s ON d.day = s.day
-      LEFT JOIN demand dm ON d.day = dm.day
-      LEFT JOIN supplier_issues si ON d.day = si.day
-      LEFT JOIN weather w ON d.day = w.day
-      ORDER BY d.day ASC
+        (SELECT clicks FROM recent_traffic) as recent_clicks,
+        (SELECT avg_clicks FROM baseline_traffic) as baseline_avg_clicks,
+        (SELECT prices_scraped FROM recent_supply) as recent_supply,
+        (SELECT avg_prices FROM baseline_supply) as baseline_avg_supply,
+        (SELECT new_locations FROM recent_demand) as recent_demand,
+        (SELECT avg_locations FROM baseline_demand) as baseline_avg_demand,
+        (SELECT failures FROM recent_failures) as recent_failures,
+        (SELECT avg_failures FROM baseline_failures) as baseline_avg_failures,
+        (SELECT temp_avg FROM recent_weather) as recent_temp,
+        (SELECT json_agg(json_build_object('temp', temp_avg))
+         FROM baseline_weather WHERE temp_avg IS NOT NULL) as baseline_temps
     `);
 
-    const todayStr = new Date().toISOString().split('T')[0];
     const anomalies = [];
-
-    // Separate today vs history
-    const todayRow = dailyMetrics.find(r => new Date(r.day).toISOString().split('T')[0] === todayStr);
-    const historyRows = dailyMetrics.filter(r => new Date(r.day).toISOString().split('T')[0] !== todayStr);
-
-    if (!todayRow || historyRows.length < 3) return anomalies;
+    const row = windowMetrics[0];
+    if (!row) return anomalies;
 
     // --- Traffic anomaly (HDD-normalized) ---
-    const todayClicks = parseInt(todayRow.clicks) || 0;
-    const todayTemp = todayRow.temp_avg ? parseFloat(todayRow.temp_avg) : null;
-    const todayHDD = todayTemp !== null ? Math.max(0, 65 - todayTemp) : null;
+    const recentClicks = parseInt(row.recent_clicks) || 0;
+    const baselineAvgClicks = parseFloat(row.baseline_avg_clicks) || 0;
+    const recentTemp = row.recent_temp ? parseFloat(row.recent_temp) : null;
+    const recentHDD = recentTemp !== null ? Math.max(0, 65 - recentTemp) : null;
 
-    const histClicks = historyRows.map(r => parseInt(r.clicks) || 0);
-    const avgClicks = histClicks.reduce((s, v) => s + v, 0) / histClicks.length;
-
-    // Try HDD normalization
     let trafficDeviation;
     let trafficNote = '';
-    if (todayHDD !== null && todayHDD > 0) {
-      const histWithHDD = historyRows
-        .filter(r => r.temp_avg !== null)
-        .map(r => {
-          const hdd = Math.max(0, 65 - parseFloat(r.temp_avg));
-          const clicks = parseInt(r.clicks) || 0;
-          return hdd > 0 ? clicks / hdd : null;
-        })
-        .filter(v => v !== null);
+    if (recentHDD !== null && recentHDD > 0 && row.baseline_temps) {
+      const baselineTemps = typeof row.baseline_temps === 'string'
+        ? JSON.parse(row.baseline_temps) : row.baseline_temps;
+      const histWithHDD = (baselineTemps || [])
+        .filter(t => t.temp !== null)
+        .map(t => Math.max(0, 65 - parseFloat(t.temp)))
+        .filter(hdd => hdd > 0);
 
-      if (histWithHDD.length >= 3) {
-        const avgClicksPerHDD = histWithHDD.reduce((s, v) => s + v, 0) / histWithHDD.length;
-        const todayClicksPerHDD = todayClicks / todayHDD;
-        trafficDeviation = avgClicksPerHDD > 0
-          ? Math.round(((todayClicksPerHDD - avgClicksPerHDD) / avgClicksPerHDD) * 100)
+      if (histWithHDD.length >= 3 && baselineAvgClicks > 0) {
+        const avgBaselineHDD = histWithHDD.reduce((s, v) => s + v, 0) / histWithHDD.length;
+        // Normalize: clicks per HDD unit
+        const baselineClicksPerHDD = baselineAvgClicks / avgBaselineHDD;
+        const recentClicksPerHDD = recentClicks / recentHDD;
+        trafficDeviation = baselineClicksPerHDD > 0
+          ? Math.round(((recentClicksPerHDD - baselineClicksPerHDD) / baselineClicksPerHDD) * 100)
           : 0;
         trafficNote = 'Weather-normalized (HDD)';
       }
     }
 
     if (trafficDeviation === undefined) {
-      trafficDeviation = avgClicks > 0
-        ? Math.round(((todayClicks - avgClicks) / avgClicks) * 100)
+      trafficDeviation = baselineAvgClicks > 0
+        ? Math.round(((recentClicks - baselineAvgClicks) / baselineAvgClicks) * 100)
         : 0;
     }
 
-    if (Math.abs(trafficDeviation) > 25 && todayClicks >= 5) {
+    if (Math.abs(trafficDeviation) > 25 && recentClicks >= 5) {
       anomalies.push({
         category: 'traffic',
         title: 'Traffic',
-        today: todayClicks,
-        avg7d: Math.round(avgClicks),
+        today: recentClicks,
+        avg7d: Math.round(baselineAvgClicks),
         deviation: trafficDeviation,
         direction: trafficDeviation > 0 ? 'up' : 'down',
         severity: Math.abs(trafficDeviation) > 50 ? 'high' : 'medium',
@@ -273,68 +302,65 @@ class CommandCenterService {
     }
 
     // --- Supply anomaly ---
-    const todaySupply = parseInt(todayRow.prices_scraped) || 0;
-    const histSupply = historyRows.map(r => parseInt(r.prices_scraped) || 0);
-    const avgSupply = histSupply.reduce((s, v) => s + v, 0) / histSupply.length;
-    const supplyDev = avgSupply > 0 ? Math.round(((todaySupply - avgSupply) / avgSupply) * 100) : 0;
+    const recentSupply = parseInt(row.recent_supply) || 0;
+    const baselineAvgSupply = parseFloat(row.baseline_avg_supply) || 0;
+    const supplyDev = baselineAvgSupply > 0 ? Math.round(((recentSupply - baselineAvgSupply) / baselineAvgSupply) * 100) : 0;
 
-    if (Math.abs(supplyDev) > 20 && avgSupply >= 3) {
+    if (Math.abs(supplyDev) > 20 && baselineAvgSupply >= 3) {
       anomalies.push({
         category: 'supply',
         title: 'Price Supply',
-        today: todaySupply,
-        avg7d: Math.round(avgSupply),
+        today: recentSupply,
+        avg7d: Math.round(baselineAvgSupply),
         deviation: supplyDev,
         direction: supplyDev > 0 ? 'up' : 'down',
         severity: supplyDev < -30 ? 'high' : 'medium',
         insight: supplyDev < 0
-          ? `Only ${todaySupply} suppliers scraped today vs ${Math.round(avgSupply)} avg — check scraper health`
-          : `${todaySupply} suppliers scraped today, ${supplyDev}% above average`
+          ? `Only ${recentSupply} suppliers scraped (24h) vs ${Math.round(baselineAvgSupply)} avg — check scraper health`
+          : `${recentSupply} suppliers scraped (24h), ${supplyDev}% above average`
       });
     }
 
     // --- Demand anomaly ---
-    const todayDemand = parseInt(todayRow.new_locations) || 0;
-    const histDemand = historyRows.map(r => parseInt(r.new_locations) || 0);
-    const avgDemand = histDemand.reduce((s, v) => s + v, 0) / histDemand.length;
-    const demandDev = avgDemand > 0 ? Math.round(((todayDemand - avgDemand) / avgDemand) * 100) : 0;
+    const recentDemand = parseInt(row.recent_demand) || 0;
+    const baselineAvgDemand = parseFloat(row.baseline_avg_demand) || 0;
+    const demandDev = baselineAvgDemand > 0 ? Math.round(((recentDemand - baselineAvgDemand) / baselineAvgDemand) * 100) : 0;
 
-    if (Math.abs(demandDev) > 30 && (todayDemand >= 3 || avgDemand >= 3)) {
+    if (Math.abs(demandDev) > 30 && (recentDemand >= 3 || baselineAvgDemand >= 3)) {
       anomalies.push({
         category: 'demand',
         title: 'New Demand',
-        today: todayDemand,
-        avg7d: Math.round(avgDemand),
+        today: recentDemand,
+        avg7d: Math.round(baselineAvgDemand),
         deviation: demandDev,
         direction: demandDev > 0 ? 'up' : 'down',
         severity: Math.abs(demandDev) > 60 ? 'high' : 'medium',
         insight: demandDev > 0
-          ? `${todayDemand} new ZIP locations today — demand surge, check coverage gaps`
+          ? `${recentDemand} new ZIP locations (24h) — demand surge, check coverage gaps`
           : `New user locations down ${Math.abs(demandDev)}% from average`
       });
     }
 
     // --- Supplier failures anomaly ---
-    const todayFails = parseInt(todayRow.scrape_failures) || 0;
-    const histFails = historyRows.map(r => parseInt(r.scrape_failures) || 0);
-    const avgFails = histFails.reduce((s, v) => s + v, 0) / histFails.length;
-    const failDev = avgFails > 0 ? Math.round(((todayFails - avgFails) / avgFails) * 100) : 0;
+    const recentFails = parseInt(row.recent_failures) || 0;
+    const baselineAvgFails = parseFloat(row.baseline_avg_failures) || 0;
+    const failDev = baselineAvgFails > 0 ? Math.round(((recentFails - baselineAvgFails) / baselineAvgFails) * 100) : 0;
 
-    if (todayFails > avgFails + 2 && todayFails >= 3) {
+    if (recentFails > baselineAvgFails + 2 && recentFails >= 3) {
       anomalies.push({
         category: 'supplier',
         title: 'Scrape Failures',
-        today: todayFails,
-        avg7d: Math.round(avgFails),
+        today: recentFails,
+        avg7d: Math.round(baselineAvgFails),
         deviation: failDev,
         direction: 'up',
-        severity: todayFails > avgFails * 2 ? 'high' : 'medium',
-        insight: `${todayFails} scrape failures today vs ${Math.round(avgFails)} avg — suppliers may be blocking`
+        severity: recentFails > baselineAvgFails * 2 ? 'high' : 'medium',
+        insight: `${recentFails} scrape failures (24h) vs ${Math.round(baselineAvgFails)} avg — suppliers may be blocking`
       });
     }
 
     // --- Conversion anomaly (quality connection rate) ---
-    // Reuse North Star logic: what % of clicks hit fresh-price suppliers
+    // Rolling 24h window vs 7d baseline
     const [convData] = await sequelize.query(`
       WITH fresh AS (
         SELECT DISTINCT sp.supplier_id
@@ -342,42 +368,54 @@ class CommandCenterService {
         JOIN suppliers s ON sp.supplier_id = s.id
         WHERE sp.is_valid = true AND s.active = true
           AND sp.scraped_at > NOW() - INTERVAL '48 hours'
+      ),
+      recent_conv AS (
+        SELECT
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE f.supplier_id IS NOT NULL) as quality
+        FROM supplier_clicks sc
+        LEFT JOIN fresh f ON sc.supplier_id = f.supplier_id
+        WHERE sc.created_at > NOW() - INTERVAL '24 hours'
+      ),
+      baseline_conv AS (
+        SELECT
+          COUNT(*)::float / 7 as avg_total,
+          COUNT(*) FILTER (WHERE f.supplier_id IS NOT NULL)::float / 7 as avg_quality
+        FROM supplier_clicks sc
+        LEFT JOIN fresh f ON sc.supplier_id = f.supplier_id
+        WHERE sc.created_at > NOW() - INTERVAL '8 days'
+          AND sc.created_at <= NOW() - INTERVAL '24 hours'
       )
       SELECT
-        sc.created_at::date as day,
-        COUNT(*) as total,
-        COUNT(*) FILTER (WHERE f.supplier_id IS NOT NULL) as quality
-      FROM supplier_clicks sc
-      LEFT JOIN fresh f ON sc.supplier_id = f.supplier_id
-      WHERE sc.created_at > CURRENT_DATE - INTERVAL '8 days'
-      GROUP BY sc.created_at::date
-      ORDER BY day ASC
+        (SELECT total FROM recent_conv) as recent_total,
+        (SELECT quality FROM recent_conv) as recent_quality,
+        (SELECT avg_total FROM baseline_conv) as baseline_avg_total,
+        (SELECT avg_quality FROM baseline_conv) as baseline_avg_quality
     `);
 
-    const todayConv = convData.find(r => new Date(r.day).toISOString().split('T')[0] === todayStr);
-    const histConv = convData.filter(r => new Date(r.day).toISOString().split('T')[0] !== todayStr);
+    const convRow = convData[0];
+    if (convRow) {
+      const recentTotal = parseInt(convRow.recent_total) || 0;
+      const recentQuality = parseInt(convRow.recent_quality) || 0;
+      const baselineAvgTotal = parseFloat(convRow.baseline_avg_total) || 0;
+      const baselineAvgQuality = parseFloat(convRow.baseline_avg_quality) || 0;
 
-    if (todayConv && histConv.length >= 3) {
-      const todayRate = parseInt(todayConv.total) > 0
-        ? Math.round((parseInt(todayConv.quality) / parseInt(todayConv.total)) * 100) : 0;
-      const histRates = histConv.map(r =>
-        parseInt(r.total) > 0 ? (parseInt(r.quality) / parseInt(r.total)) * 100 : 0
-      );
-      const avgRate = Math.round(histRates.reduce((s, v) => s + v, 0) / histRates.length);
-      const convDev = avgRate > 0 ? Math.round(((todayRate - avgRate) / avgRate) * 100) : 0;
+      const recentRate = recentTotal > 0 ? Math.round((recentQuality / recentTotal) * 100) : 0;
+      const baselineRate = baselineAvgTotal > 0 ? Math.round((baselineAvgQuality / baselineAvgTotal) * 100) : 0;
+      const convDev = baselineRate > 0 ? Math.round(((recentRate - baselineRate) / baselineRate) * 100) : 0;
 
-      if (Math.abs(convDev) > 20 && parseInt(todayConv.total) >= 5) {
+      if (Math.abs(convDev) > 20 && recentTotal >= 5) {
         anomalies.push({
           category: 'conversion',
           title: 'Connection Quality',
-          today: todayRate + '%',
-          avg7d: avgRate + '%',
+          today: recentRate + '%',
+          avg7d: baselineRate + '%',
           deviation: convDev,
           direction: convDev > 0 ? 'up' : 'down',
           severity: convDev < -30 ? 'high' : 'medium',
           insight: convDev < 0
-            ? `Only ${todayRate}% of clicks hit suppliers with fresh prices (normally ${avgRate}%)`
-            : `${todayRate}% quality connection rate — above the ${avgRate}% average`
+            ? `Only ${recentRate}% of clicks hit suppliers with fresh prices (normally ${baselineRate}%)`
+            : `${recentRate}% quality connection rate — above the ${baselineRate}% average`
         });
       }
     }
@@ -846,14 +884,15 @@ class CommandCenterService {
           COUNT(*) FILTER (WHERE fs.supplier_id IS NOT NULL) as quality
         FROM supplier_clicks sc
         LEFT JOIN fresh_sup fs ON sc.supplier_id = fs.supplier_id
-        WHERE sc.created_at > CURRENT_DATE
+        WHERE sc.created_at > NOW() - INTERVAL '24 hours'
       `),
       sequelize.query(`
         SELECT
-          (SELECT COUNT(*) FROM user_locations WHERE first_seen_at::date = CURRENT_DATE) as today,
+          (SELECT COUNT(*) FROM user_locations
+           WHERE first_seen_at > NOW() - INTERVAL '24 hours') as today,
           (SELECT COUNT(*)::float / 7 FROM user_locations
-           WHERE first_seen_at >= CURRENT_DATE - INTERVAL '7 days'
-             AND first_seen_at < CURRENT_DATE) as daily_avg
+           WHERE first_seen_at > NOW() - INTERVAL '8 days'
+             AND first_seen_at <= NOW() - INTERVAL '24 hours') as daily_avg
       `)
     ]);
 
@@ -981,6 +1020,52 @@ class CommandCenterService {
           value: total > 0 ? Math.round((s / total) * 100) : 100
         };
       })
+    };
+  }
+
+  /**
+   * Liquidity Metrics: read latest daily_platform_metrics snapshot
+   * Returns null if no snapshot exists yet.
+   */
+  async _getLiquidityMetrics(sequelize) {
+    const [rows] = await sequelize.query(`
+      SELECT * FROM daily_platform_metrics
+      ORDER BY day DESC LIMIT 1
+    `);
+
+    if (!rows.length) return null;
+
+    const r = rows[0];
+    return {
+      day: new Date(r.day).toISOString().split('T')[0],
+      computedAt: r.computed_at,
+      pulse: {
+        pipelineSuppliers: parseInt(r.pipeline_suppliers) || 0,
+        searchZipDays: parseInt(r.search_zip_days) || 0,
+        searchZips: parseInt(r.search_zips) || 0,
+        suppliersClicked7d: parseInt(r.suppliers_clicked_7d) || 0,
+        suppliersClicked30d: parseInt(r.suppliers_clicked_30d) || 0,
+        suppliersCalled7d: parseInt(r.suppliers_called_7d) || 0,
+        suppliersCalled30d: parseInt(r.suppliers_called_30d) || 0,
+        zipDaysWithClick7d: parseInt(r.zip_days_with_click_7d) || 0,
+        zipDaysWithCall7d: parseInt(r.zip_days_with_call_7d) || 0,
+        zipsWithCall7d: parseInt(r.zips_with_call_7d) || 0,
+        calls7d: parseInt(r.calls_7d) || 0,
+        websiteClicks7d: parseInt(r.website_clicks_7d) || 0
+      },
+      demandDensity: typeof r.demand_density_top25 === 'string'
+        ? JSON.parse(r.demand_density_top25)
+        : (r.demand_density_top25 || []),
+      community: {
+        deliveries7d: parseInt(r.deliveries_7d) || 0,
+        deliveries30d: parseInt(r.deliveries_30d) || 0,
+        oil30d: parseInt(r.deliveries_oil_30d) || 0,
+        propane30d: parseInt(r.deliveries_propane_30d) || 0,
+        propanePrev30d: parseInt(r.deliveries_propane_prev30d) || 0,
+        topZips: typeof r.community_top_zips_30d === 'string'
+          ? JSON.parse(r.community_top_zips_30d)
+          : (r.community_top_zips_30d || [])
+      }
     };
   }
 }
