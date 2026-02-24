@@ -2330,6 +2330,7 @@ async function loadLeaderboard() {
     document.getElementById('lb-total-clicks').textContent = `${totalScore} pts (${totalOrders} orders, ${totalQuotes} quotes, ${totalSaves} saves)`;
     document.getElementById('lb-market-avg').textContent = marketAvg > 0 ? formatPrice(marketAvg) : '--';
     document.getElementById('lb-top3-pct').textContent = `${top3Pct}%`;
+    document.getElementById('lb-total-opportunity').textContent = data.summary?.totalOpportunity ? `${data.summary.totalOpportunity.toLocaleString()}` : '--';
 
     // Quick wins from API
     const quickWinsList = document.getElementById('quick-wins-list');
@@ -2349,7 +2350,7 @@ async function loadLeaderboard() {
     tbody.innerHTML = '';
 
     if (suppliers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--gray-500);padding:2rem;">No engagement data for this period</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--gray-500);padding:2rem;">No engagement data for this period</td></tr>';
     } else {
       suppliers.forEach((s) => {
         const vsMarket = s.price?.delta != null ? (s.price.delta > 0 ? '+' : '') + formatPrice(s.price.delta) : '--';
@@ -2378,6 +2379,7 @@ async function loadLeaderboard() {
           <td class="${s.conversions?.orders > 0 ? 'has-orders' : ''}">${s.conversions?.orders > 0 ? s.conversions.orders : '-'}</td>
           <td>${s.price ? formatPrice(s.price.current) : '--'}</td>
           <td class="${s.price?.delta > 0 ? 'above-market' : s.price?.delta < 0 ? 'below-market' : ''}">${vsMarket}</td>
+          <td class="${s.opportunity?.galPerWeek >= 300 ? 'opp-high' : s.opportunity?.galPerWeek >= 100 ? 'opp-med' : 'opp-low'}">${s.opportunity?.galPerWeek || 0}${s.opportunity?.clickShare != null ? '<br><span class="click-share">' + s.opportunity.clickShare + '% share</span>' : ''}</td>
           <td>${signalBadges[s.primarySignal] || signalBadges.standard}</td>
         `;
         tbody.appendChild(row);
@@ -2386,9 +2388,9 @@ async function loadLeaderboard() {
 
     // Export CSV button
     document.getElementById('lb-export-csv').onclick = () => {
-      const csv = ['Rank,Supplier,City,State,Score,Calls,Clicks,Saves,Quotes,Orders,Price,vs Market,Signal'];
+      const csv = ['Rank,Supplier,City,State,Score,Calls,Clicks,Saves,Quotes,Orders,Price,vs Market,Opp (gal/wk),Click Share %,Signal'];
       suppliers.forEach((s) => {
-        csv.push(`${s.rank},"${s.name}","${s.city || ''}","${s.state || ''}",${s.engagementScore || 0},${s.clicks?.calls || 0},${s.clicks?.websites || 0},${s.conversions?.saves || 0},${s.conversions?.quotes || 0},${s.conversions?.orders || 0},${s.price?.current || ''},${s.price?.delta || ''},${s.primarySignal || ''}`);
+        csv.push(`${s.rank},"${s.name}","${s.city || ''}","${s.state || ''}",${s.engagementScore || 0},${s.clicks?.calls || 0},${s.clicks?.websites || 0},${s.conversions?.saves || 0},${s.conversions?.quotes || 0},${s.conversions?.orders || 0},${s.price?.current || ''},${s.price?.delta || ''},${s.opportunity?.galPerWeek || 0},${s.opportunity?.clickShare || 0},${s.primarySignal || ''}`);
       });
       const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);

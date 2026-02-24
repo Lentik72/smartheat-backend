@@ -1840,6 +1840,11 @@ legend {
   font-weight: 700;
 }
 
+.opp-high { color: #dc2626; font-weight: 600; }
+.opp-med { color: #d97706; font-weight: 500; }
+.opp-low { color: #16a34a; }
+.click-share { font-size: 0.7rem; color: var(--gray-500); font-weight: 400; }
+
 .leaderboard-table .supplier-location {
   font-size: 0.75rem;
   color: var(--gray-500);

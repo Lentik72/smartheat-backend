@@ -3529,6 +3529,24 @@ router.get('/leaderboard', async (req, res) => {
         WHERE sp.is_valid = true
           AND sp.scraped_at > NOW() - INTERVAL '7 days'
           AND s.active = true
+      ),
+      zip_clicks AS (
+        SELECT zip_code, COUNT(*) as click_count
+        FROM supplier_clicks
+        WHERE created_at > NOW() - INTERVAL '${days} days'
+          AND zip_code IS NOT NULL
+        GROUP BY zip_code
+      ),
+      supplier_area_demand AS (
+        SELECT s.id as supplier_id,
+          COALESCE(SUM(zc.click_count), 0) as area_total_clicks
+        FROM suppliers s
+        CROSS JOIN LATERAL jsonb_array_elements_text(s.postal_codes_served) AS served_zip(zip)
+        LEFT JOIN zip_clicks zc ON zc.zip_code = served_zip.zip
+        WHERE s.active = true
+          AND s.postal_codes_served IS NOT NULL
+          AND jsonb_array_length(s.postal_codes_served) > 0
+        GROUP BY s.id
       )
       SELECT
         aes.supplier_id,
@@ -3560,13 +3578,15 @@ router.get('/leaderboard', async (req, res) => {
         CASE WHEN cd.clicks_prev_7d > 0
           THEN ROUND(((cd.clicks_7d - cd.clicks_prev_7d)::numeric / cd.clicks_prev_7d * 100), 1)
           ELSE NULL
-        END as wow_growth
+        END as wow_growth,
+        COALESCE(sad.area_total_clicks, 0) as area_total_clicks
       FROM all_engaged_suppliers aes
       JOIN suppliers s ON aes.supplier_id = s.id
       LEFT JOIN click_data cd ON aes.supplier_id = cd.supplier_id
       LEFT JOIN engagement_data ed ON aes.supplier_id = ed.supplier_id
       LEFT JOIN saves_data sv ON aes.supplier_id = sv.supplier_id
       LEFT JOIN price_data pd ON aes.supplier_id = pd.supplier_id
+      LEFT JOIN supplier_area_demand sad ON aes.supplier_id = sad.supplier_id
       CROSS JOIN market_avg ma
       WHERE s.active = true
       ORDER BY (COALESCE(cd.websites, 0) * 1 + COALESCE(cd.calls, 0) * 2 + COALESCE(sv.saves, 0) * 3 + COALESCE(ed.quotes, 0) * 4 + COALESCE(ed.orders, 0) * 5) DESC,
@@ -3577,7 +3597,20 @@ router.get('/leaderboard', async (req, res) => {
     // Calculate signals for each supplier
     const marketAvg = suppliers[0]?.market_avg || 3.29;
 
+    const ORDER_RATE = 0.05, AVG_FILL = 175, MIN_AREA_CLICKS = 20;
+    const weeks = Math.max(days / 7, 1);
+
     const leaderboard = suppliers.map((s, index) => {
+      // Opportunity computation
+      const areaClicks = parseInt(s.area_total_clicks) || 0;
+      const ownClicks = parseInt(s.total_clicks) || 0;
+      const missedClicks = Math.max(areaClicks - ownClicks, 0);
+      const opportunityGalPerWeek = areaClicks >= MIN_AREA_CLICKS
+        ? Math.round((missedClicks * ORDER_RATE * AVG_FILL) / weeks)
+        : 0;
+      const confidence = areaClicks >= 100 ? 'high' : areaClicks >= MIN_AREA_CLICKS ? 'medium' : 'low';
+      const clickShare = areaClicks > 0 ? Math.round((ownClicks / areaClicks) * 100) : 0;
+
       const signals = [];
       let primarySignal = null;
 
@@ -3668,6 +3701,17 @@ router.get('/leaderboard', async (req, res) => {
         if (!primarySignal) primarySignal = 'underperformer';
       }
 
+      // High opportunity (significant volume going to competitors)
+      if (opportunityGalPerWeek >= 300 && confidence !== 'low') {
+        signals.push({
+          type: 'high_opportunity',
+          icon: '🎯',
+          label: `${opportunityGalPerWeek} gal/wk`,
+          description: `~${opportunityGalPerWeek} gal/wk going to competitors in their ZIPs`,
+          priority: 2
+        });
+      }
+
       // Default: standard performer
       if (!primarySignal) {
         primarySignal = 'standard';
@@ -3704,7 +3748,14 @@ router.get('/leaderboard', async (req, res) => {
         signals,
         primarySignal,
         estRevenue: parseInt(s.est_revenue) || 0,
-        revenueRisk
+        revenueRisk,
+        opportunity: {
+          galPerWeek: opportunityGalPerWeek,
+          areaClicks,
+          missedClicks,
+          clickShare,
+          confidence
+        }
       };
     });
 
@@ -3736,10 +3787,25 @@ router.get('/leaderboard', async (req, res) => {
       });
     }
 
+    // High opportunity suppliers (volume going to competitors)
+    const highOpp = leaderboard.filter(s => s.opportunity.galPerWeek >= 200)
+      .sort((a, b) => b.opportunity.galPerWeek - a.opportunity.galPerWeek);
+    if (highOpp.length > 0) {
+      quickWins.push({
+        priority: 'high',
+        title: `${highOpp.length} supplier(s) with high missed volume`,
+        insight: `~${highOpp.reduce((sum, x) => sum + x.opportunity.galPerWeek, 0)} gal/wk to competitors`,
+        action: 'Top outreach candidates',
+        suppliers: highOpp.slice(0, 3).map(s => s.name)
+      });
+    }
+
     // Top 3 concentration
     const top3Clicks = leaderboard.slice(0, 3).reduce((sum, s) => sum + s.clicks.total, 0);
     const totalClicks = leaderboard.reduce((sum, s) => sum + s.clicks.total, 0);
     const top3Percent = totalClicks > 0 ? Math.round((top3Clicks / totalClicks) * 100) : 0;
+
+    const totalOpportunity = leaderboard.reduce((sum, s) => sum + s.opportunity.galPerWeek, 0);
 
     res.json({
       period: `${days}d`,
@@ -3747,7 +3813,8 @@ router.get('/leaderboard', async (req, res) => {
         totalSuppliers: leaderboard.length,
         totalClicks,
         marketAvg: parseFloat(marketAvg),
-        top3Concentration: top3Percent
+        top3Concentration: top3Percent,
+        totalOpportunity
       },
       leaderboard,
       quickWins,
