@@ -1117,12 +1117,11 @@ async function loadMissingSuppliers() {
     }
 
     // Near matches table
-    const nearMatchPanel = document.getElementById('near-matches-panel');
     const nearMatchBody = document.getElementById('near-matches-body');
+    if (!nearMatchBody) return;
     nearMatchBody.innerHTML = '';
 
     if (data.nearMatches.length > 0) {
-      nearMatchPanel.style.display = 'block';
       data.nearMatches.forEach(s => {
         const row = document.createElement('tr');
         const suggestions = s.suggestions.map(sg => `${sg.name} (${sg.city}, ${sg.state})`).join('<br>');
@@ -1135,7 +1134,7 @@ async function loadMissingSuppliers() {
         nearMatchBody.appendChild(row);
       });
     } else {
-      nearMatchPanel.style.display = 'none';
+      nearMatchBody.innerHTML = '<tr><td colspan="4" class="no-data">No near matches</td></tr>';
     }
 
   } catch (error) {
