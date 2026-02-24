@@ -1845,6 +1845,12 @@ legend {
 .opp-low { color: #16a34a; }
 .click-share { font-size: 0.7rem; color: var(--gray-500); font-weight: 400; }
 
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { background: var(--gray-100); }
+th.sortable::after { content: ' ⇅'; opacity: 0.3; font-size: 0.7rem; }
+th.sortable.sort-desc::after { content: ' ↓'; opacity: 1; }
+th.sortable.sort-asc::after { content: ' ↑'; opacity: 1; }
+
 .leaderboard-table .supplier-location {
   font-size: 0.75rem;
   color: var(--gray-500);

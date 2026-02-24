@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1772006401">
+  <link rel="stylesheet" href="dashboard.css?v=1772006403">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -448,15 +448,15 @@
                   <tr>
                     <th>#</th>
                     <th>Supplier</th>
-                    <th>Score</th>
-                    <th>📞 Calls</th>
-                    <th>🔗 Clicks</th>
-                    <th>💾 Saves</th>
-                    <th>📝 Quotes</th>
-                    <th>🛒 Orders</th>
-                    <th>Price</th>
-                    <th>vs Mkt</th>
-                    <th>Opp (gal/wk)</th>
+                    <th class="sortable" data-sort="engagementScore">Score</th>
+                    <th class="sortable" data-sort="calls">📞 Calls</th>
+                    <th class="sortable" data-sort="clicks">🔗 Clicks</th>
+                    <th class="sortable" data-sort="saves">💾 Saves</th>
+                    <th class="sortable" data-sort="quotes">📝 Quotes</th>
+                    <th class="sortable" data-sort="orders">🛒 Orders</th>
+                    <th class="sortable" data-sort="price">Price</th>
+                    <th class="sortable" data-sort="delta">vs Mkt</th>
+                    <th class="sortable" data-sort="opportunity">Opp (gal/wk)</th>
                     <th>Signal</th>
                   </tr>
                 </thead>
@@ -1987,6 +1987,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1772006402"></script>
+  <script src="dashboard.js?v=1772006403"></script>
 </body>
 </html>

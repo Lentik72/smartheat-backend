@@ -2304,6 +2304,97 @@ function ccRenderMovers(movers) {
   }
 }
 
+// Leaderboard sort state
+let lbSuppliers = [];
+let lbSortKey = null;
+let lbSortDesc = true;
+
+function lbGetSortValue(s, key) {
+  switch (key) {
+    case 'engagementScore': return s.engagementScore || 0;
+    case 'calls': return s.clicks?.calls || 0;
+    case 'clicks': return s.clicks?.websites || 0;
+    case 'saves': return s.conversions?.saves || 0;
+    case 'quotes': return s.conversions?.quotes || 0;
+    case 'orders': return s.conversions?.orders || 0;
+    case 'price': return s.price?.current || 0;
+    case 'delta': return s.price?.delta || 0;
+    case 'opportunity': return s.opportunity?.galPerWeek || 0;
+    default: return 0;
+  }
+}
+
+function renderLeaderboardRows() {
+  const tbody = document.getElementById('leaderboard-body');
+  tbody.innerHTML = '';
+
+  const sorted = [...lbSuppliers];
+  if (lbSortKey) {
+    sorted.sort((a, b) => {
+      const av = lbGetSortValue(a, lbSortKey);
+      const bv = lbGetSortValue(b, lbSortKey);
+      return lbSortDesc ? bv - av : av - bv;
+    });
+  }
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--gray-500);padding:2rem;">No engagement data for this period</td></tr>';
+    return;
+  }
+
+  const signalBadges = {
+    converter: '<span class="signal converter">✅ Converter</span>',
+    missing_price: '<span class="signal data-gap">⚠️ No Price</span>',
+    brand_power: '<span class="signal brand">🔥 Brand</span>',
+    price_leader: '<span class="signal price-leader">💰 Price Leader</span>',
+    rising_star: '<span class="signal rising">🆕 Rising</span>',
+    local_favorite: '<span class="signal local">📍 Local</span>',
+    underperformer: '<span class="signal underperformer">📉 Hidden</span>',
+    standard: '<span class="signal normal">—</span>'
+  };
+
+  sorted.forEach((s, i) => {
+    const vsMarket = s.price?.delta != null ? (s.price.delta > 0 ? '+' : '') + formatPrice(s.price.delta) : '--';
+    const displayRank = lbSortKey ? i + 1 : s.rank;
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="rank">${displayRank}</td>
+      <td><strong>${s.name}</strong><br><span class="supplier-location">${s.city || ''}, ${s.state || ''}</span></td>
+      <td class="score-col"><strong>${s.engagementScore}</strong></td>
+      <td>${s.clicks?.calls > 0 ? s.clicks.calls : '-'}</td>
+      <td>${s.clicks?.websites > 0 ? s.clicks.websites : '-'}</td>
+      <td>${s.conversions?.saves > 0 ? s.conversions.saves : '-'}</td>
+      <td>${s.conversions?.quotes > 0 ? s.conversions.quotes : '-'}</td>
+      <td class="${s.conversions?.orders > 0 ? 'has-orders' : ''}">${s.conversions?.orders > 0 ? s.conversions.orders : '-'}</td>
+      <td>${s.price ? formatPrice(s.price.current) : '--'}</td>
+      <td class="${s.price?.delta > 0 ? 'above-market' : s.price?.delta < 0 ? 'below-market' : ''}">${vsMarket}</td>
+      <td class="${s.opportunity?.galPerWeek >= 300 ? 'opp-high' : s.opportunity?.galPerWeek >= 100 ? 'opp-med' : 'opp-low'}">${s.opportunity?.galPerWeek || 0}${s.opportunity?.clickShare != null ? '<br><span class="click-share">' + s.opportunity.clickShare + '% share</span>' : ''}</td>
+      <td>${signalBadges[s.primarySignal] || signalBadges.standard}</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function initLeaderboardSort() {
+  document.querySelectorAll('#leaderboard-table th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.sort;
+      if (lbSortKey === key) {
+        lbSortDesc = !lbSortDesc;
+      } else {
+        lbSortKey = key;
+        lbSortDesc = true;
+      }
+      // Update header indicators
+      document.querySelectorAll('#leaderboard-table th.sortable').forEach(h => {
+        h.classList.remove('sort-asc', 'sort-desc');
+      });
+      th.classList.add(lbSortDesc ? 'sort-desc' : 'sort-asc');
+      renderLeaderboardRows();
+    });
+  });
+}
+
 // Load Leaderboard tab - Uses weighted engagement scoring
 async function loadLeaderboard() {
   const loadingEl = document.getElementById('leaderboard-loading');
@@ -2346,46 +2437,13 @@ async function loadLeaderboard() {
       quickWinsList.innerHTML = '<div class="quick-win success">✅ No urgent issues detected</div>';
     }
 
-    // Leaderboard table with weighted engagement scoring
-    const tbody = document.getElementById('leaderboard-body');
-    tbody.innerHTML = '';
-
-    if (suppliers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--gray-500);padding:2rem;">No engagement data for this period</td></tr>';
-    } else {
-      suppliers.forEach((s) => {
-        const vsMarket = s.price?.delta != null ? (s.price.delta > 0 ? '+' : '') + formatPrice(s.price.delta) : '--';
-
-        // Signal badge based on primarySignal
-        const signalBadges = {
-          converter: '<span class="signal converter">✅ Converter</span>',
-          missing_price: '<span class="signal data-gap">⚠️ No Price</span>',
-          brand_power: '<span class="signal brand">🔥 Brand</span>',
-          price_leader: '<span class="signal price-leader">💰 Price Leader</span>',
-          rising_star: '<span class="signal rising">🆕 Rising</span>',
-          local_favorite: '<span class="signal local">📍 Local</span>',
-          underperformer: '<span class="signal underperformer">📉 Hidden</span>',
-          standard: '<span class="signal normal">—</span>'
-        };
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class="rank">${s.rank}</td>
-          <td><strong>${s.name}</strong><br><span class="supplier-location">${s.city || ''}, ${s.state || ''}</span></td>
-          <td class="score-col"><strong>${s.engagementScore}</strong></td>
-          <td>${s.clicks?.calls > 0 ? s.clicks.calls : '-'}</td>
-          <td>${s.clicks?.websites > 0 ? s.clicks.websites : '-'}</td>
-          <td>${s.conversions?.saves > 0 ? s.conversions.saves : '-'}</td>
-          <td>${s.conversions?.quotes > 0 ? s.conversions.quotes : '-'}</td>
-          <td class="${s.conversions?.orders > 0 ? 'has-orders' : ''}">${s.conversions?.orders > 0 ? s.conversions.orders : '-'}</td>
-          <td>${s.price ? formatPrice(s.price.current) : '--'}</td>
-          <td class="${s.price?.delta > 0 ? 'above-market' : s.price?.delta < 0 ? 'below-market' : ''}">${vsMarket}</td>
-          <td class="${s.opportunity?.galPerWeek >= 300 ? 'opp-high' : s.opportunity?.galPerWeek >= 100 ? 'opp-med' : 'opp-low'}">${s.opportunity?.galPerWeek || 0}${s.opportunity?.clickShare != null ? '<br><span class="click-share">' + s.opportunity.clickShare + '% share</span>' : ''}</td>
-          <td>${signalBadges[s.primarySignal] || signalBadges.standard}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
+    // Leaderboard table with weighted engagement scoring + sorting
+    lbSuppliers = suppliers;
+    lbSortKey = null;
+    lbSortDesc = true;
+    document.querySelectorAll('#leaderboard-table th.sortable').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+    renderLeaderboardRows();
+    initLeaderboardSort();
 
     // Export CSV button
     document.getElementById('lb-export-csv').onclick = () => {
