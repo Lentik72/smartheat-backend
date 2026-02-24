@@ -2330,7 +2330,7 @@ async function loadLeaderboard() {
     document.getElementById('lb-total-clicks').textContent = `${totalScore} pts (${totalOrders} orders, ${totalQuotes} quotes, ${totalSaves} saves)`;
     document.getElementById('lb-market-avg').textContent = marketAvg > 0 ? formatPrice(marketAvg) : '--';
     document.getElementById('lb-top3-pct').textContent = `${top3Pct}%`;
-    document.getElementById('lb-total-opportunity').textContent = data.summary?.totalOpportunity ? `${data.summary.totalOpportunity.toLocaleString()}` : '--';
+    document.getElementById('lb-total-opportunity').textContent = data.summary?.totalOpportunity != null ? `${data.summary.totalOpportunity.toLocaleString()}` : '--';
 
     // Quick wins from API
     const quickWinsList = document.getElementById('quick-wins-list');
@@ -2339,7 +2339,8 @@ async function loadLeaderboard() {
     if (data.quickWins && data.quickWins.length > 0) {
       data.quickWins.forEach(win => {
         const priorityClass = win.priority === 'high' ? 'urgent' : '';
-        quickWinsList.innerHTML += `<div class="quick-win ${priorityClass}">${win.title}: ${win.insight}</div>`;
+        const supplierList = win.suppliers?.length ? ` (${win.suppliers.join(', ')})` : '';
+        quickWinsList.innerHTML += `<div class="quick-win ${priorityClass}">${win.title}: ${win.insight}${supplierList}</div>`;
       });
     } else {
       quickWinsList.innerHTML = '<div class="quick-win success">✅ No urgent issues detected</div>';
