@@ -216,22 +216,34 @@ router.get('/', requireAuth, async (req, res) => {
     let blockedSites = [];
     try {
       const [result] = await sequelize.query(`
+        WITH latest_prices AS (
+          SELECT DISTINCT ON (supplier_id)
+            supplier_id,
+            price_per_gallon AS current_price,
+            scraped_at
+          FROM supplier_prices
+          WHERE is_valid = true
+          ORDER BY supplier_id, scraped_at DESC
+        )
         SELECT
-          id,
-          name,
-          website,
-          city,
-          state,
-          scrape_status as status,
-          consecutive_scrape_failures,
-          last_scrape_failure_at,
-          scrape_cooldown_until as cooldown_until,
+          s.id,
+          s.name,
+          s.website,
+          s.city,
+          s.state,
+          s.scrape_status as status,
+          s.consecutive_scrape_failures,
+          s.last_scrape_failure_at,
+          s.scrape_cooldown_until as cooldown_until,
+          lp.current_price,
+          lp.scraped_at,
           'scrape_blocked' as review_reason
-        FROM suppliers
-        WHERE active = true
-          AND website IS NOT NULL
-          AND allow_price_display = true
-          AND (scrape_status = 'cooldown' OR scrape_status = 'phone_only')
+        FROM suppliers s
+        LEFT JOIN latest_prices lp ON lp.supplier_id = s.id
+        WHERE s.active = true
+          AND s.website IS NOT NULL
+          AND s.allow_price_display = true
+          AND (s.scrape_status = 'cooldown' OR s.scrape_status = 'phone_only')
       `);
       blockedSites = result;
     } catch (err) {
