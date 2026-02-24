@@ -3609,7 +3609,7 @@ router.get('/leaderboard', async (req, res) => {
         ? Math.round((missedClicks * ORDER_RATE * AVG_FILL) / weeks)
         : 0;
       const confidence = areaClicks >= 100 ? 'high' : areaClicks >= MIN_AREA_CLICKS ? 'medium' : 'low';
-      const clickShare = areaClicks > 0 ? Math.round((ownClicks / areaClicks) * 100) : 0;
+      const clickShare = areaClicks > 0 ? Math.min(Math.round((ownClicks / areaClicks) * 100), 100) : 0;
 
       const signals = [];
       let primarySignal = null;
