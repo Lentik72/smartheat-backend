@@ -453,6 +453,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/072-add-westchester-putnam-suppliers', label: 'Westchester/Putnam suppliers' },
           { path: './src/migrations/073-cleanup-scrapeconfig-duplicates', label: 'ScrapeConfigSync duplicate cleanup' },
           { path: './src/migrations/074-add-daily-platform-metrics', label: 'Daily platform metrics' },
+          { path: './src/migrations/075-supplier-data-integrity', label: 'Supplier data integrity' },
         ];
 
         let migrationErrors = 0;

@@ -147,7 +147,7 @@ class ScrapeConfigSync {
 
           stats.updated++;
         } else {
-          // Create new supplier
+          // Create new supplier — inactive by default until vetted via migration
           const name = cfg.name || this.domainToName(normalizedDomain);
 
           await this.sequelize.query(`
@@ -156,7 +156,7 @@ class ScrapeConfigSync {
               active, source, created_at, updated_at
             ) VALUES (
               gen_random_uuid(), $1, $2, $3, $4,
-              true, 'scrape_config_sync', NOW(), NOW()
+              false, 'scrape_config_sync', NOW(), NOW()
             )
           `, {
             bind: [
