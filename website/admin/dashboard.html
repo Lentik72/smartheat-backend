@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1771871185">
+  <link rel="stylesheet" href="dashboard.css?v=1772006400">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -74,49 +74,16 @@
             <span class="nav-item-icon">🏢</span>
             <span class="nav-item-label">Suppliers</span>
           </button>
+          <button class="nav-item" data-tab="website">
+            <span class="nav-item-icon">🌐</span>
+            <span class="nav-item-label">Website</span>
+          </button>
           <button class="nav-item" data-tab="settings">
             <span class="nav-item-icon">⚙️</span>
             <span class="nav-item-label">Settings</span>
           </button>
         </div>
 
-        <!-- Legacy Section (Collapsed by default) -->
-        <div class="nav-section collapsed" id="legacy-nav-section">
-          <div class="nav-section-header" id="legacy-toggle">
-            <span class="nav-section-title">Legacy Views</span>
-            <span class="nav-section-toggle">▼</span>
-          </div>
-          <div class="nav-items">
-            <button class="nav-item" data-tab="overview">
-              <span class="nav-item-icon">📋</span>
-              <span class="nav-item-label">Overview</span>
-            </button>
-            <button class="nav-item" data-tab="website">
-              <span class="nav-item-icon">🌐</span>
-              <span class="nav-item-label">Website</span>
-            </button>
-            <button class="nav-item" data-tab="searches">
-              <span class="nav-item-icon">🔍</span>
-              <span class="nav-item-label">Searches</span>
-            </button>
-            <button class="nav-item" data-tab="clicks">
-              <span class="nav-item-icon">👆</span>
-              <span class="nav-item-label">Clicks</span>
-            </button>
-            <button class="nav-item" data-tab="prices">
-              <span class="nav-item-icon">💰</span>
-              <span class="nav-item-label">Prices</span>
-            </button>
-            <button class="nav-item" data-tab="ios-app">
-              <span class="nav-item-icon">📱</span>
-              <span class="nav-item-label">iOS App</span>
-            </button>
-            <button class="nav-item" data-tab="map">
-              <span class="nav-item-icon">📍</span>
-              <span class="nav-item-label">Map</span>
-            </button>
-          </div>
-        </div>
       </nav>
 
       <div class="sidebar-footer">
@@ -186,45 +153,6 @@
         <button class="banner-dismiss" id="dismiss-banner">×</button>
       </div>
 
-      <!-- Summary Cards (Combined Business Metrics) -->
-      <div class="cards" id="overview-cards">
-        <div class="card" id="card-users">
-          <div class="card-label">Total Users</div>
-          <div class="card-value" id="total-users">--</div>
-          <div class="card-sub" id="users-breakdown">-- iOS / -- website</div>
-          <div class="card-freshness" id="users-freshness">--</div>
-        </div>
-        <div class="card" id="card-deliveries">
-          <div class="card-label">Deliveries Shared</div>
-          <div class="card-value" id="total-deliveries">--</div>
-          <div class="card-sub" id="deliveries-breakdown">Community price data</div>
-          <div class="card-freshness" id="deliveries-freshness">--</div>
-        </div>
-        <div class="card" id="card-deliveries-logged">
-          <div class="card-label">Deliveries Logged</div>
-          <div class="card-value" id="total-deliveries-logged">--</div>
-          <div class="card-sub" id="deliveries-logged-breakdown">Local app logging</div>
-          <div class="card-freshness" id="deliveries-logged-freshness">--</div>
-        </div>
-        <div class="card" id="card-revenue">
-          <div class="card-label">Est. Revenue</div>
-          <div class="card-value" id="est-revenue">--</div>
-          <div class="card-sub" id="revenue-breakdown">From supplier clicks</div>
-          <div class="card-freshness" id="revenue-freshness">--</div>
-        </div>
-        <div class="card" id="card-android">
-          <div class="card-label">Android Waitlist</div>
-          <div class="card-value" id="waitlist-total">--</div>
-          <div class="card-sub" id="waitlist-recent">+-- this week</div>
-          <div class="card-freshness" id="waitlist-freshness">--</div>
-        </div>
-      </div>
-
-      <!-- Alert Banner -->
-      <div id="alert-banner" class="alert hidden">
-        <span id="alert-text"></span>
-        <a href="#" id="alert-action">View</a>
-      </div>
 
       <!-- Legacy Tabs (hidden with sidebar nav) -->
       <nav class="tabs">
@@ -358,80 +286,105 @@
               </div>
             </div>
 
-            <!-- MARKET PULSE (inline sparklines) -->
-            <div class="cc-pulse-row">
-              <div class="cc-pulse-item">
-                <div class="cc-pulse-head">
-                  <span class="cc-pulse-label">Median Price</span>
-                  <span class="cc-pulse-val" id="cc-pulse-price-val"></span>
+            <!-- MARKET MOMENTUM -->
+            <div class="cc-mid-grid">
+              <div class="cc-section">
+                <div class="cc-section-header">
+                  <div class="cc-section-title">Demand Trend <span class="cc-section-sub" id="cc-demand-period"></span></div>
+                  <span class="cc-conversion-stat" id="cc-conversion-stat"></span>
                 </div>
-                <div class="cc-pulse-chart-wrap"><canvas id="cc-chart-price"></canvas></div>
+                <div class="cc-chart-wrap">
+                  <canvas id="cc-demand-trend-chart"></canvas>
+                  <div class="cc-empty hidden" id="cc-demand-empty"></div>
+                </div>
               </div>
-              <div class="cc-pulse-item">
-                <div class="cc-pulse-head">
-                  <span class="cc-pulse-label">Demand Volume</span>
-                  <span class="cc-pulse-val" id="cc-pulse-demand-val"></span>
+              <div class="cc-section">
+                <div class="cc-section-header">
+                  <div class="cc-section-title">Channel Mix <span class="cc-section-sub" id="cc-channel-period"></span></div>
+                  <span class="cc-channel-stat" id="cc-channel-stats"></span>
                 </div>
-                <div class="cc-pulse-chart-wrap"><canvas id="cc-chart-demand"></canvas></div>
-              </div>
-              <div class="cc-pulse-item">
-                <div class="cc-pulse-head">
-                  <span class="cc-pulse-label">Call Volume</span>
-                  <span class="cc-pulse-val" id="cc-pulse-calls-val"></span>
+                <div class="cc-chart-wrap">
+                  <canvas id="cc-channel-mix-chart"></canvas>
+                  <div class="cc-empty hidden" id="cc-channel-empty"></div>
                 </div>
-                <div class="cc-pulse-chart-wrap"><canvas id="cc-chart-calls"></canvas></div>
               </div>
             </div>
 
-            <!-- DEMAND DENSITY + COMMUNITY DELIVERIES -->
-            <div class="cc-density-grid">
-              <div class="cc-section">
-                <div class="cc-section-title">Demand Density <span class="cc-section-sub">Top 25 ZIPs (7d)</span></div>
-                <div class="cc-density-table-wrap">
-                  <table class="cc-density-table">
-                    <thead>
-                      <tr><th>ZIP</th><th>Clicks</th><th>Calls</th><th>Score</th><th>Days</th><th>Suppliers</th><th>Fresh</th><th>Status</th></tr>
-                    </thead>
-                    <tbody id="cc-density-tbody">
-                      <tr><td colspan="8" class="cc-diag-empty">Awaiting first snapshot</td></tr>
-                    </tbody>
-                  </table>
-                </div>
+            <!-- PRICE INTELLIGENCE -->
+            <div class="cc-section cc-price-intel">
+              <div class="cc-price-intel-header">
+                <div class="cc-section-title">Price Intelligence</div>
+                <div class="cc-price-intel-stats" id="cc-price-intel-stats"></div>
               </div>
-              <div class="cc-section">
-                <div class="cc-section-title">Community Deliveries</div>
-                <div class="cc-community-metrics" id="cc-community-metrics">
-                  <div class="cc-comm-stat"><div class="cc-comm-label">Total <span class="cc-liq-window">7d</span></div><div class="cc-comm-value" id="cc-comm-7d">&mdash;</div></div>
-                  <div class="cc-comm-stat"><div class="cc-comm-label">Total <span class="cc-liq-window">30d</span></div><div class="cc-comm-value" id="cc-comm-30d">&mdash;</div></div>
-                  <div class="cc-comm-stat"><div class="cc-comm-label">Heating Oil <span class="cc-liq-window">30d</span></div><div class="cc-comm-value" id="cc-comm-oil">&mdash;</div></div>
-                  <div class="cc-comm-stat"><div class="cc-comm-label">Propane <span class="cc-liq-window">30d</span></div><div class="cc-comm-value" id="cc-comm-propane">&mdash;</div></div>
-                </div>
-                <div class="cc-comm-growth" id="cc-comm-growth"></div>
-                <div class="cc-comm-sample hidden" id="cc-comm-sample">Low sample size</div>
-                <div class="cc-comm-topzips-title">Top ZIPs (30d)</div>
-                <div class="cc-comm-topzips" id="cc-comm-topzips"></div>
+              <div class="cc-chart-wrap cc-chart-wide">
+                <canvas id="cc-price-band-chart"></canvas>
+                <div class="cc-empty hidden" id="cc-price-empty"></div>
               </div>
             </div>
 
-            <!-- BOTTOM: Command Board + Market Movers -->
-            <div class="cc-bottom-grid">
-              <div class="cc-section">
-                <div class="cc-section-title">Command Board</div>
-                <div class="cc-command-list" id="cc-priority-list">
-                  <div class="cc-command-empty">No actions needed</div>
-                </div>
-              </div>
-              <div class="cc-section">
-                <div class="cc-section-title">Market Movers</div>
-                <div class="cc-movers-split">
-                  <div class="cc-movers-col">
-                    <div class="cc-movers-colhead">INCREASES</div>
-                    <div id="cc-movers-up" class="cc-movers-list"></div>
+            <!-- DEMAND DENSITY + COMMUNITY DELIVERIES (collapsible) -->
+            <div class="cc-collapsible collapsed" id="cc-section-density">
+              <button class="cc-collapse-toggle" aria-expanded="false">
+                <span class="toggle-icon">▼</span> Demand Density & Deliveries
+              </button>
+              <div class="cc-collapse-content">
+                <div class="cc-density-grid">
+                  <div class="cc-section">
+                    <div class="cc-section-title">Demand Density <span class="cc-section-sub">Top 25 ZIPs (7d)</span></div>
+                    <div class="cc-density-table-wrap">
+                      <table class="cc-density-table">
+                        <thead>
+                          <tr><th>ZIP</th><th>Clicks</th><th>Calls</th><th>Score</th><th>Days</th><th>Suppliers</th><th>Fresh</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="cc-density-tbody">
+                          <tr><td colspan="8" class="cc-diag-empty">Awaiting first snapshot</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                  <div class="cc-movers-divider"></div>
-                  <div class="cc-movers-col">
-                    <div class="cc-movers-colhead">DROPS</div>
-                    <div id="cc-movers-down" class="cc-movers-list"></div>
+                  <div class="cc-section">
+                    <div class="cc-section-title">Community Deliveries</div>
+                    <div class="cc-community-metrics" id="cc-community-metrics">
+                      <div class="cc-comm-stat"><div class="cc-comm-label">Total <span class="cc-liq-window">7d</span></div><div class="cc-comm-value" id="cc-comm-7d">&mdash;</div></div>
+                      <div class="cc-comm-stat"><div class="cc-comm-label">Total <span class="cc-liq-window">30d</span></div><div class="cc-comm-value" id="cc-comm-30d">&mdash;</div></div>
+                      <div class="cc-comm-stat"><div class="cc-comm-label">Heating Oil <span class="cc-liq-window">30d</span></div><div class="cc-comm-value" id="cc-comm-oil">&mdash;</div></div>
+                      <div class="cc-comm-stat"><div class="cc-comm-label">Propane <span class="cc-liq-window">30d</span></div><div class="cc-comm-value" id="cc-comm-propane">&mdash;</div></div>
+                    </div>
+                    <div class="cc-comm-growth" id="cc-comm-growth"></div>
+                    <div class="cc-comm-sample hidden" id="cc-comm-sample">Low sample size</div>
+                    <div class="cc-comm-topzips-title">Top ZIPs (30d)</div>
+                    <div class="cc-comm-topzips" id="cc-comm-topzips"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- BOTTOM: Command Board + Market Movers (collapsible) -->
+            <div class="cc-collapsible collapsed" id="cc-section-board">
+              <button class="cc-collapse-toggle" aria-expanded="false">
+                <span class="toggle-icon">▼</span> Command Board & Market Movers
+              </button>
+              <div class="cc-collapse-content">
+                <div class="cc-bottom-grid">
+                  <div class="cc-section">
+                    <div class="cc-section-title">Command Board</div>
+                    <div class="cc-command-list" id="cc-priority-list">
+                      <div class="cc-command-empty">No actions needed</div>
+                    </div>
+                  </div>
+                  <div class="cc-section">
+                    <div class="cc-section-title">Market Movers</div>
+                    <div class="cc-movers-split">
+                      <div class="cc-movers-col">
+                        <div class="cc-movers-colhead">INCREASES</div>
+                        <div id="cc-movers-up" class="cc-movers-list"></div>
+                      </div>
+                      <div class="cc-movers-divider"></div>
+                      <div class="cc-movers-col">
+                        <div class="cc-movers-colhead">DROPS</div>
+                        <div id="cc-movers-down" class="cc-movers-list"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1218,6 +1171,16 @@
             <div id="map-container" style="height: 450px;"></div>
           </div>
 
+          <!-- Price Spread by State -->
+          <div class="panel full-width">
+            <h3>Price Spread by State</h3>
+            <p class="panel-description">Higher spread = more pricing diversity. States sorted by gap between cheapest and most expensive supplier.</p>
+            <div style="height: 280px; position: relative;">
+              <canvas id="coverage-spread-chart"></canvas>
+              <div class="cc-empty hidden" id="coverage-spread-empty"></div>
+            </div>
+          </div>
+
           <!-- State Breakdown and Top Locations side by side -->
           <div class="coverage-tables-grid">
             <div class="panel">
@@ -1412,38 +1375,6 @@
         </div>
       </section>
 
-      <!-- ============================================================ -->
-      <!-- LEGACY TABS (Hidden, kept for backward compatibility) -->
-      <!-- ============================================================ -->
-      <section id="tab-recommendations" class="tab-panel hidden-legacy">
-        <div class="recommendations-container">
-          <div id="recommendations-loading" class="loading">Generating recommendations...</div>
-
-          <div id="recommendations-content" class="hidden">
-            <!-- HIGH Priority -->
-            <div class="priority-section" id="section-high">
-              <h3 class="priority-header high">HIGH PRIORITY</h3>
-              <div class="recommendation-cards" id="cards-high"></div>
-            </div>
-
-            <!-- MEDIUM Priority -->
-            <div class="priority-section" id="section-medium">
-              <h3 class="priority-header medium">MEDIUM PRIORITY</h3>
-              <div class="recommendation-cards" id="cards-medium"></div>
-            </div>
-
-            <!-- LOW / OPPORTUNITY -->
-            <div class="priority-section" id="section-low">
-              <h3 class="priority-header low">OPPORTUNITIES</h3>
-              <div class="recommendation-cards" id="cards-low"></div>
-            </div>
-          </div>
-
-          <div id="no-recommendations" class="hidden">
-            <p class="success-message">All systems healthy - no urgent recommendations</p>
-          </div>
-        </div>
-      </section>
 
       <!-- Website Tab (GA4 Data) -->
       <section id="tab-website" class="tab-panel">
@@ -1694,631 +1625,14 @@
         </div>
       </section>
 
-      <!-- Acquisition Tab -->
-      <section id="tab-acquisition" class="tab-panel">
-        <div class="panel-grid">
-          <div class="panel">
-            <h3>Total Sessions</h3>
-            <div id="acq-sessions" class="stat-large">--</div>
-            <div class="hint" id="acq-sessions-source">From GA4</div>
-          </div>
-          <div class="panel">
-            <h3>Organic %</h3>
-            <div id="acq-organic" class="stat-large">--%</div>
-            <div class="hint">Target: 30%+</div>
-          </div>
-          <div class="panel">
-            <h3>Search → Click Rate</h3>
-            <div id="acq-conversion" class="stat-large">--%</div>
-          </div>
-          <div class="panel full-width">
-            <h3>Traffic Sources</h3>
-            <canvas id="traffic-sources-chart"></canvas>
-            <div id="traffic-sources-note" class="hint"></div>
-          </div>
-          <div class="panel full-width">
-            <h3>Daily Conversion Funnel</h3>
-            <canvas id="acquisition-funnel-chart"></canvas>
-          </div>
-          <div class="panel full-width">
-            <h3>Top Converting Locations</h3>
-            <table id="converting-locations-table">
-              <thead>
-                <tr>
-                  <th>ZIP</th>
-                  <th>City</th>
-                  <th>Searches</th>
-                  <th>Clicks</th>
-                  <th>Conversion</th>
-                </tr>
-              </thead>
-              <tbody id="converting-locations-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
 
-      <!-- Android Decision Tab (Legacy) -->
-      <section id="tab-android" class="tab-panel">
-        <div class="panel-grid">
-          <div class="panel decision-card" id="legacy-android-decision">
-            <h3>Android Decision</h3>
-            <div id="legacy-android-status" class="decision-status">WAIT</div>
-            <div id="legacy-android-message" class="decision-message">Loading...</div>
-          </div>
-          <div class="panel">
-            <h3>Waitlist Total</h3>
-            <div id="android-waitlist" class="stat-large">--</div>
-            <div class="hint">Target: 200</div>
-          </div>
-          <div class="panel">
-            <h3>Weekly Growth</h3>
-            <div id="android-growth" class="stat-large">--%</div>
-            <div class="hint">Target: 5%+</div>
-          </div>
-          <div class="panel">
-            <h3>PWA Installs</h3>
-            <div id="android-pwa" class="stat-large">--</div>
-            <div class="hint" id="android-pwa-rate">--% conversion</div>
-          </div>
-          <div class="panel full-width">
-            <h3>PWA Funnel</h3>
-            <div class="pwa-funnel">
-              <div class="pwa-funnel-step">
-                <div class="pwa-funnel-value" id="pwa-prompts">--</div>
-                <div class="pwa-funnel-label">Install Prompts</div>
-              </div>
-              <div class="pwa-funnel-arrow">→</div>
-              <div class="pwa-funnel-step">
-                <div class="pwa-funnel-value" id="pwa-installs-detail">--</div>
-                <div class="pwa-funnel-label">Installs</div>
-              </div>
-              <div class="pwa-funnel-arrow">→</div>
-              <div class="pwa-funnel-step">
-                <div class="pwa-funnel-value" id="pwa-launches">--</div>
-                <div class="pwa-funnel-label">App Launches</div>
-              </div>
-            </div>
-            <div class="hint" style="text-align: center; margin-top: 1rem;">PWA serves Android users until native app launches</div>
-          </div>
-          <div class="panel full-width">
-            <h3>Website Visitors by Platform (from GA4)</h3>
-            <div class="platform-breakdown" id="platform-breakdown">
-              <div class="platform-item">
-                <span class="platform-icon">🍎</span>
-                <span class="platform-name">iOS</span>
-                <span class="platform-value" id="platform-ios">--%</span>
-                <span class="platform-users" id="platform-ios-users">-- users</span>
-              </div>
-              <div class="platform-item">
-                <span class="platform-icon">🤖</span>
-                <span class="platform-name">Android</span>
-                <span class="platform-value" id="platform-android">--%</span>
-                <span class="platform-users" id="platform-android-users">-- users</span>
-              </div>
-              <div class="platform-item">
-                <span class="platform-icon">🖥️</span>
-                <span class="platform-name">Desktop</span>
-                <span class="platform-value" id="platform-desktop">--%</span>
-                <span class="platform-users" id="platform-desktop-users">-- users</span>
-              </div>
-            </div>
-            <div class="hint" id="platform-note"></div>
-          </div>
-          <div class="panel full-width">
-            <h3>Threshold Status</h3>
-            <div class="thresholds-grid" id="thresholds-grid">
-              <!-- Filled by JS -->
-            </div>
-          </div>
-          <div class="panel full-width">
-            <h3>Weekly Waitlist Trend</h3>
-            <canvas id="android-trend-chart"></canvas>
-          </div>
-          <div class="panel full-width">
-            <h3>Projection</h3>
-            <div id="android-projection" class="projection-box">
-              <div class="projection-item">
-                <span class="projection-label">Weeks to 200:</span>
-                <span class="projection-value" id="weeks-to-200">--</span>
-              </div>
-              <div class="projection-item">
-                <span class="projection-label">Expected launch users (30% conv):</span>
-                <span class="projection-value" id="expected-users">--</span>
-              </div>
-              <div class="projection-item">
-                <span class="projection-label">Break-even threshold:</span>
-                <span class="projection-value">100 active users</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- Overview Tab -->
-      <section id="tab-overview" class="tab-panel">
-        <div class="overview-grid">
-          <!-- Top Row: Key Metrics -->
-          <div class="overview-metrics">
-            <div class="metric-card">
-              <div class="metric-icon">🏆</div>
-              <div class="metric-content">
-                <div class="metric-label">Top Supplier</div>
-                <div class="metric-value" id="top-supplier">--</div>
-              </div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-icon">📍</div>
-              <div class="metric-content">
-                <div class="metric-label">Total Searched</div>
-                <div class="metric-value" id="total-searched">-- ZIPs</div>
-                <div class="metric-hint">Unique ZIPs in period</div>
-              </div>
-            </div>
-          </div>
 
-          <!-- Coverage Gap Cards -->
-          <div class="coverage-cards">
-            <div class="coverage-card danger clickable" id="panel-no-suppliers" title="Click to view ZIPs">
-              <div class="coverage-icon">⚠️</div>
-              <div class="coverage-content">
-                <div class="coverage-label">No Suppliers</div>
-                <div class="coverage-value" id="true-coverage-gaps">-- ZIPs</div>
-                <div class="coverage-hint">Users searching areas with zero coverage</div>
-              </div>
-              <div class="coverage-action">View List →</div>
-            </div>
-            <div class="coverage-card warning clickable" id="panel-low-engagement" title="Click to view ZIPs">
-              <div class="coverage-icon">📉</div>
-              <div class="coverage-content">
-                <div class="coverage-label">Low Engagement</div>
-                <div class="coverage-value" id="engagement-gaps">-- ZIPs</div>
-                <div class="coverage-hint">Has suppliers but no clicks yet</div>
-              </div>
-              <div class="coverage-action">View List →</div>
-            </div>
-          </div>
 
-          <!-- Conversion Funnel -->
-          <div class="funnel-section">
-            <h3>Conversion Funnel</h3>
-            <div class="funnel-visual">
-              <div class="funnel-step">
-                <div class="funnel-bar searches-bar" id="funnel-searches-bar"></div>
-                <div class="funnel-label">
-                  <span class="funnel-count" id="funnel-searches">--</span>
-                  <span class="funnel-name">Searches</span>
-                </div>
-              </div>
-              <div class="funnel-arrow">→</div>
-              <div class="funnel-step">
-                <div class="funnel-bar clicks-bar" id="funnel-clicks-bar"></div>
-                <div class="funnel-label">
-                  <span class="funnel-count" id="funnel-clicks">--</span>
-                  <span class="funnel-name">Clicks</span>
-                </div>
-              </div>
-              <div class="funnel-rate">
-                <span id="funnel-rate">--%</span> conversion
-              </div>
-            </div>
-          </div>
 
-          <!-- Price Alerts -->
-          <div class="panel full-width" id="price-alerts-panel" style="display: none;">
-            <h3>⚠️ Price Alerts</h3>
-            <div id="price-alerts-content"></div>
-          </div>
 
-          <!-- Supplier Signals Table -->
-          <div class="panel full-width">
-            <h3>Supplier Signals</h3>
-            <table id="supplier-signals-table">
-              <thead>
-                <tr>
-                  <th>Supplier</th>
-                  <th>Clicks</th>
-                  <th>Price</th>
-                  <th>vs Market</th>
-                  <th>Est. Revenue</th>
-                  <th>Signal</th>
-                </tr>
-              </thead>
-              <tbody id="supplier-signals-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
 
-      <!-- Searches Tab -->
-      <section id="tab-searches" class="tab-panel">
-        <div class="panel-grid">
-          <div class="panel">
-            <h3>Total Searches</h3>
-            <div id="searches-total" class="stat-large">--</div>
-            <div class="hint" id="searches-avg">-- avg/day</div>
-          </div>
-          <div class="panel">
-            <h3>Unique ZIPs</h3>
-            <div id="searches-zips" class="stat-large">--</div>
-          </div>
-          <div class="panel full-width">
-            <h3>Daily Search Volume</h3>
-            <canvas id="searches-chart"></canvas>
-          </div>
-          <div class="panel">
-            <h3>Peak Hours</h3>
-            <canvas id="peak-hours-chart"></canvas>
-          </div>
-          <div class="panel">
-            <h3>Top Searched ZIPs</h3>
-            <table id="top-zips-table">
-              <thead>
-                <tr>
-                  <th>ZIP</th>
-                  <th>City</th>
-                  <th>State</th>
-                  <th>Searches</th>
-                </tr>
-              </thead>
-              <tbody id="top-zips-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
 
-      <!-- iOS App Tab -->
-      <section id="tab-ios-app" class="tab-panel">
-        <div class="panel-grid">
-          <div class="panel">
-            <h3>App Installs</h3>
-            <div id="ios-installs" class="stat-large">--</div>
-            <div class="hint">Total installs</div>
-          </div>
-          <div class="panel">
-            <h3>Monthly Active Users</h3>
-            <div id="ios-mau" class="stat-large">--</div>
-            <div class="hint" id="ios-mau-percent">--% of installs</div>
-          </div>
-          <div class="panel">
-            <h3>Week 1 Retention</h3>
-            <div id="ios-retention" class="stat-large retention-stat">--%</div>
-            <div class="hint">Target: 30%+</div>
-          </div>
-          <div class="panel">
-            <h3>Deliveries Logged (Local)</h3>
-            <div id="ios-deliveries" class="stat-large">--</div>
-            <div class="hint">App logging events</div>
-          </div>
-          <div class="panel">
-            <h3>Deliveries Shared</h3>
-            <div id="ios-deliveries-shared" class="stat-large">--</div>
-            <div class="hint">Community contributions</div>
-          </div>
-          <div class="panel full-width">
-            <h3>App Event Breakdown</h3>
-            <div class="ios-events-grid" id="ios-events-grid">
-              <div class="event-item">
-                <span class="event-name">Suppliers Saved</span>
-                <span class="event-count" id="ios-event-saves">--</span>
-              </div>
-              <div class="event-item">
-                <span class="event-name">Suppliers Viewed</span>
-                <span class="event-count" id="ios-event-views">--</span>
-              </div>
-              <div class="event-item">
-                <span class="event-name">Orders Placed</span>
-                <span class="event-count" id="ios-event-orders">--</span>
-              </div>
-              <div class="event-item">
-                <span class="event-name">Quotes Requested</span>
-                <span class="event-count" id="ios-event-quotes">--</span>
-              </div>
-              <div class="event-item">
-                <span class="event-name">Directory Searches</span>
-                <span class="event-count" id="ios-event-searches">--</span>
-              </div>
-              <div class="event-item">
-                <span class="event-name">Deliveries Logged</span>
-                <span class="event-count" id="ios-event-deliveries">--</span>
-              </div>
-            </div>
-          </div>
-          <div class="panel full-width">
-            <h3>Daily App Engagement</h3>
-            <canvas id="ios-chart"></canvas>
-          </div>
-          <div class="panel full-width">
-            <h3>Top Suppliers in App</h3>
-            <table id="ios-suppliers-table">
-              <thead>
-                <tr>
-                  <th>Supplier</th>
-                  <th>Users</th>
-                  <th>Saved</th>
-                  <th>Viewed</th>
-                  <th>Orders</th>
-                  <th>Quotes</th>
-                  <th>Total</th>
-                  <th>Flag</th>
-                </tr>
-              </thead>
-              <tbody id="ios-suppliers-body"></tbody>
-            </table>
-          </div>
-
-          <!-- Add New Supplier Form -->
-          <div class="panel full-width" id="add-supplier-panel">
-            <h3>Add New Supplier</h3>
-            <p class="panel-description">Manually add a supplier to the database after researching their contact info.</p>
-            <form id="add-supplier-form">
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Name *</label>
-                  <input type="text" name="name" required placeholder="Dragon Fuel LLC">
-                </div>
-                <div class="form-group">
-                  <label>State *</label>
-                  <input type="text" name="state" required placeholder="CT" maxlength="2" style="width: 60px;">
-                </div>
-                <div class="form-group">
-                  <label>City</label>
-                  <input type="text" name="city" placeholder="Stratford">
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Phone</label>
-                  <input type="text" name="phone" placeholder="(203) 220-2243">
-                </div>
-                <div class="form-group">
-                  <label>Website</label>
-                  <input type="text" name="website" placeholder="dragonfuelllc.com">
-                </div>
-                <div class="form-group">
-                  <label>Email</label>
-                  <input type="email" name="email" placeholder="info@example.com">
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group" style="flex: 2;">
-                  <label>Address</label>
-                  <input type="text" name="addressLine1" placeholder="29 Minor Ave">
-                </div>
-                <div class="form-group">
-                  <label>Fuel Types</label>
-                  <select name="fuelType">
-                    <option value="heating_oil">Heating Oil</option>
-                    <option value="propane">Propane</option>
-                    <option value="both">Both</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group" style="flex: 2;">
-                  <label>Notes</label>
-                  <input type="text" name="notes" placeholder="Optional notes about this supplier">
-                </div>
-                <div class="form-group">
-                  <label>Options</label>
-                  <div style="display: flex; gap: 1rem; padding-top: 0.25rem;">
-                    <label style="font-weight: normal; display: flex; align-items: center; gap: 0.25rem;">
-                      <input type="checkbox" name="active" checked> Active
-                    </label>
-                    <label style="font-weight: normal; display: flex; align-items: center; gap: 0.25rem;">
-                      <input type="checkbox" name="allowPriceDisplay" checked> Show Price
-                    </label>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <button type="submit" class="btn-primary" id="add-supplier-btn">Add Supplier</button>
-                </div>
-              </div>
-              <div id="add-supplier-status" style="margin-top: 0.5rem; display: none;"></div>
-            </form>
-          </div>
-
-          <!-- Missing Suppliers - User-mentioned suppliers not in our DB -->
-          <div class="panel full-width">
-            <h3>Missing Suppliers <span class="badge" id="missing-count">0</span></h3>
-            <p class="panel-description">Suppliers users mention that we don't have. Could be new leads or contract-only companies.</p>
-            <table id="missing-suppliers-table">
-              <thead>
-                <tr>
-                  <th>Supplier Name</th>
-                  <th>Mentions</th>
-                  <th>Users</th>
-                  <th>Last Seen</th>
-                  <th>Type</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="missing-suppliers-body"></tbody>
-            </table>
-          </div>
-
-          <!-- Near Matches - Possible alias/name variations -->
-          <div class="panel full-width" id="near-matches-panel" style="display: none;">
-            <h3>Name Variations <span class="badge warning" id="near-match-count">0</span></h3>
-            <p class="panel-description">Users entered these names but we have similar suppliers. Click "Add Alias" to link them.</p>
-            <table id="near-matches-table">
-              <thead>
-                <tr>
-                  <th>User Entered</th>
-                  <th>Mentions</th>
-                  <th>Possible Match</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="near-matches-body"></tbody>
-            </table>
-          </div>
-
-          <!-- Supplier Aliases - Configured name mappings -->
-          <div class="panel full-width" id="aliases-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <h3 style="margin: 0;">Supplier Aliases <span class="badge" id="alias-count">0</span></h3>
-              <button class="btn-small btn-primary" id="add-alias-btn">+ Add Alias</button>
-            </div>
-            <p class="panel-description">Alternate names that map to canonical supplier names. E.g., "Castle Fuel" → "Castle Fuel Inc."</p>
-            <table id="aliases-table">
-              <thead>
-                <tr>
-                  <th>Alias (Search Term)</th>
-                  <th>Canonical Name</th>
-                  <th>Supplier Location</th>
-                  <th>Scope</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="aliases-body"></tbody>
-            </table>
-          </div>
-
-          <!-- Firebase Setup Guide (shown when not configured) -->
-          <div class="panel full-width" id="ios-firebase-setup" style="display: none;">
-            <div class="setup-guide">
-              <h3>Connect Firebase Analytics</h3>
-              <p>Enable Firebase API to see detailed iOS app analytics including retention cohorts, user journeys, and event funnels.</p>
-
-              <h4>Option 1: Firebase GA4 Property (Recommended - No BigQuery required)</h4>
-              <ol>
-                <li>Go to <a href="https://console.firebase.google.com/project/smartheat-e0729/settings/integrations/analytics" target="_blank">Firebase Console &gt; Project settings &gt; Integrations &gt; Google Analytics</a></li>
-                <li>Find the linked GA4 property ID (starts with numbers, e.g., <code>123456789</code>)</li>
-                <li>Set <code>FIREBASE_GA4_PROPERTY_ID</code> env var with this property ID</li>
-                <li>Ensure <code>FIREBASE_SERVICE_ACCOUNT_JSON</code> is set (same as below)</li>
-              </ol>
-
-              <h4>Option 2: BigQuery Export (Requires enabling BigQuery in Firebase)</h4>
-              <ol>
-                <li>Go to <a href="https://console.firebase.google.com/project/smartheat-e0729/settings/serviceaccounts/adminsdk" target="_blank">Firebase Console &gt; Service Accounts</a></li>
-                <li>Click "Generate new private key"</li>
-                <li>Download the JSON file</li>
-                <li>Set <code>FIREBASE_SERVICE_ACCOUNT_JSON</code> env var with the raw JSON content</li>
-                <li>Set <code>FIREBASE_PROJECT_ID=smartheat-e0729</code></li>
-                <li>Enable BigQuery export in <a href="https://console.firebase.google.com/project/smartheat-e0729/settings/integrations/bigquery" target="_blank">Firebase &gt; Integrations &gt; BigQuery</a></li>
-              </ol>
-              <div class="setup-actions">
-                <a href="https://console.firebase.google.com/project/smartheat-e0729/analytics" target="_blank" class="btn">Open Firebase Console</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Clicks Tab -->
-      <section id="tab-clicks" class="tab-panel">
-        <div class="panel-grid">
-          <div class="panel full-width">
-            <h3>Daily Clicks</h3>
-            <canvas id="clicks-chart"></canvas>
-          </div>
-          <div class="panel">
-            <h3>By Page Source</h3>
-            <canvas id="page-source-chart"></canvas>
-          </div>
-          <div class="panel">
-            <h3>By Device</h3>
-            <canvas id="device-chart"></canvas>
-          </div>
-          <div class="panel full-width">
-            <h3>Top Suppliers by Clicks</h3>
-            <table id="clicks-by-supplier-table">
-              <thead>
-                <tr>
-                  <th>Supplier</th>
-                  <th>Calls</th>
-                  <th>Websites</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody id="clicks-by-supplier-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- Prices Tab -->
-      <section id="tab-prices" class="tab-panel">
-        <div class="panel-grid">
-          <div class="panel full-width">
-            <h3>Price Trends</h3>
-            <canvas id="price-chart"></canvas>
-          </div>
-          <div class="panel full-width">
-            <h3>Price Spread by State (Marketing Opportunity)</h3>
-            <canvas id="spread-chart"></canvas>
-            <p class="hint">Higher spread = easier marketing ("Save up to $X/gal!")</p>
-          </div>
-          <div class="panel full-width">
-            <h3>Current Prices by Supplier</h3>
-            <table id="prices-table">
-              <thead>
-                <tr>
-                  <th>Supplier</th>
-                  <th>State</th>
-                  <th>Price</th>
-                  <th>Last Updated</th>
-                </tr>
-              </thead>
-              <tbody id="prices-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- Map Tab (Legacy) -->
-      <section id="tab-map" class="tab-panel">
-        <div class="panel full-width">
-          <h3>Demand Heatmap & Coverage Gaps</h3>
-          <div id="legacy-map-stats" class="map-legend"></div>
-          <div id="legacy-map-container"></div>
-        </div>
-        <div class="panel full-width">
-          <h3>Supplier Clicks by Location</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>ZIP</th>
-                <th>City</th>
-                <th>County</th>
-                <th>State</th>
-                <th>Clicks</th>
-              </tr>
-            </thead>
-            <tbody id="geo-clicks-body"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Scrapers Tab (Legacy) -->
-      <section id="tab-scrapers" class="tab-panel">
-        <div class="panel-grid">
-          <div class="panel">
-            <h3>Last Scrape Run</h3>
-            <div id="legacy-last-scrape" class="stat-large">--</div>
-          </div>
-          <div class="panel">
-            <h3>Suppliers Scraped</h3>
-            <div id="legacy-suppliers-scraped" class="stat-large">--</div>
-          </div>
-          <div class="panel full-width">
-            <h3>Stale Suppliers (No update in 48h)</h3>
-            <table id="legacy-stale-table">
-              <thead>
-                <tr>
-                  <th>Supplier</th>
-                  <th>Last Price</th>
-                  <th>Last Updated</th>
-                  <th>Website</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="legacy-stale-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
 
       <!-- Suppliers Tab -->
       <section id="tab-suppliers" class="tab-panel">
@@ -2378,29 +1692,149 @@
               <button id="next-page">Next →</button>
             </div>
           </div>
+
+          <!-- Collapsible Supplier Sub-sections (rescued from iOS App tab) -->
+          <div class="supplier-section collapsible" id="section-add-supplier">
+            <button class="section-toggle" aria-expanded="true">
+              <span class="toggle-icon">▼</span> Add New Supplier
+            </button>
+            <div class="section-content">
+              <p class="panel-description">Manually add a supplier to the database after researching their contact info.</p>
+              <form id="add-supplier-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" name="name" required placeholder="Dragon Fuel LLC">
+                  </div>
+                  <div class="form-group">
+                    <label>State *</label>
+                    <input type="text" name="state" required placeholder="CT" maxlength="2" style="width: 60px;">
+                  </div>
+                  <div class="form-group">
+                    <label>City</label>
+                    <input type="text" name="city" placeholder="Stratford">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Phone</label>
+                    <input type="text" name="phone" placeholder="(203) 220-2243">
+                  </div>
+                  <div class="form-group">
+                    <label>Website</label>
+                    <input type="text" name="website" placeholder="dragonfuelllc.com">
+                  </div>
+                  <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="info@example.com">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group" style="flex: 2;">
+                    <label>Address</label>
+                    <input type="text" name="addressLine1" placeholder="29 Minor Ave">
+                  </div>
+                  <div class="form-group">
+                    <label>Fuel Types</label>
+                    <select name="fuelType">
+                      <option value="heating_oil">Heating Oil</option>
+                      <option value="propane">Propane</option>
+                      <option value="both">Both</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group" style="flex: 2;">
+                    <label>Notes</label>
+                    <input type="text" name="notes" placeholder="Optional notes about this supplier">
+                  </div>
+                  <div class="form-group">
+                    <label>Options</label>
+                    <div style="display: flex; gap: 1rem; padding-top: 0.25rem;">
+                      <label style="font-weight: normal; display: flex; align-items: center; gap: 0.25rem;">
+                        <input type="checkbox" name="active" checked> Active
+                      </label>
+                      <label style="font-weight: normal; display: flex; align-items: center; gap: 0.25rem;">
+                        <input type="checkbox" name="allowPriceDisplay" checked> Show Price
+                      </label>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <button type="submit" class="btn-primary" id="add-supplier-btn">Add Supplier</button>
+                  </div>
+                </div>
+                <div id="add-supplier-status" style="margin-top: 0.5rem; display: none;"></div>
+              </form>
+            </div>
+          </div>
+
+          <div class="supplier-section collapsible collapsed" id="section-missing">
+            <button class="section-toggle" aria-expanded="false">
+              <span class="toggle-icon">▼</span> Missing Suppliers <span class="badge" id="missing-count">0</span>
+            </button>
+            <div class="section-content">
+              <p class="panel-description">Suppliers users mention that we don't have. Could be new leads or contract-only companies.</p>
+              <table id="missing-suppliers-table">
+                <thead>
+                  <tr>
+                    <th>Supplier Name</th>
+                    <th>Mentions</th>
+                    <th>Users</th>
+                    <th>Last Seen</th>
+                    <th>Type</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="missing-suppliers-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="supplier-section collapsible collapsed" id="section-near-matches">
+            <button class="section-toggle" aria-expanded="false">
+              <span class="toggle-icon">▼</span> Name Variations <span class="badge warning" id="near-match-count">0</span>
+            </button>
+            <div class="section-content">
+              <table id="near-matches-table">
+                <thead>
+                  <tr>
+                    <th>User Entered</th>
+                    <th>Mentions</th>
+                    <th>Possible Match</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="near-matches-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="supplier-section collapsible collapsed" id="section-aliases">
+            <button class="section-toggle" aria-expanded="false">
+              <span class="toggle-icon">▼</span> Supplier Aliases <span class="badge" id="alias-count">0</span>
+            </button>
+            <div class="section-content">
+              <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+                <button class="btn-small btn-primary" id="add-alias-btn">+ Add Alias</button>
+              </div>
+              <p class="panel-description">Alternate names that map to canonical supplier names. E.g., "Castle Fuel" → "Castle Fuel Inc."</p>
+              <table id="aliases-table">
+                <thead>
+                  <tr>
+                    <th>Alias (Search Term)</th>
+                    <th>Canonical Name</th>
+                    <th>Supplier Location</th>
+                    <th>Scope</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="aliases-body"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- External Tab -->
-      <section id="tab-external" class="tab-panel">
-        <div class="panel-grid">
-          <div class="panel">
-            <h3>Firebase Analytics (iOS App)</h3>
-            <p>View detailed iOS app analytics including supplier_selected, delivery_logged, and other custom events.</p>
-            <a href="https://console.firebase.google.com/project/smartheat-e0729/analytics" target="_blank" class="btn">Open Firebase Console</a>
-          </div>
-          <div class="panel">
-            <h3>Google Analytics 4 (Website)</h3>
-            <p>View website traffic, user behavior, and conversion data.</p>
-            <a href="https://analytics.google.com/" target="_blank" class="btn">Open Google Analytics</a>
-          </div>
-          <div class="panel">
-            <h3>Google Search Console</h3>
-            <p>Monitor search performance, indexing status, and SEO issues.</p>
-            <a href="https://search.google.com/search-console" target="_blank" class="btn">Open Search Console</a>
-          </div>
-        </div>
-      </section>
     </main>
     </div><!-- End main-content -->
 
@@ -2548,6 +1982,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1771871185"></script>
+  <script src="dashboard.js?v=1772006400"></script>
 </body>
 </html>

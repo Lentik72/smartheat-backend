@@ -12,16 +12,41 @@ let suppliersPage = 0;
 const suppliersLimit = 50;
 
 // Charts
-let clicksChart = null;
-let pageSourceChart = null;
-let deviceChart = null;
-let priceChart = null;
-let spreadChart = null;
 let nsSparklineChart = null;
-let mpPriceChart = null;
-let mpDemandChart = null;
-let mpCallChart = null;
 let map = null;
+
+// CC Intelligence + Coverage charts
+let ccDemandTrendChart = null;
+let ccChannelMixChart = null;
+let ccPriceBandChart = null;
+let coverageSpreadChart = null;
+let ccRenderToken = 0;
+let coverageRenderToken = 0;
+
+// Per-period API cache — prevents duplicate calls between CC and Coverage
+const apiCache = {};
+async function cachedApi(path) {
+  if (!apiCache[path]) {
+    apiCache[path] = api(path).catch(err => {
+      delete apiCache[path];
+      throw err;
+    });
+  }
+  return apiCache[path];
+}
+function clearApiCache() {
+  Object.keys(apiCache).forEach(k => delete apiCache[k]);
+}
+
+// Empty state helper (non-destructive — preserves canvas for re-render)
+function setEmptyState(canvasId, emptyId, message, show) {
+  const canvas = document.getElementById(canvasId);
+  const empty = document.getElementById(emptyId);
+  if (!canvas || !empty) return;
+  empty.textContent = message || '';
+  empty.classList.toggle('hidden', !show);
+  canvas.classList.toggle('hidden', show);
+}
 
 // API base
 const API_BASE = '/api/dashboard';
@@ -158,11 +183,6 @@ function showLogin() {
 function showDashboard() {
   document.getElementById('login-modal').classList.add('hidden');
   document.getElementById('dashboard').classList.remove('hidden');
-  // Command Center is default — hide overview cards
-  const oc = document.getElementById('overview-cards');
-  if (oc) oc.style.display = 'none';
-  const ab = document.getElementById('alert-banner');
-  if (ab) ab.style.display = 'none';
   loadDashboard();
 }
 
@@ -183,7 +203,15 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
 // Tab navigation handler (shared between tabs and sidebar)
 function handleTabSwitch(target) {
-  // Track current tab for period refresh
+  const validTabs = ['command-center','leaderboard','app-analytics','retention','growth','coverage','health','suppliers','website','settings'];
+  if (!validTabs.includes(target)) target = 'command-center';
+
+  // Destroy intelligence charts on tab leave
+  if (ccDemandTrendChart) { ccDemandTrendChart.destroy(); ccDemandTrendChart = null; }
+  if (ccChannelMixChart) { ccChannelMixChart.destroy(); ccChannelMixChart = null; }
+  if (ccPriceBandChart) { ccPriceBandChart.destroy(); ccPriceBandChart = null; }
+  if (coverageSpreadChart) { coverageSpreadChart.destroy(); coverageSpreadChart = null; }
+
   currentTab = target;
 
   // Update active tab (legacy tabs)
@@ -208,25 +236,10 @@ function handleTabSwitch(target) {
   const panel = document.getElementById(`tab-${target}`);
   if (panel) panel.classList.add('active');
 
-  // Command Center: hide overview cards
-  const overviewCards = document.getElementById('overview-cards');
-  const alertBanner = document.getElementById('alert-banner');
-  const dataSourceBanner = document.getElementById('data-source-warnings');
-  if (target === 'command-center') {
-    if (overviewCards) overviewCards.style.display = 'none';
-    if (alertBanner) alertBanner.style.display = 'none';
-    if (dataSourceBanner) dataSourceBanner.style.display = 'none';
-  } else {
-    if (overviewCards) overviewCards.style.display = '';
-    if (alertBanner) alertBanner.style.display = '';
-    if (dataSourceBanner) dataSourceBanner.style.display = '';
-  }
-
   // Close mobile sidebar after selection
   closeMobileSidebar();
 
   // Load tab-specific data
-  // Scope 18 tabs (new primary navigation)
   if (target === 'command-center') loadCommandCenter();
   if (target === 'leaderboard') loadLeaderboard();
   if (target === 'app-analytics') loadAppAnalytics();
@@ -234,19 +247,8 @@ function handleTabSwitch(target) {
   if (target === 'coverage') loadCoverage();
   if (target === 'health') loadHealth();
   if (target === 'settings') loadSettings();
-  // Legacy tabs (kept for backward compatibility)
-  if (target === 'recommendations') loadRecommendations();
   if (target === 'website') loadWebsite();
-  if (target === 'ios-app') loadIOSApp();
-  if (target === 'android') loadAndroidSignals();
   if (target === 'retention') loadRetention();
-  if (target === 'acquisition') loadAcquisition();
-  if (target === 'overview') loadOverviewTab();
-  if (target === 'searches') loadSearches();
-  if (target === 'clicks') loadClicks();
-  if (target === 'prices') loadPrices();
-  if (target === 'map') loadMap();
-  if (target === 'scrapers') loadScrapers();
   if (target === 'suppliers') loadSuppliers();
 }
 
@@ -284,10 +286,14 @@ document.getElementById('mobile-menu-btn')?.addEventListener('click', openMobile
 // Overlay click to close
 document.getElementById('sidebar-overlay')?.addEventListener('click', closeMobileSidebar);
 
-// Legacy section collapse toggle
-document.getElementById('legacy-toggle')?.addEventListener('click', () => {
-  const section = document.getElementById('legacy-nav-section');
-  section?.classList.toggle('collapsed');
+// Collapsible section toggles (delegated — covers Suppliers and CC)
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.section-toggle, .cc-collapse-toggle');
+  if (!btn) return;
+  const section = btn.closest('.supplier-section, .cc-collapsible');
+  if (!section) return;
+  section.classList.toggle('collapsed');
+  btn.setAttribute('aria-expanded', !section.classList.contains('collapsed'));
 });
 
 // Update header metrics when data loads
@@ -327,8 +333,17 @@ document.querySelectorAll('.period-btn').forEach(btn => {
     currentDays = parseInt(btn.dataset.days);
     document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    clearApiCache();
+    // Destroy intelligence charts before re-render
+    if (currentTab === 'command-center') {
+      if (ccDemandTrendChart) { ccDemandTrendChart.destroy(); ccDemandTrendChart = null; }
+      if (ccChannelMixChart) { ccChannelMixChart.destroy(); ccChannelMixChart = null; }
+      if (ccPriceBandChart) { ccPriceBandChart.destroy(); ccPriceBandChart = null; }
+    }
+    if (currentTab === 'coverage') {
+      if (coverageSpreadChart) { coverageSpreadChart.destroy(); coverageSpreadChart = null; }
+    }
     loadDashboard();
-    // Also reload the current tab with new period
     reloadCurrentTab();
   });
 });
@@ -341,156 +356,10 @@ function reloadCurrentTab() {
     case 'app-analytics': loadAppAnalytics(); break;
     case 'growth': loadGrowth(); break;
     case 'coverage': loadCoverage(); break;
-    case 'recommendations': loadRecommendations(); break;
     case 'website': loadWebsite(); break;
-    case 'ios-app': loadIOSApp(); break;
-    case 'android': loadAndroidSignals(); break;
     case 'retention': loadRetention(); break;
-    case 'acquisition': loadAcquisition(); break;
-    case 'searches': loadSearches(); break;
-    case 'clicks': loadClicks(); break;
-    case 'prices': loadPrices(); break;
-    case 'map': loadMap(); break;
-    case 'scrapers': loadScrapers(); break;
-    // Note: suppliers and settings don't need period refresh
+    case 'health': loadHealth(); break;
   }
-}
-
-// Load overview (top cards)
-async function loadOverview() {
-  try {
-    const data = await api(`/overview?days=${currentDays}`);
-
-    // Get unified data for combined metrics
-    let unified = null;
-    try {
-      unified = await api(`/unified?days=${currentDays}`);
-    } catch (e) {
-      console.log('Unified data not available');
-    }
-
-    // Show data source connection warnings
-    updateDataSourceBanner(unified);
-
-    // Update header metrics for sticky header
-    if (unified) {
-      updateHeaderMetrics({
-        totalUsers: (unified?.app?.summary?.totalUsers || 0) + (unified?.website?.activeUsers || 0),
-        revenue: { current: Math.round((data.website?.totalClicks || 0) * 0.03 * 7.50) },
-        deliveries: { total: unified?.app?.deliveries?.total ?? unified?.app?.saves ?? 0 }
-      });
-    }
-
-    // Get trend data
-    const trends = unified?.trends || {};
-
-    // Card 1: Total Users (iOS MAU + Website unique visitors)
-    // Try unified data first (GA4/Firebase), fallback to database estimates
-    const ga4Available = unified?.dataSources?.ga4;
-    const iosUsersCount = unified?.app?.summary?.totalUsers || unified?.app?.uniqueUsers || data.users?.ios || 0;
-    const webUsers = ga4Available
-      ? (unified?.website?.activeUsers || 0)
-      : (data.users?.website || 0);
-    const totalUsers = iosUsersCount + webUsers;
-
-    document.getElementById('total-users').textContent = totalUsers || '--';
-    document.getElementById('users-breakdown').innerHTML = `${iosUsersCount} iOS / ${webUsers} website`;
-    // Show data source with trend
-    if (totalUsers > 0) {
-      const usersTrend = trends.iosUsers || trends.websiteUsers;
-      document.getElementById('users-freshness').innerHTML = (ga4Available ? 'via GA4' : 'unique searches') +
-        (usersTrend ? ' ' + trendArrow(usersTrend) : '');
-    } else {
-      document.getElementById('users-freshness').textContent = 'No activity yet';
-    }
-
-    // Card 2: Deliveries Shared (community_deliveries table - shared to backend)
-    const deliveriesShared = unified?.app?.deliveries?.total ?? 0;
-    document.getElementById('total-deliveries').textContent = deliveriesShared;
-    document.getElementById('deliveries-breakdown').textContent = deliveriesShared > 0
-      ? `${deliveriesShared} price point${deliveriesShared > 1 ? 's' : ''} shared`
-      : 'No deliveries shared yet';
-    document.getElementById('deliveries-freshness').textContent = '';
-
-    // Card 2b: Deliveries Logged (from app_events - no consent required)
-    const topEvents = unified?.app?.topEvents || [];
-    const deliveryLoggedEvent = topEvents.find(e => e.name === 'delivery_logged');
-    const deliveriesLogged = deliveryLoggedEvent?.count || 0;
-    const deliveriesLoggedUsers = deliveryLoggedEvent?.uniqueUsers || 0;
-    document.getElementById('total-deliveries-logged').textContent = deliveriesLogged > 0 ? deliveriesLogged : '0';
-    document.getElementById('deliveries-logged-breakdown').textContent = deliveriesLogged > 0
-      ? `${deliveriesLoggedUsers} user${deliveriesLoggedUsers > 1 ? 's' : ''}`
-      : 'No deliveries logged yet';
-    document.getElementById('deliveries-logged-freshness').textContent = '';
-
-    // Card 3: Est. Revenue (from supplier clicks)
-    const totalClicks = data.website.totalClicks || 0;
-    // Assume 3% of clicks convert to $500 avg order, 5% referral = $7.50 per conversion
-    const estRevenue = Math.round(totalClicks * 0.03 * 7.50);
-    document.getElementById('est-revenue').textContent = estRevenue > 0 ? `~$${estRevenue}` : '--';
-    document.getElementById('revenue-breakdown').textContent =
-      `${totalClicks} clicks @ 3% conv`;
-    const revenueFreshness = data.dataFreshness?.supplier_clicks;
-    const clicksTrend = trends.clicks;
-    document.getElementById('revenue-freshness').innerHTML = (revenueFreshness ? timeAgo(revenueFreshness) : '') +
-      (clicksTrend ? ' ' + trendArrow(clicksTrend) : '');
-
-    // Card 4: Android Waitlist
-    document.getElementById('waitlist-total').textContent = data.waitlist.total;
-    const waitlistTrend = trends.waitlist;
-    document.getElementById('waitlist-recent').innerHTML = `+${data.waitlist.last7Days} this week` +
-      (waitlistTrend ? ' ' + trendArrow(waitlistTrend) : '');
-    const waitlistFreshness = data.waitlist?.lastUpdated;
-    document.getElementById('waitlist-freshness').textContent = waitlistFreshness ? timeAgo(waitlistFreshness) : '';
-
-    // Top supplier (for Overview tab)
-    if (data.website.topSupplier) {
-      document.getElementById('top-supplier').textContent =
-        `${data.website.topSupplier.name} (${data.website.topSupplier.clicks} clicks)`;
-    }
-
-    // Coverage gaps breakdown (with defensive checks)
-    const coverage = data.coverage || {};
-    const trueCoverageGaps = coverage.trueCoverageGaps || 0;
-    const engagementGaps = coverage.engagementGaps || 0;
-    const totalSearched = coverage.totalSearched || 0;
-
-    document.getElementById('true-coverage-gaps').textContent = `${trueCoverageGaps} ZIPs`;
-    document.getElementById('engagement-gaps').textContent = `${engagementGaps} ZIPs`;
-    document.getElementById('total-searched').textContent = `${totalSearched} ZIPs`;
-
-    // Click handlers to show ZIP details
-    document.getElementById('panel-no-suppliers').onclick = () => showCoverageDetails('no-suppliers');
-    document.getElementById('panel-low-engagement').onclick = () => showCoverageDetails('low-engagement');
-
-    // Alert banner - prioritize true coverage gaps
-    if (trueCoverageGaps > 5) {
-      document.getElementById('alert-banner').classList.remove('hidden');
-      document.getElementById('alert-text').textContent =
-        `${trueCoverageGaps} ZIPs have demand but NO suppliers - add coverage!`;
-      document.getElementById('alert-action').textContent = 'View Map';
-      document.getElementById('alert-action').onclick = () => switchTab('map');
-    } else if (engagementGaps > 20) {
-      document.getElementById('alert-banner').classList.remove('hidden');
-      document.getElementById('alert-text').textContent =
-        `${engagementGaps} ZIPs have suppliers but no clicks - check pricing/visibility`;
-      document.getElementById('alert-action').textContent = 'View Clicks';
-      document.getElementById('alert-action').onclick = () => switchTab('clicks');
-    }
-
-  } catch (error) {
-    console.error('Failed to load overview:', error);
-  }
-}
-
-// Load Overview tab (different from top cards)
-async function loadOverviewTab() {
-  // This just triggers the existing supplier signals and conversion loading
-  await Promise.all([
-    loadSupplierSignals(),
-    loadConversion(),
-    loadPriceAlerts()
-  ]);
 }
 
 // Charts for Website tab
@@ -785,375 +654,6 @@ function initActivityControls() {
   }
 }
 
-// Load supplier signals for overview
-async function loadSupplierSignals() {
-  try {
-    const data = await api(`/clicks?days=${currentDays}`);
-    const tbody = document.getElementById('supplier-signals-body');
-    tbody.innerHTML = '';
-
-    data.bySupplierWithPrice.slice(0, 10).forEach(s => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${s.name}</td>
-        <td>${s.clicks}</td>
-        <td>${formatPrice(s.currentPrice)}</td>
-        <td>${s.priceDelta ? (s.priceDelta > 0 ? '+' : '') + formatPrice(s.priceDelta) : '--'}</td>
-        <td>${s.estRevenueLost !== null ? '$' + s.estRevenueLost : 'Unknown'}</td>
-        <td><span class="signal signal-${s.signal}">${formatSignal(s.signal)}</span></td>
-      `;
-      tbody.appendChild(row);
-    });
-  } catch (error) {
-    console.error('Failed to load supplier signals:', error);
-  }
-}
-
-function formatSignal(signal) {
-  const signals = {
-    brand_strength: 'Brand Strength',
-    visibility_issue: 'Visibility Gap',
-    data_gap: 'Needs Scraping',
-    normal: 'Normal'
-  };
-  return signals[signal] || signal;
-}
-
-// Load clicks tab
-async function loadClicks() {
-  try {
-    const data = await api(`/clicks?days=${currentDays}`);
-
-    // Daily chart
-    const ctx = document.getElementById('clicks-chart').getContext('2d');
-    if (clicksChart) clicksChart.destroy();
-
-    clicksChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: data.daily.map(d => d.date),
-        datasets: [
-          {
-            label: 'Calls',
-            data: data.daily.map(d => d.calls),
-            borderColor: '#2563eb',
-            backgroundColor: 'rgba(37, 99, 235, 0.1)',
-            fill: true
-          },
-          {
-            label: 'Websites',
-            data: data.daily.map(d => d.websites),
-            borderColor: '#22c55e',
-            backgroundColor: 'rgba(34, 197, 94, 0.1)',
-            fill: true
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-
-    // Page source chart
-    const pageCtx = document.getElementById('page-source-chart').getContext('2d');
-    if (pageSourceChart) pageSourceChart.destroy();
-
-    pageSourceChart = new Chart(pageCtx, {
-      type: 'doughnut',
-      data: {
-        labels: Object.keys(data.byPage),
-        datasets: [{
-          data: Object.values(data.byPage),
-          backgroundColor: ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6']
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
-      }
-    });
-
-    // Device chart
-    const deviceCtx = document.getElementById('device-chart').getContext('2d');
-    if (deviceChart) deviceChart.destroy();
-
-    deviceChart = new Chart(deviceCtx, {
-      type: 'doughnut',
-      data: {
-        labels: Object.keys(data.byDevice),
-        datasets: [{
-          data: Object.values(data.byDevice),
-          backgroundColor: ['#2563eb', '#22c55e']
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
-      }
-    });
-
-    // Top suppliers table
-    const tbody = document.getElementById('clicks-by-supplier-body');
-    tbody.innerHTML = '';
-    data.bySupplier.forEach(s => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${s.name}</td>
-        <td>${s.calls}</td>
-        <td>${s.websites}</td>
-        <td>${s.calls + s.websites}</td>
-      `;
-      tbody.appendChild(row);
-    });
-
-  } catch (error) {
-    console.error('Failed to load clicks:', error);
-  }
-}
-
-// Load prices tab
-async function loadPrices() {
-  try {
-    const data = await api(`/prices?days=${currentDays}`);
-
-    // Price trend chart
-    const ctx = document.getElementById('price-chart').getContext('2d');
-    if (priceChart) priceChart.destroy();
-
-    priceChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: data.trends.map(t => t.date),
-        datasets: [
-          {
-            label: 'Avg Price',
-            data: data.trends.map(t => t.avgPrice),
-            borderColor: '#2563eb',
-            fill: false
-          },
-          {
-            label: 'Min Price',
-            data: data.trends.map(t => t.minPrice),
-            borderColor: '#22c55e',
-            fill: false,
-            borderDash: [5, 5]
-          },
-          {
-            label: 'Max Price',
-            data: data.trends.map(t => t.maxPrice),
-            borderColor: '#ef4444',
-            fill: false,
-            borderDash: [5, 5]
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: false
-          }
-        }
-      }
-    });
-
-    // Price spread chart
-    const spreadCtx = document.getElementById('spread-chart').getContext('2d');
-    if (spreadChart) spreadChart.destroy();
-
-    spreadChart = new Chart(spreadCtx, {
-      type: 'bar',
-      data: {
-        labels: data.priceSpread.map(p => p.state),
-        datasets: [{
-          label: 'Price Spread',
-          data: data.priceSpread.map(p => p.spread),
-          backgroundColor: '#2563eb'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: 'y',
-        scales: {
-          x: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Spread ($)'
-            }
-          }
-        }
-      }
-    });
-
-    // Prices table
-    const tbody = document.getElementById('prices-body');
-    tbody.innerHTML = '';
-    data.bySupplier.forEach(s => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${s.name}</td>
-        <td>${s.state}</td>
-        <td>${formatPrice(s.currentPrice)}</td>
-        <td>${timeAgo(s.lastUpdated)}</td>
-      `;
-      tbody.appendChild(row);
-    });
-
-  } catch (error) {
-    console.error('Failed to load prices:', error);
-  }
-}
-
-// Load map
-async function loadMap() {
-  try {
-    const data = await api(`/geographic?days=${currentDays}`);
-
-    // Initialize map if needed
-    if (!map) {
-      map = L.map('map-container').setView([40.7, -74.0], 7);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
-    }
-
-    // Clear existing markers
-    map.eachLayer(layer => {
-      if (layer instanceof L.CircleMarker) {
-        map.removeLayer(layer);
-      }
-    });
-
-    // Add demand heatmap (blue circles)
-    const demandData = data.demandHeatmap || [];
-    const maxDemand = Math.max(...demandData.map(c => c.count), 1);
-    demandData.forEach(c => {
-      if (!c.lat || !c.lng) return; // Skip points without coordinates
-      const radius = 6 + (c.count / maxDemand) * 18;
-      L.circleMarker([c.lat, c.lng], {
-        radius: radius,
-        fillColor: '#2563eb',
-        color: '#1d4ed8',
-        weight: 1,
-        opacity: 0.8,
-        fillOpacity: 0.4
-      })
-      .bindPopup(`<b>${c.city || 'Unknown'}, ${c.state || ''}</b><br>ZIP: ${c.zip}<br>Searches: ${c.count}`)
-      .addTo(map);
-    });
-
-    // Add coverage gaps (red circles) on top
-    const gapData = data.coverageGaps || [];
-    gapData.forEach(c => {
-      if (!c.lat || !c.lng) return; // Skip points without coordinates
-      const radius = 8 + (c.count / maxDemand) * 16;
-      L.circleMarker([c.lat, c.lng], {
-        radius: radius,
-        fillColor: '#ef4444',
-        color: '#dc2626',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.6
-      })
-      .bindPopup(`<b>⚠️ COVERAGE GAP</b><br>${c.city || 'Unknown'}, ${c.state || ''}<br>ZIP: ${c.zip}<br>Searches: ${c.count}<br><i>No suppliers serve this area!</i>`)
-      .addTo(map);
-    });
-
-    // Fit bounds if we have points
-    const allPoints = [...demandData, ...gapData].filter(c => c.lat && c.lng);
-    if (allPoints.length > 0) {
-      const bounds = allPoints.map(c => [c.lat, c.lng]);
-      map.fitBounds(bounds, { padding: [20, 20] });
-    }
-
-    // Update stats
-    const stats = data.stats || {};
-    document.getElementById('map-stats').innerHTML = `
-      <span class="stat-item"><span class="dot blue"></span> Demand: ${stats.totalDemandZips || 0} ZIPs</span>
-      <span class="stat-item"><span class="dot red"></span> Coverage Gaps: ${stats.totalGapZips || 0} ZIPs</span>
-      <span class="stat-item">Supplier Coverage: ${stats.coveredZips || 0} ZIPs</span>
-    `;
-
-    // Populate clicks table
-    const tbody = document.getElementById('geo-clicks-body');
-    tbody.innerHTML = '';
-    const allClicks = data.allClicks || [];
-
-    if (allClicks.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">No click data yet</td></tr>';
-    } else {
-      allClicks.forEach(c => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${c.zip || '--'}</td>
-          <td>${c.city || '--'}</td>
-          <td>${c.county || '--'}</td>
-          <td>${c.state || '--'}</td>
-          <td>${c.count}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-  } catch (error) {
-    console.error('Failed to load map:', error);
-  }
-}
-
-// Load scrapers tab (legacy - elements may not exist)
-async function loadScrapers() {
-  try {
-    const data = await api('/scraper-health');
-
-    const lastScrapeEl = document.getElementById('last-scrape');
-    const suppliersScrapedEl = document.getElementById('suppliers-scraped');
-    if (lastScrapeEl) lastScrapeEl.textContent = timeAgo(data.lastRun);
-    if (suppliersScrapedEl) suppliersScrapedEl.textContent =
-      `${data.withPrices}/${data.totalSuppliers} (${data.suppliersScrapedToday} today)`;
-
-    // Stale suppliers table (may not exist)
-    const tbody = document.getElementById('stale-body');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    if (data.stale.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">No stale suppliers</td></tr>';
-    } else {
-      data.stale.forEach(s => {
-        const row = document.createElement('tr');
-        let websiteLink = '--';
-        if (s.website && typeof s.website === 'string') {
-          const safeUrl = s.website.startsWith('http') ? s.website : `https://${s.website}`;
-          const displayUrl = s.website.replace(/^https?:\/\//, '');
-          websiteLink = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="website-link">${displayUrl}</a>`;
-        }
-        row.innerHTML = `
-          <td><strong>${s.name}</strong><br><span class="supplier-location">${s.city || ''}${s.city && s.state ? ', ' : ''}${s.state || ''}</span></td>
-          <td>${formatPrice(s.lastPrice)}</td>
-          <td>${timeAgo(s.lastUpdated)}</td>
-          <td>${websiteLink}</td>
-          <td><button class="btn edit-supplier-btn" data-id="${s.id}">Edit</button></td>
-        `;
-        tbody.appendChild(row);
-      });
-      // Attach event listeners
-      tbody.querySelectorAll('.edit-supplier-btn').forEach(btn => {
-        btn.addEventListener('click', () => editSupplier(btn.dataset.id));
-      });
-    }
-
-  } catch (error) {
-    console.error('Failed to load scrapers:', error);
-  }
-}
 
 // Sorting state for suppliers
 let suppliersSort = 'clicks';
@@ -1290,6 +790,10 @@ async function loadSuppliers() {
     document.getElementById('page-info').textContent = `Page ${suppliersPage + 1} of ${totalPages}`;
     document.getElementById('prev-page').disabled = suppliersPage === 0;
     document.getElementById('next-page').disabled = suppliersPage >= totalPages - 1;
+
+    // Load collapsible sub-sections
+    await loadMissingSuppliers();
+    await loadAliases();
 
   } catch (error) {
     console.error('Failed to load suppliers:', error);
@@ -1577,265 +1081,7 @@ document.getElementById('supplier-form').addEventListener('submit', async (e) =>
   }
 });
 
-// Charts for new tabs
-let searchesChart = null;
-let peakHoursChart = null;
-let iosChart = null;
 
-// Load conversion funnel
-async function loadConversion() {
-  try {
-    const data = await api(`/conversion?days=${currentDays}`);
-
-    document.getElementById('funnel-searches').textContent = data.funnel.searches.toLocaleString();
-    document.getElementById('funnel-clicks').textContent = data.funnel.clicks.toLocaleString();
-    document.getElementById('funnel-rate').textContent = data.funnel.conversionRate + '%';
-
-    // Adjust bar widths proportionally
-    const maxWidth = 200;
-    const clicksWidth = data.funnel.searches > 0
-      ? Math.max(30, (data.funnel.clicks / data.funnel.searches) * maxWidth)
-      : 30;
-    document.getElementById('funnel-clicks-bar').style.width = clicksWidth + 'px';
-
-  } catch (error) {
-    console.error('Failed to load conversion:', error);
-  }
-}
-
-// Load price alerts
-async function loadPriceAlerts() {
-  try {
-    const data = await api('/price-alerts');
-    const panel = document.getElementById('price-alerts-panel');
-    const content = document.getElementById('price-alerts-content');
-
-    if (data.alerts && data.alerts.length > 0) {
-      panel.style.display = 'block';
-      content.innerHTML = data.alerts.map(a => `
-        <div class="price-alert-item ${a.direction}">
-          <div>
-            <span class="price-alert-supplier">${a.supplierName}</span>
-            <span style="color: var(--gray-500); margin-left: 0.5rem;">
-              $${a.previousPrice.toFixed(2)} → $${a.currentPrice.toFixed(2)}
-            </span>
-          </div>
-          <span class="price-alert-change ${a.direction}">
-            ${a.direction === 'up' ? '↑' : '↓'} ${a.changePercent}%
-          </span>
-        </div>
-      `).join('');
-    } else {
-      panel.style.display = 'none';
-    }
-  } catch (error) {
-    console.error('Failed to load price alerts:', error);
-  }
-}
-
-// Load searches tab
-async function loadSearches() {
-  try {
-    const data = await api(`/searches?days=${currentDays}`);
-
-    // Summary stats
-    document.getElementById('searches-total').textContent = data.summary.totalSearches.toLocaleString();
-    document.getElementById('searches-avg').textContent = `${data.summary.avgPerDay} avg/day`;
-    document.getElementById('searches-zips').textContent = data.summary.uniqueZips;
-
-    // Daily chart
-    const ctx = document.getElementById('searches-chart').getContext('2d');
-    if (searchesChart) searchesChart.destroy();
-
-    searchesChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: data.daily.map(d => d.date),
-        datasets: [{
-          label: 'Searches',
-          data: data.daily.map(d => d.searches),
-          borderColor: '#2563eb',
-          backgroundColor: 'rgba(37, 99, 235, 0.1)',
-          fill: true,
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-
-    // Peak hours chart
-    const peakCtx = document.getElementById('peak-hours-chart').getContext('2d');
-    if (peakHoursChart) peakHoursChart.destroy();
-
-    peakHoursChart = new Chart(peakCtx, {
-      type: 'bar',
-      data: {
-        labels: data.hourly.map(h => `${h.hour}:00`),
-        datasets: [{
-          label: 'Searches',
-          data: data.hourly.map(h => h.searches),
-          backgroundColor: '#2563eb'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-
-    // Top ZIPs table
-    const tbody = document.getElementById('top-zips-body');
-    tbody.innerHTML = '';
-    data.topZips.slice(0, 15).forEach(z => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${z.zip}</td>
-        <td>${z.city}</td>
-        <td>${z.state}</td>
-        <td>${z.searches}</td>
-      `;
-      tbody.appendChild(row);
-    });
-
-  } catch (error) {
-    console.error('Failed to load searches:', error);
-  }
-}
-
-// Load iOS App tab
-async function loadIOSApp() {
-  try {
-    // Get unified data for iOS/app metrics
-    const unified = await api(`/unified?days=${currentDays}`);
-    const app = unified?.app || {};
-    const retention = unified?.retention || {};
-    const hasFirebase = unified?.dataSources?.firebase === true;
-
-    // Show/hide Firebase setup guide
-    const setupGuide = document.getElementById('ios-firebase-setup');
-    if (setupGuide) {
-      setupGuide.style.display = hasFirebase ? 'none' : 'block';
-    }
-
-    // Summary stats from our database
-    // Note: Full install counts require Firebase Analytics API
-    const uniqueUsers = app.uniqueUsers || 0;
-    document.getElementById('ios-installs').textContent = hasFirebase ? (app.installs || '--') : '--';
-    document.getElementById('ios-mau').textContent = uniqueUsers || '--';
-
-    if (hasFirebase && app.installs && uniqueUsers) {
-      const mauPercent = ((uniqueUsers / app.installs) * 100).toFixed(0);
-      document.getElementById('ios-mau-percent').textContent = `${mauPercent}% of installs`;
-    } else {
-      document.getElementById('ios-mau-percent').textContent = uniqueUsers > 0 ? 'Active users' : '--% of installs';
-    }
-
-    // Retention from retention data
-    const retentionEl = document.getElementById('ios-retention');
-    const week1Rate = retention?.summary?.week1RetentionRate;
-    if (week1Rate) {
-      retentionEl.textContent = `${week1Rate}%`;
-      retentionEl.classList.toggle('good', parseFloat(week1Rate) >= 30);
-    } else {
-      retentionEl.textContent = '--%';
-    }
-
-    // Deliveries Logged (from app_events / topEvents)
-    const iosTopEvents = app.topEvents || [];
-    const iosDeliveryLoggedEvent = iosTopEvents.find(e => e.name === 'delivery_logged');
-    const iosDeliveriesLogged = iosDeliveryLoggedEvent?.count || 0;
-    document.getElementById('ios-deliveries').textContent = iosDeliveriesLogged || '--';
-
-    // Deliveries Shared (from community_deliveries table)
-    const iosDeliveriesShared = app.deliveries?.total || 0;
-    const iosDeliveriesSharedEl = document.getElementById('ios-deliveries-shared');
-    if (iosDeliveriesSharedEl) {
-      iosDeliveriesSharedEl.textContent = iosDeliveriesShared || '--';
-    }
-
-    // Also try to get local iOS engagement data
-    let localData = null;
-    try {
-      localData = await api(`/ios-app?days=${currentDays}`);
-    } catch (e) {
-      console.log('Local iOS data not available');
-    }
-
-    // Event breakdown from our database
-    const summary = localData?.summary || {};
-    document.getElementById('ios-event-saves').textContent = summary.saves || '0';
-    document.getElementById('ios-event-views').textContent = summary.views || '0';
-    document.getElementById('ios-event-orders').textContent = summary.orders || '0';
-    document.getElementById('ios-event-quotes').textContent = summary.quotes || '0';
-    document.getElementById('ios-event-searches').textContent = summary.searches || '0';
-    document.getElementById('ios-event-deliveries').textContent = summary.deliveriesLogged || '0';
-
-    // Daily chart
-    const ctx = document.getElementById('ios-chart').getContext('2d');
-    if (iosChart) iosChart.destroy();
-
-    if (localData?.daily?.length > 0) {
-      iosChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: localData.daily.map(d => d.date),
-          datasets: [{
-            label: 'Engagements',
-            data: localData.daily.map(d => d.engagements),
-            borderColor: '#22c55e',
-            backgroundColor: 'rgba(34, 197, 94, 0.1)',
-            fill: true,
-            tension: 0.3
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { beginAtZero: true } }
-        }
-      });
-    }
-
-    // Top suppliers table
-    const tbody = document.getElementById('ios-suppliers-body');
-    tbody.innerHTML = '';
-
-    if (localData?.bySupplier?.length > 0) {
-      localData.bySupplier.forEach(s => {
-        const row = document.createElement('tr');
-        if (s.flag) row.classList.add('flagged-row');
-        const flagBadge = s.flag === 'rapid_orders'
-          ? '<span class="flag-badge test" title="3+ orders from single user in short period">Rapid Orders</span>'
-          : '';
-        row.innerHTML = `
-          <td>${s.name}</td>
-          <td>${s.uniqueUsers || 1}</td>
-          <td>${s.saved || 0}</td>
-          <td>${s.viewed || 0}</td>
-          <td>${s.orders || 0}</td>
-          <td>${s.quotes || 0}</td>
-          <td>${s.total}</td>
-          <td>${flagBadge}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    } else {
-      tbody.innerHTML = '<tr><td colspan="8" class="no-data">No app engagement data yet</td></tr>';
-    }
-
-    // Load missing suppliers and aliases
-    await loadMissingSuppliers();
-    await loadAliases();
-
-  } catch (error) {
-    console.error('Failed to load iOS app data:', error);
-  }
-}
 
 // Load missing suppliers - suppliers users mention that we don't have
 async function loadMissingSuppliers() {
@@ -2220,92 +1466,7 @@ function switchTab(tabName) {
 
 // Charts for intelligence tabs
 let retentionChart = null;
-let trafficSourcesChart = null;
-let acquisitionFunnelChart = null;
-let androidTrendChart = null;
 
-// Load recommendations
-async function loadRecommendations() {
-  const loadingEl = document.getElementById('recommendations-loading');
-  const contentEl = document.getElementById('recommendations-content');
-  const noRecsEl = document.getElementById('no-recommendations');
-
-  loadingEl.classList.remove('hidden');
-  contentEl.classList.add('hidden');
-  noRecsEl.classList.add('hidden');
-
-  try {
-    const data = await api(`/recommendations?days=${currentDays}`);
-
-    // Group recommendations by priority
-    const high = data.recommendations.filter(r => r.priority === 'CRITICAL' || r.priority === 'HIGH');
-    const medium = data.recommendations.filter(r => r.priority === 'MEDIUM');
-    const low = data.recommendations.filter(r => r.priority === 'LOW' || r.priority === 'OPPORTUNITY');
-
-    // Show top priority alert
-    if (data.summary.topPriority) {
-      document.getElementById('top-priority-alert').classList.remove('hidden');
-      document.getElementById('priority-title').textContent = data.summary.topPriority.title;
-      const topRec = data.recommendations[0];
-      document.getElementById('priority-insight').textContent = topRec?.insight || '';
-    }
-
-    // Render cards
-    renderRecommendationCards('cards-high', high);
-    renderRecommendationCards('cards-medium', medium);
-    renderRecommendationCards('cards-low', low);
-
-    // Show/hide sections
-    document.getElementById('section-high').style.display = high.length > 0 ? 'block' : 'none';
-    document.getElementById('section-medium').style.display = medium.length > 0 ? 'block' : 'none';
-    document.getElementById('section-low').style.display = low.length > 0 ? 'block' : 'none';
-
-    if (data.recommendations.length === 0) {
-      noRecsEl.classList.remove('hidden');
-    } else {
-      contentEl.classList.remove('hidden');
-    }
-  } catch (error) {
-    console.error('Failed to load recommendations:', error);
-    loadingEl.textContent = 'Failed to load recommendations';
-  } finally {
-    loadingEl.classList.add('hidden');
-  }
-}
-
-function renderRecommendationCards(containerId, recommendations) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-
-  recommendations.forEach(rec => {
-    const card = document.createElement('div');
-    card.className = `recommendation-card ${rec.priority.toLowerCase()}`;
-
-    const actions = rec.actions?.map(a =>
-      `<li>${a.text || a}</li>`
-    ).join('') || '';
-
-    const metricsHtml = rec.metrics ? `
-      <div class="rec-metrics">
-        ${Object.entries(rec.metrics).map(([k, v]) =>
-          `<span><strong>${k}:</strong> ${typeof v === 'object' ? JSON.stringify(v) : v}</span>`
-        ).join(' | ')}
-      </div>
-    ` : '';
-
-    card.innerHTML = `
-      <div class="rec-header">
-        <div class="rec-title">${rec.title}</div>
-        <span class="rec-category">${rec.category}</span>
-      </div>
-      <div class="rec-insight">${rec.insight}</div>
-      <ul class="rec-actions">${actions}</ul>
-      ${metricsHtml}
-    `;
-
-    container.appendChild(card);
-  });
-}
 
 // Load retention data with Day 1/7/30 cohort analysis
 async function loadRetention() {
@@ -2506,222 +1667,6 @@ function formatBehavior(behavior) {
   return names[behavior] || behavior.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// Load acquisition data
-async function loadAcquisition() {
-  try {
-    const data = await api(`/acquisition?days=${currentDays}`);
-
-    if (!data.available) {
-      console.log('Acquisition data not available:', data.reason);
-      return;
-    }
-
-    // Summary stats
-    if (data.data?.websiteTraffic) {
-      document.getElementById('acq-sessions').textContent = data.data.websiteTraffic.sessions || '--';
-      document.getElementById('acq-organic').textContent = `${data.data.websiteTraffic.organicPercent || 0}%`;
-    } else {
-      document.getElementById('acq-sessions-source').textContent = 'GA4 not configured';
-    }
-
-    // Conversion rate from funnel
-    const funnel = data.data?.conversionFunnel?.daily || [];
-    if (funnel.length > 0) {
-      const totalSearches = funnel.reduce((sum, d) => sum + d.searches, 0);
-      const totalClicks = funnel.reduce((sum, d) => sum + d.clicks, 0);
-      const rate = totalSearches > 0 ? ((totalClicks / totalSearches) * 100).toFixed(1) : 0;
-      document.getElementById('acq-conversion').textContent = `${rate}%`;
-    }
-
-    // Traffic sources chart
-    if (data.data?.websiteTraffic?.trafficSources) {
-      const sources = data.data.websiteTraffic.trafficSources;
-      const ctx = document.getElementById('traffic-sources-chart').getContext('2d');
-      if (trafficSourcesChart) trafficSourcesChart.destroy();
-
-      trafficSourcesChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: sources.map(s => s.channel),
-          datasets: [{
-            label: 'Sessions',
-            data: sources.map(s => s.sessions),
-            backgroundColor: '#2563eb'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: 'y'
-        }
-      });
-    } else {
-      document.getElementById('traffic-sources-note').textContent =
-        'Configure GA4 API to see traffic sources';
-    }
-
-    // Daily funnel chart
-    if (funnel.length > 0) {
-      const ctx = document.getElementById('acquisition-funnel-chart').getContext('2d');
-      if (acquisitionFunnelChart) acquisitionFunnelChart.destroy();
-
-      acquisitionFunnelChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: funnel.map(d => d.date),
-          datasets: [
-            {
-              label: 'Searches',
-              data: funnel.map(d => d.searches),
-              borderColor: '#2563eb',
-              fill: false
-            },
-            {
-              label: 'Clicks',
-              data: funnel.map(d => d.clicks),
-              borderColor: '#22c55e',
-              fill: false
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { beginAtZero: true } }
-        }
-      });
-    }
-
-    // Top converting locations table
-    const locationsBody = document.getElementById('converting-locations-body');
-    locationsBody.innerHTML = '';
-
-    (data.data?.topConvertingLocations || []).slice(0, 15).forEach(loc => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${loc.zip}</td>
-        <td>${loc.city}</td>
-        <td>${loc.searches}</td>
-        <td>${loc.clicks}</td>
-        <td>${loc.conversionRate}%</td>
-      `;
-      locationsBody.appendChild(row);
-    });
-  } catch (error) {
-    console.error('Failed to load acquisition:', error);
-  }
-}
-
-// Load Android decision signals
-async function loadAndroidSignals() {
-  try {
-    // Use unified endpoint which has more reliable GA4 data
-    const unified = await api('/unified?days=30');
-    const signals = unified.android;
-
-    if (!signals) {
-      console.log('Android signals not available');
-      return;
-    }
-
-    // Decision status
-    const statusEl = document.getElementById('android-status');
-    statusEl.textContent = signals.recommendation?.status || 'WAIT';
-    statusEl.className = 'decision-status ' + (signals.recommendation?.status || 'wait').toLowerCase();
-
-    document.getElementById('android-message').textContent =
-      signals.recommendation?.message || 'Loading...';
-
-    // Key metrics
-    document.getElementById('android-waitlist').textContent = signals.waitlist?.total ?? '--';
-    document.getElementById('android-growth').textContent = `${signals.waitlist?.growthRate ?? 0}%`;
-    document.getElementById('android-pwa').textContent = signals.pwa?.installs ?? '--';
-
-    // PWA conversion rate
-    const pwaRate = signals.pwa?.conversionRate;
-    const pwaRateEl = document.getElementById('android-pwa-rate');
-    if (pwaRateEl) {
-      pwaRateEl.textContent = pwaRate ? `${pwaRate}% conversion` : '--% conversion';
-    }
-
-    // PWA Funnel
-    const pwaPrompts = document.getElementById('pwa-prompts');
-    const pwaInstallsDetail = document.getElementById('pwa-installs-detail');
-    const pwaLaunches = document.getElementById('pwa-launches');
-
-    if (pwaPrompts) pwaPrompts.textContent = signals.pwa?.prompts ?? '--';
-    if (pwaInstallsDetail) pwaInstallsDetail.textContent = signals.pwa?.installs ?? '--';
-    if (pwaLaunches) pwaLaunches.textContent = signals.pwa?.launches ?? '--';
-
-    // Thresholds
-    const thresholdsGrid = document.getElementById('thresholds-grid');
-    thresholdsGrid.innerHTML = '';
-
-    if (signals.thresholds) {
-      Object.entries(signals.thresholds).forEach(([key, threshold]) => {
-        const item = document.createElement('div');
-        item.className = 'threshold-item';
-        item.innerHTML = `
-          <div class="threshold-icon">${threshold.met ? '✅' : '⏳'}</div>
-          <div class="threshold-content">
-            <div class="threshold-label">${formatThresholdKey(key)}</div>
-            <div class="threshold-value">${threshold.current}</div>
-            <div class="threshold-target">Target: ${threshold.value}</div>
-          </div>
-        `;
-        thresholdsGrid.appendChild(item);
-      });
-    }
-
-    // Platform breakdown
-    if (signals.platformBreakdown) {
-      const pb = signals.platformBreakdown;
-      document.getElementById('platform-ios').textContent = `${pb.ios?.percent || 0}%`;
-      document.getElementById('platform-ios-users').textContent = `${pb.ios?.users || 0} users`;
-      document.getElementById('platform-android').textContent = `${pb.android?.percent || 0}%`;
-      document.getElementById('platform-android-users').textContent = `${pb.android?.users || 0} users`;
-      document.getElementById('platform-desktop').textContent = `${pb.desktop?.percent || 0}%`;
-      document.getElementById('platform-desktop-users').textContent = `${pb.desktop?.users || 0} users`;
-      document.getElementById('platform-note').textContent = '';
-    } else {
-      document.getElementById('platform-note').textContent = 'GA4 not configured - enable for platform data';
-    }
-
-    // Projections
-    document.getElementById('weeks-to-200').textContent =
-      signals.projection?.weeksTo200 || 'N/A';
-    document.getElementById('expected-users').textContent =
-      signals.projection?.expectedConversion || '--';
-
-    // Trend chart
-    const trend = signals.weeklyTrend || [];
-    if (trend.length > 0) {
-      const ctx = document.getElementById('android-trend-chart').getContext('2d');
-      if (androidTrendChart) androidTrendChart.destroy();
-
-      androidTrendChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: trend.map(t => new Date(t.week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
-          datasets: [{
-            label: 'Weekly Signups',
-            data: trend.map(t => t.signups),
-            borderColor: '#8b5cf6',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { beginAtZero: true } }
-        }
-      });
-    }
-  } catch (error) {
-    console.error('Failed to load Android signals:', error);
-  }
-}
 
 function formatThresholdKey(key) {
   const names = {
@@ -2781,7 +1726,6 @@ async function loadCommandCenter() {
     // ── MIDDLE ──
     ccRenderMarketplacePulse(liquidity, anomalies);
     ccRenderPipeline(lc);
-    ccRenderMarketPulse(mp);
     ccRenderDemandDensity(liquidity);
     ccRenderCommunityDeliveries(liquidity);
 
@@ -2792,8 +1736,22 @@ async function loadCommandCenter() {
     const genEl = document.getElementById('cc-generated');
     if (genEl && data.generatedAt) genEl.textContent = 'Updated ' + timeAgo(data.generatedAt);
 
+    // Surface conversion stat from existing CC data
+    const convEl = document.getElementById('cc-conversion-stat');
+    if (convEl && liquidity?.wow?.matchSoft7d) {
+      const rate = liquidity.wow.matchSoft7d.current;
+      const delta = liquidity.wow.matchSoft7d.delta;
+      convEl.textContent = `7d Search\u2192Click: ${rate}%`;
+      if (delta !== null && Math.abs(delta) >= 0.5) {
+        convEl.textContent += ` (${delta > 0 ? '+' : ''}${delta}pp)`;
+      }
+    }
+
     if (loadingEl) loadingEl.classList.add('hidden');
     if (contentEl) contentEl.classList.remove('hidden');
+
+    // Fire intelligence charts (3 parallel API calls)
+    loadCCIntelligence();
   } catch (error) {
     console.error('Failed to load command center:', error);
     if (loadingEl) loadingEl.innerHTML = 'Failed to load Command Center.';
@@ -3279,69 +2237,6 @@ function ccRenderAttention(states) {
   el.innerHTML = items.map(i =>
     `<div class="cc-attn-item cc-attn-${i.severity}"><span class="cc-attn-icon">${i.icon}</span> <span class="cc-attn-text">${i.text}</span> <span class="cc-attn-action">${i.action}</span></div>`
   ).join('');
-}
-
-function ccRenderMarketPulse(mp) {
-  const makeSpark = (canvasId, data, color, yMin, yMax) => {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas || !data?.length) return null;
-    const ctx = canvas.getContext('2d');
-    const containerH = canvas.parentElement ? canvas.parentElement.clientHeight : 56;
-    const grad = ctx.createLinearGradient(0, 0, 0, containerH);
-    grad.addColorStop(0, color + '25');
-    grad.addColorStop(1, color + '05');
-    return new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: data.map(d => d.date),
-        datasets: [{
-          data: data.map(d => d.value),
-          borderColor: color,
-          backgroundColor: grad,
-          fill: true, tension: 0.3,
-          pointRadius: 0, pointHoverRadius: 3,
-          borderWidth: 1.5
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { enabled: true, mode: 'index', intersect: false, bodyFont: { size: 10 }, padding: 6, cornerRadius: 4 }
-        },
-        scales: {
-          x: { display: false },
-          y: { display: false, min: yMin, max: yMax, grace: '15%' }
-        },
-        elements: { point: { radius: 0 } },
-        layout: { padding: { top: 2, bottom: 2 } }
-      }
-    });
-  };
-
-  // Summary values
-  const setSummary = (id, data, prefix, suffix, decimals) => {
-    const el = document.getElementById(id);
-    if (!el || !data?.length) return;
-    const last = data[data.length - 1].value;
-    const first = data[0].value;
-    const diff = last - first;
-    const arrow = diff > 0 ? '\u2191' : diff < 0 ? '\u2193' : '\u2192';
-    const d = decimals ?? 2;
-    el.textContent = prefix + (typeof last === 'number' ? last.toFixed(d) : last) + (suffix || '') + ' ' + arrow;
-  };
-
-  setSummary('cc-pulse-price-val', mp.medianPrice, '$', '', 2);
-  setSummary('cc-pulse-demand-val', mp.demandVolume, '', '', 0);
-  setSummary('cc-pulse-calls-val', mp.callVolume, '', '', 0);
-
-  if (mpPriceChart) mpPriceChart.destroy();
-  if (mpDemandChart) mpDemandChart.destroy();
-  if (mpCallChart) mpCallChart.destroy();
-
-  mpPriceChart = makeSpark('cc-chart-price', mp.medianPrice, '#3b82f6');
-  mpDemandChart = makeSpark('cc-chart-demand', mp.demandVolume, '#d97706');
-  mpCallChart = makeSpark('cc-chart-calls', mp.callVolume, '#8b5cf6');
 }
 
 function ccRenderActions(actions) {
@@ -4477,6 +3372,9 @@ async function loadCoverage() {
     // Load map with current view
     loadCoverageMapWithView(currentMapView);
 
+    // Price Spread chart
+    loadCoverageSpread();
+
   } catch (error) {
     console.error('Failed to load coverage:', error);
   }
@@ -4814,14 +3712,163 @@ async function loadSettings() {
   }
 }
 
+// ── CC Intelligence — single orchestrator, 3 parallel calls ──
+async function loadCCIntelligence() {
+  if (currentTab !== 'command-center') return;
+  if (typeof Chart === 'undefined') return;
+  const token = ++ccRenderToken;
+  await Promise.all([
+    loadCCDemandTrend(token),
+    loadCCChannelMix(token),
+    loadCCPriceIntel(token)
+  ]);
+}
+
+async function loadCCDemandTrend(token) {
+  try {
+    if (currentTab !== 'command-center') return;
+    const data = await cachedApi(`/searches?days=${currentDays}`);
+    if (currentTab !== 'command-center' || token !== ccRenderToken) return;
+    const ctx = document.getElementById('cc-demand-trend-chart');
+    if (!ctx || !ctx.isConnected) return;
+    if (!data || !Array.isArray(data.daily) || !data.daily.length) {
+      setEmptyState('cc-demand-trend-chart', 'cc-demand-empty', 'No search data for selected period', true);
+      return;
+    }
+    setEmptyState('cc-demand-trend-chart', 'cc-demand-empty', '', false);
+    if (ccDemandTrendChart) ccDemandTrendChart.destroy();
+    const periodEl = document.getElementById('cc-demand-period');
+    if (periodEl) periodEl.textContent = `${currentDays}d`;
+    ccDemandTrendChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.daily.map(d => d.date),
+        datasets: [{
+          label: 'Searches',
+          data: data.daily.map(d => d.searches),
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,0.08)',
+          fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  } catch (e) { console.error('[CC] Demand trend error:', e.message); }
+}
+
+async function loadCCChannelMix(token) {
+  try {
+    if (currentTab !== 'command-center') return;
+    const data = await cachedApi(`/clicks?days=${currentDays}`);
+    if (currentTab !== 'command-center' || token !== ccRenderToken) return;
+    const ctx = document.getElementById('cc-channel-mix-chart');
+    if (!ctx || !ctx.isConnected) return;
+    if (!data || !Array.isArray(data.daily) || !data.daily.length) {
+      setEmptyState('cc-channel-mix-chart', 'cc-channel-empty', 'No click data for selected period', true);
+      return;
+    }
+    setEmptyState('cc-channel-mix-chart', 'cc-channel-empty', '', false);
+    if (ccChannelMixChart) ccChannelMixChart.destroy();
+    const periodEl = document.getElementById('cc-channel-period');
+    if (periodEl) periodEl.textContent = `${currentDays}d`;
+    const totalCalls = data.daily.reduce((s, d) => s + (Number(d.calls) || 0), 0);
+    const totalWeb = data.daily.reduce((s, d) => s + (Number(d.websites) || 0), 0);
+    const callShare = totalCalls + totalWeb > 0 ? ((totalCalls / (totalCalls + totalWeb)) * 100).toFixed(1) : '0';
+    const statsEl = document.getElementById('cc-channel-stats');
+    if (statsEl) statsEl.textContent = `Call Share: ${callShare}%`;
+    ccChannelMixChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.daily.map(d => d.date),
+        datasets: [
+          { label: 'Calls', data: data.daily.map(d => d.calls), borderColor: '#8b5cf6', fill: false, pointRadius: 0, borderWidth: 2 },
+          { label: 'Website', data: data.daily.map(d => d.websites), borderColor: '#2563eb', fill: false, pointRadius: 0, borderWidth: 2 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+      }
+    });
+  } catch (e) { console.error('[CC] Channel mix error:', e.message); }
+}
+
+async function loadCCPriceIntel(token) {
+  try {
+    if (currentTab !== 'command-center') return;
+    const data = await cachedApi(`/prices?days=${currentDays}`);
+    if (currentTab !== 'command-center' || token !== ccRenderToken) return;
+    const ctx = document.getElementById('cc-price-band-chart');
+    if (!ctx || !ctx.isConnected) return;
+    if (!data || !Array.isArray(data.trends) || !data.trends.length) {
+      setEmptyState('cc-price-band-chart', 'cc-price-empty', 'No price data for selected period', true);
+      return;
+    }
+    setEmptyState('cc-price-band-chart', 'cc-price-empty', '', false);
+    if (ccPriceBandChart) ccPriceBandChart.destroy();
+    const latest = data.trends[data.trends.length - 1];
+    const spread = latest ? (latest.maxPrice - latest.minPrice).toFixed(2) : '--';
+    const statsEl = document.getElementById('cc-price-intel-stats');
+    if (statsEl) statsEl.innerHTML = `<span class="cc-price-stat">Avg: <strong>$${latest?.avgPrice?.toFixed(2) || '--'}</strong></span><span class="cc-price-stat">Spread: <strong>$${spread}</strong></span>`;
+    ccPriceBandChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.trends.map(t => t.date),
+        datasets: [
+          { label: 'Min', data: data.trends.map(t => t.minPrice), borderColor: '#22c55e', fill: false, borderDash: [4, 4], pointRadius: 0, borderWidth: 1.5 },
+          { label: 'Max', data: data.trends.map(t => t.maxPrice), borderColor: '#ef4444', backgroundColor: 'rgba(0,0,0,0.04)', fill: '-1', borderDash: [4, 4], pointRadius: 0, borderWidth: 1.5 },
+          { label: 'Avg', data: data.trends.map(t => t.avgPrice), borderColor: '#2563eb', fill: false, pointRadius: 0, borderWidth: 2.5 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: false } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+      }
+    });
+  } catch (e) { console.error('[CC] Price intel error:', e.message); }
+}
+
+// Price Spread by State (Coverage tab)
+async function loadCoverageSpread() {
+  const token = ++coverageRenderToken;
+  try {
+    if (currentTab !== 'coverage') return;
+    const data = await cachedApi(`/prices?days=${currentDays}`);
+    if (currentTab !== 'coverage' || token !== coverageRenderToken) return;
+    const ctx = document.getElementById('coverage-spread-chart');
+    if (!ctx || !ctx.isConnected) return;
+    if (!data || !Array.isArray(data.priceSpread) || !data.priceSpread.length) {
+      setEmptyState('coverage-spread-chart', 'coverage-spread-empty', 'No price spread data available', true);
+      return;
+    }
+    setEmptyState('coverage-spread-chart', 'coverage-spread-empty', '', false);
+    if (coverageSpreadChart) coverageSpreadChart.destroy();
+    const sorted = [...data.priceSpread].sort((a, b) => b.spread - a.spread);
+    coverageSpreadChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: sorted.map(p => `${p.state} (${p.supplierCount})`),
+        datasets: [{ label: 'Spread ($)', data: sorted.map(p => p.spread), backgroundColor: '#2563eb' }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        indexAxis: 'y',
+        scales: { x: { beginAtZero: true, title: { display: true, text: 'Price Spread ($)' } } }
+      }
+    });
+  } catch (e) { console.error('[Coverage] Price spread error:', e.message); }
+}
+
 // Load dashboard
 async function loadDashboard() {
   await Promise.all([
-    loadOverview(),
-    loadCommandCenter(),  // Load default tab
-    loadSupplierSignals(),
-    loadConversion(),
-    loadPriceAlerts()
+    loadCommandCenter()
   ]);
 }
 
