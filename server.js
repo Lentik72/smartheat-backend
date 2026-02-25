@@ -461,8 +461,8 @@ if (API_KEYS.DATABASE_URL) {
         let migrationErrors = 0;
         for (const { path: migPath, label } of migrations) {
           try {
-            const migration = require(migPath);
-            await migration.up(sequelize);
+            const { up } = require(migPath);
+            await up(sequelize);
           } catch (err) {
             migrationErrors++;
             logger.warn(`⚠️  ${label} migration: ${err.message}`);
