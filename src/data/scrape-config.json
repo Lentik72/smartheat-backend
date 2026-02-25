@@ -2069,6 +2069,43 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "wickedwarmoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: RI Scituate + CT Windham + MA Worcester - Droplet widget, prices behind ZIP form.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "rambonespragueoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "RI North Scituate - Providence/Kent counties - 100 gal min - Drupal 7 price block",
+    "priceRegex": "class=\"price\">([0-9]+\\.[0-9]{2})",
+    "postalCodesServed": ["02802","02814","02815","02816","02817","02818","02823","02824","02825","02826","02827","02828","02829","02830","02831","02838","02839","02857","02858","02859","02860","02861","02863","02864","02865","02876","02886","02887","02888","02889","02893","02895","02896","02903","02904","02905","02906","02907","02908","02909","02910","02911","02914","02915","02916","02917","02919","02920","02921"]
+  },
+
+  "dudekoilri.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "RI Warren - East Bay RI + Southern Bristol County MA - 150 gal min - Price without $ sign",
+    "priceRegex": "Total Fuel Oil Price ([0-9]+\\.[0-9]{2})",
+    "postalCodesServed": ["02885","02809","02806","02914","02915","02916","02842","02871","02777","02771"]
+  },
+
+  "charliesoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA Fall River / RI East Bay - Will-call. No prices on site.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "stopandgooil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: RI West Warwick - COD statewide. ZIP form/dynamic pricing.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_DE": "=== DELAWARE ===",
 
   "aweoil.com": {

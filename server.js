@@ -458,6 +458,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/077-add-ma-suppliers-batch1', label: 'MA suppliers batch 1' },
           { path: './src/migrations/078-add-ma-suppliers-batch2', label: 'MA suppliers batch 2' },
           { path: './src/migrations/079-add-ma-suppliers-batch3', label: 'MA suppliers batch 3' },
+          { path: './src/migrations/080-add-ri-suppliers', label: 'RI suppliers' },
         ];
 
         let migrationErrors = 0;
