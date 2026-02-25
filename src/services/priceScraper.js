@@ -143,6 +143,58 @@ async function scrapeSupplierPriceOnce(supplier, config) {
       url = urlObj.toString();
     }
 
+    // V2.10.0: json_api pattern — call a JSON API with custom method/headers,
+    // extract price from a dot-notation path in the response.
+    // Config fields: apiUrl, apiMethod (default POST), apiHeaders, jsonPath
+    if (config.pattern === 'json_api') {
+      const apiUrl = config.apiUrl;
+      if (!apiUrl) {
+        return { supplierId: supplier.id, supplierName: supplier.name, success: false,
+          error: 'json_api pattern requires apiUrl', duration: Date.now() - startTime, retryable: false };
+      }
+      const apiController = new AbortController();
+      const apiTimeout = setTimeout(() => apiController.abort(), 10000);
+      try {
+        const apiResp = await fetch(apiUrl, {
+          method: config.apiMethod || 'POST',
+          headers: { 'Content-Type': 'application/json', ...config.apiHeaders },
+          body: config.apiMethod === 'GET' ? undefined : JSON.stringify(config.apiBody || {}),
+          signal: apiController.signal,
+        });
+        clearTimeout(apiTimeout);
+        if (!apiResp.ok) {
+          return { supplierId: supplier.id, supplierName: supplier.name, success: false,
+            error: `API HTTP ${apiResp.status}`, duration: Date.now() - startTime, retryable: apiResp.status >= 500 };
+        }
+        const json = await apiResp.json();
+        // Walk jsonPath like "datalist.0.TodaysOilPrice1"
+        const parts = (config.jsonPath || '').split('.');
+        let val = json;
+        for (const p of parts) {
+          if (val == null) break;
+          val = val[p];
+        }
+        const price = parseFloat(val);
+        if (isNaN(price) || price < 2.00 || price > 5.00) {
+          return { supplierId: supplier.id, supplierName: supplier.name, success: false,
+            error: `API price ${val} invalid`, duration: Date.now() - startTime, retryable: false };
+        }
+        const sourceType = config.displayable === false ? 'aggregator_signal' : 'scraped';
+        return {
+          supplierId: supplier.id, supplierName: supplier.name, success: true,
+          pricePerGallon: price, minGallons: 100, fuelType: 'heating_oil', sourceType,
+          sourceUrl: apiUrl, scrapedAt: new Date(),
+          expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+          duration: Date.now() - startTime, isAggregator: config.displayable === false
+        };
+      } catch (e) {
+        clearTimeout(apiTimeout);
+        return { supplierId: supplier.id, supplierName: supplier.name, success: false,
+          error: e.name === 'AbortError' ? 'API timeout' : e.message,
+          duration: Date.now() - startTime, retryable: true };
+      }
+    }
+
     // Fetch with timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
