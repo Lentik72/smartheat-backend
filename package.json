@@ -1,6 +1,6 @@
 {
   "name": "smartheat-backend-api",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "SmartHeat Backend API - Community & Market Intelligence Platform",
   "main": "server.js",
   "scripts": {
