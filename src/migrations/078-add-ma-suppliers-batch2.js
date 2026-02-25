@@ -14,7 +14,7 @@
  *     Prices NOT scrapable (Hibu JS SPA).
  *  4. Atlantic Oil — Amesbury (Essex MA + Rockingham NH)
  *     Will-call confirmed: "will-call oil delivery" on own site. 3rd-generation since 1940s.
- *     DEACTIVATED: Website down (server unresponsive Feb 2026). Re-activate when site returns.
+ *     Prices NOT scrapable (Droplet Fuel widget). Also sells kerosene + diesel.
  *  5. Old Man Oil — Holden (Worcester/Middlesex/Hampshire/Hampden/Franklin)
  *     COD confirmed: "C.O.D." in company name. Broad Central MA coverage.
  *     Prices scrapable via zipleads JSON API (100-299 gal tier).
@@ -249,7 +249,7 @@ module.exports = {
     // Will-call confirmed: "will-call oil delivery" on own site.
     // 3rd-generation family business since 1940s. 24-hour burner service.
     // Serves both MA (Essex County) and NH (Rockingham County).
-    // DEACTIVATED: Website down (server unresponsive Feb 2026).
+    // Prices NOT scrapable (Droplet Fuel widget, ZIP+email form).
     // ============================================
     await upsertSupplier(sequelize, {
       id: uuidv4(),
@@ -292,9 +292,9 @@ module.exports = {
       seniorDiscount: false,
       allowPriceDisplay: false,
       notes: null,
-      active: false,
+      active: true,
     });
-    console.log('[Migration 078] Upserted Atlantic Oil (Amesbury, MA) [DEACTIVATED - site down]');
+    console.log('[Migration 078] Upserted Atlantic Oil (Amesbury, MA)');
 
     // ============================================
     // 5. OLD MAN OIL (Old Man C.O.D. Oil LLC) — Holden, MA
