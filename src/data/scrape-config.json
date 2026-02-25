@@ -1140,9 +1140,18 @@
     "enabled": true,
     "pattern": "direct",
     "name": "Brunelli Energy",
-    "phone": "(860) 886-2400",
+    "phone": "(860) 889-4442",
     "notes": "CT Bozrah/New London County. Wix SSR — price in static HTML.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})/gallon"
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})/gallon",
+    "postalCodesServed": [
+      "06226", "06231", "06232", "06235", "06237", "06247", "06248",
+      "06249", "06250", "06254", "06256", "06259", "06264", "06266",
+      "06268", "06320", "06330", "06331", "06332", "06333", "06334",
+      "06335", "06336", "06338", "06339", "06340", "06350", "06351",
+      "06354", "06355", "06359", "06360", "06365", "06370", "06372",
+      "06374", "06375", "06378", "06382", "06383", "06384", "06385",
+      "06389", "06415", "06420", "06423", "06469"
+    ]
   },
 
   "_section_MA": "=== MASSACHUSETTS ===",
@@ -2167,18 +2176,33 @@
     "enabled": true,
     "pattern": "direct",
     "name": "Ace Oil Maine",
-    "phone": "(207) 883-8832",
-    "notes": "ME Scarborough/Southern Maine. Price in Elementor heading.",
-    "priceRegex": "Heating Oil Price: \\$([0-9]+\\.[0-9]{2,3})"
+    "phone": "(207) 283-0576",
+    "notes": "ME Saco/Southern Maine. Price in Elementor heading. Will-call confirmed.",
+    "priceRegex": "Heating Oil Price: \\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04002", "04005", "04009", "04011", "04014", "04021", "04030",
+      "04032", "04038", "04039", "04042", "04043", "04046", "04048",
+      "04049", "04054", "04055", "04061", "04062", "04064", "04069",
+      "04071", "04072", "04073", "04074", "04076", "04078", "04079",
+      "04083", "04084", "04085", "04087", "04088", "04090", "04092",
+      "04093", "04095", "04096", "04097", "04101", "04102", "04103",
+      "04105", "04106", "04107", "04110", "04260"
+    ]
   },
 
   "desrochersoil.com": {
     "enabled": true,
     "pattern": "direct",
     "name": "Desrochers Oil",
-    "phone": "(207) 284-9989",
-    "notes": "ME Biddeford/York County. Cash price in price-box span.",
-    "priceRegex": "Cash Price[\\s\\S]*?\\$([0-9]+\\.[0-9]{2,3})"
+    "phone": "(207) 282-6789",
+    "notes": "ME Biddeford/York County. Cash price in price-box span. Will-call confirmed. Est. 1960.",
+    "priceRegex": "Cash Price[\\s\\S]*?\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04002", "04005", "04011", "04014", "04030", "04038", "04042",
+      "04043", "04046", "04054", "04062", "04064", "04072", "04073",
+      "04074", "04078", "04088", "04090", "04092", "04093", "04095",
+      "04101", "04102", "04103", "04106"
+    ]
   },
 
   "dalesoil.com": {
