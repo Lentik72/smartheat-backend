@@ -1580,6 +1580,91 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "oilmanonline.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Foxborough/Norfolk County - Cash price in h1 tag. COD confirmed.",
+    "priceRegex": "<h1>\\$([0-9]+\\.[0-9]{2,3})</h1>",
+    "postalCodesServed": ["02021","02030","02035","02038","02048","02052","02056","02062","02067","02081","02090","02093","02356","02703","02760","02762","02766"]
+  },
+
+  "plainville-oil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/price/plainville-oil_price.php",
+    "notes": "MA Foxboro/Norfolk-Bristol - Price via iframe PHP page. On-demand ordering.",
+    "priceRegex": "\\$\\s*([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": ["02019","02035","02038","02048","02056","02081","02093","02703","02760","02761","02762","02766","02769"]
+  },
+
+  "americandiscountoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/chicopee-springfield-palmer-area-oil-propane-prices/",
+    "notes": "MA Palmer/Hampden-Hampshire-Worcester - COD confirmed. Tiered pricing table.",
+    "priceRegex": "<td[^>]*>\\$([0-9]+\\.[0-9]{2,3})</td>",
+    "postalCodesServed": ["01007","01009","01010","01013","01020","01022","01028","01031","01033","01036","01037","01040","01041","01056","01057","01069","01074","01075","01079","01080","01081","01082","01083","01092","01094","01095","01101","01103","01104","01105","01106","01107","01108","01109","01118","01119","01128","01129","01151","01506","01515","01518","01521","01535","01566","01585"]
+  },
+
+  "fastfilloil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA West Springfield/Hampden County - COD explicit. Tiered pricing table.",
+    "priceRegex": "<td[^>]*>\\$([0-9]+\\.[0-9]{2})</td>",
+    "postalCodesServed": ["01001","01007","01009","01013","01020","01022","01028","01030","01033","01036","01040","01041","01056","01057","01069","01075","01077","01079","01080","01085","01089","01095","01101","01103","01104","01105","01106","01107","01108","01109","01118","01119","01128","01129","01151"]
+  },
+
+  "vickersoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA West Springfield/Hampden County - Will-call explicit. Tiered pricing table. Sister company of Fast Fill Oil.",
+    "priceRegex": "<td[^>]*>\\$([0-9]+\\.[0-9]{2})</td>",
+    "postalCodesServed": ["01001","01007","01009","01010","01013","01020","01022","01027","01028","01030","01033","01034","01036","01040","01041","01056","01057","01069","01071","01073","01075","01077","01079","01080","01081","01083","01085","01089","01092","01095","01101","01103","01104","01105","01106","01107","01108","01109","01118","01119","01128","01129","01151","01521"]
+  },
+
+  "nalaindustries.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/oil-prices",
+    "notes": "MA Upton/Worcester-Middlesex-Norfolk - Will-call confirmed. Squarespace SSR.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})/gallon",
+    "postalCodesServed": ["01501","01503","01504","01507","01519","01524","01527","01529","01532","01534","01537","01540","01560","01562","01568","01569","01570","01571","01581","01588","01590","01701","01702","01721","01745","01746","01747","01748","01756","01757","01760","01770","01772","02019","02021","02026","02030","02038","02052","02053","02054","02056","02062","02081","02090","02093"]
+  },
+
+  "aorlandooil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Framingham/Middlesex-Worcester - Will-call confirmed. Wix SSR, price on homepage.",
+    "priceRegex": "Today.{0,10}Oil Price \\$([0-9]+\\.[0-9]{2})",
+    "postalCodesServed": ["01701","01702","01718","01721","01745","01746","01747","01748","01749","01756","01757","01760","01770","01772","01776","01778","01519","01527","01529","01532","01534","01537","01545","01560","01568","01581","01588","02019","02030","02038","02052","02053","02054"]
+  },
+
+  "alsoilservice.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA Shrewsbury/Worcester County - Hibu JS-rendered site. Prices not in static HTML. COD confirmed.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": ["01501","01503","01505","01507","01516","01519","01520","01524","01527","01529","01531","01532","01534","01537","01540","01541","01542","01543","01545","01550","01560","01562","01566","01568","01569","01570","01581","01583","01585","01588","01590","01601","01602","01603","01604","01605","01606","01607","01608","01609","01610","01746","01747","01749","01752","01756","01757","01760","01770","01772"]
+  },
+
+  "frascofueloil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/order/",
+    "notes": "MA West Springfield/Hampden County - Cash pricing. Price in JS var on order page.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})</td>",
+    "postalCodesServed": ["01001","01007","01009","01013","01020","01022","01027","01028","01030","01033","01034","01036","01040","01041","01056","01057","01069","01071","01075","01077","01085","01089","01095","01101","01103","01104","01105","01106","01107","01108","01109","01118","01119","01128","01129","01151"]
+  },
+
+  "southbridgetireandoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/home-heating-oil-company",
+    "notes": "MA Southbridge/Worcester County + CT Windham County - Will-call. Hibu SSR.",
+    "priceRegex": "Oil Price \\$([0-9]+\\.[0-9]{2})",
+    "postalCodesServed": ["01506","01507","01510","01515","01518","01521","01524","01529","01535","01537","01540","01550","01560","01566","01569","01570","01571","01585","01588","01590","06230","06234","06235","06242","06255","06259","06260","06263","06277","06279","06281"]
+  },
+
   "_section_PA": "=== PENNSYLVANIA ===",
 
   "ferrofueloil.com": {

@@ -455,6 +455,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/074-add-daily-platform-metrics', label: 'Daily platform metrics' },
           { path: './src/migrations/075-supplier-data-integrity', label: 'Supplier data integrity' },
           { path: './src/migrations/076-add-me-ct-incomplete-suppliers', label: 'ME/CT incomplete suppliers' },
+          { path: './src/migrations/077-add-ma-suppliers-batch1', label: 'MA suppliers batch 1' },
         ];
 
         let migrationErrors = 0;
