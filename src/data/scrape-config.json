@@ -1708,6 +1708,51 @@
     "postalCodesServed": ["01005","01010","01037","01068","01074","01082","01083","01092","01094","01331","01355","01366","01368","01420","01430","01431","01434","01436","01438","01440","01451","01452","01453","01462","01464","01467","01473","01475","01501","01503","01505","01506","01507","01510","01515","01518","01519","01520","01522","01523","01524","01527","01531","01532","01535","01536","01537","01541","01542","01543","01545","01550","01562","01564","01566","01581","01583","01585","01590","01602","01605","01606","01609","01612","01740","01749","01752"]
   },
 
+  "ronsfuelinc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "MA Athol/North Quabbin - COD. 'Today's cash price' on homepage. GoDaddy SSR.",
+    "priceRegex": "HOME HEATING OIL IS \\$([0-9]+\\.[0-9]{2})",
+    "postalCodesServed": ["01331","01344","01349","01351","01354","01355","01360","01364","01366","01368","01376","01378","01430","01436","01440","01475"]
+  },
+
+  "oilpeddler.com": {
+    "enabled": true,
+    "pattern": "table",
+    "notes": "MA South Dennis/Cape Cod - Explicit COD. Tiered pricing 150+/200+ gal. WordPress SSR.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": ["02537","02542","02561","02562","02563","02601","02630","02631","02632","02633","02634","02635","02637","02638","02639","02641","02642","02643","02644","02645","02646","02647","02648","02649","02650","02651","02652","02653","02655","02657","02659","02660","02661","02662","02663","02664","02666","02667","02668","02669","02670","02671","02672","02673","02675"]
+  },
+
+  "vickersoil.com": {
+    "enabled": true,
+    "pattern": "table",
+    "notes": "MA West Springfield/Hampden - Will-call. Tiered 50-99/100-149/150-299/300+. Also Supreme Oil (same entity).",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})",
+    "postalCodesServed": ["01001","01007","01008","01009","01010","01013","01020","01022","01027","01028","01030","01033","01034","01036","01040","01041","01056","01057","01069","01071","01073","01075","01077","01079","01080","01081","01083","01089","01090","01092","01095","01101","01103","01104","01105","01106","01107","01108","01109","01151","01521"]
+  },
+
+  "highwayfuel.biz": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA Hingham/South Shore - Discount dealer since 1991. No prices on site (ModSecurity blocks).",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "kierasoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA North Amherst/Hampshire - Since 1949. Hibu JS SPA, prices not in static HTML.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "willandsontrucking.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MA Milford/Bellingham - Family trucking co. Hibu JS SPA, prices not in static HTML.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_PA": "=== PENNSYLVANIA ===",
 
   "ferrofueloil.com": {
