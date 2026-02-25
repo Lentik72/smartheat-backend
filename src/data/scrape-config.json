@@ -1237,7 +1237,7 @@
   "countyenergyproducts.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "MA - County Energy Products. May be CAPTCHA blocked intermittently.",
+    "notes": "MA + NH - County Energy Products, Chelmsford MA. Serves MA Middlesex/Essex + NH Hillsborough/Rockingham. NH price appears as 'NH $X.XX' on homepage.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
@@ -2369,6 +2369,100 @@
     "notes": "NH Londonderry/Southern NH - COD. DudaMobile site — price in data-binding without $ sign.",
     "priceRegex": "cash price[\\s\\S]*?>([0-9]+\\.[0-9]{2})<",
     "postalCodesServed": ["03032","03036","03038","03044","03051","03052","03053","03054","03076","03079","03087","03101","03102","03103","03104","03110","03811","03819","03841","03848","03873"]
+  },
+
+  "foleyoilco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NH Belmont/Lakes Region - COD. 75+ years family-owned. Price in price-box div on homepage.",
+    "priceRegex": "class=\"price\">\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "davisoilandpropane.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NH Keene/Monadnock - COD since 1926. Cash price in fuel-price div, no $ sign.",
+    "priceRegex": "#2 Fuel Cash Price: ([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "fitchfuelco.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/prices/",
+    "notes": "NH Lancaster/Northern - COD. 10-day cash price. Elementor price-list widget on /prices/ page.",
+    "priceRegex": "elementor-price-list-price\">\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "www.joelsoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/product-page/heating-oil",
+    "notes": "NH Canterbury/Central - COD cash/check. Wix site. Price in JSON-LD schema on product page. MUST use www prefix.",
+    "priceRegex": "\"price\":\"([0-9]+\\.[0-9]{2,3})\""
+  },
+
+  "noblefuelsinc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/online-store/ols/products/home-heating-kerosine-hm-htn-krs1",
+    "notes": "ME North Berwick → NH Seacoast. COD cash/check only. Price in OG meta tag on product page. NO www prefix (TLS fails with www).",
+    "priceRegex": "product:price:amount\" content=\"([0-9]+\\.[0-9]{2})\""
+  },
+
+  "flagshipfuelco.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NH Greenland/Seacoast - Droplet widget, prices loaded via JS.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "discountenergy.org": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NH Rochester - Will-call COD, 40+ years. No prices on site.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "reedfamilyenergy.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Acton → NH. Small family COD. No prices on site.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "hometown-oil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NH Portsmouth - Will-call, 20+ years. Prices via myfuelaccount portal.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "welchheatingoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME York → NH. Will-call primary. Droplet widget, prices loaded via JS.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "fieldingsoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NH Rochester - Contract-focused, auto-delivery emphasis. 50+ years. Not COD.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "myqualityfuels.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Lebanon → NH. Online ordering only via Droplet. Excluded.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "rehinkley.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NH Claremont/Sullivan County. Cloudflare WAF blocks scraping. Excluded.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "_section_VT": "=== VERMONT ===",
