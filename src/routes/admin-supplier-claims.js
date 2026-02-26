@@ -21,15 +21,24 @@ const MAGIC_LINK_EXPIRY_DAYS = 365;
 
 /**
  * Admin authentication middleware
+ * Accepts: X-Admin-Token header, Authorization: Bearer, or ?token= query param.
+ * Checks against ADMIN_REVIEW_TOKEN first, then DASHBOARD_PASSWORD as fallback.
  */
 const requireAdmin = (req, res, next) => {
-  const token = req.headers['x-admin-token'] || req.query.token;
+  const token = req.headers['x-admin-token']
+    || req.query.token
+    || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null);
 
-  if (!token || token !== ADMIN_MASTER_TOKEN) {
+  if (!token) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  next();
+  const dashboardPassword = process.env.DASHBOARD_PASSWORD;
+  if (token === ADMIN_MASTER_TOKEN || (dashboardPassword && token === dashboardPassword)) {
+    return next();
+  }
+
+  return res.status(401).json({ error: 'Unauthorized' });
 };
 
 /**
@@ -159,6 +168,7 @@ router.get('/', requireAdmin, async (req, res) => {
         sc.rejection_reason,
         s.id as supplier_id,
         s.name as supplier_name,
+        s.slug as supplier_slug,
         s.phone as supplier_phone,
         s.city as supplier_city,
         s.state as supplier_state,
@@ -192,6 +202,7 @@ router.get('/', requireAdmin, async (req, res) => {
         supplier: {
           id: c.supplier_id,
           name: c.supplier_name,
+          slug: c.supplier_slug,
           phone: c.supplier_phone,
           city: c.supplier_city,
           state: c.supplier_state,

@@ -4123,7 +4123,7 @@ function renderClaimsTable() {
       actionsHtml = `<span style="color:var(--gray-500); font-size:12px;">${reason}</span>`;
     }
 
-    const slug = claim.supplier?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || '';
+    const slug = claim.supplier?.slug || '';
 
     return `
       <tr class="claim-row" data-claim-id="${claim.id}">

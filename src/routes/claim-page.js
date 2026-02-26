@@ -35,11 +35,15 @@ function checkSlugSweep(ip, slug) {
   return entry.slugs.size > SWEEP_THRESHOLD;
 }
 
-// Periodic cleanup of stale sweep entries (every 5 min)
+// Periodic cleanup of stale sweep entries + cache size logging (every 5 min)
 setInterval(() => {
   const cutoff = Date.now() - SWEEP_WINDOW;
+  let swept = 0;
   for (const [ip, entry] of slugSweepTracker) {
-    if (entry.ts < cutoff) slugSweepTracker.delete(ip);
+    if (entry.ts < cutoff) { slugSweepTracker.delete(ip); swept++; }
+  }
+  if (slugSweepTracker.size > 0 || supplierDemandCache.size > 50) {
+    console.log(`[ClaimPage] Cache: ${supplierDemandCache.size} demand entries, ${slugSweepTracker.size} sweep IPs (cleaned ${swept})`);
   }
 }, 300000);
 
@@ -86,6 +90,7 @@ async function getActivityRanks(sequelize) {
   }
 
   activityRanksCache = { data: ranks, ts: now };
+  console.log(`[ClaimPage] Activity ranks recomputed: ${total} suppliers ranked`);
   return ranks;
 }
 
