@@ -1154,6 +1154,45 @@
     ]
   },
 
+  "cashwayoilct.com": {
+    "enabled": true,
+    "pattern": "table",
+    "targetTier": 2,
+    "name": "Cashway Oil",
+    "phone": "(860) 745-0133",
+    "notes": "CT Enfield/Hartford-Tolland County - Will-call. CT arm of Vickers Oil. Tiered pricing (50-99/100-149/150-299). targetTier=2 gets 150 gal price. Also delivers kerosene & diesel.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})",
+    "postalCodesServed": [
+      "06002","06016","06026","06029","06033","06035",
+      "06040","06042","06066","06067","06070","06071",
+      "06073","06074","06076","06078","06082","06088",
+      "06089","06093","06095","06096",
+      "06105","06106","06107","06108","06109","06110",
+      "06112","06114","06117","06118","06119"
+    ]
+  },
+
+  "easyoilct.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "Easy Oil LLC",
+    "phone": "(203) 272-7878",
+    "notes": "CT Cheshire/New Haven-Middlesex County - Family-owned COD. Wix SSR, price in static HTML. 100 gal min.",
+    "priceRegex": "Today.*?Price.*?\\$([0-9]+\\.[0-9]{2})",
+    "postalCodesServed": [
+      "06410","06422","06450","06451","06455","06457",
+      "06471","06473","06489","06492",
+      "06514","06517","06518","06524","06712"
+    ]
+  },
+
+  "ctheatingoild.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: CT Orange/Fairfield-New Haven County - GoDaddy site, no price displayed. Directory only.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_MA": "=== MASSACHUSETTS ===",
 
   "georgesoil.com": {
