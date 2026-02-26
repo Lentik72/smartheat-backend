@@ -142,12 +142,12 @@ function formatPhone(phone) {
   return phone;
 }
 
-// Activity badge config
+// Activity badge config — reflects area demand, not supplier performance
 const ACTIVITY_LABELS = {
-  high: { text: 'HIGH DEMAND', cls: 'badge-high' },
-  active: { text: 'ACTIVE', cls: 'badge-active' },
-  growing: { text: 'GROWING', cls: 'badge-growing' },
-  new: { text: 'NEW', cls: 'badge-new' }
+  high: { text: 'ACTIVE AREA', cls: 'badge-high' },
+  active: { text: 'ACTIVE AREA', cls: 'badge-active' },
+  growing: { text: 'GROWING AREA', cls: 'badge-growing' },
+  new: { text: 'NEW LISTING', cls: 'badge-new' }
 };
 
 // ── Page Renderer ────────────────────────────────────────────────
@@ -176,7 +176,7 @@ function renderClaimPage(supplier, demand, activityLevel, hasPrice, isClaimed) {
         <div class="claim-card-header">
           <span class="activity-badge ${badge.cls}">${badge.text}</span>
         </div>
-        <p class="demand-zero">Your listing is live but hasn't received clicks yet. Claimed suppliers with displayed prices get more visibility.</p>
+        <p class="demand-zero">Homeowners in your area are searching for heating oil. Claim your listing to appear when they compare prices.</p>
       </div>`;
   } else {
     const priceNudge = !hasPrice
@@ -198,22 +198,18 @@ function renderClaimPage(supplier, demand, activityLevel, hasPrice, isClaimed) {
         </div>
         <div class="locked-grid">
           <div class="locked-stat">
-            <span class="locked-number">247</span>
             <span class="lock-icon">&#128274;</span>
             <span class="locked-label">Area searches</span>
           </div>
           <div class="locked-stat">
-            <span class="locked-number">83%</span>
             <span class="lock-icon">&#128274;</span>
             <span class="locked-label">Clicks going to competitors</span>
           </div>
           <div class="locked-stat">
-            <span class="locked-number">12%</span>
             <span class="lock-icon">&#128274;</span>
             <span class="locked-label">Your click share</span>
           </div>
           <div class="locked-stat">
-            <span class="locked-number">+$0.18</span>
             <span class="lock-icon">&#128274;</span>
             <span class="locked-label">Price vs market</span>
           </div>
