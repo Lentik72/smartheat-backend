@@ -2566,6 +2566,259 @@
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
 
+  "ofarrellenergy.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "O'Farrell Energy",
+    "phone": "(207) 844-7800",
+    "notes": "ME Bowdoinham/Mid-Coast - Will Call, senior discounts. Price in element id containing 'heating-oil-price-is-X.XXX'.",
+    "priceRegex": "heating-oil-price-is-([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04003", "04008", "04011", "04066", "04079", "04086", "04106",
+      "04222", "04236", "04240", "04250", "04252", "04259", "04265",
+      "04280", "04287", "04342", "04344", "04345", "04346", "04347",
+      "04350", "04357", "04359", "04530", "04535", "04548", "04553",
+      "04556", "04562", "04571", "04578", "04579"
+    ]
+  },
+
+  "ajsdiscountoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "AJ's Discount Oil",
+    "phone": "(207) 791-2825",
+    "notes": "ME Portland - Will-call. DudaMobile site (needs got-scraping). Price: Today's #2 Heating Oil Price $X.XX/gal.",
+    "priceRegex": "Today's.*Price:?\\s*\\$([0-9]+\\.[0-9]{2})",
+    "postalCodesServed": [
+      "04015", "04021", "04032", "04038", "04039", "04062", "04064",
+      "04069", "04070", "04072", "04074", "04078", "04084", "04092",
+      "04093", "04096", "04097", "04101", "04102", "04103", "04105",
+      "04106", "04107", "04108", "04110"
+    ]
+  },
+
+  "ne-fuels.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "Northeast Fuels",
+    "phone": "(207) 675-3002",
+    "notes": "ME Steep Falls/Southern ME - Will Call + emergency. WordPress/Genesis. Price in <strong> tag.",
+    "priceRegex": "<strong>\\$([0-9]+\\.[0-9]{2,3})</strong>",
+    "postalCodesServed": [
+      "04020", "04029", "04038", "04042", "04046", "04049",
+      "04084", "04085", "04091", "04093", "04062"
+    ]
+  },
+
+  "higgins-energy.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "Higgins Energy",
+    "phone": "(207) 829-1842",
+    "notes": "ME Cumberland Center - Cash price. Price in h2: Today's Oil Price X.XXX (no $ sign).",
+    "priceRegex": "Today's Oil Price ([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04011", "04015", "04021", "04032", "04038", "04039", "04062",
+      "04069", "04071", "04074", "04077", "04078", "04079", "04084",
+      "04092", "04096", "04097", "04101", "04102", "04103", "04105",
+      "04106", "04107", "04108", "04110", "04222", "04252", "04260", "04274"
+    ]
+  },
+
+  "paulsservicesinc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/order-now/",
+    "name": "Paul's Services",
+    "phone": "(207) 780-6710",
+    "notes": "ME Portland - Cash/money order on 1st delivery. WordPress/Gravity. Price on /order-now/ in div.price.",
+    "priceRegex": "class=\"price\">\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04005", "04015", "04021", "04032", "04038", "04039", "04042",
+      "04062", "04064", "04069", "04070", "04071", "04072", "04074",
+      "04077", "04078", "04084", "04085", "04092", "04093", "04096",
+      "04097", "04101", "04102", "04103", "04105", "04106", "04107",
+      "04108", "04110", "04260"
+    ]
+  },
+
+  "rroil.me": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "R&R Oil",
+    "phone": "(207) 499-7100",
+    "notes": "ME Lyman/York County - Cash pricing. Jimdo site. Oil + K-1 prices on homepage.",
+    "priceRegex": "Home Heating Oil \\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04002", "04005", "04043", "04046", "04064",
+      "04072", "04073", "04083", "04087"
+    ]
+  },
+
+  "countryfuelllc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "Country Fuel LLC",
+    "phone": "(207) 725-4651",
+    "notes": "ME Topsham - COD only explicit. GoDaddy SSR site. Oil + K1 prices on homepage.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04008", "04011", "04032", "04079", "04086", "04210", "04222",
+      "04236", "04240", "04250", "04252", "04259", "04280", "04287",
+      "04342", "04345", "04350", "04357", "04530", "04537", "04538",
+      "04539", "04543", "04544", "04548", "04553", "04554", "04555",
+      "04556", "04558", "04562", "04564", "04568", "04573", "04578",
+      "04579"
+    ]
+  },
+
+  "hometownfuelme.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "Hometown Fuel",
+    "phone": "(207) 565-2746",
+    "notes": "ME Eastbrook/Downeast - Senior + military discounts. Hancock/Washington Counties.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04605", "04607", "04613", "04634", "04640", "04658",
+      "04660", "04664", "04669", "04677", "04680", "04684", "04693"
+    ]
+  },
+
+  "coastlineenergyllc.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/products",
+    "name": "Coastline Energy",
+    "phone": "(207) 888-3233",
+    "notes": "ME Richmond/Mid-Coast - Wix site. Prices on /products page.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04008", "04011", "04032", "04079", "04086",
+      "04096", "04287", "04357", "04530", "04579"
+    ]
+  },
+
+  "winterwood-farm.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "Winterwood Fuel",
+    "phone": "(207) 608-2045",
+    "notes": "ME Lyman/York County - Jimdo site. Oil + K-1 + diesel prices on homepage. Droplet ordering.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04002", "04005", "04027", "04038", "04042", "04043", "04046",
+      "04048", "04056", "04062", "04064", "04072", "04073", "04074",
+      "04076", "04083", "04087", "04090", "04092", "04093", "04101",
+      "04106", "04107", "03906"
+    ]
+  },
+
+  "ggcashfuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Litchfield/Kennebec County - Website down. Legit business (BBB A+, 40+ years).",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bobscashfuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Madison/Central ME - Prices via myfuelaccount.com portal, not on site.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "rinaldienergy.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Saco/York County - Dynamic price form via myfuelaccount.com. Senior discounts.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "topitoffoilme.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Alfred/York County - DudaMobile site, 403 to bots. No visible price.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "arrowoilmaine.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Biddeford - JS widget ordering. Not scrapable.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "conroysoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Saco - Est. 1942, 3rd gen. Cash/check. No public price on site.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "vicandsonsfuelco.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME South Portland - Droplet widget ordering. Parent of SoPo Fuel.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "willowcreekfuel.me": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Saco - Weekend delivery + 24hr. No price on site.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "eagleoilmaine.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Arundel - Broken SSL cert. Small operation. No visible price.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "sopofuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME South Portland - Related to Vic & Sons. Droplet widget. 2 ZIPs only.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "alfredoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Alfred - Website down (broken SSL). BBB confirmed. Senior discounts.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "kaleroil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME North Bath/Sagadahoc - Est. 1956, family-run. No public price on site.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "cbhaskellfuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Windsor/Kennebec - Wix Thunderbolt, JS-rendered. 24hr emergency.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "dysartsfuels.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Hermon/Bangor - Requires application. Not COD/walk-up.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "onlinefuel.net": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: ME Portland - Reseller/aggregator. Not a direct supplier.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "yourenergydirect.net": {
     "enabled": true,
     "pattern": "direct",
