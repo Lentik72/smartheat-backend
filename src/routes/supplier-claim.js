@@ -206,17 +206,19 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Server-side timing validation (anti-bot)
-    if (ts) {
-      const renderTime = parseInt(ts, 10) * 1000;
-      const elapsed = Date.now() - renderTime;
-      if (elapsed < 3000) {
-        logger?.warn(`[SupplierClaim] Bot-speed submission for ${slug}: ${elapsed}ms`);
-        return res.status(400).json({ success: false, error: 'Please wait a moment before submitting.' });
-      }
-      if (elapsed > 1800000) {
-        return res.status(400).json({ success: false, error: 'Session expired. Please refresh and try again.' });
-      }
+    // Server-side timing validation (anti-bot) — ts is required
+    if (!ts) {
+      logger?.warn(`[SupplierClaim] Missing ts for ${slug} — direct POST without page load`);
+      return res.status(400).json({ success: false, error: 'Invalid submission. Please use the claim page.' });
+    }
+    const renderTime = parseInt(ts, 10) * 1000;
+    const elapsed = Date.now() - renderTime;
+    if (isNaN(renderTime) || elapsed < 3000) {
+      logger?.warn(`[SupplierClaim] Bot-speed submission for ${slug}: ${elapsed}ms`);
+      return res.status(400).json({ success: false, error: 'Please wait a moment before submitting.' });
+    }
+    if (elapsed > 1800000) {
+      return res.status(400).json({ success: false, error: 'Session expired. Please refresh and try again.' });
     }
 
     // Check honeypot (simple spam prevention)
