@@ -1268,7 +1268,7 @@ ${supplierRows}
       <a href="/support">Support</a>
     </div>
     <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
-    <p>&copy; 2026 HomeHeat. All rights reserved.</p>
+    <p>&copy; 2026 HomeHeat by Tsoir Advisors LLC. All rights reserved.</p>
   </footer>
 
   <script src="${assetPath}js/nav.js"></script>

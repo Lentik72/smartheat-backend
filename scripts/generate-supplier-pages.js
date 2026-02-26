@@ -246,7 +246,7 @@ function generateSupplierPage(supplier, latestPrice) {
       <a href="/terms">Terms</a>
     </div>
     <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
-    <p>&copy; ${new Date().getFullYear()} HomeHeat. All rights reserved.</p>
+    <p>&copy; ${new Date().getFullYear()} HomeHeat by Tsoir Advisors LLC. All rights reserved.</p>
   </footer>
 
   <script src="/js/nav.js"></script>
