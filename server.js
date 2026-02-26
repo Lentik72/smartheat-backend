@@ -462,6 +462,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/081-add-nh-suppliers', label: 'NH suppliers' },
           { path: './src/migrations/082-add-me-suppliers', label: 'ME suppliers' },
           { path: './src/migrations/083-add-ct-suppliers', label: 'CT suppliers' },
+          { path: './src/migrations/084-add-vt-suppliers', label: 'VT suppliers' },
         ];
 
         let migrationErrors = 0;

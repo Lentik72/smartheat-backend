@@ -2513,6 +2513,95 @@
     "priceRegex": "CURRENT PRICE: \\$([0-9]+\\.[0-9]{2})"
   },
 
+  "greenesoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "Greene's Oil",
+    "phone": "(802) 442-2705",
+    "notes": "VT Bennington/Bennington County - Will-call explicit. Cash pricing. Since 1946. Fuel oil + kerosene.",
+    "priceRegex": "fuel oil ([0-9]+\\.[0-9]{2})",
+    "postalCodesServed": ["05201","05250","05257","05260","05261","05262"]
+  },
+
+  "gechafuels.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "Gecha Fuels",
+    "phone": "(802) 483-9333",
+    "notes": "VT Pittsford/Rutland-Addison County - COD cash discount. Price of the Day in Revolution Slider.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2})/gal",
+    "postalCodesServed": [
+      "05701","05733","05735","05736","05737","05738",
+      "05739","05742","05743","05744","05750","05757",
+      "05758","05759","05761","05763","05764","05765",
+      "05773","05774","05777","05251","05769","05778"
+    ]
+  },
+
+  "jamesfuels.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "James Plumbing & Heating Oil",
+    "phone": "(802) 463-3122",
+    "notes": "VT Bellows Falls/Windham-Windsor County + NH Cheshire-Sullivan. Cash price on homepage. $0.10/gal cash discount.",
+    "priceRegex": "Heating Oil Price: \\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "05101","05146","05154","05155","05158",
+      "05301","05343","05345","05346","05353","05355","05359","05362",
+      "05030","05142","05143","05148","05149","05150","05151","05156","05161",
+      "03431","03443","03448","03456","03457","03462","03464","03466","03467","03469",
+      "03601","03602","03603","03604","03607","03608","03609","03743"
+    ]
+  },
+
+  "westoilcompany.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "West Oil Company",
+    "phone": "(413) 664-4000",
+    "notes": "MA North Adams/Berkshire + VT S. Bennington County - Retail price in sidebar widget. Since 1949.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3}) per gallon",
+    "postalCodesServed": [
+      "01220","01225","01237","01247","01256","01267","01346","01367",
+      "05201","05257","05260","05261","05262","05350","05363"
+    ]
+  },
+
+  "morsefuels.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NY Stephentown/serves VT Bennington County - ZIP form required for pricing. Directory only.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "corsefuels.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: VT Cambridge/Lamoille-Franklin-Chittenden County - Will-call. No prices on website.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "packardfuels.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: VT East Montpelier/Washington-Orange-Caledonia County - Will-call. Site returns 403.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "cvoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: VT Pittsfield/Windsor-Rutland County - Will-call. No prices on website.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "samsusavefuel.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: VT Fair Haven/Rutland County - Cash company. No prices on website.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
   "_section_ME": "=== MAINE ===",
 
   "aceoilmaine.com": {
