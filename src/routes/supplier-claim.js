@@ -14,6 +14,8 @@ const router = express.Router();
 
 // Rate limit: max claims per email per day
 const MAX_CLAIMS_PER_EMAIL_PER_DAY = 3;
+// Rate limit: max claims per IP per day
+const MAX_CLAIMS_PER_IP_PER_DAY = 10;
 
 /**
  * Send confirmation email to the claimant
@@ -178,19 +180,20 @@ async function sendAdminNotificationEmail(claim, supplier, pendingCount) {
 /**
  * POST /api/supplier-claim
  * Submit a new claim for a supplier listing
+ * Accepts slug (not supplierId) — ID resolved server-side
  */
 router.post('/', async (req, res) => {
   const sequelize = req.app.locals.sequelize;
   const logger = req.app.locals.logger;
 
   try {
-    const { supplierId, claimantName, claimantEmail, claimantPhone, claimantRole } = req.body;
+    const { slug, claimantName, claimantEmail, claimantPhone, claimantRole, ts } = req.body;
 
     // Validate required fields
-    if (!supplierId || !claimantName || !claimantEmail) {
+    if (!slug || !claimantName || !claimantEmail) {
       return res.status(400).json({
         success: false,
-        error: 'Supplier ID, name, and email are required'
+        error: 'Supplier, name, and email are required'
       });
     }
 
@@ -203,12 +206,28 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Server-side timing validation (anti-bot)
+    if (ts) {
+      const renderTime = parseInt(ts, 10) * 1000;
+      const elapsed = Date.now() - renderTime;
+      if (elapsed < 3000) {
+        logger?.warn(`[SupplierClaim] Bot-speed submission for ${slug}: ${elapsed}ms`);
+        return res.status(400).json({ success: false, error: 'Please wait a moment before submitting.' });
+      }
+      if (elapsed > 1800000) {
+        return res.status(400).json({ success: false, error: 'Session expired. Please refresh and try again.' });
+      }
+    }
+
     // Check honeypot (simple spam prevention)
     if (req.body.website_url) {
-      // Honeypot field filled = likely a bot
       logger?.warn(`[SupplierClaim] Honeypot triggered for ${claimantEmail}`);
       return res.json({ success: true, claimId: 'submitted', message: 'Claim submitted.' });
     }
+
+    // Get IP for rate limiting and audit
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'] || '';
 
     // Check rate limit: max claims per email per day
     const [rateLimitCheck] = await sequelize.query(`
@@ -225,12 +244,27 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Verify supplier exists
+    // Check rate limit: max claims per IP per day
+    const [ipRateCheck] = await sequelize.query(`
+      SELECT COUNT(*) as count
+      FROM supplier_claims
+      WHERE ip_address = :ip
+        AND submitted_at > NOW() - INTERVAL '24 hours'
+    `, { replacements: { ip } });
+
+    if (parseInt(ipRateCheck[0]?.count || 0) >= MAX_CLAIMS_PER_IP_PER_DAY) {
+      return res.status(429).json({
+        success: false,
+        error: 'Too many claims from this network. Please try again tomorrow.'
+      });
+    }
+
+    // Resolve supplier by slug (active only) — no internal ID on client
     const [supplierRows] = await sequelize.query(`
-      SELECT id, name, phone, city, state
+      SELECT id, name, phone, city, state, claimed_at
       FROM suppliers
-      WHERE id = :id AND active = true
-    `, { replacements: { id: supplierId } });
+      WHERE slug = :slug AND active = true
+    `, { replacements: { slug } });
 
     if (supplierRows.length === 0) {
       return res.status(404).json({
@@ -240,8 +274,17 @@ router.post('/', async (req, res) => {
     }
 
     const supplier = supplierRows[0];
+    const supplierId = supplier.id;
 
-    // Check for existing pending or verified claim
+    // Block claims on already-verified suppliers
+    if (supplier.claimed_at) {
+      return res.status(400).json({
+        success: false,
+        error: 'This listing has already been verified'
+      });
+    }
+
+    // Check for existing pending claim (user-friendly check before DB constraint)
     const [existingClaim] = await sequelize.query(`
       SELECT id, status
       FROM supplier_claims
@@ -265,34 +308,57 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Get IP and user agent for audit
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
-    const userAgent = req.headers['user-agent'] || '';
-
-    // Insert claim
-    const [insertResult] = await sequelize.query(`
-      INSERT INTO supplier_claims (
-        supplier_id, claimant_name, claimant_email, claimant_phone, claimant_role,
-        ip_address, user_agent
-      )
-      VALUES (
-        :supplierId, :name, :email, :phone, :role,
-        :ip, :userAgent
-      )
-      RETURNING id
-    `, {
-      replacements: {
-        supplierId,
-        name: claimantName.trim(),
-        email: claimantEmail.toLowerCase().trim(),
-        phone: claimantPhone?.trim() || null,
-        role: claimantRole || 'other',
-        ip,
-        userAgent
+    // Insert claim (unique index guards against race conditions)
+    let insertResult;
+    try {
+      [insertResult] = await sequelize.query(`
+        INSERT INTO supplier_claims (
+          supplier_id, claimant_name, claimant_email, claimant_phone, claimant_role,
+          ip_address, user_agent
+        )
+        VALUES (
+          :supplierId, :name, :email, :phone, :role,
+          :ip, :userAgent
+        )
+        RETURNING id
+      `, {
+        replacements: {
+          supplierId,
+          name: claimantName.trim(),
+          email: claimantEmail.toLowerCase().trim(),
+          phone: claimantPhone?.trim() || null,
+          role: claimantRole || 'other',
+          ip,
+          userAgent
+        }
+      });
+    } catch (insertError) {
+      // Catch unique index violation (race condition: two simultaneous claims)
+      if (insertError.original?.code === '23505') {
+        return res.status(400).json({
+          success: false,
+          error: 'This listing already has a pending or verified claim.'
+        });
       }
-    });
+      throw insertError;
+    }
 
     const claimId = insertResult[0]?.id;
+
+    // Log claim_submitted event for funnel tracking
+    try {
+      await sequelize.query(`
+        INSERT INTO audit_logs (action, details, ip_address, created_at, updated_at)
+        VALUES ('claim_submitted', :details, :ip, NOW(), NOW())
+      `, {
+        replacements: {
+          details: JSON.stringify({ slug, claimId }),
+          ip
+        }
+      });
+    } catch (logErr) {
+      // Non-critical
+    }
 
     // Get pending claim count for admin notification
     const [pendingCount] = await sequelize.query(

@@ -203,7 +203,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
 // Tab navigation handler (shared between tabs and sidebar)
 function handleTabSwitch(target) {
-  const validTabs = ['command-center','leaderboard','app-analytics','retention','growth','coverage','health','suppliers','website','settings'];
+  const validTabs = ['command-center','leaderboard','app-analytics','retention','growth','coverage','health','suppliers','claims','website','settings'];
   if (!validTabs.includes(target)) target = 'command-center';
 
   // Destroy intelligence charts on tab leave
@@ -250,6 +250,7 @@ function handleTabSwitch(target) {
   if (target === 'website') loadWebsite();
   if (target === 'retention') loadRetention();
   if (target === 'suppliers') loadSuppliers();
+  if (target === 'claims') loadClaims();
 }
 
 // Tab navigation (legacy)
@@ -3928,7 +3929,8 @@ async function loadCoverageSpread() {
 // Load dashboard
 async function loadDashboard() {
   await Promise.all([
-    loadCommandCenter()
+    loadCommandCenter(),
+    updateClaimsBadge()
   ]);
 }
 
@@ -3951,4 +3953,341 @@ document.addEventListener('DOMContentLoaded', function() {
   if (addSupplierForm) {
     addSupplierForm.addEventListener('submit', createSupplier);
   }
+});
+
+// ========================================
+// CLAIMS TAB
+// ========================================
+
+let claimsCurrentStatus = 'pending';
+let claimsData = [];
+let claimsPendingRejectId = null;
+let claimsExpandedRow = null;
+
+// Simple toast notification for claims tab
+function showToast(message, type) {
+  const existing = document.querySelector('.claims-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = 'claims-toast';
+  toast.style.cssText = `position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;color:#fff;background:${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6'};box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:opacity 0.3s;`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3500);
+}
+
+// Claims API helper (uses /api/admin/supplier-claims, not dashboard API)
+async function claimsApi(path) {
+  const res = await fetch(`/api/admin/supplier-claims${path}`, {
+    headers: { 'X-Admin-Token': authToken }
+  });
+  if (res.status === 401) throw new Error('Unauthorized');
+  return res.json();
+}
+
+// Fetch pending badge count on dashboard load
+async function updateClaimsBadge() {
+  try {
+    const data = await claimsApi('?status=pending');
+    const pending = data?.counts?.pending || 0;
+    const badge = document.getElementById('claims-badge');
+    if (badge) {
+      badge.textContent = pending;
+      badge.style.display = pending > 0 ? 'inline-flex' : 'none';
+    }
+  } catch (e) {
+    // Non-critical
+  }
+}
+
+async function loadClaims() {
+  const loading = document.getElementById('claims-loading');
+  const table = document.getElementById('claims-table');
+  const empty = document.getElementById('claims-empty');
+  if (!loading) return;
+
+  loading.style.display = 'block';
+  if (table) table.style.display = 'none';
+  if (empty) empty.style.display = 'none';
+
+  try {
+    const data = await claimsApi(`?status=${claimsCurrentStatus}`);
+
+    if (!data.success) throw new Error(data.error || 'Failed to load claims');
+
+    claimsData = data.claims || [];
+    const counts = data.counts || {};
+
+    // Update status tab counts
+    const pendingEl = document.getElementById('claims-count-pending');
+    const verifiedEl = document.getElementById('claims-count-verified');
+    const rejectedEl = document.getElementById('claims-count-rejected');
+    if (pendingEl) pendingEl.textContent = counts.pending || 0;
+    if (verifiedEl) verifiedEl.textContent = counts.verified || 0;
+    if (rejectedEl) rejectedEl.textContent = counts.rejected || 0;
+
+    // Update sidebar badge
+    const badge = document.getElementById('claims-badge');
+    if (badge) {
+      const p = counts.pending || 0;
+      badge.textContent = p;
+      badge.style.display = p > 0 ? 'inline-flex' : 'none';
+    }
+
+    loading.style.display = 'none';
+
+    if (claimsData.length === 0) {
+      if (empty) empty.style.display = 'block';
+    } else {
+      renderClaimsTable();
+      if (table) table.style.display = 'table';
+    }
+
+    // Load funnel metrics
+    loadClaimsFunnel();
+
+  } catch (error) {
+    console.error('Claims load error:', error);
+    loading.style.display = 'none';
+    if (empty) {
+      empty.textContent = 'Failed to load claims';
+      empty.style.display = 'block';
+    }
+  }
+}
+
+async function loadClaimsFunnel() {
+  const el = document.getElementById('claims-funnel');
+  if (!el) return;
+
+  try {
+    const data = await claimsApi('/funnel').catch(() => null);
+
+    if (!data || !data.success) {
+      // Funnel endpoint not available — show counts from claim data instead
+      el.innerHTML = '<span class="funnel-loading">Funnel metrics available after first claims</span>';
+      return;
+    }
+
+    const { views, submits, verifies } = data;
+
+    if (views === 0 && submits === 0 && verifies === 0) {
+      el.innerHTML = '<span class="funnel-loading">No claim funnel data yet</span>';
+      return;
+    }
+
+    const submitRate = views > 0 ? Math.round((submits / views) * 100) : 0;
+    const approvalRate = submits > 0 ? Math.round((verifies / submits) * 100) : 0;
+
+    el.innerHTML = `
+      <span>Claims:</span>
+      <span class="funnel-stat">${views} page views</span>
+      <span class="funnel-sep">&rarr;</span>
+      <span class="funnel-stat">${submits} submitted</span>
+      <span class="funnel-sep">&rarr;</span>
+      <span class="funnel-stat">${verifies} verified</span>
+      ${submitRate > 0 ? `<span class="funnel-rate">(${submitRate}% submit, ${approvalRate}% approval)</span>` : ''}
+      <span style="color:var(--gray-400)">Last 30 days</span>
+    `;
+  } catch (e) {
+    el.innerHTML = '<span class="funnel-loading">Funnel data unavailable</span>';
+  }
+}
+
+function renderClaimsTable() {
+  const tbody = document.getElementById('claims-body');
+  if (!tbody) return;
+
+  claimsExpandedRow = null;
+
+  tbody.innerHTML = claimsData.map(claim => {
+    const date = new Date(claim.submittedAt).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+
+    let actionsHtml = '';
+    if (claimsCurrentStatus === 'pending') {
+      actionsHtml = `
+        <button class="btn-verify" data-action="verify" data-claim-id="${claim.id}">&#10003; Verify</button>
+        <button class="btn-reject" data-action="reject" data-claim-id="${claim.id}">&#10007; Reject</button>
+      `;
+    } else if (claimsCurrentStatus === 'verified') {
+      actionsHtml = `
+        <button class="btn-regen" data-action="regenerate" data-claim-id="${claim.id}">&#128279; New Link</button>
+        <button class="btn-revoke" data-action="revoke" data-claim-id="${claim.id}">&#9888; Revoke</button>
+      `;
+    } else if (claimsCurrentStatus === 'rejected') {
+      const reason = claim.rejectionReason || 'No reason provided';
+      actionsHtml = `<span style="color:var(--gray-500); font-size:12px;">${reason}</span>`;
+    }
+
+    const slug = claim.supplier?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || '';
+
+    return `
+      <tr class="claim-row" data-claim-id="${claim.id}">
+        <td>
+          <span class="claim-supplier-name">${claim.supplier.name}</span><br>
+          <span class="claim-supplier-loc">${claim.supplier.city || ''}, ${claim.supplier.state || ''}</span>
+        </td>
+        <td class="claim-phone">
+          ${claim.supplier.phone ? `<a href="tel:${claim.supplier.phone}">${claim.supplier.phone}</a>` : '<span style="color:var(--gray-400)">No phone</span>'}
+        </td>
+        <td>
+          <span class="claim-claimant-name">${claim.claimant.name}</span><br>
+          <span class="claim-claimant-email">${claim.claimant.email}</span>
+          ${claim.claimant.phone ? `<br><span class="claim-claimant-email">${claim.claimant.phone}</span>` : ''}
+          <br><span class="claim-claimant-role">${claim.claimant.role || 'Not specified'}</span>
+        </td>
+        <td>${date}</td>
+        <td class="claim-actions">${actionsHtml}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Claim actions
+async function claimsVerify(claimId) {
+  if (!confirm('Verify this claim? This will generate a magic link and email it to the supplier.')) return;
+
+  try {
+    const data = await fetch(`/api/admin/supplier-claims/${claimId}/verify`, {
+      method: 'POST',
+      headers: { 'X-Admin-Token': authToken, 'Content-Type': 'application/json' }
+    }).then(r => r.json());
+
+    if (!data.success) throw new Error(data.error || 'Failed to verify');
+
+    // Log audit event
+    try {
+      await fetch('/api/admin/supplier-claims/' + claimId + '/audit', {
+        method: 'POST',
+        headers: { 'X-Admin-Token': authToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'claim_verified' })
+      }).catch(() => {});
+    } catch (e) {}
+
+    showToast(`Verified! ${data.magicLinkSent ? 'Email sent.' : 'Email failed - copy link manually.'}`, 'success');
+    if (data.magicLinkUrl) console.log('Magic link:', data.magicLinkUrl);
+    loadClaims();
+  } catch (error) {
+    showToast(error.message || 'Failed to verify claim', 'error');
+  }
+}
+
+function claimsOpenRejectModal(claimId) {
+  claimsPendingRejectId = claimId;
+  const modal = document.getElementById('claims-reject-modal');
+  const textarea = document.getElementById('claims-reject-reason');
+  if (modal) modal.classList.remove('hidden');
+  if (textarea) textarea.value = '';
+}
+
+function claimsCloseRejectModal() {
+  claimsPendingRejectId = null;
+  const modal = document.getElementById('claims-reject-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function claimsConfirmReject() {
+  if (!claimsPendingRejectId) return;
+  const reason = document.getElementById('claims-reject-reason')?.value.trim();
+  if (!reason) {
+    showToast('A rejection reason is required', 'error');
+    return;
+  }
+
+  try {
+    const data = await fetch(`/api/admin/supplier-claims/${claimsPendingRejectId}/reject`, {
+      method: 'POST',
+      headers: { 'X-Admin-Token': authToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    }).then(r => r.json());
+
+    if (!data.success) throw new Error(data.error || 'Failed to reject');
+    claimsCloseRejectModal();
+    showToast('Claim rejected', 'success');
+    loadClaims();
+  } catch (error) {
+    showToast(error.message || 'Failed to reject claim', 'error');
+  }
+}
+
+async function claimsRevoke(claimId) {
+  if (!confirm('Revoke the magic link? The supplier will no longer be able to update prices.')) return;
+
+  try {
+    const data = await fetch(`/api/admin/supplier-claims/${claimId}/revoke`, {
+      method: 'POST',
+      headers: { 'X-Admin-Token': authToken }
+    }).then(r => r.json());
+
+    if (!data.success) throw new Error(data.error || 'Failed to revoke');
+    showToast(`Revoked ${data.revokedCount} link(s)`, 'success');
+    loadClaims();
+  } catch (error) {
+    showToast(error.message || 'Failed to revoke link', 'error');
+  }
+}
+
+async function claimsRegenerate(claimId) {
+  if (!confirm('Generate a new magic link? This will invalidate the old link.')) return;
+
+  try {
+    const data = await fetch(`/api/admin/supplier-claims/${claimId}/regenerate`, {
+      method: 'POST',
+      headers: { 'X-Admin-Token': authToken }
+    }).then(r => r.json());
+
+    if (!data.success) throw new Error(data.error || 'Failed to regenerate');
+    showToast(`New link generated. ${data.magicLinkSent ? 'Email sent.' : 'Email failed.'}`, 'success');
+    if (data.magicLinkUrl) console.log('New magic link:', data.magicLinkUrl);
+  } catch (error) {
+    showToast(error.message || 'Failed to regenerate link', 'error');
+  }
+}
+
+// Event delegation for claims tab
+document.addEventListener('DOMContentLoaded', function() {
+  // Status tabs
+  const statusTabs = document.getElementById('claims-status-tabs');
+  if (statusTabs) {
+    statusTabs.addEventListener('click', (e) => {
+      const tab = e.target.closest('.claims-status-tab');
+      if (!tab || !tab.dataset.status) return;
+      claimsCurrentStatus = tab.dataset.status;
+      document.querySelectorAll('.claims-status-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      loadClaims();
+    });
+  }
+
+  // Action buttons (event delegation)
+  const claimsBody = document.getElementById('claims-body');
+  if (claimsBody) {
+    claimsBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const claimId = btn.dataset.claimId;
+      switch (action) {
+        case 'verify': claimsVerify(claimId); break;
+        case 'reject': claimsOpenRejectModal(claimId); break;
+        case 'regenerate': claimsRegenerate(claimId); break;
+        case 'revoke': claimsRevoke(claimId); break;
+      }
+    });
+  }
+
+  // Reject modal buttons
+  const rejectCancel = document.getElementById('claims-reject-cancel');
+  const rejectConfirm = document.getElementById('claims-reject-confirm');
+  if (rejectCancel) rejectCancel.addEventListener('click', claimsCloseRejectModal);
+  if (rejectConfirm) rejectConfirm.addEventListener('click', claimsConfirmReject);
+
+  // Close modal on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') claimsCloseRejectModal();
+  });
 });

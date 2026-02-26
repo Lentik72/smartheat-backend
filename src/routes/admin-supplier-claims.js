@@ -503,4 +503,35 @@ router.post('/:claimId/regenerate', requireAdmin, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/admin/supplier-claims/funnel
+ * Claim funnel metrics from audit_logs (last 30 days)
+ */
+router.get('/funnel', requireAdmin, async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+
+  try {
+    const [rows] = await sequelize.query(`
+      SELECT action, COUNT(*) as count
+      FROM audit_logs
+      WHERE action IN ('claim_page_view', 'claim_submitted', 'claim_verified', 'claim_rejected')
+        AND created_at > NOW() - INTERVAL '30 days'
+      GROUP BY action
+    `);
+
+    const counts = {};
+    rows.forEach(r => { counts[r.action] = parseInt(r.count); });
+
+    res.json({
+      success: true,
+      views: counts.claim_page_view || 0,
+      submits: counts.claim_submitted || 0,
+      verifies: counts.claim_verified || 0,
+      rejects: counts.claim_rejected || 0
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to load funnel data' });
+  }
+});
+
 module.exports = router;

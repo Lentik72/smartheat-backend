@@ -220,7 +220,7 @@ function generateSupplierPage(supplier, latestPrice) {
     <div class="supplier-section supplier-claim">
       <h2>Is this your business?</h2>
       <p>Claim your listing to display your current prices, hours, and connect with local customers.</p>
-      <a href="/for-suppliers.html?supplier=${supplier.slug}" class="btn btn-secondary" rel="nofollow">Claim Your Listing</a>
+      <a href="/claim/${supplier.slug}" class="btn btn-secondary" rel="nofollow">Claim Your Listing</a>
     </div>
     ` : ''}
   </main>
