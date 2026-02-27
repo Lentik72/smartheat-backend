@@ -3980,7 +3980,10 @@ function showToast(message, type) {
 // Claims API helper (uses /api/admin/supplier-claims, not dashboard API)
 async function claimsApi(path) {
   const res = await fetch(`/api/admin/supplier-claims${path}`, {
-    headers: { 'X-Admin-Token': authToken }
+    headers: {
+      'X-Admin-Token': authToken,
+      'Authorization': `Bearer ${authToken}`
+    }
   });
   if (res.status === 401) throw new Error('Unauthorized');
   return res.json();
@@ -4154,7 +4157,7 @@ async function claimsVerify(claimId) {
   try {
     const data = await fetch(`/api/admin/supplier-claims/${claimId}/verify`, {
       method: 'POST',
-      headers: { 'X-Admin-Token': authToken, 'Content-Type': 'application/json' }
+      headers: { 'X-Admin-Token': authToken, 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' }
     }).then(r => r.json());
 
     if (!data.success) throw new Error(data.error || 'Failed to verify');
@@ -4163,7 +4166,7 @@ async function claimsVerify(claimId) {
     try {
       await fetch('/api/admin/supplier-claims/' + claimId + '/audit', {
         method: 'POST',
-        headers: { 'X-Admin-Token': authToken, 'Content-Type': 'application/json' },
+        headers: { 'X-Admin-Token': authToken, 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'claim_verified' })
       }).catch(() => {});
     } catch (e) {}
@@ -4201,7 +4204,7 @@ async function claimsConfirmReject() {
   try {
     const data = await fetch(`/api/admin/supplier-claims/${claimsPendingRejectId}/reject`, {
       method: 'POST',
-      headers: { 'X-Admin-Token': authToken, 'Content-Type': 'application/json' },
+      headers: { 'X-Admin-Token': authToken, 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ reason })
     }).then(r => r.json());
 
@@ -4220,7 +4223,7 @@ async function claimsRevoke(claimId) {
   try {
     const data = await fetch(`/api/admin/supplier-claims/${claimId}/revoke`, {
       method: 'POST',
-      headers: { 'X-Admin-Token': authToken }
+      headers: { 'X-Admin-Token': authToken, 'Authorization': `Bearer ${authToken}` }
     }).then(r => r.json());
 
     if (!data.success) throw new Error(data.error || 'Failed to revoke');
@@ -4237,7 +4240,7 @@ async function claimsRegenerate(claimId) {
   try {
     const data = await fetch(`/api/admin/supplier-claims/${claimId}/regenerate`, {
       method: 'POST',
-      headers: { 'X-Admin-Token': authToken }
+      headers: { 'X-Admin-Token': authToken, 'Authorization': `Bearer ${authToken}` }
     }).then(r => r.json());
 
     if (!data.success) throw new Error(data.error || 'Failed to regenerate');
