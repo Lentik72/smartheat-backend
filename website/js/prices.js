@@ -604,8 +604,7 @@
         '</div>' +
       '</div>' +
       '<div class="supplier-price supplier-price-unpriced">' +
-        '<div class="price-amount">Call</div>' +
-        '<div class="price-unit">for price</div>' +
+        '<div class="price-unavailable">No online price</div>' +
       '</div>' +
     '</div>';
   }
