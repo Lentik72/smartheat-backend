@@ -2289,27 +2289,22 @@ body {
     border-radius: 12px;
     overflow: hidden;
     border: 1px solid var(--border-color);
-    table-layout: fixed;
 }
 
 .supplier-table th,
 .supplier-table td {
-    padding: 1rem 1rem;
+    padding: 1rem 0.75rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
 }
 
-/* Column widths: Supplier 30%, Location 18%, Price 14%, Phone 20%, Website 12% */
-.supplier-table th:nth-child(1),
-.supplier-table td:nth-child(1) { width: 30%; }
-.supplier-table th:nth-child(2),
-.supplier-table td:nth-child(2) { width: 18%; }
+/* Price column: center-align for tighter spacing */
 .supplier-table th:nth-child(3),
-.supplier-table td:nth-child(3) { width: 14%; }
-.supplier-table th:nth-child(4),
-.supplier-table td:nth-child(4) { width: 20%; }
+.supplier-table td:nth-child(3) { text-align: center; }
+
+/* Website column: center-align */
 .supplier-table th:nth-child(5),
-.supplier-table td:nth-child(5) { width: 12%; }
+.supplier-table td:nth-child(5) { text-align: center; }
 
 .supplier-table th {
     background: var(--background-secondary);
