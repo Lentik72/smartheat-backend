@@ -2297,20 +2297,24 @@ body {
     padding: 1rem 0.75rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+/* Only truncate supplier name column — other columns sized to fit */
+.supplier-table td:nth-child(1) {
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 /* Fixed column widths — all 5 defined to avoid equal-split on auto columns */
 .supplier-table th:nth-child(2),
-.supplier-table td:nth-child(2) { width: 130px; }
+.supplier-table td:nth-child(2) { width: 120px; }
 .supplier-table th:nth-child(3),
-.supplier-table td:nth-child(3) { width: 90px; text-align: right; }
+.supplier-table td:nth-child(3) { width: 110px; text-align: right; }
 .supplier-table th:nth-child(4),
-.supplier-table td:nth-child(4) { width: 160px; }
+.supplier-table td:nth-child(4) { width: 150px; }
 .supplier-table th:nth-child(5),
-.supplier-table td:nth-child(5) { width: 95px; text-align: center; }
+.supplier-table td:nth-child(5) { width: 110px; text-align: center; }
 
 .supplier-table th {
     background: var(--background-secondary);
