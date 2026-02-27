@@ -132,7 +132,7 @@ class SmsPriceService {
       twilioMessageSid
     });
 
-    return `HomeHeat: You're updating ${supplier.name}.\nReply YES to publish $${price.toFixed(2)} on your listing.`;
+    return `HomeHeat: You're updating ${supplier.name}. Reply YES to publish $${price.toFixed(2)} on your listing. Msg & data rates may apply. Reply STOP to unsubscribe or HELP for help.`;
   }
 
   /**
@@ -209,7 +209,7 @@ class SmsPriceService {
     });
 
     const slug = supplier.slug || supplier.id;
-    return `Published! $${price.toFixed(2)} is now live:\ngethomeheat.com/supplier/${slug}\nJust text your price anytime to update.`;
+    return `Published! $${price.toFixed(2)} is now live: gethomeheat.com/supplier/${slug}\nJust text your price anytime to update. Msg & data rates may apply. Reply STOP to unsubscribe or HELP for help.`;
   }
 
   /**
@@ -250,7 +250,7 @@ class SmsPriceService {
       parsedPrice: price, type: 'price_update', status: 'success', twilioMessageSid
     });
 
-    return `Saved at $${price.toFixed(2)}/gal.`;
+    return `Saved at $${price.toFixed(2)}/gal. Message frequency varies. Reply STOP to unsubscribe or HELP for help.`;
   }
 
   /**
@@ -274,12 +274,12 @@ class SmsPriceService {
         `, { replacements: { phone: normalizedPhone } });
       }
       await this.logSms({ fromPhone, type: 'keyword', status: 'start', twilioMessageSid });
-      return "HomeHeat: You're all set! Just text your price anytime to update your listing. Reply STOP to unsubscribe or HELP for info.";
+      return "HomeHeat: You're all set! Just text your price anytime to update your listing. Msg & data rates may apply. Reply STOP to unsubscribe or HELP for info.";
     }
 
     if (keyword === 'HELP') {
       await this.logSms({ fromPhone, type: 'keyword', status: 'help', twilioMessageSid });
-      return "HomeHeat SMS Help:\nText your price like 3.49 to update your listing.\nSTOP to unsubscribe. Terms: gethomeheat.com/sms-terms.html\nQuestions? support@gethomeheat.com";
+      return "HomeHeat SMS Help: Text your price like 3.49 to update your listing. Message frequency varies. Msg & data rates may apply. Reply STOP to unsubscribe or HELP for help. Terms: gethomeheat.com/sms-terms Privacy: gethomeheat.com/privacy";
     }
 
     return null;
