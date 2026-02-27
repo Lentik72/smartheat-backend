@@ -1139,7 +1139,7 @@ function generatePageHTML(data) {
   <meta property="og:type" content="website">
 
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="${assetPath}style.min.css?v=35">
+  <link rel="stylesheet" href="${assetPath}style.min.css?v=36">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
 
