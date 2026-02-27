@@ -1,4 +1,10 @@
-/* Supplier Profile Page Styles */
+/* ========================================
+   Supplier Profile Styles
+   V1 (Legacy) — kept for rollback safety
+   V2 (sp- prefix) — current layout
+   ======================================== */
+
+/* --- V1 Legacy Styles (unused by current template) --- */
 
 .supplier-profile {
   max-width: 700px;
@@ -179,20 +185,6 @@
   background: #E55A2B;
 }
 
-@media (max-width: 480px) {
-  .supplier-header h1 {
-    font-size: 24px;
-  }
-
-  .supplier-contact {
-    flex-direction: column;
-  }
-
-  .contact-btn {
-    justify-content: center;
-  }
-}
-
 .supplier-app-cta {
   text-align: center;
   background: #FEF3EB;
@@ -208,5 +200,551 @@
   font-size: 12px;
   color: #6b7280;
   margin: 12px 0 0;
+}
+
+@media (max-width: 480px) {
+  .supplier-header h1 {
+    font-size: 24px;
+  }
+
+  .supplier-contact {
+    flex-direction: column;
+  }
+
+  .contact-btn {
+    justify-content: center;
+  }
+}
+
+/* ========================================
+   V2 — sp- Prefix Styles
+   Profile page overhaul
+   ======================================== */
+
+/* Hero */
+.sp-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.sp-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: white;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+/* Same 10-color palette as Phase 1 cards (style.css .supplier-avatar) */
+.sp-avatar[data-color="0"] { background: #E07A5F; }
+.sp-avatar[data-color="1"] { background: #3D85C6; }
+.sp-avatar[data-color="2"] { background: #81B29A; }
+.sp-avatar[data-color="3"] { background: #F2994A; }
+.sp-avatar[data-color="4"] { background: #6C5B7B; }
+.sp-avatar[data-color="5"] { background: #C06C84; }
+.sp-avatar[data-color="6"] { background: #355C7D; }
+.sp-avatar[data-color="7"] { background: #2D8A6E; }
+.sp-avatar[data-color="8"] { background: #B5838D; }
+.sp-avatar[data-color="9"] { background: #7B68AE; }
+
+.sp-hero-text {
+  min-width: 0;
+}
+
+.sp-hero-text h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-dark, #1a1a1a);
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+
+.sp-location {
+  font-size: 1rem;
+  color: var(--text-muted, #6b7280);
+  margin: 0 0 6px;
+}
+
+.sp-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2d8a2d;
+  background: #e8f5e9;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.sp-claim-hint {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #6b7280);
+  font-style: italic;
+}
+
+/* Price */
+.sp-price {
+  background: var(--background-secondary, #FEF3EB);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.sp-price-amount {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #2d8a2d;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.sp-price-unit {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted, #6b7280);
+}
+
+.sp-price-meta {
+  font-size: 0.875rem;
+  color: var(--text-muted, #6b7280);
+  margin: 6px 0 0;
+}
+
+.sp-price-meta .freshness-dot {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+
+.sp-price-unavailable {
+  text-align: center;
+}
+
+.sp-price-none {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-secondary, #374151);
+  margin: 0 0 8px;
+}
+
+.sp-price-help {
+  font-size: 0.875rem;
+  color: var(--text-muted, #6b7280);
+  margin: 0;
+}
+
+/* Breadcrumb */
+.sp-breadcrumb {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #6b7280);
+  margin-bottom: 20px;
+}
+
+.sp-breadcrumb a {
+  color: var(--text-muted, #6b7280);
+  text-decoration: none;
+}
+
+.sp-breadcrumb a:hover {
+  color: var(--primary-orange, #FF6B35);
+  text-decoration: underline;
+}
+
+.sp-breadcrumb-sep {
+  margin: 0 4px;
+  color: var(--text-light, #9ca3af);
+}
+
+/* Contact */
+.sp-contact {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.sp-contact-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.sp-contact-btn svg {
+  flex-shrink: 0;
+}
+
+.sp-contact-phone {
+  background: var(--primary-orange, #FF6B35);
+  color: white;
+}
+
+.sp-contact-phone:hover {
+  background: var(--primary-orange-hover, #E55A2B);
+}
+
+.sp-contact-website {
+  background: var(--background-secondary, #FEF3EB);
+  color: var(--text-secondary, #374151);
+}
+
+.sp-contact-website:hover {
+  background: #FDDCC8;
+}
+
+/* Shared section base */
+.sp-section {
+  background: var(--background-secondary, #FEF3EB);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.sp-section h2 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-dark, #1a1a1a);
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Service Details Grid */
+.sp-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+}
+
+.sp-detail-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.sp-detail-item dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+
+.sp-detail-item dd {
+  font-size: 0.9375rem;
+  color: var(--text-dark, #1a1a1a);
+  margin: 2px 0 0;
+}
+
+/* Service Area */
+.sp-area-counties,
+.sp-area-towns {
+  margin-bottom: 8px;
+  font-size: 0.9375rem;
+  color: var(--text-dark, #1a1a1a);
+  line-height: 1.5;
+}
+
+.sp-area-counties:last-child,
+.sp-area-towns:last-child {
+  margin-bottom: 0;
+}
+
+.sp-area-counties strong,
+.sp-area-towns strong {
+  font-weight: 600;
+}
+
+.sp-towns-more {
+  color: var(--text-muted, #6b7280);
+  font-style: italic;
+}
+
+/* Hours */
+.sp-hours-dl {
+  margin: 0;
+  padding: 0;
+}
+
+.sp-hours-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sp-hours-row:last-child {
+  border-bottom: none;
+}
+
+.sp-hours-row dt {
+  font-weight: 600;
+  color: var(--text-dark, #1a1a1a);
+}
+
+.sp-hours-row dd {
+  color: var(--text-secondary, #374151);
+  margin: 0;
+}
+
+.sp-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-top: 12px;
+}
+
+.sp-badge-emergency {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.sp-badge-weekend {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Nearby Suppliers */
+.sp-nearby {
+  border-top: 1px solid var(--border-color, #E5D8D0);
+  padding-top: 24px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.sp-nearby h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-dark, #1a1a1a);
+  margin: 0 0 16px;
+}
+
+.sp-nearby-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sp-nearby-card {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  background: var(--background-card, #FFFFFF);
+  border: 1px solid var(--border-color, #E5D8D0);
+  border-radius: 10px;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sp-nearby-card:hover {
+  border-color: #c5b8b0;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+}
+
+.sp-nearby-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: white;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* Nearby avatar uses same palette */
+.sp-nearby-avatar[data-color="0"] { background: #E07A5F; }
+.sp-nearby-avatar[data-color="1"] { background: #3D85C6; }
+.sp-nearby-avatar[data-color="2"] { background: #81B29A; }
+.sp-nearby-avatar[data-color="3"] { background: #F2994A; }
+.sp-nearby-avatar[data-color="4"] { background: #6C5B7B; }
+.sp-nearby-avatar[data-color="5"] { background: #C06C84; }
+.sp-nearby-avatar[data-color="6"] { background: #355C7D; }
+.sp-nearby-avatar[data-color="7"] { background: #2D8A6E; }
+.sp-nearby-avatar[data-color="8"] { background: #B5838D; }
+.sp-nearby-avatar[data-color="9"] { background: #7B68AE; }
+
+.sp-nearby-info {
+  min-width: 0;
+}
+
+.sp-nearby-info h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-dark, #1a1a1a);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-nearby-location {
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.sp-nearby-price {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sp-nearby-amount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d8a2d;
+}
+
+.sp-nearby-unit {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted, #6b7280);
+}
+
+.sp-nearby-freshness {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.625rem;
+  color: var(--text-muted, #6b7280);
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+/* Claim Banner */
+.sp-claim {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.sp-claim-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sp-claim-text {
+  font-size: 0.9375rem;
+  color: #92400e;
+}
+
+.sp-claim-text strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.sp-claim-btn {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--primary-orange, #FF6B35);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.sp-claim-btn:hover {
+  background: var(--primary-orange-hover, #E55A2B);
+}
+
+/* App CTA */
+.sp-app-cta {
+  text-align: center;
+}
+
+.sp-app-cta h2 {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 1rem;
+}
+
+.sp-app-cta p {
+  color: var(--text-secondary, #374151);
+  margin: 0 0 16px;
+}
+
+.sp-app-micro {
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+  margin: 12px 0 0;
+}
+
+/* ========================================
+   Mobile Responsive (V2)
+   ======================================== */
+
+@media (max-width: 480px) {
+  .sp-hero {
+    gap: 12px;
+  }
+
+  .sp-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 1.25rem;
+    border-radius: 12px;
+  }
+
+  .sp-hero-text h1 {
+    font-size: 22px;
+  }
+
+  .sp-contact {
+    flex-direction: column;
+  }
+
+  .sp-contact-btn {
+    justify-content: center;
+  }
+
+  .sp-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sp-claim-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .sp-nearby-card {
+    grid-template-columns: 32px 1fr;
+  }
+
+  .sp-nearby-price {
+    grid-column: 1 / -1;
+    text-align: left;
+    padding-left: 44px;
+  }
 }
 
