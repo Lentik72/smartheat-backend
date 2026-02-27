@@ -2307,6 +2307,12 @@ body {
     text-overflow: ellipsis;
 }
 
+/* Reset card styles that leak into table cells via shared class names */
+.supplier-table .supplier-phone {
+    display: table-cell;
+    min-height: auto;
+}
+
 /* Fixed column widths — all 5 defined to avoid equal-split on auto columns */
 .supplier-table th:nth-child(2),
 .supplier-table td:nth-child(2) { width: 120px; }
