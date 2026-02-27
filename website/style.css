@@ -1480,10 +1480,11 @@ body {
 }
 
 .supplier-card-unpriced .supplier-profile-link {
-    color: var(--primary-orange);
+    color: var(--text-dark);
 }
 
 .supplier-card-unpriced .supplier-profile-link:hover {
+    color: var(--primary-orange);
     text-decoration: underline;
 }
 

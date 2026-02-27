@@ -81,18 +81,26 @@
     var icon = wrapper.querySelector('.floating-app-icon');
     var dismissBtn = wrapper.querySelector('.floating-app-dismiss');
     var hasShownTracking = false;
+    var showDelayTimer = null;
 
-    // Show after scrolling down
+    // Show after scrolling past 60% of viewport AND holding for 2 seconds
     function checkScroll() {
-      if (window.scrollY > 300) {
-        if (!wrapper.classList.contains('visible')) {
-          wrapper.classList.add('visible');
-          if (!hasShownTracking) {
-            hasShownTracking = true;
-            track('floating_icon_shown', { device: 'ios' });
-          }
+      var scrollThreshold = window.innerHeight * 0.6 + 300;
+      if (window.scrollY > scrollThreshold) {
+        if (!wrapper.classList.contains('visible') && !showDelayTimer) {
+          showDelayTimer = setTimeout(function() {
+            wrapper.classList.add('visible');
+            if (!hasShownTracking) {
+              hasShownTracking = true;
+              track('floating_icon_shown', { device: 'ios' });
+            }
+          }, 2000);
         }
       } else {
+        if (showDelayTimer) {
+          clearTimeout(showDelayTimer);
+          showDelayTimer = null;
+        }
         wrapper.classList.remove('visible');
       }
     }
