@@ -2296,6 +2296,7 @@ body {
 .supplier-table td {
     padding: 1rem 0.75rem;
     text-align: left;
+    vertical-align: middle;
     border-bottom: 1px solid var(--border-color);
     white-space: nowrap;
 }
