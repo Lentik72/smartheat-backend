@@ -1,162 +1,15 @@
 /* ========================================
-   Supplier Profile Styles
-   V1 (Legacy) — kept for rollback safety
-   V2 (sp- prefix) — current layout
+   Supplier Profile Styles (sp- prefix)
    ======================================== */
 
-/* --- V1 Legacy Styles (unused by current template) --- */
-
+/* Page container */
 .supplier-profile {
   max-width: 700px;
   margin: 0 auto;
   padding: 24px 16px 48px;
 }
 
-.supplier-header {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.supplier-header h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 8px;
-}
-
-.supplier-location {
-  font-size: 18px;
-  color: #666;
-  margin: 0 0 12px;
-}
-
-.supplier-contact {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 32px;
-}
-
-.contact-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: background 0.2s;
-}
-
-.contact-phone {
-  background: #FF6B35;
-  color: white;
-}
-
-.contact-phone:hover {
-  background: #E55A2B;
-}
-
-.contact-website {
-  background: #FEF3EB;
-  color: #374151;
-}
-
-.contact-website:hover {
-  background: #FDDCC8;
-}
-
-.contact-btn .icon {
-  font-size: 18px;
-}
-
-.supplier-section {
-  background: #FEF3EB;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
-
-.supplier-section h2 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.supplier-price .price-display {
-  font-size: 36px;
-  font-weight: 700;
-  color: #2d8a2d;
-  margin: 0;
-}
-
-.supplier-price .price-meta {
-  font-size: 14px;
-  color: #4B5563;
-  margin: 4px 0 0;
-}
-
-.supplier-price-cta {
-  text-align: center;
-}
-
-.supplier-price-cta p {
-  color: #4B5563;
-  margin: 0 0 16px;
-}
-
-.hours-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.hours-list li {
-  padding: 6px 0;
-  color: #1a1a1a;
-}
-
-.badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.badge-claimed {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.badge-emergency {
-  background: #fee2e2;
-  color: #991b1b;
-  margin-top: 12px;
-}
-
-.badge-weekend {
-  background: #dbeafe;
-  color: #1e40af;
-  margin-top: 8px;
-}
-
-.supplier-claim {
-  text-align: center;
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
-}
-
-.supplier-claim p {
-  color: #92400e;
-  margin: 0 0 16px;
-}
-
+/* Shared button base (used by app CTA) */
 .btn {
   display: inline-block;
   padding: 12px 24px;
@@ -175,51 +28,6 @@
 .btn-primary:hover {
   background: #E55A2B;
 }
-
-.btn-secondary {
-  background: #FF6B35;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #E55A2B;
-}
-
-.supplier-app-cta {
-  text-align: center;
-  background: #FEF3EB;
-  border: 1px solid #E5D8D0;
-}
-
-.supplier-app-cta p {
-  color: #374151;
-  margin: 0 0 16px;
-}
-
-.supplier-app-cta .app-micro {
-  font-size: 12px;
-  color: #6b7280;
-  margin: 12px 0 0;
-}
-
-@media (max-width: 480px) {
-  .supplier-header h1 {
-    font-size: 24px;
-  }
-
-  .supplier-contact {
-    flex-direction: column;
-  }
-
-  .contact-btn {
-    justify-content: center;
-  }
-}
-
-/* ========================================
-   V2 — sp- Prefix Styles
-   Profile page overhaul
-   ======================================== */
 
 /* Hero */
 .sp-hero {
