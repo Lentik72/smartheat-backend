@@ -154,10 +154,28 @@
         '<img src="' + assetPath + 'images/qr-appstore.png" alt="QR Code" class="qr-code">' +
       '</a>';
 
+    widget.style.display = 'none';
     document.body.appendChild(widget);
 
-    // Track shown
-    track('qr_widget_shown', { device: 'desktop' });
+    // Show after scrolling past first viewport + 2 second delay
+    var qrDelayTimer = null;
+    var qrShown = false;
+    function checkQRScroll() {
+      var scrollThreshold = window.innerHeight * 0.6 + 300;
+      if (window.scrollY > scrollThreshold && !qrShown) {
+        if (!qrDelayTimer) {
+          qrDelayTimer = setTimeout(function() {
+            widget.style.display = '';
+            qrShown = true;
+            track('qr_widget_shown', { device: 'desktop' });
+          }, 2000);
+        }
+      } else if (!qrShown && qrDelayTimer) {
+        clearTimeout(qrDelayTimer);
+        qrDelayTimer = null;
+      }
+    }
+    window.addEventListener('scroll', checkQRScroll, { passive: true });
 
     // Dismiss button
     widget.querySelector('.qr-dismiss').addEventListener('click', function() {
