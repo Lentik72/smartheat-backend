@@ -432,83 +432,185 @@
     }
   }
 
+  // V3.0.0: Generate supplier initials for avatar
+  function getInitials(name) {
+    if (!name) return '?';
+    // Split on whitespace, take first letter of first two meaningful words
+    var words = name.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return '?';
+    if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+    // Use first letter of each of the first two words
+    return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+  }
+
+  // V3.0.0: Deterministic color index from supplier name (0-9)
+  function getAvatarColor(name) {
+    if (!name) return 0;
+    var hash = 0;
+    for (var i = 0; i < name.length; i++) {
+      hash = ((hash << 5) - hash) + name.charCodeAt(i);
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash) % 10;
+  }
+
+  // V3.0.0: Build avatar HTML
+  function buildAvatar(name) {
+    return '<div class="supplier-avatar" data-color="' + getAvatarColor(name) + '">' + escapeHtml(getInitials(name)) + '</div>';
+  }
+
+  // V3.0.0: Build service badges HTML (graceful degradation — only shown when data exists)
+  function buildBadges(supplier) {
+    var badges = [];
+
+    // Fuel types
+    if (supplier.fuelTypes && supplier.fuelTypes.length > 0) {
+      var fuelLabels = { oil: 'Heating Oil', kerosene: 'Kerosene', diesel: 'Diesel', propane: 'Propane' };
+      supplier.fuelTypes.forEach(function(ft) {
+        if (fuelLabels[ft] && ft !== 'oil') { // Skip "Heating Oil" — it's assumed
+          badges.push(fuelLabels[ft]);
+        }
+      });
+    }
+
+    // Payment methods
+    if (supplier.paymentMethods && supplier.paymentMethods.length > 0) {
+      var hasCreditCard = supplier.paymentMethods.indexOf('credit_card') !== -1;
+      if (hasCreditCard) badges.push('Credit Cards');
+    }
+
+    // Min gallons shown in price block (single source of truth), not duplicated here
+
+    // Senior discount
+    if (supplier.seniorDiscount === 'yes') {
+      badges.push('Senior Discount');
+    }
+
+    if (badges.length === 0) return '';
+    return '<div class="supplier-badges">' +
+      badges.map(function(b) { return '<span class="supplier-badge">' + escapeHtml(b) + '</span>'; }).join('') +
+      '</div>';
+  }
+
+  // V3.0.0: Freshness indicator with color-coded dot
+  function buildFreshness(scrapedAt) {
+    if (!scrapedAt) {
+      return '<div class="price-freshness"><span class="freshness-dot stale"></span> Update time unknown</div>';
+    }
+
+    var date = new Date(scrapedAt);
+    if (isNaN(date.getTime())) {
+      return '<div class="price-freshness"><span class="freshness-dot stale"></span> Update time unknown</div>';
+    }
+
+    var now = new Date();
+    var diff = now - date;
+    if (diff < 0) {
+      return '<div class="price-freshness"><span class="freshness-dot stale"></span> Update time unknown</div>';
+    }
+    var hours = Math.floor(diff / (1000 * 60 * 60));
+    var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    var dotClass, text;
+    if (hours < 24) {
+      dotClass = 'fresh';
+      text = hours < 1 ? 'Updated now' : hours + 'h ago';
+    } else if (days <= 3) {
+      dotClass = 'recent';
+      text = days === 1 ? 'Yesterday' : days + 'd ago';
+    } else {
+      dotClass = 'stale';
+      text = days < 7 ? days + 'd ago' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    return '<div class="price-freshness"><span class="freshness-dot ' + dotClass + '"></span> ' + escapeHtml(text) + '</div>';
+  }
+
+  // V3.0.0: Verified badge HTML
+  function buildVerifiedBadge(supplier) {
+    if (!supplier.claimedAt) return '';
+    return '<span class="verified-badge"><svg viewBox="0 0 16 16"><path d="M6.5 12.5l-4-4 1.5-1.5 2.5 2.5 5.5-5.5 1.5 1.5z"/></svg>Verified</span>';
+  }
+
   // Create supplier card HTML
   function createSupplierCard(supplier) {
-    const price = supplier.currentPrice;
-    const phone = supplier.phone || '';
-    const phoneHref = phone.replace(/\D/g, '');
-    const scrapedAt = price.scrapedAt ? new Date(price.scrapedAt) : null;
-    const freshness = formatCardFreshness(scrapedAt);
-    const hasValidWebsite = supplier.website && supplier.website.startsWith('https://');
+    var price = supplier.currentPrice;
+    // Defensive: if price data is missing/malformed, fall back to unpriced card
+    var ppg = price ? Number(price.pricePerGallon) : NaN;
+    if (!price || !Number.isFinite(ppg) || ppg <= 0) {
+      return createUnpricedSupplierCard(supplier);
+    }
 
-    // V2.15.0: Link to supplier profile page if slug available
-    const hasSlug = supplier.slug;
+    var phone = supplier.phone || '';
+    var phoneDigits = phone.replace(/\D/g, '');
+    var canCall = phoneDigits.length >= 10;
+    var hasValidWebsite = supplier.website && /^https?:\/\//i.test(supplier.website);
+    var safeSlug = supplier.slug ? encodeURIComponent(supplier.slug) : '';
 
-    return `
-      <div class="supplier-card">
-        <div class="supplier-info">
-          <div class="supplier-name">
-            ${hasSlug ? `<a href="/supplier/${supplier.slug}" class="supplier-profile-link">${escapeHtml(supplier.name)}</a>` : escapeHtml(supplier.name)}
-          </div>
-          <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
-          <div class="supplier-actions">
-            ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone" data-track-supplier-id="${supplier.id}" data-track-supplier-name="${escapeHtml(supplier.name)}" data-track-action="call">Call ${escapeHtml(phone)}</a>` : ''}
-            ${hasValidWebsite ? `<a href="${escapeHtml(supplier.website)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="supplier-website-btn" data-track-supplier-id="${supplier.id}" data-track-supplier-name="${escapeHtml(supplier.name)}" data-track-action="website">Visit Website</a>` : ''}
-          </div>
-        </div>
-        <div class="supplier-price">
-          <div class="price-amount">$${price.pricePerGallon.toFixed(2)}</div>
-          <div class="price-unit">per gallon</div>
-          ${price.minGallons ? `<div class="price-min">${price.minGallons}+ gal min</div>` : ''}
-          <div class="price-freshness">${freshness}</div>
-        </div>
-      </div>
-    `;
+    // Estimate: use minGallons if higher than 150, single source of truth
+    var estimateGal = 150;
+    var minGal = Math.floor(Number(supplier.minimumGallons || price.minGallons || 0) || 0);
+    if (minGal > estimateGal) estimateGal = minGal;
+    var estimateTotal = Math.round(ppg * estimateGal);
+
+    return '<div class="supplier-card">' +
+      buildAvatar(supplier.name) +
+      '<div class="supplier-info">' +
+        '<div class="supplier-name-row">' +
+          '<div class="supplier-name">' +
+            (safeSlug ? '<a href="/supplier/' + safeSlug + '" class="supplier-profile-link">' + escapeHtml(supplier.name) + '</a>' : escapeHtml(supplier.name)) +
+          '</div>' +
+          buildVerifiedBadge(supplier) +
+        '</div>' +
+        '<div class="supplier-location">' + escapeHtml(supplier.city || '') + ', ' + escapeHtml(supplier.state || '') + '</div>' +
+        buildBadges(supplier) +
+        '<div class="supplier-actions">' +
+          (canCall ? '<a href="tel:' + phoneDigits + '" class="supplier-phone" data-track-supplier-id="' + supplier.id + '" data-track-supplier-name="' + escapeHtml(supplier.name) + '" data-track-action="call">Call ' + escapeHtml(phone) + '</a>' : '') +
+          (hasValidWebsite ? '<a href="' + escapeHtml(supplier.website) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="supplier-website-btn" data-track-supplier-id="' + supplier.id + '" data-track-supplier-name="' + escapeHtml(supplier.name) + '" data-track-action="website">Visit Website</a>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="supplier-price">' +
+        '<div class="price-amount">$' + ppg.toFixed(2) + '</div>' +
+        '<div class="price-unit">per gallon</div>' +
+        '<div class="price-estimate">~$' + estimateTotal + ' for ' + estimateGal + ' gal</div>' +
+        (minGal ? '<div class="price-min">' + minGal + '+ gal min</div>' : '') +
+        buildFreshness(price.scrapedAt) +
+      '</div>' +
+    '</div>';
   }
 
   // Create unpriced supplier card HTML (call for price)
   function createUnpricedSupplierCard(supplier) {
-    const phone = supplier.phone || '';
-    const phoneHref = phone.replace(/\D/g, '');
-    const hasValidWebsite = supplier.website && supplier.website.startsWith('https://');
-    const hasSlug = supplier.slug;
+    var phone = supplier.phone || '';
+    var phoneDigits = phone.replace(/\D/g, '');
+    var canCall = phoneDigits.length >= 10;
+    var hasValidWebsite = supplier.website && /^https?:\/\//i.test(supplier.website);
+    var safeSlug = supplier.slug ? encodeURIComponent(supplier.slug) : '';
 
-    return `
-      <div class="supplier-card supplier-card-unpriced">
-        <div class="supplier-info">
-          <div class="supplier-name">
-            ${hasSlug ? `<a href="/supplier/${supplier.slug}" class="supplier-profile-link">${escapeHtml(supplier.name)}</a>` : escapeHtml(supplier.name)}
-          </div>
-          <div class="supplier-location">${escapeHtml(supplier.city || '')}, ${escapeHtml(supplier.state || '')}</div>
-          <div class="supplier-actions">
-            ${phone ? `<a href="tel:${phoneHref}" class="supplier-phone" data-track-supplier-id="${supplier.id}" data-track-supplier-name="${escapeHtml(supplier.name)}" data-track-action="call">Call ${escapeHtml(phone)}</a>` : ''}
-            ${hasValidWebsite ? `<a href="${escapeHtml(supplier.website)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="supplier-website-btn" data-track-supplier-id="${supplier.id}" data-track-supplier-name="${escapeHtml(supplier.name)}" data-track-action="website">Visit Website</a>` : ''}
-          </div>
-        </div>
-        <div class="supplier-price supplier-price-unpriced">
-          <div class="price-amount">Call</div>
-          <div class="price-unit">for price</div>
-        </div>
-      </div>
-    `;
+    return '<div class="supplier-card supplier-card-unpriced">' +
+      buildAvatar(supplier.name) +
+      '<div class="supplier-info">' +
+        '<div class="supplier-name-row">' +
+          '<div class="supplier-name">' +
+            (safeSlug ? '<a href="/supplier/' + safeSlug + '" class="supplier-profile-link">' + escapeHtml(supplier.name) + '</a>' : escapeHtml(supplier.name)) +
+          '</div>' +
+          buildVerifiedBadge(supplier) +
+        '</div>' +
+        '<div class="supplier-location">' + escapeHtml(supplier.city || '') + ', ' + escapeHtml(supplier.state || '') + '</div>' +
+        buildBadges(supplier) +
+        '<div class="supplier-actions">' +
+          (canCall ? '<a href="tel:' + phoneDigits + '" class="supplier-phone" data-track-supplier-id="' + supplier.id + '" data-track-supplier-name="' + escapeHtml(supplier.name) + '" data-track-action="call">Call ' + escapeHtml(phone) + '</a>' : '') +
+          (hasValidWebsite ? '<a href="' + escapeHtml(supplier.website) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="supplier-website-btn" data-track-supplier-id="' + supplier.id + '" data-track-supplier-name="' + escapeHtml(supplier.name) + '" data-track-action="website">Visit Website</a>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="supplier-price supplier-price-unpriced">' +
+        '<div class="price-amount">Call</div>' +
+        '<div class="price-unit">for price</div>' +
+      '</div>' +
+    '</div>';
   }
 
-  // Format freshness for individual supplier cards (compact format)
-  function formatCardFreshness(date) {
-    if (!date || date.getTime() === 0) return 'Updated recently';
-
-    const now = new Date();
-    const diff = now - date;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (hours < 1) return 'Updated now';
-    if (hours < 24) return `${hours}h ago`;
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return `${days}d ago`;
-
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
+  // V3.0.0: formatCardFreshness replaced by buildFreshness() with color-coded dot
 
   // Handle share button - uses native share on mobile, clipboard on desktop
   async function handleShare() {

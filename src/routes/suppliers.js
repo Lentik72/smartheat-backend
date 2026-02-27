@@ -321,7 +321,9 @@ router.get('/', async (req, res) => {
         // V2.14.0: Hours & Availability (only exposed when verified)
         'hoursWeekday', 'hoursSaturday', 'hoursSunday',
         'weekendDelivery', 'emergencyDelivery', 'emergencyPhone',
-        'hoursVerifiedAt'
+        'hoursVerifiedAt',
+        // V3.0.0: Service details for card badges (graceful degradation - shown when available)
+        'minimumGallons', 'paymentMethods', 'fuelTypes', 'seniorDiscount'
       ]
     });
 
@@ -404,6 +406,11 @@ router.get('/', async (req, res) => {
             emergencyPhone: s.emergencyPhone
           };
         }
+        // V3.0.0: Service details for card badges (only include when data exists)
+        if (s.minimumGallons) result.minimumGallons = s.minimumGallons;
+        if (s.paymentMethods && s.paymentMethods.length > 0) result.paymentMethods = s.paymentMethods;
+        if (s.fuelTypes && s.fuelTypes.length > 0) result.fuelTypes = s.fuelTypes;
+        if (s.seniorDiscount && s.seniorDiscount !== 'unknown') result.seniorDiscount = s.seniorDiscount;
         return result;
       });
 
@@ -616,6 +623,11 @@ router.get('/', async (req, res) => {
           emergencyPhone: s.emergencyPhone
         };
       }
+      // V3.0.0: Service details for card badges (only include when data exists)
+      if (s.minimumGallons) result.minimumGallons = s.minimumGallons;
+      if (s.paymentMethods && s.paymentMethods.length > 0) result.paymentMethods = s.paymentMethods;
+      if (s.fuelTypes && s.fuelTypes.length > 0) result.fuelTypes = s.fuelTypes;
+      if (s.seniorDiscount && s.seniorDiscount !== 'unknown') result.seniorDiscount = s.seniorDiscount;
       return result;
     });
 
