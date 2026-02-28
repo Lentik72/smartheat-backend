@@ -96,21 +96,17 @@ router.get('/', async (req, res) => {
 
     const currentPrice = priceRows[0] || null;
 
-    // Get view count from analytics (last 7 days)
-    // This uses audit_logs or a similar tracking table
+    // Get engagement count from supplier_clicks (last 7 days)
     let viewsLast7Days = 0;
     try {
       const [viewRows] = await sequelize.query(`
         SELECT COUNT(*) as count
-        FROM audit_logs
-        WHERE action = 'supplier_viewed'
-          AND details->>'supplier_id' = :supplierId
+        FROM supplier_clicks
+        WHERE supplier_id = :supplierId
           AND created_at > NOW() - INTERVAL '7 days'
       `, { replacements: { supplierId: validation.supplierId } });
       viewsLast7Days = parseInt(viewRows[0]?.count || 0);
     } catch (e) {
-      // Fallback: estimate from general activity
-      // If no specific tracking, show a motivating number
       viewsLast7Days = 0;
     }
 
@@ -246,8 +242,8 @@ router.post('/price', async (req, res) => {
     // Log the update for analytics
     try {
       await sequelize.query(`
-        INSERT INTO audit_logs (action, details, ip_address, created_at)
-        VALUES ('supplier_price_update', :details, :ip, NOW())
+        INSERT INTO audit_logs (id, admin_user_id, admin_email, action, details, ip_address, created_at, updated_at)
+        VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'system', 'supplier_price_update', :details, :ip, NOW(), NOW())
       `, {
         replacements: {
           details: JSON.stringify({

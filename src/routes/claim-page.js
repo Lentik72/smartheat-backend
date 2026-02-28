@@ -17,6 +17,7 @@ const CACHE_TTL = 3600000; // 1 hour
 
 // Per-supplier demand cache (slug → { clicks, calls, websites, ts })
 const supplierDemandCache = new Map();
+const supplierMarketCache = new Map();
 
 // ── Slug Sweep Detection ─────────────────────────────────────────
 // Track distinct slugs per IP in 10-min window
@@ -43,7 +44,7 @@ setInterval(() => {
     if (entry.ts < cutoff) { slugSweepTracker.delete(ip); swept++; }
   }
   if (slugSweepTracker.size > 0 || supplierDemandCache.size > 50) {
-    console.log(`[ClaimPage] Cache: ${supplierDemandCache.size} demand entries, ${slugSweepTracker.size} sweep IPs (cleaned ${swept})`);
+    console.log(`[ClaimPage] Cache: ${supplierDemandCache.size} demand, ${supplierMarketCache.size} market, ${slugSweepTracker.size} sweep IPs (cleaned ${swept})`);
   }
 }, 300000);
 
@@ -122,6 +123,78 @@ async function getSupplierDemand(sequelize, supplierId, slug) {
   return data;
 }
 
+// ── Per-Supplier Market Data ─────────────────────────────────────
+async function getSupplierMarketData(sequelize, supplierId, slug) {
+  const cached = supplierMarketCache.get(slug);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    return cached;
+  }
+
+  const [rows] = await sequelize.query(`
+    WITH supplier_info AS (
+      SELECT id, postal_codes_served,
+        (SELECT price_per_gallon FROM supplier_prices
+         WHERE supplier_id = s.id AND is_valid = true
+         ORDER BY scraped_at DESC LIMIT 1) as current_price
+      FROM suppliers s WHERE id = :supplierId
+    ),
+    supplier_zips AS (
+      SELECT DISTINCT LEFT(jsonb_array_elements_text(
+        (SELECT postal_codes_served FROM supplier_info)
+      ), 5) as zip
+    ),
+    area_searches AS (
+      SELECT COALESCE(SUM(request_count), 0) as total
+      FROM user_locations ul
+      INNER JOIN supplier_zips sz ON LEFT(ul.zip_code, 5) = sz.zip
+    ),
+    competitor_clicks AS (
+      SELECT COUNT(*) as total
+      FROM supplier_clicks sc
+      INNER JOIN supplier_zips sz ON LEFT(sc.zip_code, 5) = sz.zip
+      WHERE sc.supplier_id != :supplierId
+        AND sc.created_at > NOW() - INTERVAL '30 days'
+    ),
+    zip_demand AS (
+      SELECT DISTINCT LEFT(sz.zip, 3) as prefix,
+        COALESCE(SUM(ul.request_count), 0) as demand_weight
+      FROM supplier_zips sz
+      LEFT JOIN user_locations ul ON LEFT(ul.zip_code, 5) = sz.zip
+      GROUP BY LEFT(sz.zip, 3)
+    ),
+    market_price AS (
+      SELECT CASE
+        WHEN SUM(zd.demand_weight) > 0
+        THEN ROUND(
+          SUM(zcs.median_price::numeric * zd.demand_weight) /
+          SUM(zd.demand_weight), 3)
+        ELSE ROUND(AVG(zcs.median_price::numeric), 3)
+        END as avg_median
+      FROM zip_current_stats zcs
+      INNER JOIN zip_demand zd ON zcs.zip_prefix = zd.prefix
+      WHERE zcs.fuel_type = 'heating_oil'
+        AND zcs.median_price IS NOT NULL
+    )
+    SELECT
+      (SELECT total FROM area_searches) as area_searches,
+      (SELECT total FROM competitor_clicks) as competitor_clicks,
+      (SELECT current_price FROM supplier_info) as current_price,
+      (SELECT avg_median FROM market_price) as market_avg_price
+  `, { replacements: { supplierId } });
+
+  const row = rows[0] || {};
+  const data = {
+    areaSearches: parseInt(row.area_searches || 0),
+    competitorClicks: parseInt(row.competitor_clicks || 0),
+    currentPrice: row.current_price ? parseFloat(row.current_price) : null,
+    marketAvgPrice: row.market_avg_price ? parseFloat(row.market_avg_price) : null,
+    ts: Date.now()
+  };
+
+  supplierMarketCache.set(slug, data);
+  return data;
+}
+
 // ── HTML Helpers ─────────────────────────────────────────────────
 function escapeHtml(text) {
   if (!text) return '';
@@ -151,7 +224,7 @@ const ACTIVITY_LABELS = {
 };
 
 // ── Page Renderer ────────────────────────────────────────────────
-function renderClaimPage(supplier, demand, activityLevel, hasPrice, isClaimed) {
+function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, isClaimed) {
   const name = escapeHtml(supplier.name);
   const city = escapeHtml(supplier.city) || '';
   const state = supplier.state || '';
@@ -159,6 +232,7 @@ function renderClaimPage(supplier, demand, activityLevel, hasPrice, isClaimed) {
   const phone = formatPhone(supplier.phone);
   const badge = ACTIVITY_LABELS[activityLevel] || ACTIVITY_LABELS.new;
   const ts = Math.floor(Date.now() / 1000);
+  const hasZips = marketData && marketData.hasZips !== false;
 
   // Build stats section based on state
   let statsHtml;
@@ -170,7 +244,104 @@ function renderClaimPage(supplier, demand, activityLevel, hasPrice, isClaimed) {
         <p>This supplier has already claimed and verified their listing on HomeHeat.</p>
         <a href="/for-suppliers" class="btn btn-secondary">Learn More About HomeHeat for Suppliers</a>
       </div>`;
+  } else if (!hasZips) {
+    // No postal_codes_served — can't compute market data
+    statsHtml = `
+      <div class="claim-card demand-card">
+        <p class="demand-zero" style="color:#999;font-style:italic;">No service area configured. Claim to define your coverage.</p>
+      </div>`;
+  } else if (marketData.areaSearches > 0) {
+    // ── Unlocked grid: real computed stats ──
+    const ownClicks = demand.clicks;
+    const competitorClicks = marketData.competitorClicks;
+    const areaSearches = marketData.areaSearches;
+
+    // Click share
+    let clickShareHtml;
+    if (ownClicks === 0 && competitorClicks === 0) {
+      clickShareHtml = '<span class="stat-value stat-neutral">&mdash;</span>';
+    } else {
+      const share = Math.min(100, Math.max(0, Math.round(ownClicks / (ownClicks + competitorClicks) * 100)));
+      const shareClass = share === 0 ? 'stat-negative' : (share < 30 ? 'stat-negative' : '');
+      clickShareHtml = `<span class="stat-value ${shareClass}">${share}%</span>`;
+    }
+
+    // Price vs market
+    let priceVsHtml;
+    if (!marketData.currentPrice) {
+      priceVsHtml = '<span class="stat-value stat-neutral" style="font-size:14px">No price listed</span>';
+    } else if (!marketData.marketAvgPrice) {
+      priceVsHtml = '<span class="stat-value stat-neutral" style="font-size:14px">No market data</span>';
+    } else {
+      const delta = marketData.currentPrice - marketData.marketAvgPrice;
+      if (Math.abs(delta) <= 0.02) {
+        priceVsHtml = '<span class="stat-value stat-neutral">At market</span>';
+      } else if (delta > 0) {
+        priceVsHtml = `<span class="stat-value stat-negative">+$${delta.toFixed(2)}</span>`;
+      } else {
+        priceVsHtml = `<span class="stat-value stat-positive">-$${Math.abs(delta).toFixed(2)}</span>`;
+      }
+    }
+
+    // Contextual tease CTA
+    const clickShare = (ownClicks + competitorClicks > 0)
+      ? Math.round(ownClicks / (ownClicks + competitorClicks) * 100)
+      : -1;
+    let teaseText;
+    if (!hasPrice) {
+      teaseText = "Without a price, you're invisible in comparisons.";
+    } else if (clickShare >= 0 && clickShare < 30) {
+      const competitorShare = 100 - clickShare;
+      teaseText = `Competitors are capturing ${competitorShare}% of clicks in your area. Claim to display your price.`;
+    } else {
+      teaseText = "You're getting attention. Claim to convert these clicks into calls.";
+    }
+
+    const priceNudge = !hasPrice
+      ? '<p class="demand-nudge">Suppliers displaying prices typically receive more engagement.</p>'
+      : '';
+
+    statsHtml = `
+      <div class="claim-card demand-card">
+        <div class="claim-card-header">
+          <span>HOMEOWNERS ARE COMPARING SUPPLIERS IN YOUR AREA</span>
+          <span class="activity-badge ${badge.cls}">${badge.text}</span>
+        </div>
+        ${ownClicks > 0 ? `
+        <div class="demand-own">
+          <p class="demand-headline">Your listing received:</p>
+          <p class="demand-number">${ownClicks} click${ownClicks !== 1 ? 's' : ''}</p>
+          <p class="demand-breakdown">${demand.calls} call${demand.calls !== 1 ? 's' : ''}, ${demand.websites} website visit${demand.websites !== 1 ? 's' : ''}</p>
+          <p class="demand-period">in the last 30 days</p>
+          ${priceNudge}
+        </div>` : `
+        <div class="demand-own">
+          <p class="demand-headline" style="color:#DC2626;font-weight:600">Your listing received 0 clicks in the last 30 days</p>
+          <p class="demand-intent">But homeowners <em>are</em> searching in your area.</p>
+          ${priceNudge}
+        </div>`}
+        <div class="locked-grid">
+          <div class="unlocked-stat">
+            <span class="stat-value">${areaSearches.toLocaleString()}</span>
+            <span class="stat-label">Area searches</span>
+          </div>
+          <div class="unlocked-stat">
+            <span class="stat-value">${competitorClicks.toLocaleString()}</span>
+            <span class="stat-label">Clicked competitors</span>
+          </div>
+          <div class="unlocked-stat">
+            ${clickShareHtml}
+            <span class="stat-label">Your click share</span>
+          </div>
+          <div class="unlocked-stat">
+            ${priceVsHtml}
+            <span class="stat-label">Price vs market</span>
+          </div>
+        </div>
+        <p class="locked-tease">${escapeHtml(teaseText)}</p>
+      </div>`;
   } else if (demand.clicks === 0) {
+    // No area searches, no own clicks — generic prompt
     statsHtml = `
       <div class="claim-card demand-card">
         <div class="claim-card-header">
@@ -179,6 +350,7 @@ function renderClaimPage(supplier, demand, activityLevel, hasPrice, isClaimed) {
         <p class="demand-zero">Homeowners in your area are searching for heating oil. Claim your listing to appear when they compare prices.</p>
       </div>`;
   } else {
+    // Has own clicks but no area searches — locked grid as incentive
     const priceNudge = !hasPrice
       ? '<p class="demand-nudge">Suppliers displaying prices typically receive more engagement.</p>'
       : '';
@@ -237,11 +409,11 @@ function renderClaimPage(supplier, demand, activityLevel, hasPrice, isClaimed) {
           </div>
           <div class="form-group">
             <label for="claimant-email">Email</label>
-            <input type="email" id="claimant-email" name="claimantEmail" required autocomplete="email" placeholder="john@company.com">
+            <input type="email" id="claimant-email" name="claimantEmail" required autocomplete="email" inputmode="email" placeholder="john@company.com">
           </div>
           <div class="form-group">
             <label for="claimant-phone">Your phone</label>
-            <input type="tel" id="claimant-phone" name="claimantPhone" autocomplete="tel" placeholder="(555) 123-4567">
+            <input type="tel" id="claimant-phone" name="claimantPhone" autocomplete="tel" inputmode="tel" placeholder="(555) 123-4567">
           </div>
           <div class="form-group">
             <label for="claimant-role">Role</label>
@@ -305,8 +477,8 @@ function renderClaimPage(supplier, demand, activityLevel, hasPrice, isClaimed) {
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="/style.min.css?v=27">
-  <link rel="stylesheet" href="/claim.css?v=1">
+  <link rel="stylesheet" href="/style.min.css?v=38">
+  <link rel="stylesheet" href="/claim.css?v=3">
 </head>
 <body>
   <nav class="nav">
@@ -349,23 +521,18 @@ function renderClaimPage(supplier, demand, activityLevel, hasPrice, isClaimed) {
   </main>
 
   <footer class="footer">
-    <div class="footer-container">
-      <div class="footer-logo">
-        <img src="/images/app-icon-small.png" alt="HomeHeat" class="footer-logo-icon">
-        HomeHeat
-      </div>
-      <div class="footer-links">
-        <a href="/prices">Prices</a>
-        <a href="/for-suppliers">For Suppliers</a>
-        <a href="/learn/">Learn</a>
-        <a href="/support">Support</a>
-        <a href="/privacy">Privacy</a>
-      </div>
-      <p class="footer-copy">&copy; ${new Date().getFullYear()} HomeHeat. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="/for-suppliers">For Suppliers</a>
+      <a href="/prices">Prices</a>
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/terms">Terms of Service</a>
+      <a href="/support">Support</a>
     </div>
+    <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
+    <p>&copy; ${new Date().getFullYear()} HomeHeat by Tsoir Advisors LLC. All rights reserved.</p>
   </footer>
 
-  <script src="/js/nav.js?v=24"></script>
+  <script src="/js/nav.js"></script>
   ${!isClaimed ? '<script src="/js/claim.js?v=1"></script>' : ''}
 </body>
 </html>`;
@@ -382,8 +549,8 @@ function render404() {
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="/style.min.css?v=27">
-  <link rel="stylesheet" href="/claim.css?v=1">
+  <link rel="stylesheet" href="/style.min.css?v=38">
+  <link rel="stylesheet" href="/claim.css?v=3">
 </head>
 <body>
   <nav class="nav">
@@ -418,7 +585,7 @@ function render404() {
       <p class="footer-copy">&copy; ${new Date().getFullYear()} HomeHeat. All rights reserved.</p>
     </div>
   </footer>
-  <script src="/js/nav.js?v=24"></script>
+  <script src="/js/nav.js"></script>
 </body>
 </html>`;
 }
@@ -459,7 +626,7 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
   try {
     // Resolve supplier by slug (active only)
     const [supplierRows] = await sequelize.query(`
-      SELECT id, name, slug, phone, city, state, claimed_at
+      SELECT id, name, slug, phone, city, state, postal_codes_served, claimed_at
       FROM suppliers
       WHERE slug = :slug AND active = true
       LIMIT 1
@@ -472,9 +639,11 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
     const supplier = supplierRows[0];
     const supplierId = supplier.id;
     const isClaimed = !!supplier.claimed_at;
+    const postalCodes = supplier.postal_codes_served;
+    const hasZips = Array.isArray(postalCodes) && postalCodes.length > 0;
 
-    // Get demand data + activity level + price check in parallel
-    const [demand, activityRanks, priceRows] = await Promise.all([
+    // Get demand data + activity level + price check + market data in parallel
+    const fetchPromises = [
       getSupplierDemand(sequelize, supplierId, slug),
       getActivityRanks(sequelize),
       sequelize.query(`
@@ -482,20 +651,30 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
         WHERE supplier_id = :id AND is_valid = true
         LIMIT 1
       `, { replacements: { id: supplierId } })
-    ]);
+    ];
+    if (hasZips) {
+      fetchPromises.push(getSupplierMarketData(sequelize, supplierId, slug));
+    }
+
+    const results = await Promise.all(fetchPromises);
+    const demand = results[0];
+    const activityRanks = results[1];
+    const priceRows = results[2];
+    const marketData = hasZips ? { ...results[3], hasZips: true } : { hasZips: false };
 
     const activityLevel = activityRanks[slug] || 'new';
     const hasPrice = priceRows[0]?.length > 0;
+    const gridState = !hasZips ? 'no_zips' : (marketData.areaSearches > 0 ? 'unlocked' : 'locked');
 
     // Log page view for funnel tracking
     try {
       const ipHash = crypto.createHash('sha256').update(ip + 'claim-salt').digest('hex').slice(0, 16);
       await sequelize.query(`
-        INSERT INTO audit_logs (action, details, ip_address, created_at, updated_at)
-        VALUES ('claim_page_view', :details, :ip, NOW(), NOW())
+        INSERT INTO audit_logs (id, admin_user_id, admin_email, action, details, ip_address, created_at, updated_at)
+        VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'system', 'claim_page_view', :details, :ip, NOW(), NOW())
       `, {
         replacements: {
-          details: JSON.stringify({ slug, ipHash }),
+          details: JSON.stringify({ slug, ipHash, gridState, hasPrice }),
           ip
         }
       });
@@ -504,7 +683,7 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
       logger?.warn(`[ClaimPage] Audit log error: ${logErr.message}`);
     }
 
-    const html = renderClaimPage(supplier, demand, activityLevel, hasPrice, isClaimed);
+    const html = renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, isClaimed);
     res.set('Cache-Control', 'no-store');
     res.send(html);
 

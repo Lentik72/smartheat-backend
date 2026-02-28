@@ -246,19 +246,21 @@
 
 .btn-claim {
   width: 100%;
-  padding: 14px;
-  font-size: 17px;
-  font-weight: 600;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 700;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   background: #FF6B35;
   color: white;
-  transition: background 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 3px 10px rgba(255, 107, 53, 0.3);
 }
 
 .btn-claim:hover {
   background: #E55A2B;
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.4);
 }
 
 .btn-claim:disabled {
@@ -326,6 +328,41 @@
   text-transform: none;
   font-size: 20px;
 }
+
+/* Unlocked stats grid */
+.unlocked-stat {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.stat-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 11px;
+  color: #555;
+  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stat-positive { color: #16A34A; }
+.stat-negative { color: #DC2626; }
+.stat-neutral { color: #666; }
 
 /* Responsive: narrow screens stack locked cards 1-col */
 @media (max-width: 400px) {

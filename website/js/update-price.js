@@ -99,14 +99,25 @@ function renderSupplierInfo(data) {
     // Price history
     if (priceHistory && priceHistory.length > 1) {
         const historyList = document.getElementById('price-history-list');
-        historyList.innerHTML = priceHistory.slice(0, 5).map(p => {
+        const items = priceHistory.slice(0, 5);
+        historyList.innerHTML = items.map((p, i) => {
             const date = new Date(p.date).toLocaleDateString('en-US', {
                 month: 'short', day: 'numeric'
             });
             const sourceLabel = getSourceLabel(p.source);
+            // Delta arrow compared to next (older) entry
+            let deltaHtml = '';
+            if (i < items.length - 1) {
+                const diff = p.price - items[i + 1].price;
+                if (Math.abs(diff) >= 0.005) {
+                    const cls = diff > 0 ? 'delta-up' : 'delta-down';
+                    const arrow = diff > 0 ? '\u2191' : '\u2193';
+                    deltaHtml = `<span class="delta ${cls}">${arrow}$${Math.abs(diff).toFixed(3)}</span>`;
+                }
+            }
             return `
                 <div class="price-history-item">
-                    <span class="price">$${p.price.toFixed(3)}</span>
+                    <span><span class="price">$${p.price.toFixed(3)}</span>${deltaHtml}</span>
                     <span>
                         <span class="date">${date}</span>
                         <span class="source">${sourceLabel}</span>

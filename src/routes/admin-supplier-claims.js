@@ -516,29 +516,286 @@ router.post('/:claimId/regenerate', requireAdmin, async (req, res) => {
 
 /**
  * GET /api/admin/supplier-claims/funnel
- * Claim funnel metrics from audit_logs (last 30 days)
+ * Comprehensive claim funnel metrics from audit_logs (last 30 days)
+ * Includes outreach tracking, conversion rates, timing, grid/price impact
  */
 router.get('/funnel', requireAdmin, async (req, res) => {
   const sequelize = req.app.locals.sequelize;
 
   try {
-    const [rows] = await sequelize.query(`
+    // 1. Basic funnel counts
+    const [countRows] = await sequelize.query(`
       SELECT action, COUNT(*) as count
       FROM audit_logs
-      WHERE action IN ('claim_page_view', 'claim_submitted', 'claim_verified', 'claim_rejected')
+      WHERE action IN (
+        'claim_page_view', 'claim_submitted', 'claim_verified',
+        'claim_rejected', 'outreach_email_sent'
+      )
         AND created_at > NOW() - INTERVAL '30 days'
       GROUP BY action
     `);
 
     const counts = {};
-    rows.forEach(r => { counts[r.action] = parseInt(r.count); });
+    countRows.forEach(r => { counts[r.action] = parseInt(r.count); });
+
+    const outreachSent = counts.outreach_email_sent || 0;
+    const pageViewsTotal = counts.claim_page_view || 0;
+    const formSubmits = counts.claim_submitted || 0;
+    const verified = counts.claim_verified || 0;
+    const rejected = counts.claim_rejected || 0;
+
+    // 2. Outreach slugs + outreach-related page views
+    const [outreachSlugs] = await sequelize.query(`
+      SELECT DISTINCT (details::jsonb)->>'slug' as slug
+      FROM audit_logs
+      WHERE action = 'outreach_email_sent'
+        AND created_at > NOW() - INTERVAL '30 days'
+    `);
+    const outreachSlugSet = outreachSlugs.map(r => r.slug).filter(Boolean);
+
+    let outreachOpened = 0;
+    let pageViewsOrganic = pageViewsTotal;
+    if (outreachSlugSet.length > 0) {
+      const [outreachViews] = await sequelize.query(`
+        SELECT COUNT(DISTINCT (details::jsonb)->>'slug') as opened
+        FROM audit_logs
+        WHERE action = 'claim_page_view'
+          AND (details::jsonb)->>'slug' = ANY(:slugs)
+          AND created_at > NOW() - INTERVAL '30 days'
+      `, { replacements: { slugs: outreachSlugSet } });
+      outreachOpened = parseInt(outreachViews[0]?.opened || 0);
+
+      const [outreachViewCount] = await sequelize.query(`
+        SELECT COUNT(*) as count
+        FROM audit_logs
+        WHERE action = 'claim_page_view'
+          AND (details::jsonb)->>'slug' = ANY(:slugs)
+          AND created_at > NOW() - INTERVAL '30 days'
+      `, { replacements: { slugs: outreachSlugSet } });
+      const outreachPageViews = parseInt(outreachViewCount[0]?.count || 0);
+      pageViewsOrganic = pageViewsTotal - outreachPageViews;
+    }
+
+    // 3. Grid impact breakdown (from gridState in page view details)
+    const [gridRows] = await sequelize.query(`
+      SELECT
+        (details::jsonb)->>'gridState' as grid_state,
+        COUNT(*) as views,
+        COUNT(DISTINCT (details::jsonb)->>'slug') as unique_slugs
+      FROM audit_logs
+      WHERE action = 'claim_page_view'
+        AND created_at > NOW() - INTERVAL '30 days'
+        AND (details::jsonb)->>'gridState' IS NOT NULL
+      GROUP BY (details::jsonb)->>'gridState'
+    `);
+
+    const gridCounts = {};
+    gridRows.forEach(r => { gridCounts[r.grid_state] = parseInt(r.views); });
+    const unlockedViews = gridCounts.unlocked || 0;
+    const lockedViews = gridCounts.locked || 0;
+
+    // 4. Price visibility impact (from hasPrice in page view details)
+    const [priceRows] = await sequelize.query(`
+      SELECT
+        ((details::jsonb)->>'hasPrice')::text as has_price,
+        COUNT(*) as views
+      FROM audit_logs
+      WHERE action = 'claim_page_view'
+        AND created_at > NOW() - INTERVAL '30 days'
+        AND (details::jsonb)->>'hasPrice' IS NOT NULL
+      GROUP BY ((details::jsonb)->>'hasPrice')::text
+    `);
+
+    const priceCounts = {};
+    priceRows.forEach(r => { priceCounts[r.has_price] = parseInt(r.views); });
+    const pricedViews = priceCounts['true'] || 0;
+    const unpricedViews = priceCounts['false'] || 0;
+
+    // 5. Timing: average hours between funnel stages
+    let timingData = {};
+    try {
+      // Avg time from outreach to first page view (for outreach slugs)
+      if (outreachSlugSet.length > 0) {
+        const [timingRows] = await sequelize.query(`
+          SELECT AVG(EXTRACT(EPOCH FROM (pv.created_at - oe.created_at)) / 3600) as avg_hours
+          FROM (
+            SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+            FROM audit_logs
+            WHERE action = 'outreach_email_sent'
+              AND created_at > NOW() - INTERVAL '30 days'
+            GROUP BY (details::jsonb)->>'slug'
+          ) oe
+          INNER JOIN (
+            SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+            FROM audit_logs
+            WHERE action = 'claim_page_view'
+              AND created_at > NOW() - INTERVAL '30 days'
+            GROUP BY (details::jsonb)->>'slug'
+          ) pv ON oe.slug = pv.slug
+          WHERE pv.created_at > oe.created_at
+        `);
+        timingData.avg_hours_outreach_to_view = timingRows[0]?.avg_hours
+          ? Math.round(parseFloat(timingRows[0].avg_hours))
+          : null;
+      }
+
+      // Avg time from page view to submit
+      const [viewToSubmit] = await sequelize.query(`
+        SELECT AVG(EXTRACT(EPOCH FROM (sub.created_at - pv.created_at)) / 3600) as avg_hours
+        FROM (
+          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          FROM audit_logs
+          WHERE action = 'claim_page_view'
+            AND created_at > NOW() - INTERVAL '30 days'
+          GROUP BY (details::jsonb)->>'slug'
+        ) pv
+        INNER JOIN (
+          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          FROM audit_logs
+          WHERE action = 'claim_submitted'
+            AND created_at > NOW() - INTERVAL '30 days'
+          GROUP BY (details::jsonb)->>'slug'
+        ) sub ON pv.slug = sub.slug
+        WHERE sub.created_at > pv.created_at
+      `);
+      timingData.avg_hours_view_to_submit = viewToSubmit[0]?.avg_hours
+        ? Math.round(parseFloat(viewToSubmit[0].avg_hours))
+        : null;
+
+      // Avg time from submit to verify
+      const [submitToVerify] = await sequelize.query(`
+        SELECT AVG(EXTRACT(EPOCH FROM (ver.created_at - sub.created_at)) / 3600) as avg_hours
+        FROM (
+          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          FROM audit_logs
+          WHERE action = 'claim_submitted'
+            AND created_at > NOW() - INTERVAL '30 days'
+          GROUP BY (details::jsonb)->>'slug'
+        ) sub
+        INNER JOIN (
+          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          FROM audit_logs
+          WHERE action = 'claim_verified'
+            AND created_at > NOW() - INTERVAL '30 days'
+          GROUP BY (details::jsonb)->>'slug'
+        ) ver ON sub.slug = ver.slug
+        WHERE ver.created_at > sub.created_at
+      `);
+      timingData.avg_hours_submit_to_verify = submitToVerify[0]?.avg_hours
+        ? Math.round(parseFloat(submitToVerify[0].avg_hours))
+        : null;
+    } catch (e) {
+      // Timing queries are best-effort
+    }
+
+    // 6. Submit rates by grid/price state (match submits to page view state by slug)
+    let submitRateUnlocked = null;
+    let submitRateLocked = null;
+    let submitRatePriced = null;
+    let submitRateUnpriced = null;
+    try {
+      // Get the grid state of each submitted slug's most recent page view before submit
+      const [submitGrid] = await sequelize.query(`
+        SELECT
+          pv.grid_state,
+          COUNT(DISTINCT sub.slug) as submits
+        FROM (
+          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          FROM audit_logs
+          WHERE action = 'claim_submitted'
+            AND created_at > NOW() - INTERVAL '30 days'
+          GROUP BY (details::jsonb)->>'slug'
+        ) sub
+        INNER JOIN LATERAL (
+          SELECT (details::jsonb)->>'gridState' as grid_state
+          FROM audit_logs
+          WHERE action = 'claim_page_view'
+            AND (details::jsonb)->>'slug' = sub.slug
+            AND created_at <= sub.created_at
+          ORDER BY created_at DESC
+          LIMIT 1
+        ) pv ON true
+        WHERE pv.grid_state IS NOT NULL
+        GROUP BY pv.grid_state
+      `);
+
+      const submitsByGrid = {};
+      submitGrid.forEach(r => { submitsByGrid[r.grid_state] = parseInt(r.submits); });
+
+      if (unlockedViews > 0) submitRateUnlocked = ((submitsByGrid.unlocked || 0) / unlockedViews * 100).toFixed(1) + '%';
+      if (lockedViews > 0) submitRateLocked = ((submitsByGrid.locked || 0) / lockedViews * 100).toFixed(1) + '%';
+
+      // Price visibility submit rates
+      const [submitPrice] = await sequelize.query(`
+        SELECT
+          pv.has_price,
+          COUNT(DISTINCT sub.slug) as submits
+        FROM (
+          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          FROM audit_logs
+          WHERE action = 'claim_submitted'
+            AND created_at > NOW() - INTERVAL '30 days'
+          GROUP BY (details::jsonb)->>'slug'
+        ) sub
+        INNER JOIN LATERAL (
+          SELECT ((details::jsonb)->>'hasPrice')::text as has_price
+          FROM audit_logs
+          WHERE action = 'claim_page_view'
+            AND (details::jsonb)->>'slug' = sub.slug
+            AND created_at <= sub.created_at
+          ORDER BY created_at DESC
+          LIMIT 1
+        ) pv ON true
+        WHERE pv.has_price IS NOT NULL
+        GROUP BY pv.has_price
+      `);
+
+      const submitsByPrice = {};
+      submitPrice.forEach(r => { submitsByPrice[r.has_price] = parseInt(r.submits); });
+
+      if (pricedViews > 0) submitRatePriced = ((submitsByPrice['true'] || 0) / pricedViews * 100).toFixed(1) + '%';
+      if (unpricedViews > 0) submitRateUnpriced = ((submitsByPrice['false'] || 0) / unpricedViews * 100).toFixed(1) + '%';
+    } catch (e) {
+      // Submit rate queries are best-effort
+    }
+
+    // Helper for safe percentage
+    const pct = (num, den) => den > 0 ? (num / den * 100).toFixed(1) + '%' : '0%';
 
     res.json({
       success: true,
-      views: counts.claim_page_view || 0,
-      submits: counts.claim_submitted || 0,
-      verifies: counts.claim_verified || 0,
-      rejects: counts.claim_rejected || 0
+      funnel: {
+        outreach_sent: outreachSent,
+        outreach_opened: outreachOpened,
+        page_views_total: pageViewsTotal,
+        page_views_organic: pageViewsOrganic,
+        form_submits: formSubmits,
+        verified,
+        rejected
+      },
+      conversion_rates: {
+        outreach_to_view: pct(outreachOpened, outreachSent),
+        view_to_submit: pct(formSubmits, pageViewsTotal),
+        submit_to_verify: pct(verified, formSubmits)
+      },
+      timing: {
+        avg_hours_outreach_to_view: timingData.avg_hours_outreach_to_view,
+        avg_hours_view_to_submit: timingData.avg_hours_view_to_submit,
+        avg_hours_submit_to_verify: timingData.avg_hours_submit_to_verify
+      },
+      grid_impact: {
+        unlocked_views: unlockedViews,
+        locked_views: lockedViews,
+        submit_rate_unlocked: submitRateUnlocked,
+        submit_rate_locked: submitRateLocked
+      },
+      price_impact: {
+        priced_views: pricedViews,
+        unpriced_views: unpricedViews,
+        submit_rate_priced: submitRatePriced,
+        submit_rate_unpriced: submitRateUnpriced
+      },
+      period: 'last_30_days'
     });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to load funnel data' });

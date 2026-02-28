@@ -350,8 +350,8 @@ router.post('/', async (req, res) => {
     // Log claim_submitted event for funnel tracking
     try {
       await sequelize.query(`
-        INSERT INTO audit_logs (action, details, ip_address, created_at, updated_at)
-        VALUES ('claim_submitted', :details, :ip, NOW(), NOW())
+        INSERT INTO audit_logs (id, admin_user_id, admin_email, action, details, ip_address, created_at, updated_at)
+        VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'system', 'claim_submitted', :details, :ip, NOW(), NOW())
       `, {
         replacements: {
           details: JSON.stringify({ slug, claimId }),
