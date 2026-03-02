@@ -327,21 +327,44 @@ body {
 
 /* Mobile: stacked, centered */
 @media (max-width: 767px) {
+    .hero {
+        text-align: center;
+        padding: 2rem 1.25rem 2.5rem;
+    }
     .hero-grid {
         display: flex;
         flex-direction: column;
         align-items: center;
     }
-    .hero {
-        text-align: center;
+    .hero h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+    }
+    .hero-badges {
+        margin-bottom: 0.5rem;
     }
     .hero-tagline {
-        max-width: 360px;
+        font-size: 0.95rem;
+        max-width: 340px;
         margin-left: auto;
         margin-right: auto;
+        margin-bottom: 0.5rem;
+    }
+    .hero-emotional {
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
     }
     .hero-visual {
-        margin-top: 2rem;
+        margin-top: 1.5rem;
+    }
+    .hero-mockup img {
+        max-height: 280px;
+    }
+    .hero-proof-line {
+        font-size: 0.8rem;
+    }
+    .hero-trust-line {
+        font-size: 0.8rem;
     }
 }
 
@@ -355,8 +378,20 @@ body {
 
 @media (max-width: 767px) {
     .hero-zip-form {
+        max-width: 320px;
         margin-left: auto;
         margin-right: auto;
+    }
+    .hero-zip-form input {
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+    .hero-zip-form button {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    .hero-zip-helper {
+        font-size: 0.75rem;
     }
 }
 
@@ -505,6 +540,30 @@ body {
 /* iOS App Store card (secondary CTA below ZIP form) */
 .hero .app-download-card {
     margin-top: 1.25rem;
+}
+
+@media (max-width: 767px) {
+    .hero .app-download-card {
+        margin-top: 0.75rem;
+        padding: 0.5rem 1rem 0.5rem 0.5rem;
+        gap: 0.65rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(180,100,80,0.15);
+    }
+    .hero .app-download-card img {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+    }
+    .hero .app-download-card .app-name {
+        font-size: 0.95rem;
+    }
+    .hero .app-download-card .app-subtitle {
+        font-size: 0.7rem;
+    }
+    .hero .app-download-card .app-cta {
+        font-size: 0.75rem;
+    }
 }
 
 /* Composite visual (phone + floating price card) */
@@ -3245,12 +3304,6 @@ body {
     border-radius: 24px;
     box-shadow: 0 12px 40px rgba(0,0,0,0.15);
 }
-@media (max-width: 767px) {
-    .hero-mockup img {
-        max-height: 320px;
-    }
-}
-
 /* Stats context label */
 .stats-context {
     text-align: center;
