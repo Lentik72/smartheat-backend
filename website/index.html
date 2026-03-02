@@ -26,7 +26,9 @@
     <link rel="preconnect" href="https://www.googletagmanager.com">
     <link rel="preconnect" href="https://www.google-analytics.com">
 
-    <link rel="stylesheet" href="style.min.css?v=38">
+    <script>(function(){var u=navigator.userAgent;document.documentElement.className+=(/Android/i.test(u)?' platform-android':/iPhone|iPad|iPod/i.test(u)||('MacIntel'===navigator.platform&&navigator.maxTouchPoints>1)?' platform-ios':' platform-desktop');})();</script>
+    <link rel="preload" as="image" type="image/webp" href="images/screenshot-1-home.webp">
+    <link rel="stylesheet" href="style.min.css?v=40">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
@@ -50,26 +52,10 @@
         "mainEntity": [
             {
                 "@type": "Question",
-                "name": "How does HomeHeat estimate when I'll run out?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "HomeHeat uses your logged tank readings, recent usage patterns, and local weather data to estimate how long your fuel supply will last."
-                }
-            },
-            {
-                "@type": "Question",
                 "name": "Do I need a smart tank sensor?",
                 "acceptedAnswer": {
                     "@type": "Answer",
                     "text": "No. HomeHeat works with manual gauge readings and does not require any hardware or sensors."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": "Does HomeHeat work with propane?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Yes! HomeHeat supports both heating oil and propane tanks. Just select your fuel type in settings."
                 }
             },
             {
@@ -127,52 +113,6 @@
 <style>
 /* V2 Index Page Styles */
 
-/* Social Proof in Hero */
-.hero-social-proof {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin: 16px 0;
-    flex-wrap: wrap;
-}
-
-.app-store-rating {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--background-secondary, #FEF3EB);
-    padding: 8px 14px;
-    border-radius: 20px;
-    font-size: 14px;
-    color: var(--text-dark, #1a1a1a);
-}
-
-.app-store-rating .stars {
-    color: #FFB800;
-    letter-spacing: -1px;
-}
-
-.user-review-quote {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 12px 16px;
-    background: var(--background-secondary, #FEF3EB);
-    border-radius: 12px;
-    font-size: 14px;
-    font-style: italic;
-    color: var(--text-gray, #4B5563);
-    text-align: center;
-}
-
-.user-review-quote .review-author {
-    font-style: normal;
-    font-weight: 500;
-    color: var(--text-dark, #1a1a1a);
-    margin-top: 6px;
-    font-size: 12px;
-}
-
 /* Live Stats Bar */
 .live-stats-bar {
     display: flex;
@@ -180,7 +120,6 @@
     gap: 24px;
     padding: 12px 20px;
     background: var(--background-secondary, #FEF3EB);
-    border-top: 1px solid var(--border-color, #E5D8D0);
     border-bottom: 1px solid var(--border-color, #E5D8D0);
     flex-wrap: wrap;
 }
@@ -343,57 +282,6 @@
     }
 }
 
-/* Merged Features Section */
-.features-v2 {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 40px 20px;
-}
-
-.features-v2 .section-header {
-    text-align: center;
-    margin-bottom: 32px;
-}
-
-.features-v2 .section-header h2 {
-    margin-bottom: 8px;
-}
-
-.features-v2 .section-header p {
-    color: var(--text-gray, #4B5563);
-    font-size: 16px;
-}
-
-.features-grid-v2 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 24px;
-}
-
-.feature-card-v2 {
-    background: var(--background-card, white);
-    border: 1px solid var(--border-color, #E5D8D0);
-    border-radius: 12px;
-    padding: 20px;
-}
-
-.feature-card-v2 .feature-icon {
-    font-size: 28px;
-    margin-bottom: 12px;
-}
-
-.feature-card-v2 h3 {
-    font-size: 16px;
-    margin-bottom: 8px;
-    color: var(--text-dark, #1a1a1a);
-}
-
-.feature-card-v2 p {
-    font-size: 14px;
-    color: var(--text-gray, #4B5563);
-    line-height: 1.5;
-}
-
 /* Simplified Value Props */
 .value-props-v2 {
     background: var(--background-secondary, #FEF3EB);
@@ -478,6 +366,88 @@
     text-decoration: underline;
 }
 
+/* How It Works — 3-step horizontal block */
+.how-it-works-section {
+    background: #FDFBF9;
+    border-top: 1px solid var(--border-color, #E5D8D0);
+    border-bottom: 1px solid var(--border-color, #E5D8D0);
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.how-it-works-section h2 {
+    margin-bottom: 24px;
+    font-size: 1.35rem;
+}
+
+.how-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 820px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.how-step {
+    padding: 0 4px;
+}
+
+.how-step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--background-secondary, #FEF3EB);
+    border: 1px solid var(--border-color, #E5D8D0);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary-orange, #FF6B35);
+    margin-bottom: 14px;
+}
+
+.how-step h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: var(--text-dark, #1a1a1a);
+}
+
+.how-step p {
+    font-size: 0.85rem;
+    color: var(--text-gray, #4B5563);
+    line-height: 1.5;
+    margin: 0;
+    opacity: 0.8;
+}
+
+.how-tension-line {
+    margin-top: 28px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-dark, #1a1a1a);
+    opacity: 0.45;
+    letter-spacing: 0.02em;
+}
+
+@media (max-width: 600px) {
+    .how-steps {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+}
+
+/* Hide screenshots 4 & 5 on desktop — show best 3 */
+@media (min-width: 768px) {
+    .screenshot-item--extra {
+        display: none;
+    }
+}
+
 </style>
 </head>
 <body>
@@ -503,74 +473,102 @@
         </div>
     </nav>
 
-    <!-- Hero Section - Streamlined -->
+    <!-- Hero Section -->
     <section class="hero" id="main-content">
-        <div class="hero-badge">Free on the App Store</div>
-        <h1>Know when you'll run out — before it happens.</h1>
-        <p class="hero-tagline">HomeHeat predicts when your heating oil or propane tank will need a refill using your usage and local weather — no sensors required.</p>
+        <div class="hero-grid">
+            <div class="hero-content">
+                <div class="hero-badges">
+                    <span class="hero-badge ios-only">Free on the App Store</span>
+                    <span class="hero-badge desktop-only">Free for Homeowners</span>
+                    <span class="hero-badge android-only">Free for Homeowners</span>
+                </div>
+                <h1>Live heating oil prices in your area.</h1>
+                <p class="hero-tagline">See what suppliers are charging near you — and know when to refill before you run out.</p>
+                <p class="hero-emotional">Never get surprised by an empty tank.</p>
 
-        <p class="hero-behavioral">Most people don't run out because prices are high — they run out because life gets busy.</p>
+                <form class="hero-zip-form" id="hero-zip-form">
+                    <input type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5"
+                           placeholder="Enter your ZIP code" id="hero-zip-input" required>
+                    <button type="submit">See Local Prices</button>
+                </form>
+                <p class="hero-zip-helper">We'll show prices near your ZIP. No signup needed.</p>
+                <div class="hero-zip-error" id="hero-zip-error"></div>
+                <div class="hero-zip-expand" id="hero-zip-expand" style="display:none;">
+                    <p class="expand-msg" id="expand-msg"></p>
+                    <form class="hero-expand-form" id="hero-expand-form">
+                        <input type="email" placeholder="Your email" id="hero-expand-email" required>
+                        <button type="submit">Notify Me</button>
+                    </form>
+                    <p class="expand-success" id="expand-success" style="display:none;"></p>
+                </div>
 
-        <!-- Social Proof - NEW -->
-        <div class="hero-social-proof">
-            <div class="app-store-rating">
-                <span class="stars">★★★★★</span>
-                <span>5.0 on App Store</span>
+                <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card ios-only" id="hero-download-cta">
+                    <img src="images/app-icon.png" alt="HomeHeat App Icon">
+                    <div class="app-download-info">
+                        <div class="app-name">HomeHeat</div>
+                        <div class="app-subtitle">Oil & Propane Tracker</div>
+                        <div class="app-cta">Download on the App Store →</div>
+                    </div>
+                </a>
+
+                <p class="hero-proof-line">
+                    <span class="pulse-dot"></span>
+                    Updated daily from <strong id="hero-supplier-count" class="loading-pulse">---</strong> real supplier listings
+                </p>
+
+                <p class="hero-trust-line">Free. No account. No hardware required.</p>
             </div>
-        </div>
-
-        <!-- User Review Quote - NEW -->
-        <div class="user-review-quote">
-            "Now I know exactly when to order oil and at what price. Great app, highly recommended."
-            <div class="review-author">— Punchy2012, App Store Review</div>
-        </div>
-
-        <div class="trust-badges">
-            <span class="trust-badge">No sensors needed</span>
-            <span class="trust-badge">No account required</span>
-            <span class="trust-badge">Oil & Propane</span>
-        </div>
-
-        <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="app-download-card ios-only" id="hero-download-cta">
-            <img src="images/app-icon.png" alt="HomeHeat App Icon">
-            <div class="app-download-info">
-                <div class="app-name">HomeHeat</div>
-                <div class="app-subtitle">Oil & Propane Tracker</div>
-                <div class="app-cta">Download on the App Store →</div>
+            <div class="hero-visual">
+                <div class="hero-composite">
+                    <div class="hero-composite-card">
+                        <div class="composite-card-header">Average Price Today</div>
+                        <div class="composite-card-price">
+                            <span class="composite-avg loading-pulse" id="composite-avg-price">---</span>
+                            <span class="composite-unit">/gal</span>
+                        </div>
+                        <div class="composite-card-meta">
+                            <span id="composite-supplier-count" class="loading-pulse">---</span> suppliers compared
+                        </div>
+                        <div class="composite-card-cta">Based on real supplier listings</div>
+                    </div>
+                    <div class="hero-mockup">
+                        <picture>
+                            <source srcset="images/screenshot-1-home.webp" type="image/webp">
+                            <img src="images/screenshot-1-home.png"
+                                 alt="HomeHeat app showing tank level and days remaining">
+                        </picture>
+                    </div>
+                </div>
             </div>
-        </a>
-        <p class="hero-micro-copy">Free for homeowners. No account required. Privacy first.</p>
-
-        <!-- Android Waitlist (hidden on iOS) -->
-        <div class="android-waitlist android-only">
-            <p class="android-waitlist-title">Android coming soon</p>
-            <p class="android-waitlist-text">Join the waitlist to help us prioritize.</p>
-            <form id="android-waitlist-form" class="android-waitlist-form">
-                <input type="email" id="android-email" placeholder="Email" required>
-                <input type="text" id="android-zip" placeholder="ZIP (optional)" maxlength="5" pattern="[0-9]{5}">
-                <button type="submit">Notify Me</button>
-            </form>
-            <p id="android-waitlist-success" class="android-waitlist-success" style="display: none;">You're on the list!</p>
         </div>
     </section>
 
-    <!-- Live Stats Bar - NEW -->
-    <div class="live-stats-bar">
-        <div class="live-stat">
-            <span class="pulse-dot"></span>
-            <span><strong id="stat-suppliers">430+</strong> suppliers tracked</span>
+    <!-- How It Works -->
+    <section class="how-it-works-section">
+        <h2>How HomeHeat Works</h2>
+        <div class="how-steps">
+            <div class="how-step">
+                <div class="how-step-number">1</div>
+                <h3>Compare Local Prices</h3>
+                <p>Enter your ZIP code to see live pricing from nearby suppliers.</p>
+            </div>
+            <div class="how-step">
+                <div class="how-step-number">2</div>
+                <h3>Choose Your Supplier</h3>
+                <p>Order from the provider you prefer — no hidden fees, no contracts required.</p>
+            </div>
+            <div class="how-step">
+                <div class="how-step-number">3</div>
+                <h3>Track Your Tank</h3>
+                <p>Use our free app to monitor usage and predict when to refill. Never get caught with an empty tank.</p>
+            </div>
         </div>
-        <div class="live-stat">
-            <span><strong id="stat-states">12</strong> states covered</span>
-        </div>
-        <div class="live-stat">
-            <span>Avg price: <strong id="stat-avg-price">$3.75</strong>/gal</span>
-        </div>
-    </div>
+        <p class="how-tension-line">No contracts. No surprise fees. No emergency deliveries.</p>
+    </section>
 
-    <!-- Screenshots - Horizontal Scroll (reduced to 5) -->
+    <!-- Screenshots -->
     <section class="screenshots-v2">
-        <h2>See HomeHeat in Action</h2>
+        <h2>See How HomeHeat Tracks Your Tank</h2>
         <div class="screenshot-scroll-wrapper" id="screenshot-wrapper">
             <div class="screenshot-scroll" id="screenshot-scroll">
                 <div class="screenshot-item">
@@ -594,14 +592,14 @@
                     </picture>
                     <p>Low fuel warnings</p>
                 </div>
-                <div class="screenshot-item">
+                <div class="screenshot-item screenshot-item--extra">
                     <picture>
                         <source srcset="images/screenshot-3-prices.webp" type="image/webp">
                         <img loading="lazy" src="images/screenshot-3-prices.png" alt="HomeHeat price tracking showing $2.90 current market price with price history chart comparing your prices vs market average">
                     </picture>
                     <p>Local price comparison</p>
                 </div>
-                <div class="screenshot-item">
+                <div class="screenshot-item screenshot-item--extra">
                     <picture>
                         <source srcset="images/screenshot-7-suppliers.webp" type="image/webp">
                         <img loading="lazy" src="images/screenshot-7-suppliers.png" alt="HomeHeat supplier directory showing local oil companies like Barrco Fuel at $2.85 per gallon with phone numbers and request quote buttons">
@@ -613,92 +611,20 @@
         <p class="scroll-hint">Swipe to see more →</p>
     </section>
 
-    <!-- Merged Features Section (was two separate sections) -->
-    <section class="features-v2">
-        <div class="section-header">
-            <h2>Everything you need to never run out</h2>
-            <p>HomeHeat combines your tank readings with local weather to predict usage — no hardware required.</p>
+    <!-- Stats Bar -->
+    <p class="stats-context">Updated daily from real supplier listings</p>
+    <div class="live-stats-bar">
+        <div class="live-stat">
+            <span class="pulse-dot"></span>
+            <span><strong id="stat-suppliers" class="loading-pulse">---</strong> suppliers tracked</span>
         </div>
-        <div class="features-grid-v2">
-            <div class="feature-card-v2">
-                <div class="feature-icon">🛢️</div>
-                <h3>Track Your Tank</h3>
-                <p>Log gauge readings to see gallons remaining and how fast you're using fuel.</p>
-            </div>
-            <div class="feature-card-v2">
-                <div class="feature-icon">⏱️</div>
-                <h3>Run-Out Predictions</h3>
-                <p>Know when you'll need oil weeks ahead — before it becomes urgent.</p>
-            </div>
-            <div class="feature-card-v2">
-                <div class="feature-icon">🌡️</div>
-                <h3>Weather-Aware</h3>
-                <p>Predictions adjust automatically based on local temperature forecasts.</p>
-            </div>
-            <div class="feature-card-v2">
-                <div class="feature-icon">🔔</div>
-                <h3>Smart Alerts</h3>
-                <p>Get notified when it's time to start checking prices or schedule delivery.</p>
-            </div>
-            <div class="feature-card-v2">
-                <div class="feature-icon">📈</div>
-                <h3>Price Tracking</h3>
-                <p>See local prices, trends over time, and find the best deals nearby.</p>
-            </div>
-            <div class="feature-card-v2">
-                <div class="feature-icon">📍</div>
-                <h3>Local Suppliers</h3>
-                <p>Find and contact verified heating oil and propane suppliers in your area.</p>
-            </div>
+        <div class="live-stat">
+            <span><strong id="stat-states" class="loading-pulse">---</strong> states covered</span>
         </div>
-    </section>
-
-    <!-- Problem / Solution - Kept from original -->
-    <section class="section-wrapper">
-        <div class="section-content">
-            <div class="problem-solution-grid">
-                <div class="problem-col">
-                    <h2>The Problem</h2>
-                    <ul class="check-list check-list--negative">
-                        <li>Tank gauges are often inaccurate</li>
-                        <li>Cold snaps drain fuel fast</li>
-                        <li>Running out means emergency fees</li>
-                    </ul>
-                </div>
-                <div class="solution-col">
-                    <h2>How HomeHeat Helps</h2>
-                    <ul class="check-list check-list--positive">
-                        <li>Log readings in seconds</li>
-                        <li>See run-out date based on weather</li>
-                        <li>Get alerts before it's too late</li>
-                    </ul>
-                </div>
-            </div>
+        <div class="live-stat">
+            <span>Avg price: <strong id="stat-avg-price" class="loading-pulse">---</strong>/gal</span>
         </div>
-    </section>
-
-    <!-- Value Props - Simplified -->
-    <section class="value-props-v2">
-        <h2>Simple, Honest, Useful</h2>
-        <p>A personal tool for homeowners who heat with oil or propane. No tricks.</p>
-        <div class="value-badges">
-            <span class="value-badge">100% Free</span>
-            <span class="value-badge">No Account Needed</span>
-            <span class="value-badge">Privacy First</span>
-            <span class="value-badge">No Third-Party Ads</span>
-        </div>
-    </section>
-
-    <!-- Prices Teaser - NEW -->
-    <section class="prices-teaser">
-        <h2>Check Today's Heating Oil Prices</h2>
-        <p>We track prices from 430+ suppliers across the Northeast.</p>
-        <div class="price-preview">
-            <span class="avg-price" id="teaser-avg-price">$3.75</span>
-            <span class="price-label">average price<br>per gallon today</span>
-        </div>
-        <a href="/prices" class="cta-link" id="prices-cta">See prices in your area →</a>
-    </section>
+    </div>
 
     <!-- Floating App Download Icon (iOS mobile only) -->
     <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
@@ -720,14 +646,6 @@
                 <div class="home-faq-item">
                     <h3>Do I need a smart tank sensor?</h3>
                     <p>No. HomeHeat works with manual gauge readings. No hardware required.</p>
-                </div>
-                <div class="home-faq-item">
-                    <h3>How does it predict when I'll run out?</h3>
-                    <p>HomeHeat uses your logged readings, usage patterns, and local weather data.</p>
-                </div>
-                <div class="home-faq-item">
-                    <h3>Does it work with propane?</h3>
-                    <p>Yes! HomeHeat supports both heating oil and propane tanks.</p>
                 </div>
                 <div class="home-faq-item">
                     <h3>Is it really free?</h3>

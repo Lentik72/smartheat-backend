@@ -242,32 +242,355 @@ body {
 
 .hero h1 {
     font-size: 2.5rem;
-    margin-bottom: 1rem;
+    margin: 0 0 0.75rem;
+    line-height: 1.2;
 }
 
+/* Minimal base — each hero paragraph styled explicitly */
 .hero p {
-    font-size: 1.25rem;
     color: var(--text-dark);
-    max-width: 600px;
-    margin: 0 auto 2rem;
+    margin: 0;
+}
+
+/* Badge container + badge pill */
+.hero-badges {
+    margin-bottom: 0.75rem;
 }
 
 .hero-badge {
-    display: inline-block;
-    background: rgba(255,255,255,0.95);
-    padding: 0.5rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    background: rgba(255,255,255,0.9);
+    padding: 0.35rem 0.85rem;
     border-radius: 20px;
-    font-size: 0.875rem;
-    margin-bottom: 2rem;
+    font-size: 0.8rem;
     color: var(--text-dark);
+    font-weight: 500;
+    border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Tagline — benefit-focused, not feature list */
+.hero-tagline {
+    font-size: 1.05rem;
+    font-weight: 400;
+    margin: 0 0 0.75rem;
+    color: var(--text-dark);
+    line-height: 1.6;
+    max-width: 440px;
+}
+
+/* Emotional hook — tighter to tagline, more space before form */
+.hero-emotional {
+    font-size: 0.95rem;
+    font-style: italic;
+    opacity: 0.7;
+    margin: 0 0 1.25rem;
+    color: var(--text-dark);
+}
+
+/* Helper text under ZIP form */
+.hero-zip-helper {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    margin-top: 0.5rem;
+}
+
+/* Hero two-column grid */
+.hero-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* Desktop: two columns */
+@media (min-width: 768px) {
+    .hero {
+        text-align: left;
+        padding: 4rem 2rem;
+    }
+    .hero-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        align-items: center;
+    }
+    .hero h1 {
+        font-size: 2.8rem;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+    }
+    .hero-tagline {
+        font-size: 1.1rem;
+        max-width: 440px;
+    }
+}
+
+/* Mobile: stacked, centered */
+@media (max-width: 767px) {
+    .hero-grid {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .hero {
+        text-align: center;
+    }
+    .hero-tagline {
+        max-width: 360px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .hero-visual {
+        margin-top: 2rem;
+    }
+}
+
+/* ZIP code form */
+.hero-zip-form {
+    display: flex;
+    gap: 0;
+    max-width: 380px;
+    margin-top: 1.5rem;
+}
+
+@media (max-width: 767px) {
+    .hero-zip-form {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+.hero-zip-form input {
+    flex: 1;
+    padding: 0.9rem 1.25rem;
+    border: 2px solid rgba(255,255,255,0.5);
+    border-right: none;
+    border-radius: 12px 0 0 12px;
+    font-size: 1rem;
+    background: rgba(255,255,255,0.85);
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.hero-zip-form input:focus {
+    border-color: white;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+}
+
+.hero-zip-form input::placeholder {
+    color: var(--text-muted);
+}
+
+.hero-zip-form button {
+    padding: 0.9rem 1.5rem;
+    background: #2a2a2a;
+    color: white;
+    border: none;
+    border-radius: 0 12px 12px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.hero-zip-form button:hover {
+    background: #3d3d3d;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.hero-zip-error {
+    font-size: 0.85rem;
+    color: white;
+    margin-top: 0.5rem;
+    background: rgba(0,0,0,0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: none;
+    max-width: 380px;
+}
+
+/* Expansion email capture */
+.hero-zip-expand {
+    margin-top: 1rem;
+    max-width: 380px;
+}
+
+@media (max-width: 767px) {
+    .hero-zip-expand {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+.expand-msg {
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
     font-weight: 500;
 }
 
-.hero-tagline {
-    font-size: 1.5rem;
+.hero-expand-form {
+    display: flex;
+    gap: 0;
+}
+
+.hero-expand-form input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid rgba(255,255,255,0.6);
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    font-size: 0.95rem;
+    background: rgba(255,255,255,0.9);
+    outline: none;
+    font-family: inherit;
+}
+
+.hero-expand-form input:focus {
+    border-color: white;
+    background: white;
+}
+
+.hero-expand-form button {
+    padding: 0.75rem 1.25rem;
+    background: var(--text-dark, #1a1a1a);
+    color: white;
+    border: none;
+    border-radius: 0 10px 10px 0;
+    font-size: 0.95rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.expand-success {
+    font-size: 0.9rem;
     color: var(--text-dark);
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+/* Hero proof line */
+.hero-proof-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-dark);
+    margin-top: 1rem;
+    margin-bottom: 0;
+    opacity: 0.7;
+}
+
+@media (max-width: 767px) {
+    .hero-proof-line {
+        justify-content: center;
+    }
+}
+
+.hero-proof-line .pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: #2d8a2d;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    flex-shrink: 0;
+}
+
+/* iOS App Store card (secondary CTA below ZIP form) */
+.hero .app-download-card {
+    margin-top: 1.25rem;
+}
+
+/* Composite visual (phone + floating price card) */
+.hero-composite {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+/* Composite card — matches /prices supplier card design language */
+.hero-composite-card {
+    position: absolute;
+    left: -20px;
+    top: 40px;
+    background: var(--background-card, white);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.08));
+    border: 1px solid var(--border-color, #E5D8D0);
+    width: 180px;
+    z-index: 2;
+    text-align: right;
+}
+
+.composite-card-header {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-gray);
+    margin-bottom: 4px;
+    font-weight: 400;
+}
+
+.composite-card-price {
+    margin-bottom: 6px;
+}
+
+.composite-avg {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.1;
+}
+
+.composite-unit {
+    font-size: 0.7rem;
+    color: var(--text-gray);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.composite-card-meta {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.composite-card-cta {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+/* Mobile: hide floating card, just show phone */
+@media (max-width: 767px) {
+    .hero-composite-card {
+        display: none;
+    }
+}
+
+/* Loading pulse animation for dynamic values */
+.loading-pulse {
+    display: inline-block;
+    min-width: 2em;
+    background: rgba(0,0,0,0.08);
+    border-radius: 4px;
+    animation: loadPulse 1.5s ease-in-out infinite;
+    color: transparent;
+}
+
+@keyframes loadPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
 }
 
 .hero-behavioral {
@@ -1823,10 +2146,6 @@ body {
         font-size: 2rem;
     }
 
-    .hero p {
-        font-size: 1rem;
-    }
-
     .features-grid {
         grid-template-columns: 1fr;
     }
@@ -2892,8 +3211,57 @@ body {
    ANDROID WAITLIST
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Platform visibility — CSS-first, no flicker (JS fallback in widgets.js) */
+.platform-desktop .ios-only,
+.platform-android .ios-only { display: none !important; }
+
+.platform-ios .android-only,
+.platform-desktop .android-only { display: none !important; }
+
+.desktop-only { display: none; }
+.platform-ios .desktop-only,
+.platform-android .desktop-only { display: none !important; }
+.platform-desktop .desktop-only { display: block !important; }
+
 .android-only {
     display: none; /* Hidden by default, shown via JS on Android */
+}
+
+/* (hero-prices-cta removed — replaced by ZIP form) */
+
+/* Hero trust line */
+.hero-trust-line {
+    font-size: 0.85rem;
+    opacity: 0.65;
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+    color: var(--text-dark, #1a1a1a);
+}
+
+/* Hero device mockup */
+.hero-mockup img {
+    max-height: 420px;
+    width: auto;
+    border-radius: 24px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+@media (max-width: 767px) {
+    .hero-mockup img {
+        max-height: 320px;
+    }
+}
+
+/* Stats context label */
+.stats-context {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted, #6b7280);
+    margin: 0;
+    padding: 8px 20px 0;
+    background: var(--background-secondary, #FEF3EB);
+    border-top: 1px solid var(--border-color, #E5D8D0);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .android-waitlist {

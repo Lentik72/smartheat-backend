@@ -512,6 +512,53 @@ router.post('/android', async (req, res) => {
 });
 
 /**
+ * POST /api/waitlist/expansion
+ * Capture email from users in uncovered US states (hero ZIP form fallback)
+ */
+router.post('/expansion', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger;
+
+  try {
+    const { email, zip, state } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email required' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email' });
+    }
+
+    await sequelize.query(`
+      INSERT INTO waitlist (email, postal_code, province, country, source)
+      VALUES (:email, :zip, :state, 'EXPANSION', 'hero_zip')
+      ON CONFLICT (email, country)
+      DO UPDATE SET postal_code = EXCLUDED.postal_code, province = EXCLUDED.province, created_at = NOW()
+    `, {
+      replacements: {
+        email: email.toLowerCase().trim(),
+        zip: zip || null,
+        state: state || null
+      }
+    });
+
+    logger?.info(`[Waitlist] Expansion signup: ${email} (ZIP: ${zip || 'none'}, State: ${state || 'unknown'})`);
+
+    res.json({ success: true, message: "We'll notify you when we launch in your area." });
+  } catch (error) {
+    logger?.error('[Waitlist] Expansion signup error:', error.message);
+
+    if (error.message?.includes('duplicate') || error.message?.includes('unique')) {
+      return res.json({ success: true, message: "You're already on the list!" });
+    }
+
+    res.status(500).json({ success: false, error: 'Failed to join waitlist' });
+  }
+});
+
+/**
  * GET /api/waitlist/stats
  * Get waitlist statistics (admin only - no auth for now)
  */
