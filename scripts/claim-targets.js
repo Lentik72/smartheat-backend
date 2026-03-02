@@ -261,7 +261,7 @@ async function main() {
       }
 
       // Build email HTML
-      const subject = `"${t.name}" — homeowners are searching for you on HomeHeat`;
+      const subject = `Homeowners in ${t.city} are comparing heating oil prices`;
       const html = buildOutreachEmail(t);
 
       try {
@@ -318,34 +318,45 @@ async function main() {
 
 // ── Email Template ───────────────────────────────────────────────
 function buildOutreachEmail(target) {
-  const competitorShare = 100 - target.clickShare;
-
   return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 20px; color: #333;">
       <div style="text-align: center; margin-bottom: 24px;">
         <img src="https://www.gethomeheat.com/images/app-icon-small.png" alt="HomeHeat" style="width: 40px; height: 40px; border-radius: 8px;">
       </div>
 
-      <h1 style="font-size: 20px; color: #1a1a1a; margin: 0 0 16px; line-height: 1.3;">
-        Homeowners clicked competitors <strong style="color: #DC2626;">${target.competitorClicks} times</strong> in your area last month
-      </h1>
+      <p style="font-size: 15px; color: #374151; line-height: 1.6; margin: 0 0 16px;">
+        ${target.name} is currently listed on HomeHeat, where homeowners in ${target.city} compare local heating oil prices.
+      </p>
 
-      <div style="background: #FEF3EB; padding: 16px; border-radius: 10px; margin: 20px 0;">
-        <p style="margin: 0 0 8px; font-size: 15px; color: #374151;">
-          Your listing on HomeHeat received <strong>${target.ownClicks} click${target.ownClicks !== 1 ? 's' : ''}</strong> — but
-          <strong style="color: #DC2626;">${competitorShare}%</strong> of local clicks went to competitors instead.
+      <p style="font-size: 15px; color: #374151; line-height: 1.6; margin: 0 0 20px;">
+        Here's what happened in your coverage area over the past 30 days:
+      </p>
+
+      <div style="background: #f8f9fa; border-left: 4px solid #1a1a1a; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 0 0 24px;">
+        <p style="margin: 0 0 6px; font-size: 15px; color: #1a1a1a;">
+          <strong>${target.areaSearches.toLocaleString()}</strong> homeowners searched for heating oil
         </p>
-        <p style="margin: 0; font-size: 15px; color: #374151;">
-          ${target.areaSearches.toLocaleString()} homeowners searched for heating oil in your coverage area.
+        <p style="margin: 0 0 6px; font-size: 15px; color: #1a1a1a;">
+          <strong>${target.competitorClicks}</strong> clicks went to competing suppliers
+        </p>
+        <p style="margin: 0; font-size: 15px; color: #1a1a1a;">
+          <strong>${target.ownClicks}</strong> click${target.ownClicks !== 1 ? 's' : ''} went to your listing
         </p>
       </div>
 
-      <h3 style="font-size: 16px; color: #1a1a1a; margin: 24px 0 8px;">Without claiming, you can't:</h3>
-      <ul style="color: #4B5563; font-size: 15px; line-height: 1.8; padding-left: 20px; margin: 0 0 24px;">
-        <li>Update your price (so homeowners see your current rate)</li>
-        <li>See full analytics on who's searching</li>
-        <li>Get your Verified Business badge</li>
-        <li>Update your price by text message</li>
+      <p style="font-size: 15px; color: #374151; line-height: 1.6; margin: 0 0 8px;">
+        Your listing isn't claimed yet, which means you can't update your price or see who's searching.
+      </p>
+
+      <p style="font-size: 15px; color: #374151; line-height: 1.6; margin: 0 0 24px;">
+        By claiming, you'll be able to:
+      </p>
+
+      <ul style="color: #4B5563; font-size: 15px; line-height: 1.8; padding-left: 20px; margin: 0 0 28px;">
+        <li>Display your current price to homeowners comparing suppliers</li>
+        <li>See how many people are searching in your area</li>
+        <li>Get a Verified Business badge on your listing</li>
+        <li>Update your price anytime by text message</li>
       </ul>
 
       <div style="text-align: center; margin: 32px 0;">
