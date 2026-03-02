@@ -28,7 +28,7 @@
 
     <script>(function(){var u=navigator.userAgent;document.documentElement.className+=(/Android/i.test(u)?' platform-android':/iPhone|iPad|iPod/i.test(u)||('MacIntel'===navigator.platform&&navigator.maxTouchPoints>1)?' platform-ios':' platform-desktop');})();</script>
     <link rel="preload" as="image" type="image/webp" href="images/screenshot-1-home.webp">
-    <link rel="stylesheet" href="style.min.css?v=41">
+    <link rel="stylesheet" href="style.min.css?v=42">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
@@ -489,7 +489,7 @@
                 <form class="hero-zip-form" id="hero-zip-form">
                     <input type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5"
                            placeholder="Enter your ZIP code" id="hero-zip-input" required>
-                    <button type="submit">See Local Prices</button>
+                    <button type="submit"><span class="btn-full">See Local Prices</span><span class="btn-short">See Prices</span></button>
                 </form>
                 <p class="hero-zip-helper">We'll show prices near your ZIP. No signup needed.</p>
                 <div class="hero-zip-error" id="hero-zip-error"></div>
