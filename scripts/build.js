@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /**
- * Build Script - CSS/JS Minification
+ * Build Script - CSS/JS Minification + CSS Auto-Versioning
  * Uses esbuild for fast minification
+ * Auto-replaces ?v=N with content-hash on style.min.css references
  *
  * Usage: npm run build
  */
 
 const esbuild = require('esbuild');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -70,6 +72,32 @@ async function build() {
     }
   }
 
+  // Auto-version CSS: replace ?v=N with content hash of style.min.css
+  const minCssPath = path.join(WEBSITE_DIR, 'style.min.css');
+  if (fs.existsSync(minCssPath)) {
+    const cssContent = fs.readFileSync(minCssPath);
+    const hash = crypto.createHash('md5').update(cssContent).digest('hex').slice(0, 8);
+    const versionPattern = /style\.min\.css\?v=[^\s"']*/g;
+    const replacement = `style.min.css?v=${hash}`;
+
+    let updatedCount = 0;
+    const htmlFiles = findHtmlFiles(WEBSITE_DIR);
+
+    for (const htmlFile of htmlFiles) {
+      const content = fs.readFileSync(htmlFile, 'utf-8');
+      if (versionPattern.test(content)) {
+        versionPattern.lastIndex = 0; // reset regex state
+        const updated = content.replace(versionPattern, replacement);
+        if (updated !== content) {
+          fs.writeFileSync(htmlFile, updated);
+          updatedCount++;
+        }
+      }
+    }
+
+    console.log(`\n  🔄 CSS version: ?v=${hash} (updated ${updatedCount} HTML files)`);
+  }
+
   // Summary
   const totalOriginal = results.css.originalSize + results.js.originalSize;
   const totalMinified = results.css.minifiedSize + results.js.minifiedSize;
@@ -81,10 +109,20 @@ async function build() {
   console.log(`  CSS: ${results.css.files} file(s)`);
   console.log(`  JS:  ${results.js.files} file(s)`);
   console.log(`  Total: ${formatSize(totalOriginal)} → ${formatSize(totalMinified)} (${savings}% smaller)`);
-  console.log('');
-  console.log('  To use minified files in production:');
-  console.log('  - style.css → style.min.css');
-  console.log('  - *.js → *.min.js');
+}
+
+/** Recursively find all .html files under a directory */
+function findHtmlFiles(dir) {
+  const results = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...findHtmlFiles(fullPath));
+    } else if (entry.name.endsWith('.html')) {
+      results.push(fullPath);
+    }
+  }
+  return results;
 }
 
 function formatSize(bytes) {
