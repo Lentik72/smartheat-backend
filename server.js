@@ -492,6 +492,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/089-backfill-baltimore-coverage', label: 'Backfill Baltimore coverage' },
           { path: './src/migrations/090-add-luzerne-carbon-schuylkill-suppliers', label: 'Luzerne/Carbon/Schuylkill PA suppliers' },
           { path: './src/migrations/091-add-upstate-ny-suppliers', label: 'Upstate NY suppliers' },
+          { path: './src/migrations/092-add-northern-virginia-suppliers', label: 'Northern Virginia suppliers' },
         ];
 
         let migrationErrors = 0;
