@@ -490,6 +490,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/087-backfill-westchester-putnam-coverage', label: 'Backfill Westchester/Putnam coverage' },
           { path: './src/migrations/088-backfill-de-md-coverage', label: 'Backfill DE/MD coverage' },
           { path: './src/migrations/089-backfill-baltimore-coverage', label: 'Backfill Baltimore coverage' },
+          { path: './src/migrations/090-add-luzerne-carbon-schuylkill-suppliers', label: 'Luzerne/Carbon/Schuylkill PA suppliers' },
         ];
 
         let migrationErrors = 0;
