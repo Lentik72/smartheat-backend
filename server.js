@@ -95,7 +95,7 @@ const { initSupplierPriceModel } = require('./src/models/SupplierPrice');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Page generation gate — health returns 503 until all pages are generated
+// Page generation tracking (does NOT gate health endpoint — Railway needs 200 within 30s)
 let pagesReady = false;
 
 // Trust Railway's proxy for accurate IP detection in rate limiting
@@ -560,12 +560,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint — gates on page generation completing
+// Health check endpoint
 app.get('/health', async (req, res) => {
-  if (!pagesReady) {
-    return res.status(503).json({ status: 'starting', message: 'Page generation in progress' });
-  }
-
   let databaseStatus = false;
   if (sequelize) {
     try {
