@@ -1,9 +1,13 @@
 /**
- * Platform Detection - Show/hide iOS vs Android elements
+ * Platform Detection - Show/hide iOS vs Android vs Desktop elements
  *
  * Classes:
- * - .ios-only: Shown by default, hidden on Android
- * - .android-only: Hidden by default (style="display:none"), shown on Android
+ * - .ios-only: Shown on iOS, hidden on Android + Desktop
+ * - .android-only: Hidden by default, shown on Android
+ * - .desktop-only: Hidden by default, shown on Desktop
+ *
+ * CSS-first detection runs before paint (inline script in <head>).
+ * This JS is a fallback for pages without the inline script.
  */
 (function() {
   'use strict';
@@ -20,18 +24,21 @@
   function applyPlatformStyles() {
     const iosElements = document.querySelectorAll('.ios-only');
     const androidElements = document.querySelectorAll('.android-only');
+    const desktopElements = document.querySelectorAll('.desktop-only');
 
     if (isAndroid()) {
-      // Hide iOS elements, show Android elements
       iosElements.forEach(el => el.style.display = 'none');
       androidElements.forEach(el => el.style.display = '');
+      desktopElements.forEach(el => el.style.display = 'none');
     } else if (isIOS()) {
-      // Ensure iOS elements are visible (default)
-      iosElements.forEach(el => {
-        if (el.style.display === 'none') el.style.display = '';
-      });
+      androidElements.forEach(el => el.style.display = 'none');
+      desktopElements.forEach(el => el.style.display = 'none');
+    } else {
+      // Desktop
+      iosElements.forEach(el => el.style.display = 'none');
+      androidElements.forEach(el => el.style.display = 'none');
+      desktopElements.forEach(el => el.style.display = '');
     }
-    // Desktop: show iOS elements (App Store links) as default
   }
 
   // Run on DOM ready

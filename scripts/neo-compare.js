@@ -8,14 +8,16 @@ const zones = {
   'MA': [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
   'CT': [1,2,3,4,5,6],
   'RI': [1,2],
-  'NH': [1,2,3,4,5,6]
+  'NH': [1,2,3,4,5,6],
+  'ME': [1,2,3,4,5,6,7,8]
 };
 
 const stateUrls = {
   'MA': 'massachusetts',
   'CT': 'connecticut',
   'RI': 'rhodeisland',
-  'NH': 'newhampshire'
+  'NH': 'newhampshire',
+  'ME': 'maine'
 };
 
 async function fetchZone(state, zone) {

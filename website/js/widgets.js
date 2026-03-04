@@ -192,23 +192,37 @@
   }
 
   // ============================================
-  // ANDROID HANDLING
-  // Hide iOS elements, show Android elements
+  // PLATFORM HANDLING (JS fallback for CSS-first detection)
+  // Hide/show elements for iOS, Android, Desktop
   // ============================================
 
-  function initAndroidHandling() {
+  function initPlatformHandling() {
     if (isAndroid) {
-      // Hide iOS-only elements
       document.querySelectorAll('.ios-only').forEach(function(el) {
         el.style.display = 'none';
       });
-      // Show Android-only elements
       document.querySelectorAll('.android-only').forEach(function(el) {
-        el.style.display = 'block';
+        el.style.display = '';
+      });
+      document.querySelectorAll('.desktop-only').forEach(function(el) {
+        el.style.display = 'none';
+      });
+    } else if (isDesktop) {
+      document.querySelectorAll('.ios-only').forEach(function(el) {
+        el.style.display = 'none';
+      });
+      document.querySelectorAll('.android-only').forEach(function(el) {
+        el.style.display = 'none';
+      });
+      document.querySelectorAll('.desktop-only').forEach(function(el) {
+        el.style.display = '';
       });
     } else {
-      // Hide Android-only elements on non-Android
+      // iOS
       document.querySelectorAll('.android-only').forEach(function(el) {
+        el.style.display = 'none';
+      });
+      document.querySelectorAll('.desktop-only').forEach(function(el) {
         el.style.display = 'none';
       });
     }
@@ -219,8 +233,8 @@
   // ============================================
 
   function init() {
-    // Handle Android/iOS visibility first
-    initAndroidHandling();
+    // Handle platform visibility first (JS fallback for CSS-first detection)
+    initPlatformHandling();
 
     // Initialize floating icon for iOS
     initFloatingIcon();

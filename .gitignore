@@ -54,5 +54,8 @@ Thumbs.db
 dist/
 build/
 
+# Dev sandbox (local preview, never deployed)
+dev/
+
 # Railway
 .railway/.DS_Store
