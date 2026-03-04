@@ -808,7 +808,7 @@
     "enabled": true,
     "pattern": "direct",
     "notes": "NJ Netcong/Sussex-Warren County - COD price on homepage. Senior + military discounts.",
-    "priceRegex": "Today's C\\.O\\.D\\. Oil Price: \\$([0-9]+\\.[0-9]{2,3})"
+    "priceRegex": "Today['\u2019]s C\\.O\\.D\\. Oil Price: \\$([0-9]+\\.[0-9]{2,3})"
   },
 
   "advantage-oil.com": {
@@ -2680,7 +2680,7 @@
     "priceRegex": "elementor-price-list-price\">\\$([0-9]+\\.[0-9]{2,3})"
   },
 
-  "www.joelsoil.com": {
+  "joelsoil.com": {
     "enabled": true,
     "pattern": "direct",
     "pricePath": "/product-page/heating-oil",

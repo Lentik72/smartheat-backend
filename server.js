@@ -493,6 +493,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/090-add-luzerne-carbon-schuylkill-suppliers', label: 'Luzerne/Carbon/Schuylkill PA suppliers' },
           { path: './src/migrations/091-add-upstate-ny-suppliers', label: 'Upstate NY suppliers' },
           { path: './src/migrations/092-add-northern-virginia-suppliers', label: 'Northern Virginia suppliers' },
+          { path: './src/migrations/093-fix-stale-price-display-flags', label: 'Fix stale price display flags' },
         ];
 
         let migrationErrors = 0;
