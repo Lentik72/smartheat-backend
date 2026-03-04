@@ -95,6 +95,9 @@ const { initSupplierPriceModel } = require('./src/models/SupplierPrice');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Page generation gate — health returns 503 until all pages are generated
+let pagesReady = false;
+
 // Trust Railway's proxy for accurate IP detection in rate limiting
 app.set('trust proxy', 1);
 
@@ -484,6 +487,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/084-add-vt-suppliers', label: 'VT suppliers' },
           { path: './src/migrations/085-claim-unique-index', label: 'Claim unique index' },
           { path: './src/migrations/086-claim-funnel-hardening', label: 'Claim funnel hardening' },
+          { path: './src/migrations/087-backfill-westchester-putnam-coverage', label: 'Backfill Westchester/Putnam coverage' },
         ];
 
         let migrationErrors = 0;
@@ -554,8 +558,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
+// Health check endpoint — gates on page generation completing
 app.get('/health', async (req, res) => {
+  if (!pagesReady) {
+    return res.status(503).json({ status: 'starting', message: 'Page generation in progress' });
+  }
+
   let databaseStatus = false;
   if (sequelize) {
     try {
@@ -942,41 +950,71 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   });
   logger.info('📄 SEO + Supplier + ZIP/County Elite page generator scheduled: daily at 11:00 PM EST');
 
-  // Regenerate all pages on startup (after healthcheck passes)
-  // Generated pages live on the filesystem but git has stale versions.
-  // Each Railway deploy creates a fresh container from git, so pages must
-  // be regenerated every time the server starts.
-  setTimeout(async () => {
+  // Regenerate all pages on startup — health endpoint gates on this completing.
+  // Generated pages are gitignored; each Railway deploy starts with no pages.
+  // All 4 generators run in parallel with a 90s per-generator timeout.
+  // If ANY generator fails, pagesReady stays false → Railway keeps old deploy.
+  (async () => {
     const websiteDir = path.join(__dirname, 'website');
+    const GENERATOR_TIMEOUT = 90000; // 90s per generator
+
+    const withTimeout = (promise, name) => Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error(`${name} timed out after 90s`)), GENERATOR_TIMEOUT))
+    ]);
+
+    const startTime = Date.now();
+    logger.info('📄 [Startup] Beginning page generation (health gated)...');
+
     try {
-      const { generateSEOPages } = require('./scripts/generate-seo-pages');
-      const seoResult = await generateSEOPages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
-      if (seoResult.success) {
-        logger.info(`✅ [Startup] SEO pages regenerated: ${seoResult.statePages} state, ${seoResult.totalSuppliers} suppliers`);
+      const results = await Promise.allSettled([
+        withTimeout((async () => {
+          const { generateSEOPages } = require('./scripts/generate-seo-pages');
+          return generateSEOPages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+        })(), 'SEO pages'),
+
+        withTimeout((async () => {
+          const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
+          const supplierLogger = { log: (...args) => logger.info(args.join(' ')), error: (...args) => logger.error(args.join(' ')) };
+          return generateSupplierPages({ sequelize, logger: supplierLogger, websiteDir });
+        })(), 'Supplier pages'),
+
+        withTimeout((async () => {
+          const { generateZipElitePages } = require('./scripts/generate-zip-elite-pages');
+          return generateZipElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+        })(), 'ZIP Elite pages'),
+
+        withTimeout((async () => {
+          const { generateCountyElitePages } = require('./scripts/generate-county-elite-pages');
+          return generateCountyElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+        })(), 'County Elite pages')
+      ]);
+
+      const names = ['SEO', 'Supplier', 'ZIP Elite', 'County Elite'];
+      let allSucceeded = true;
+
+      results.forEach((result, i) => {
+        if (result.status === 'fulfilled' && result.value.success) {
+          logger.info(`✅ [Startup] ${names[i]} pages generated`);
+        } else {
+          allSucceeded = false;
+          const reason = result.status === 'rejected' ? result.reason.message : (result.value.error || result.value.reason || 'unknown');
+          logger.error(`❌ [Startup] ${names[i]} page generation failed: ${reason}`);
+        }
+      });
+
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+      if (allSucceeded) {
+        pagesReady = true;
+        logger.info(`✅ [Startup] All pages generated in ${elapsed}s — health endpoint now returning 200`);
       } else {
-        logger.warn(`⚠️ [Startup] SEO generation skipped: ${seoResult.reason}`);
+        logger.error(`❌ [Startup] Page generation incomplete after ${elapsed}s — health returning 503, Railway will keep old deploy`);
       }
-    } catch (e) { logger.error('[Startup] SEO page generation failed:', e.message); }
-    try {
-      const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
-      const supplierLogger = { log: (...args) => logger.info(args.join(' ')), error: (...args) => logger.error(args.join(' ')) };
-      const supResult = await generateSupplierPages({ sequelize, logger: supplierLogger, websiteDir });
-      if (supResult.success) {
-        logger.info(`✅ [Startup] Supplier pages regenerated: ${supResult.generated} pages`);
-      } else {
-        logger.error(`❌ [Startup] Supplier page generation failed: ${supResult.error}`);
-      }
-    } catch (e) { logger.error('[Startup] Supplier page generation failed:', e.message); }
-    try {
-      const { generateZipElitePages } = require('./scripts/generate-zip-elite-pages');
-      const zipResult = await generateZipElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
-      if (zipResult.success) {
-        logger.info(`✅ [Startup] ZIP Elite pages regenerated: ${zipResult.generated} pages`);
-      } else {
-        logger.error(`❌ [Startup] ZIP Elite page generation failed`);
-      }
-    } catch (e) { logger.error('[Startup] ZIP Elite page generation failed:', e.message); }
-  }, 10000);
+    } catch (error) {
+      logger.error(`❌ [Startup] Page generation crashed: ${error.message}`);
+    }
+  })();
 
   // V2.6.0: Monthly reset of phone_only suppliers (1st of each month at 6 AM EST)
   // Gives blocked sites another chance after a month
