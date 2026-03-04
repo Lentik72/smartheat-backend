@@ -113,6 +113,25 @@ const logger = winston.createLogger({
   ]
 });
 
+// Startup env var validation — fail loudly in production instead of silently using sandbox defaults
+const REQUIRED_EMAIL_VARS = ['EMAIL_FROM'];
+const RECOMMENDED_VARS = ['CLAIM_VERIFY_SECRET'];
+for (const v of REQUIRED_EMAIL_VARS) {
+  if (!process.env[v]) {
+    if (process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production') {
+      logger.error(`FATAL: ${v} is not set. Emails will not send from verified domain.`);
+      process.exit(1);
+    } else {
+      logger.warn(`WARNING: ${v} is not set. Set it before deploying to production.`);
+    }
+  }
+}
+for (const v of RECOMMENDED_VARS) {
+  if (!process.env[v]) {
+    logger.warn(`WARNING: ${v} is not set. One-click verify links will not work.`);
+  }
+}
+
 // Global cache with different TTLs
 const cache = new NodeCache({ 
   stdTTL: 300, // 5 minutes default
@@ -464,6 +483,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/083-add-ct-suppliers', label: 'CT suppliers' },
           { path: './src/migrations/084-add-vt-suppliers', label: 'VT suppliers' },
           { path: './src/migrations/085-claim-unique-index', label: 'Claim unique index' },
+          { path: './src/migrations/086-claim-funnel-hardening', label: 'Claim funnel hardening' },
         ];
 
         let migrationErrors = 0;
@@ -662,6 +682,8 @@ app.use('/api', require('./src/routes/tracking'));  // V2.12.0: Click tracking f
 app.use('/api/dashboard', dashboardRoutes);  // V2.14.0: Analytics dashboard
 app.use('/api/zip', require('./src/routes/zip-stats'));  // V2.32.0: ZIP price intelligence
 app.use('/api/webhook/twilio', smsWebhookRoutes);  // V2.18.0: SMS price updates via Twilio
+app.use('/api/outreach', require('./src/routes/outreach'));  // Supplier email unsubscribe
+app.use('/api/webhook', require('./src/routes/outreach'));  // Resend bounce/complaint webhook
 
 // V2.10.0: Serve static files for admin tools
 app.use(express.static(path.join(__dirname, 'public')));
@@ -1069,7 +1091,19 @@ function scheduleCoverageIntelligence() {
         logger.error('[ActivityAnalytics] Daily report failed:', error.message);
       }
 
-      // 2.5. V2.5.0: Check for stale supplier prices and send reminders
+      // 2.5. Run outreach email sequence (E2/E3 follow-ups)
+      try {
+        const OutreachSequenceService = require('./src/services/OutreachSequenceService');
+        const outreach = new OutreachSequenceService(sequelize, logger);
+        const outreachResult = await outreach.runSequence();
+        if (!outreachResult.skipped) {
+          logger.info(`[OutreachSequence] E2=${outreachResult.e2_sent}, E3=${outreachResult.e3_sent}, complete=${outreachResult.complete}`);
+        }
+      } catch (error) {
+        logger.error('[OutreachSequence] Daily run failed:', error.message);
+      }
+
+      // 2.6. V2.5.0: Check for stale supplier prices and send reminders
       try {
         const { getSupplierStalenessService } = require('./src/services/SupplierPriceStalenessService');
         const stalenessService = getSupplierStalenessService(sequelize);
@@ -1172,7 +1206,60 @@ function scheduleCoverageIntelligence() {
             logger.warn('[DailyReports] Failed to gather click stats:', err.message);
           }
 
-          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats);
+          // Gather claim funnel data for daily email
+          let claimFunnel = null;
+          try {
+            const [funnelCounts] = await sequelize.query(`
+              SELECT action, COUNT(*) as count
+              FROM audit_logs
+              WHERE action IN ('outreach_email_sent', 'claim_page_view', 'claim_submitted', 'claim_verified')
+                AND created_at > NOW() - INTERVAL '7 days'
+              GROUP BY action
+            `);
+            const fc = {};
+            funnelCounts.forEach(r => { fc[r.action] = parseInt(r.count); });
+
+            const [pendingRows] = await sequelize.query(
+              "SELECT COUNT(*) as count FROM supplier_claims WHERE status = 'pending'"
+            );
+
+            // Sequence status
+            const [seqStatus] = await sequelize.query(`
+              SELECT
+                COUNT(*) FILTER (WHERE action = 'outreach_email_sent'
+                  AND NOT EXISTS (SELECT 1 FROM audit_logs a2 WHERE a2.action = 'outreach_email_2_sent'
+                    AND COALESCE(a2.details::jsonb->>'supplier_slug', a2.details::jsonb->>'slug') =
+                        COALESCE(audit_logs.details::jsonb->>'supplier_slug', audit_logs.details::jsonb->>'slug'))
+                ) as awaiting_e2,
+                COUNT(*) FILTER (WHERE action = 'outreach_email_2_sent'
+                  AND NOT EXISTS (SELECT 1 FROM audit_logs a2 WHERE a2.action = 'outreach_email_3_sent'
+                    AND COALESCE(a2.details::jsonb->>'supplier_slug', a2.details::jsonb->>'slug') =
+                        COALESCE(audit_logs.details::jsonb->>'supplier_slug', audit_logs.details::jsonb->>'slug'))
+                ) as awaiting_e3,
+                COUNT(*) FILTER (WHERE action = 'outreach_sequence_complete') as complete
+              FROM audit_logs
+              WHERE action IN ('outreach_email_sent', 'outreach_email_2_sent', 'outreach_sequence_complete')
+                AND created_at > NOW() - INTERVAL '60 days'
+            `);
+
+            claimFunnel = {
+              outreach_sent: fc.outreach_email_sent || 0,
+              pages_viewed: fc.claim_page_view || 0,
+              claims_submitted: fc.claim_submitted || 0,
+              pending_review: parseInt(pendingRows[0]?.count || 0),
+              sequence_status: seqStatus[0] ? {
+                awaiting_e2: parseInt(seqStatus[0].awaiting_e2 || 0),
+                awaiting_e3: parseInt(seqStatus[0].awaiting_e3 || 0),
+                complete: parseInt(seqStatus[0].complete || 0)
+              } : null
+            };
+
+            logger.info(`[DailyReports] Claim funnel: ${claimFunnel.outreach_sent} sent, ${claimFunnel.pending_review} pending`);
+          } catch (err) {
+            logger.warn('[DailyReports] Failed to gather claim funnel data:', err.message);
+          }
+
+          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel);
           logger.info('[DailyReports] Combined report sent');
         } else {
           logger.info('[DailyReports] No actionable items or activity - skipping email');

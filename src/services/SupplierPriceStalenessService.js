@@ -20,7 +20,7 @@ class SupplierPriceStalenessService {
     this.sequelize = sequelize;
     this.initialized = false;
     this.apiKey = process.env.RESEND_API_KEY;
-    this.fromEmail = process.env.EMAIL_FROM || 'HomeHeat <onboarding@resend.dev>';
+    this.fromEmail = process.env.EMAIL_FROM;
   }
 
   initialize() {

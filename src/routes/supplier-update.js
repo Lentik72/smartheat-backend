@@ -192,10 +192,10 @@ router.post('/price', async (req, res) => {
 
     // Validate price
     const priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum < 1.50 || priceNum > 6.00) {
+    if (isNaN(priceNum) || priceNum < 1.50 || priceNum > 8.00) {
       return res.status(400).json({
         success: false,
-        error: 'Price must be between $1.50 and $6.00'
+        error: 'Price must be between $1.50 and $8.00'
       });
     }
 

@@ -116,7 +116,7 @@ async function sendUserConfirmationEmail(signup, position) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'SmartHeat <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM,
         to: [signup.email],
         subject: `You're #${position} on the SmartHeat Canada Waitlist! 🇨🇦`,
         html
@@ -185,7 +185,7 @@ async function sendWaitlistNotification(signup, totalCount) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'SmartHeat <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM,
         to: [recipient],
         subject: `🇨🇦 Canada Waitlist: ${signup.postal_code} (${provinceName}) - #${totalCount}`,
         html
@@ -396,7 +396,7 @@ async function sendAndroidWelcomeEmail(email, position, zipCode) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'HomeHeat <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM,
         to: [email],
         subject: `🤖 You're #${position} on the HomeHeat Android waitlist!`,
         html
@@ -480,7 +480,7 @@ router.post('/android', async (req, res) => {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              from: process.env.EMAIL_FROM || 'HomeHeat <onboarding@resend.dev>',
+              from: process.env.EMAIL_FROM,
               to: [recipient],
               subject: `🤖 Android Waitlist Signup #${totalCount}${cleanZip ? ` (${cleanZip})` : ''}`,
               html: `

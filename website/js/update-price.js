@@ -152,8 +152,8 @@ priceForm.addEventListener('submit', async (e) => {
     const notes = document.getElementById('notes').value.trim();
 
     // Validation
-    if (isNaN(price) || price < 1.50 || price > 6.00) {
-        alert('Price must be between $1.50 and $6.00');
+    if (isNaN(price) || price < 1.50 || price > 8.00) {
+        alert('Price must be between $1.50 and $8.00');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Update Price';
         return;

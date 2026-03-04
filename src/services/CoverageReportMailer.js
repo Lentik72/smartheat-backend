@@ -14,7 +14,7 @@ class CoverageReportMailer {
   constructor() {
     this.initialized = false;
     this.apiKey = process.env.RESEND_API_KEY;
-    this.fromEmail = process.env.EMAIL_FROM || 'SmartHeat <onboarding@resend.dev>';
+    this.fromEmail = process.env.EMAIL_FROM;
 
     if (this.apiKey) {
       this.initialized = true;
@@ -345,14 +345,14 @@ class CoverageReportMailer {
    * V2.12.0: Now includes click tracking stats for "Sniper" outreach
    * Reduces inbox clutter by combining both reports
    */
-  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null) {
+  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null) {
     const recipient = this.getRecipient();
     if (!recipient) {
       console.log('[CoverageReportMailer] No recipient configured');
       return false;
     }
 
-    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink, clickStats);
+    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel);
     const subject = this.getCombinedSubject(coverageReport, activityReport);
 
     const success = await this.sendEmail(recipient, subject, html);
@@ -391,7 +391,7 @@ class CoverageReportMailer {
    * V2.10.2: Added priceReviewLink parameter for manual price verification
    * V2.12.0: Added clickStats parameter for "Sniper" outreach tracking
    */
-  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null) {
+  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null) {
     const styles = `
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 650px; margin: 0 auto; }
       h2 { color: #1a1a1a; border-bottom: 2px solid #007AFF; padding-bottom: 8px; margin-top: 0; }
@@ -524,6 +524,46 @@ class CoverageReportMailer {
           </div>
         </div>
       `).join('')}
+    </div>
+  ` : ''}
+
+  <!-- ===== CLAIM FUNNEL ===== -->
+  ${claimFunnel ? `
+    <div style="background: #f3e8ff; border: 2px solid #8b5cf6; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <h3 style="margin: 0 0 12px 0; color: #6d28d9;">📊 Claim Funnel (Last 7 Days)</h3>
+      <div class="stat-grid">
+        <div class="stat-box" style="background: #ede9fe;">
+          <div class="stat-value" style="color: #7c3aed;">${claimFunnel.outreach_sent || 0}</div>
+          <div class="stat-label">Outreach Sent</div>
+        </div>
+        <div class="stat-box" style="background: #ede9fe;">
+          <div class="stat-value" style="color: #7c3aed;">${claimFunnel.pages_viewed || 0}</div>
+          <div class="stat-label">Pages Viewed</div>
+        </div>
+        <div class="stat-box" style="background: #ede9fe;">
+          <div class="stat-value" style="color: #7c3aed;">${claimFunnel.claims_submitted || 0}</div>
+          <div class="stat-label">Claims</div>
+        </div>
+        <div class="stat-box" style="background: ${claimFunnel.pending_review > 0 ? '#fef3c7' : '#ede9fe'};">
+          <div class="stat-value" style="color: ${claimFunnel.pending_review > 0 ? '#d97706' : '#7c3aed'};">${claimFunnel.pending_review || 0}</div>
+          <div class="stat-label">${claimFunnel.pending_review > 0 ? '⚠️ Pending' : 'Pending'}</div>
+        </div>
+      </div>
+      ${claimFunnel.sequence_status ? `
+        <p style="margin: 12px 0 0 0; font-size: 13px; color: #4c1d95;">
+          <strong>Sequence:</strong>
+          Awaiting E2: ${claimFunnel.sequence_status.awaiting_e2 || 0} ·
+          Awaiting E3: ${claimFunnel.sequence_status.awaiting_e3 || 0} ·
+          Complete: ${claimFunnel.sequence_status.complete || 0}
+        </p>
+      ` : ''}
+      ${claimFunnel.pending_review > 0 ? `
+        <div style="text-align: center; margin-top: 12px;">
+          <a href="https://www.gethomeheat.com/admin/claims.html" style="display: inline-block; background: #7c3aed; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">
+            Review ${claimFunnel.pending_review} Pending Claim${claimFunnel.pending_review !== 1 ? 's' : ''}
+          </a>
+        </div>
+      ` : ''}
     </div>
   ` : ''}
 

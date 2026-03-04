@@ -69,7 +69,7 @@ async function sendClaimConfirmationEmail(claim, supplierName) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'HomeHeat <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM,
         to: [claim.claimantEmail],
         subject: `Claim Received - ${supplierName}`,
         html
@@ -94,7 +94,7 @@ async function sendClaimConfirmationEmail(claim, supplierName) {
 /**
  * Send notification email to admin about new claim
  */
-async function sendAdminNotificationEmail(claim, supplier, pendingCount) {
+async function sendAdminNotificationEmail(claim, supplier, pendingCount, claimId) {
   const apiKey = process.env.RESEND_API_KEY;
   const recipient = process.env.ADMIN_EMAIL || 'ltsoir@gmail.com';
 
@@ -103,7 +103,28 @@ async function sendAdminNotificationEmail(claim, supplier, pendingCount) {
     return false;
   }
 
-  const adminUrl = `${process.env.BACKEND_URL || 'https://gethomeheat.com'}/admin/claims.html`;
+  const baseUrl = process.env.BACKEND_URL || 'https://gethomeheat.com';
+  const adminUrl = `${baseUrl}/admin/claims.html`;
+
+  // Generate one-click verify link (if CLAIM_VERIFY_SECRET is configured)
+  let quickVerifyHtml = '';
+  const verifySecret = process.env.CLAIM_VERIFY_SECRET;
+  if (verifySecret && claimId && supplier.slug) {
+    const crypto = require('crypto');
+    const exp = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+    const token = crypto.createHmac('sha256', verifySecret)
+      .update(`${claimId}${supplier.slug}${exp}`)
+      .digest('hex');
+    const verifyUrl = `${baseUrl}/api/admin/supplier-claims/verify-quick?claimId=${claimId}&exp=${exp}&token=${token}`;
+    quickVerifyHtml = `
+      <div style="text-align: center; margin: 20px 0;">
+        <a href="${verifyUrl}" style="display: inline-block; background: #28a745; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          One-Click Verify
+        </a>
+        <p style="color: #999; font-size: 12px; margin-top: 8px;">Only click after calling to confirm. Link valid for 7 days.</p>
+      </div>
+    `;
+  }
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
@@ -130,6 +151,8 @@ async function sendAdminNotificationEmail(claim, supplier, pendingCount) {
         <p style="margin: 8px 0;"><strong>Role:</strong> ${claim.claimantRole || 'Not specified'}</p>
       </div>
 
+      ${quickVerifyHtml}
+
       <div style="text-align: center; margin: 32px 0;">
         <a href="${adminUrl}" style="display: inline-block; background: #F5A623; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
           Review Claims (${pendingCount} pending)
@@ -141,7 +164,7 @@ async function sendAdminNotificationEmail(claim, supplier, pendingCount) {
           <strong>Verification steps:</strong><br>
           1. Call ${supplier.phone}<br>
           2. Ask: "Did ${claim.claimantName} submit a claim on HomeHeat?"<br>
-          3. If yes → Click Verify in admin panel
+          3. If yes → Click "One-Click Verify" above or use admin panel
         </p>
       </div>
     </div>
@@ -155,7 +178,7 @@ async function sendAdminNotificationEmail(claim, supplier, pendingCount) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'HomeHeat <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM,
         to: [recipient],
         subject: `🔔 New Supplier Claim: ${supplier.name}`,
         html
@@ -263,7 +286,7 @@ router.post('/', async (req, res) => {
 
     // Resolve supplier by slug (active only) — no internal ID on client
     const [supplierRows] = await sequelize.query(`
-      SELECT id, name, phone, city, state, claimed_at
+      SELECT id, name, slug, phone, city, state, claimed_at
       FROM suppliers
       WHERE slug = :slug AND active = true
     `, { replacements: { slug } });
@@ -378,7 +401,7 @@ router.post('/', async (req, res) => {
     };
 
     await sendClaimConfirmationEmail(claim, supplier.name);
-    await sendAdminNotificationEmail(claim, supplier, parseInt(pendingCount[0]?.count || 0));
+    await sendAdminNotificationEmail(claim, supplier, parseInt(pendingCount[0]?.count || 0), claimId);
 
     res.json({
       success: true,

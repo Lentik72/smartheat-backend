@@ -121,7 +121,7 @@ async function sendMagicLinkEmail(claimant, supplier, magicLinkUrl) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'HomeHeat <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM,
         to: [claimant.email],
         subject: `✅ Verified! Update Your Prices on HomeHeat`,
         html
@@ -242,8 +242,10 @@ router.post('/:claimId/verify', requireAdmin, async (req, res) => {
         sc.supplier_id,
         sc.claimant_name,
         sc.claimant_email,
+        sc.claimant_phone,
         sc.status,
         s.name as supplier_name,
+        s.slug as supplier_slug,
         s.city as supplier_city,
         s.state as supplier_state
       FROM supplier_claims sc
@@ -321,6 +323,47 @@ router.post('/:claimId/verify', requireAdmin, async (req, res) => {
       magicLinkUrl
     );
 
+    // 7. Audit log
+    try {
+      await sequelize.query(`
+        INSERT INTO audit_logs (id, admin_user_id, admin_email, action, details, created_at, updated_at)
+        VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'admin', 'claim_verified', :details, NOW(), NOW())
+      `, {
+        replacements: {
+          details: JSON.stringify({
+            claimId,
+            supplier_slug: claim.supplier_slug,
+            adminEmail: 'admin',
+            method: 'admin_panel'
+          })
+        }
+      });
+    } catch (auditErr) {
+      logger?.warn('[AdminClaims] Failed to write verify audit log:', auditErr.message);
+    }
+
+    // 8. Enrich supplier data from claimant if fields are empty
+    try {
+      await sequelize.query(`
+        UPDATE suppliers
+        SET email = COALESCE(email, :email),
+            phone = COALESCE(phone, :phone),
+            contact_name = COALESCE(contact_name, :contactName),
+            contact_source = 'supplier_claim',
+            contact_updated_at = NOW()
+        WHERE id = :supplierId
+      `, {
+        replacements: {
+          email: claim.claimant_email,
+          phone: claim.claimant_phone || null,
+          contactName: claim.claimant_name,
+          supplierId: claim.supplier_id
+        }
+      });
+    } catch (enrichErr) {
+      logger?.warn('[AdminClaims] Failed to enrich supplier from claim:', enrichErr.message);
+    }
+
     res.json({
       success: true,
       message: `Claim verified for ${claim.supplier_name}`,
@@ -349,9 +392,10 @@ router.post('/:claimId/reject', requireAdmin, async (req, res) => {
 
     // Get claim
     const [claims] = await sequelize.query(`
-      SELECT id, status, supplier_id
-      FROM supplier_claims
-      WHERE id = :claimId
+      SELECT sc.id, sc.status, sc.supplier_id, s.slug as supplier_slug
+      FROM supplier_claims sc
+      JOIN suppliers s ON sc.supplier_id = s.id
+      WHERE sc.id = :claimId
     `, { replacements: { claimId } });
 
     if (claims.length === 0) {
@@ -373,6 +417,26 @@ router.post('/:claimId/reject', requireAdmin, async (req, res) => {
     });
 
     logger?.info(`[AdminClaims] Rejected claim ${claimId}: ${reason}`);
+
+    // Audit log
+    try {
+      await sequelize.query(`
+        INSERT INTO audit_logs (id, admin_user_id, admin_email, action, details, created_at, updated_at)
+        VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'admin', 'claim_rejected', :details, NOW(), NOW())
+      `, {
+        replacements: {
+          details: JSON.stringify({
+            claimId,
+            supplier_slug: claims[0].supplier_slug,
+            adminEmail: 'admin',
+            method: 'admin_panel',
+            reason: reason || 'Could not verify ownership'
+          })
+        }
+      });
+    } catch (auditErr) {
+      logger?.warn('[AdminClaims] Failed to write reject audit log:', auditErr.message);
+    }
 
     res.json({
       success: true,
@@ -398,9 +462,10 @@ router.post('/:claimId/revoke', requireAdmin, async (req, res) => {
 
     // Get claim to find supplier_id
     const [claims] = await sequelize.query(`
-      SELECT supplier_id, claimant_email
-      FROM supplier_claims
-      WHERE id = :claimId AND status = 'verified'
+      SELECT sc.supplier_id, sc.claimant_email, s.slug as supplier_slug
+      FROM supplier_claims sc
+      JOIN suppliers s ON sc.supplier_id = s.id
+      WHERE sc.id = :claimId AND sc.status = 'verified'
     `, { replacements: { claimId } });
 
     if (claims.length === 0) {
@@ -422,6 +487,26 @@ router.post('/:claimId/revoke', requireAdmin, async (req, res) => {
     const revokedCount = result.length;
 
     logger?.info(`[AdminClaims] Revoked ${revokedCount} magic link(s) for claim ${claimId}`);
+
+    // Audit log
+    try {
+      await sequelize.query(`
+        INSERT INTO audit_logs (id, admin_user_id, admin_email, action, details, created_at, updated_at)
+        VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'admin', 'claim_revoked', :details, NOW(), NOW())
+      `, {
+        replacements: {
+          details: JSON.stringify({
+            claimId,
+            supplier_slug: claims[0].supplier_slug,
+            adminEmail: 'admin',
+            method: 'admin_panel',
+            revokedCount
+          })
+        }
+      });
+    } catch (auditErr) {
+      logger?.warn('[AdminClaims] Failed to write revoke audit log:', auditErr.message);
+    }
 
     res.json({
       success: true,
@@ -452,7 +537,8 @@ router.post('/:claimId/regenerate', requireAdmin, async (req, res) => {
         sc.supplier_id,
         sc.claimant_name,
         sc.claimant_email,
-        s.name as supplier_name
+        s.name as supplier_name,
+        s.slug as supplier_slug
       FROM supplier_claims sc
       JOIN suppliers s ON sc.supplier_id = s.id
       WHERE sc.id = :claimId AND sc.status = 'verified'
@@ -500,6 +586,25 @@ router.post('/:claimId/regenerate', requireAdmin, async (req, res) => {
 
     logger?.info(`[AdminClaims] Regenerated magic link for ${claim.supplier_name}`);
 
+    // Audit log
+    try {
+      await sequelize.query(`
+        INSERT INTO audit_logs (id, admin_user_id, admin_email, action, details, created_at, updated_at)
+        VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'admin', 'claim_regenerated', :details, NOW(), NOW())
+      `, {
+        replacements: {
+          details: JSON.stringify({
+            claimId,
+            supplier_slug: claim.supplier_slug,
+            adminEmail: 'admin',
+            method: 'admin_panel'
+          })
+        }
+      });
+    } catch (auditErr) {
+      logger?.warn('[AdminClaims] Failed to write regenerate audit log:', auditErr.message);
+    }
+
     res.json({
       success: true,
       message: `New magic link generated for ${claim.supplier_name}`,
@@ -546,7 +651,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
 
     // 2. Outreach slugs + outreach-related page views
     const [outreachSlugs] = await sequelize.query(`
-      SELECT DISTINCT (details::jsonb)->>'slug' as slug
+      SELECT DISTINCT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') as slug
       FROM audit_logs
       WHERE action = 'outreach_email_sent'
         AND created_at > NOW() - INTERVAL '30 days'
@@ -557,10 +662,10 @@ router.get('/funnel', requireAdmin, async (req, res) => {
     let pageViewsOrganic = pageViewsTotal;
     if (outreachSlugSet.length > 0) {
       const [outreachViews] = await sequelize.query(`
-        SELECT COUNT(DISTINCT (details::jsonb)->>'slug') as opened
+        SELECT COUNT(DISTINCT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug')) as opened
         FROM audit_logs
         WHERE action = 'claim_page_view'
-          AND (details::jsonb)->>'slug' = ANY(:slugs)
+          AND COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') = ANY(:slugs)
           AND created_at > NOW() - INTERVAL '30 days'
       `, { replacements: { slugs: outreachSlugSet } });
       outreachOpened = parseInt(outreachViews[0]?.opened || 0);
@@ -569,7 +674,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
         SELECT COUNT(*) as count
         FROM audit_logs
         WHERE action = 'claim_page_view'
-          AND (details::jsonb)->>'slug' = ANY(:slugs)
+          AND COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') = ANY(:slugs)
           AND created_at > NOW() - INTERVAL '30 days'
       `, { replacements: { slugs: outreachSlugSet } });
       const outreachPageViews = parseInt(outreachViewCount[0]?.count || 0);
@@ -581,7 +686,7 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       SELECT
         (details::jsonb)->>'gridState' as grid_state,
         COUNT(*) as views,
-        COUNT(DISTINCT (details::jsonb)->>'slug') as unique_slugs
+        COUNT(DISTINCT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug')) as unique_slugs
       FROM audit_logs
       WHERE action = 'claim_page_view'
         AND created_at > NOW() - INTERVAL '30 days'
@@ -619,18 +724,18 @@ router.get('/funnel', requireAdmin, async (req, res) => {
         const [timingRows] = await sequelize.query(`
           SELECT AVG(EXTRACT(EPOCH FROM (pv.created_at - oe.created_at)) / 3600) as avg_hours
           FROM (
-            SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+            SELECT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') as slug, MIN(created_at) as created_at
             FROM audit_logs
             WHERE action = 'outreach_email_sent'
               AND created_at > NOW() - INTERVAL '30 days'
-            GROUP BY (details::jsonb)->>'slug'
+            GROUP BY COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug')
           ) oe
           INNER JOIN (
-            SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+            SELECT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') as slug, MIN(created_at) as created_at
             FROM audit_logs
             WHERE action = 'claim_page_view'
               AND created_at > NOW() - INTERVAL '30 days'
-            GROUP BY (details::jsonb)->>'slug'
+            GROUP BY COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug')
           ) pv ON oe.slug = pv.slug
           WHERE pv.created_at > oe.created_at
         `);
@@ -643,18 +748,18 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       const [viewToSubmit] = await sequelize.query(`
         SELECT AVG(EXTRACT(EPOCH FROM (sub.created_at - pv.created_at)) / 3600) as avg_hours
         FROM (
-          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          SELECT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') as slug, MIN(created_at) as created_at
           FROM audit_logs
           WHERE action = 'claim_page_view'
             AND created_at > NOW() - INTERVAL '30 days'
-          GROUP BY (details::jsonb)->>'slug'
+          GROUP BY COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug')
         ) pv
         INNER JOIN (
-          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          SELECT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') as slug, MIN(created_at) as created_at
           FROM audit_logs
           WHERE action = 'claim_submitted'
             AND created_at > NOW() - INTERVAL '30 days'
-          GROUP BY (details::jsonb)->>'slug'
+          GROUP BY COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug')
         ) sub ON pv.slug = sub.slug
         WHERE sub.created_at > pv.created_at
       `);
@@ -666,18 +771,18 @@ router.get('/funnel', requireAdmin, async (req, res) => {
       const [submitToVerify] = await sequelize.query(`
         SELECT AVG(EXTRACT(EPOCH FROM (ver.created_at - sub.created_at)) / 3600) as avg_hours
         FROM (
-          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          SELECT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') as slug, MIN(created_at) as created_at
           FROM audit_logs
           WHERE action = 'claim_submitted'
             AND created_at > NOW() - INTERVAL '30 days'
-          GROUP BY (details::jsonb)->>'slug'
+          GROUP BY COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug')
         ) sub
         INNER JOIN (
-          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          SELECT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') as slug, MIN(created_at) as created_at
           FROM audit_logs
           WHERE action = 'claim_verified'
             AND created_at > NOW() - INTERVAL '30 days'
-          GROUP BY (details::jsonb)->>'slug'
+          GROUP BY COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug')
         ) ver ON sub.slug = ver.slug
         WHERE ver.created_at > sub.created_at
       `);
@@ -700,17 +805,17 @@ router.get('/funnel', requireAdmin, async (req, res) => {
           pv.grid_state,
           COUNT(DISTINCT sub.slug) as submits
         FROM (
-          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          SELECT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') as slug, MIN(created_at) as created_at
           FROM audit_logs
           WHERE action = 'claim_submitted'
             AND created_at > NOW() - INTERVAL '30 days'
-          GROUP BY (details::jsonb)->>'slug'
+          GROUP BY COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug')
         ) sub
         INNER JOIN LATERAL (
           SELECT (details::jsonb)->>'gridState' as grid_state
           FROM audit_logs
           WHERE action = 'claim_page_view'
-            AND (details::jsonb)->>'slug' = sub.slug
+            AND COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') = sub.slug
             AND created_at <= sub.created_at
           ORDER BY created_at DESC
           LIMIT 1
@@ -731,17 +836,17 @@ router.get('/funnel', requireAdmin, async (req, res) => {
           pv.has_price,
           COUNT(DISTINCT sub.slug) as submits
         FROM (
-          SELECT (details::jsonb)->>'slug' as slug, MIN(created_at) as created_at
+          SELECT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') as slug, MIN(created_at) as created_at
           FROM audit_logs
           WHERE action = 'claim_submitted'
             AND created_at > NOW() - INTERVAL '30 days'
-          GROUP BY (details::jsonb)->>'slug'
+          GROUP BY COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug')
         ) sub
         INNER JOIN LATERAL (
           SELECT ((details::jsonb)->>'hasPrice')::text as has_price
           FROM audit_logs
           WHERE action = 'claim_page_view'
-            AND (details::jsonb)->>'slug' = sub.slug
+            AND COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') = sub.slug
             AND created_at <= sub.created_at
           ORDER BY created_at DESC
           LIMIT 1
@@ -799,6 +904,172 @@ router.get('/funnel', requireAdmin, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to load funnel data' });
+  }
+});
+
+/**
+ * GET /api/admin/supplier-claims/verify-quick
+ * One-click verify from admin notification email
+ * Token = HMAC-SHA256(secret, claimId + supplierSlug + exp)
+ * Valid for 7 days from generation
+ */
+router.get('/verify-quick', async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger;
+
+  const secret = process.env.CLAIM_VERIFY_SECRET;
+  if (!secret) {
+    return res.status(500).send('Server misconfigured: CLAIM_VERIFY_SECRET not set.');
+  }
+
+  const { claimId, exp, token } = req.query;
+
+  if (!claimId || !exp || !token) {
+    return res.status(400).send('Missing parameters.');
+  }
+
+  // Validate expiration
+  const expMs = parseInt(exp, 10);
+  const now = Date.now();
+  if (isNaN(expMs) || expMs <= now) {
+    return res.status(410).send('This verification link has expired.');
+  }
+  // Reject manipulated expiry (max 7 days from now)
+  if (expMs > now + 7 * 24 * 60 * 60 * 1000) {
+    return res.status(400).send('Invalid expiration.');
+  }
+
+  try {
+    // Get claim + supplier slug for HMAC verification
+    const [claims] = await sequelize.query(`
+      SELECT
+        sc.id, sc.supplier_id, sc.claimant_name, sc.claimant_email, sc.claimant_phone, sc.status,
+        s.name as supplier_name, s.slug as supplier_slug
+      FROM supplier_claims sc
+      JOIN suppliers s ON sc.supplier_id = s.id
+      WHERE sc.id = :claimId
+    `, { replacements: { claimId } });
+
+    if (claims.length === 0) {
+      return res.status(404).send('Claim not found.');
+    }
+
+    const claim = claims[0];
+
+    // Verify HMAC
+    const expectedToken = crypto
+      .createHmac('sha256', secret)
+      .update(`${claimId}${claim.supplier_slug}${exp}`)
+      .digest('hex');
+
+    if (!crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expectedToken))) {
+      logger?.warn(`[AdminClaims] Invalid quick-verify token for claim ${claimId}`);
+      return res.status(403).send('Invalid verification token.');
+    }
+
+    if (claim.status !== 'pending') {
+      return res.status(400).send(`Claim is already ${claim.status}. No action needed.`);
+    }
+
+    // Perform verification (same steps as POST /:claimId/verify)
+    await sequelize.query(`
+      UPDATE supplier_claims
+      SET status = 'verified', verified_at = NOW(), verified_by = 'admin_quick_link'
+      WHERE id = :claimId
+    `, { replacements: { claimId } });
+
+    await sequelize.query(`
+      UPDATE suppliers
+      SET verified = true, claimed_by_email = :email, claimed_at = NOW()
+      WHERE id = :supplierId
+    `, { replacements: { email: claim.claimant_email, supplierId: claim.supplier_id } });
+
+    // Invalidate existing magic links
+    await sequelize.query(`
+      UPDATE magic_link_tokens SET revoked_at = NOW()
+      WHERE supplier_id = :supplierId AND purpose = 'supplier_price_update' AND revoked_at IS NULL
+    `, { replacements: { supplierId: claim.supplier_id } });
+
+    // Generate new magic link
+    const magicToken = generateToken();
+    const expiresAt = new Date(Date.now() + MAGIC_LINK_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+
+    await sequelize.query(`
+      INSERT INTO magic_link_tokens (token, purpose, supplier_id, expires_at)
+      VALUES (:token, 'supplier_price_update', :supplierId, :expiresAt)
+    `, { replacements: { token: magicToken, supplierId: claim.supplier_id, expiresAt } });
+
+    const baseUrl = process.env.BACKEND_URL || 'https://gethomeheat.com';
+    const magicLinkUrl = `${baseUrl}/update-price.html?token=${magicToken}`;
+
+    // Send magic link email
+    await sendMagicLinkEmail(
+      { name: claim.claimant_name, email: claim.claimant_email },
+      { name: claim.supplier_name },
+      magicLinkUrl
+    );
+
+    // Enrich supplier data from claimant
+    try {
+      await sequelize.query(`
+        UPDATE suppliers
+        SET email = COALESCE(email, :email),
+            phone = COALESCE(phone, :phone),
+            contact_name = COALESCE(contact_name, :contactName),
+            contact_source = 'supplier_claim',
+            contact_updated_at = NOW()
+        WHERE id = :supplierId
+      `, {
+        replacements: {
+          email: claim.claimant_email,
+          phone: claim.claimant_phone || null,
+          contactName: claim.claimant_name,
+          supplierId: claim.supplier_id
+        }
+      });
+    } catch (enrichErr) {
+      logger?.warn('[AdminClaims] Quick-verify: enrichment failed:', enrichErr.message);
+    }
+
+    // Audit log
+    try {
+      await sequelize.query(`
+        INSERT INTO audit_logs (id, admin_user_id, admin_email, action, details, created_at, updated_at)
+        VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'admin', 'claim_verified', :details, NOW(), NOW())
+      `, {
+        replacements: {
+          details: JSON.stringify({
+            claimId,
+            supplier_slug: claim.supplier_slug,
+            adminEmail: 'admin',
+            method: 'quick_link'
+          })
+        }
+      });
+    } catch (auditErr) {
+      logger?.warn('[AdminClaims] Quick-verify audit log failed:', auditErr.message);
+    }
+
+    logger?.info(`[AdminClaims] Quick-verified claim for ${claim.supplier_name}`);
+
+    // Return a simple HTML success page
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Claim Verified</title></head>
+      <body style="font-family: -apple-system, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 16px;">&#10003;</div>
+        <h1 style="color: #28a745;">Verified!</h1>
+        <p><strong>${claim.supplier_name}</strong> is now verified.</p>
+        <p>Magic link email sent to <strong>${claim.claimant_email}</strong>.</p>
+        <a href="${baseUrl}/admin/claims.html" style="display: inline-block; margin-top: 20px; background: #F5A623; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View All Claims</a>
+      </body>
+      </html>
+    `);
+
+  } catch (error) {
+    logger?.error('[AdminClaims] Quick-verify error:', error.message);
+    res.status(500).send('Verification failed. Please use the admin panel.');
   }
 });
 

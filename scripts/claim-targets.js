@@ -181,7 +181,7 @@ async function main() {
 
     // 4. Check for recent outreach (idempotency)
     const [recentOutreach] = await sequelize.query(`
-      SELECT DISTINCT (details::jsonb)->>'slug' as slug
+      SELECT DISTINCT COALESCE(details::jsonb->>'supplier_slug', details::jsonb->>'slug') as slug
       FROM audit_logs
       WHERE action = 'outreach_email_sent'
         AND created_at > NOW() - INTERVAL '30 days'
@@ -240,7 +240,11 @@ async function main() {
       process.exit(1);
     }
 
-    const emailFrom = process.env.EMAIL_FROM || 'HomeHeat <onboarding@resend.dev>';
+    const emailFrom = process.env.EMAIL_FROM;
+    if (!emailFrom) {
+      console.error('ERROR: EMAIL_FROM not set. Cannot send emails from verified domain.');
+      process.exit(1);
+    }
 
     for (const t of topTargets) {
       if (recentSlugs.has(t.slug)) {
@@ -286,14 +290,15 @@ async function main() {
 
           // Log to audit_logs
           await sequelize.query(`
-            INSERT INTO audit_logs (action, details, created_at, updated_at)
-            VALUES ('outreach_email_sent', :details, NOW(), NOW())
+            INSERT INTO audit_logs (id, admin_user_id, admin_email, action, details, created_at, updated_at)
+            VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'system', 'outreach_email_sent', :details, NOW(), NOW())
           `, {
             replacements: {
               details: JSON.stringify({
-                slug: t.slug,
+                supplier_slug: t.slug,
                 email: t.email,
-                campaign: 'first_10',
+                channel: 'email',
+                campaign_batch: process.env.CAMPAIGN_BATCH || '2026_spring_claim_push',
                 score: t.score,
                 resend_id: result.id
               })
