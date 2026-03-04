@@ -489,6 +489,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/086-claim-funnel-hardening', label: 'Claim funnel hardening' },
           { path: './src/migrations/087-backfill-westchester-putnam-coverage', label: 'Backfill Westchester/Putnam coverage' },
           { path: './src/migrations/088-backfill-de-md-coverage', label: 'Backfill DE/MD coverage' },
+          { path: './src/migrations/089-backfill-baltimore-coverage', label: 'Backfill Baltimore coverage' },
         ];
 
         let migrationErrors = 0;
