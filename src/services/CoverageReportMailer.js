@@ -652,7 +652,7 @@ class CoverageReportMailer {
   ${activity.byFuelType ? `
     <h3>🛢️ By Fuel Type</h3>
     <div class="fuel-section fuel-oil">
-      <strong>Heating Oil:</strong> ${activity.byFuelType.heating_oil?.users || 0} users, ${activity.byFuelType.heating_oil?.requests || 0} requests
+      <strong>Heating Oil:</strong> ${activity.byFuelType.heating_oil?.users || 0} users, ${activity.byFuelType.heating_oil?.requests || 0} requests${activity.byFuelType.heating_oil?.untagged ? ` <span style="color:#999;font-size:12px">(${activity.byFuelType.heating_oil.untagged} untagged)</span>` : ''}
     </div>
     <div class="fuel-section fuel-propane">
       <strong>Propane:</strong> ${activity.byFuelType.propane?.users || 0} users, ${activity.byFuelType.propane?.requests || 0} requests
@@ -884,7 +884,7 @@ class CoverageReportMailer {
         <span class="fuel-title">🔥 Heating Oil</span>
         <div class="fuel-stats">
           <div class="fuel-stat">
-            <div class="fuel-stat-value">${report.byFuelType.heating_oil?.users || 0}</div>
+            <div class="fuel-stat-value">${report.byFuelType.heating_oil?.users || 0}${report.byFuelType.heating_oil?.untagged ? ` <span style="font-size:11px;color:#999">(${report.byFuelType.heating_oil.untagged} untagged)</span>` : ''}</div>
             <div class="fuel-stat-label">Users</div>
           </div>
           <div class="fuel-stat">

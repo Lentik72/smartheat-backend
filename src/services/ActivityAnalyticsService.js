@@ -447,14 +447,15 @@ class ActivityAnalyticsService {
       });
 
       // V2.5.0: Get users and requests by fuel type (V2.8.0: hybrid tracking)
+      // V3.0.0: NULL fuel_type stored as 'untagged', not merged into heating_oil
       const [byFuel] = await this.sequelize.query(`
         SELECT
-          COALESCE(fuel_type, 'heating_oil') as fuel_type,
+          COALESCE(fuel_type, 'untagged') as fuel_type,
           COUNT(DISTINCT COALESCE(device_id, ip_hash)) as users,
           COUNT(*) as requests
         FROM api_activity
         WHERE DATE(created_at) = :targetDate
-        GROUP BY COALESCE(fuel_type, 'heating_oil')
+        GROUP BY COALESCE(fuel_type, 'untagged')
       `, { replacements: { targetDate } });
 
       const usersByFuel = {};
@@ -500,7 +501,7 @@ class ActivityAnalyticsService {
         }
       });
 
-      console.log(`[ActivityAnalytics] DAU aggregated for ${targetDate}: ${stats[0]?.unique_users || 0} users, ${stats[0]?.unique_devices || 0} devices (oil: ${usersByFuel.heating_oil || 0}, propane: ${usersByFuel.propane || 0})`);
+      console.log(`[ActivityAnalytics] DAU aggregated for ${targetDate}: ${stats[0]?.unique_users || 0} users, ${stats[0]?.unique_devices || 0} devices (oil: ${usersByFuel.heating_oil || 0}, untagged: ${usersByFuel.untagged || 0}, propane: ${usersByFuel.propane || 0})`);
       return stats[0];
     } catch (error) {
       console.error('[ActivityAnalytics] Failed to aggregate DAU:', error.message);
@@ -645,36 +646,63 @@ class ActivityAnalyticsService {
       };
 
       // V2.5.0: Get fuel type breakdown for last 24h (V2.8.0: hybrid tracking)
+      // V3.0.0: Separate NULL (untagged) from explicit heating_oil; merge onboarding_steps propane data
       const [byFuelType] = await this.sequelize.query(`
         SELECT
-          COALESCE(fuel_type, 'heating_oil') as fuel_type,
+          fuel_type,
           COUNT(DISTINCT COALESCE(device_id, ip_hash)) as users,
           COUNT(DISTINCT zip_code) as zips,
           COUNT(*) as requests
         FROM api_activity
         WHERE created_at >= NOW() - INTERVAL '24 hours'
-        GROUP BY COALESCE(fuel_type, 'heating_oil')
+        GROUP BY fuel_type
         ORDER BY users DESC
       `);
+
+      // Also check onboarding_steps for propane users (iOS app fuel selection)
+      let onboardingPropane = { users: 0, zips: 0, requests: 0 };
+      try {
+        const [onbPropane] = await this.sequelize.query(`
+          SELECT COUNT(DISTINCT ip_hash) as users
+          FROM onboarding_steps
+          WHERE fuel_type = 'propane' AND created_at >= NOW() - INTERVAL '24 hours'
+        `);
+        onboardingPropane.users = parseInt(onbPropane[0]?.users) || 0;
+      } catch (e) { /* onboarding_steps may not exist */ }
 
       // V2.5.0: Get geographic breakdown BY fuel type (V2.8.0: hybrid tracking)
       const [byStateFuel] = await this.sequelize.query(`
         SELECT
           state,
-          COALESCE(fuel_type, 'heating_oil') as fuel_type,
+          fuel_type,
           COUNT(DISTINCT COALESCE(device_id, ip_hash)) as users,
           COUNT(*) as requests
         FROM api_activity
         WHERE created_at >= NOW() - INTERVAL '24 hours'
           AND state IS NOT NULL
-        GROUP BY state, COALESCE(fuel_type, 'heating_oil')
+        GROUP BY state, fuel_type
         ORDER BY users DESC
         LIMIT 20
       `);
 
-      // Organize by fuel type for easy email rendering
-      const oilStats = byFuelType.find(f => f.fuel_type === 'heating_oil') || { users: 0, zips: 0, requests: 0 };
-      const propaneStats = byFuelType.find(f => f.fuel_type === 'propane') || { users: 0, zips: 0, requests: 0 };
+      // Organize by fuel type — NULL is untagged website traffic, not heating oil
+      const explicitOil = byFuelType.find(f => f.fuel_type === 'heating_oil') || { users: 0, zips: 0, requests: 0 };
+      const untagged = byFuelType.find(f => f.fuel_type === null) || { users: 0, zips: 0, requests: 0 };
+      const propaneApi = byFuelType.find(f => f.fuel_type === 'propane') || { users: 0, zips: 0, requests: 0 };
+
+      // Merge: explicit oil + untagged (website visitors are overwhelmingly oil)
+      const oilStats = {
+        users: parseInt(explicitOil.users || 0) + parseInt(untagged.users || 0),
+        zips: parseInt(explicitOil.zips || 0) + parseInt(untagged.zips || 0),
+        requests: parseInt(explicitOil.requests || 0) + parseInt(untagged.requests || 0),
+        untagged: parseInt(untagged.users || 0)
+      };
+      // Merge propane from api_activity + onboarding_steps (dedupe isn't possible, take max)
+      const propaneStats = {
+        users: Math.max(parseInt(propaneApi.users || 0), onboardingPropane.users),
+        zips: parseInt(propaneApi.zips || 0),
+        requests: parseInt(propaneApi.requests || 0)
+      };
 
       // V2.9.0: Get Canada waitlist stats
       let waitlistStats = { total: 0, today: 0, byProvince: [] };
@@ -700,11 +728,14 @@ class ActivityAnalyticsService {
         // Waitlist table might not exist yet - ignore
       }
 
-      const oilByState = byStateFuel.filter(s => s.fuel_type === 'heating_oil').map(s => ({
-        state: s.state,
-        users: parseInt(s.users),
-        requests: parseInt(s.requests)
-      }));
+      // Merge explicit oil + untagged by state
+      const oilStateMap = {};
+      byStateFuel.filter(s => s.fuel_type === 'heating_oil' || s.fuel_type === null).forEach(s => {
+        if (!oilStateMap[s.state]) oilStateMap[s.state] = { state: s.state, users: 0, requests: 0 };
+        oilStateMap[s.state].users += parseInt(s.users);
+        oilStateMap[s.state].requests += parseInt(s.requests);
+      });
+      const oilByState = Object.values(oilStateMap).sort((a, b) => b.users - a.users);
 
       const propaneByState = byStateFuel.filter(s => s.fuel_type === 'propane').map(s => ({
         state: s.state,
@@ -722,18 +753,19 @@ class ActivityAnalyticsService {
           avgResponseTimeMs: parseInt(realTime.summary?.avg_response_time_ms) || 0,
           errors: parseInt(realTime.summary?.errors_24h) || 0
         },
-        // V2.5.0: Fuel type breakdown
+        // V3.0.0: Fuel type breakdown (untagged merged into oil, shown separately)
         byFuelType: {
           heating_oil: {
-            users: parseInt(oilStats.users) || 0,
-            zips: parseInt(oilStats.zips) || 0,
-            requests: parseInt(oilStats.requests) || 0,
+            users: oilStats.users || 0,
+            zips: oilStats.zips || 0,
+            requests: oilStats.requests || 0,
+            untagged: oilStats.untagged || 0,
             byState: oilByState
           },
           propane: {
-            users: parseInt(propaneStats.users) || 0,
-            zips: parseInt(propaneStats.zips) || 0,
-            requests: parseInt(propaneStats.requests) || 0,
+            users: propaneStats.users || 0,
+            zips: propaneStats.zips || 0,
+            requests: propaneStats.requests || 0,
             byState: propaneByState
           }
         },

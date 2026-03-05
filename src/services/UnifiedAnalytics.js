@@ -2042,69 +2042,69 @@ class UnifiedAnalytics {
    */
   async getFuelTypeBreakdown(days = 30) {
     try {
-      // Try multiple sources for fuel type data
-      let result = [];
+      // V3.0.0: Merge all sources instead of stopping at the first hit
+      let oilUsers = 0;
+      let propaneUsers = 0;
 
-      // Source 1: onboarding_steps (users who selected fuel type during onboarding)
+      // Source 1: onboarding_steps (iOS app users who selected fuel type)
       try {
         const onboardingData = await this.sequelize.query(`
           SELECT
-            COALESCE(fuel_type, 'heating_oil') as fuel_type,
+            fuel_type,
             COUNT(DISTINCT ip_hash) as unique_users
           FROM onboarding_steps
           WHERE created_at > NOW() - INTERVAL '${days} days'
             AND fuel_type IS NOT NULL
           GROUP BY fuel_type
         `, { type: this.sequelize.QueryTypes.SELECT });
-        if (onboardingData.length > 0) result = onboardingData;
+        const onbOil = onboardingData.find(r => r.fuel_type === 'heating_oil');
+        const onbPropane = onboardingData.find(r => r.fuel_type === 'propane');
+        oilUsers = Math.max(oilUsers, parseInt(onbOil?.unique_users || 0));
+        propaneUsers = Math.max(propaneUsers, parseInt(onbPropane?.unique_users || 0));
       } catch (e) {
         this.logger.debug('[UnifiedAnalytics] onboarding_steps query failed:', e.message);
       }
 
-      // Source 2: app_events (if onboarding didn't have data)
-      if (result.length === 0) {
-        try {
-          const appEventsData = await this.sequelize.query(`
-            SELECT
-              COALESCE(fuel_type, 'heating_oil') as fuel_type,
-              COUNT(DISTINCT device_id_hash) as unique_users
-            FROM app_events
-            WHERE created_at > NOW() - INTERVAL '${days} days'
-              AND fuel_type IS NOT NULL
-            GROUP BY fuel_type
-          `, { type: this.sequelize.QueryTypes.SELECT });
-          if (appEventsData.length > 0) result = appEventsData;
-        } catch (e) {
-          this.logger.debug('[UnifiedAnalytics] app_events query failed:', e.message);
-        }
+      // Source 2: app_events (iOS app events tagged with fuel type)
+      try {
+        const appEventsData = await this.sequelize.query(`
+          SELECT
+            fuel_type,
+            COUNT(DISTINCT device_id_hash) as unique_users
+          FROM app_events
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND fuel_type IS NOT NULL
+          GROUP BY fuel_type
+        `, { type: this.sequelize.QueryTypes.SELECT });
+        const aeOil = appEventsData.find(r => r.fuel_type === 'heating_oil');
+        const aePropane = appEventsData.find(r => r.fuel_type === 'propane');
+        oilUsers = Math.max(oilUsers, parseInt(aeOil?.unique_users || 0));
+        propaneUsers = Math.max(propaneUsers, parseInt(aePropane?.unique_users || 0));
+      } catch (e) {
+        this.logger.debug('[UnifiedAnalytics] app_events query failed:', e.message);
       }
 
-      // Source 3: supplier_engagements (has fuel_type column)
-      if (result.length === 0) {
-        try {
-          const engagementsData = await this.sequelize.query(`
-            SELECT
-              COALESCE(fuel_type, 'heating_oil') as fuel_type,
-              COUNT(DISTINCT ip_hash) as unique_users
-            FROM supplier_engagements
-            WHERE created_at > NOW() - INTERVAL '${days} days'
-            GROUP BY COALESCE(fuel_type, 'heating_oil')
-          `, { type: this.sequelize.QueryTypes.SELECT });
-          if (engagementsData.length > 0) result = engagementsData;
-        } catch (e) {
-          this.logger.debug('[UnifiedAnalytics] supplier_engagements query failed:', e.message);
-        }
+      // Source 3: api_activity (website/API visitors who passed fuelType param)
+      try {
+        const apiData = await this.sequelize.query(`
+          SELECT
+            fuel_type,
+            COUNT(DISTINCT COALESCE(device_id, ip_hash)) as unique_users
+          FROM api_activity
+          WHERE created_at > NOW() - INTERVAL '${days} days'
+            AND fuel_type IS NOT NULL
+          GROUP BY fuel_type
+        `, { type: this.sequelize.QueryTypes.SELECT });
+        const apiOil = apiData.find(r => r.fuel_type === 'heating_oil');
+        const apiPropane = apiData.find(r => r.fuel_type === 'propane');
+        oilUsers = Math.max(oilUsers, parseInt(apiOil?.unique_users || 0));
+        propaneUsers = Math.max(propaneUsers, parseInt(apiPropane?.unique_users || 0));
+      } catch (e) {
+        this.logger.debug('[UnifiedAnalytics] api_activity query failed:', e.message);
       }
 
-      const totalUsers = result.reduce((sum, r) => sum + parseInt(r.unique_users || 0), 0);
+      const totalUsers = oilUsers + propaneUsers;
 
-      const oil = result.find(r => r.fuel_type === 'heating_oil');
-      const propane = result.find(r => r.fuel_type === 'propane');
-
-      const oilUsers = parseInt(oil?.unique_users || 0);
-      const propaneUsers = parseInt(propane?.unique_users || 0);
-
-      // If no data from any source, return placeholder
       if (totalUsers === 0) {
         return {
           oil: { users: 'N/A', pct: '--' },
