@@ -253,6 +253,14 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
   const chartLabels = chartHistory.map(h => formatWeekLabel(h.week));
   const chartData = chartHistory.map(h => parseFloat(h.median) || null);
 
+  // Chart y-axis clamping
+  const chartValues = chartData.filter(v => v !== null);
+  const chartMinVal = chartValues.length ? Math.min(...chartValues) : 0;
+  const chartMaxVal = chartValues.length ? Math.max(...chartValues) : 5;
+  const chartPadVal = (chartMaxVal - chartMinVal) * 0.15 || 0.10;
+  const chartYMin = Math.max(0, Math.floor((chartMinVal - chartPadVal) * 100) / 100);
+  const chartYMax = Math.ceil((chartMaxVal + chartPadVal) * 100) / 100;
+
   // Coverage depth messaging
   const coverageDepth = `Data coverage across ${zipPrefixes.length} ZIP prefix${zipPrefixes.length !== 1 ? 'es' : ''} and ${zipCount} ZIP codes.`;
 
@@ -300,7 +308,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
         "acceptedAnswer": {
           "@type": "Answer",
           "text": medianPrice
-            ? `The current median heating oil price in ${countyName} County, ${stateName} is $${medianPrice.toFixed(2)} per gallon, based on ${supplierCount} suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
+            ? `The current median heating oil price in ${countyName} County, ${stateName} is $${medianPrice.toFixed(2)} per gallon, based on ${supplierCount} tracked suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
             : `Price data is being collected for ${countyName} County. Check back soon for updates.`
         }
       },
@@ -309,7 +317,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
         "name": `Why are heating oil prices in ${countyName} County ${percentChange6w > 0 ? 'rising' : 'lower'}?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": trendMessage || `Heating oil prices fluctuate based on crude oil markets, seasonal demand, and local supplier competition. ${countyName} County has ${supplierCount} active suppliers competing for customers.`
+          "text": trendMessage || `Heating oil prices fluctuate based on crude oil markets, seasonal demand, and local supplier competition. HomeHeat currently tracks ${supplierCount} suppliers in ${countyName} County.`
         }
       },
       {
@@ -317,7 +325,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
         "name": `How many heating oil suppliers operate in ${countyName} County?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `There are ${supplierCount} heating oil suppliers with published pricing in ${countyName} County, serving ${zipCount} ZIP codes across ${zipPrefixes.length} ZIP prefix areas.`
+          "text": `HomeHeat tracks ${supplierCount} heating oil suppliers with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.`
         }
       }
     ]
@@ -428,6 +436,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
         </div>
       </div>
       ${stateComparison ? `<p class="state-comparison ${stateComparison.class}">${stateComparison.text}</p>` : ''}
+      <p class="price-trust-line">Prices updated daily from verified local suppliers.</p>
     </section>
 
     ` : `
@@ -435,10 +444,6 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
       <p>Price data is being collected for this county. Check back soon!</p>
     </section>
     `}
-
-    ${medianPrice ? `
-    <div class="price-alert-card" data-zip="${zipPrefixes[0] || ''}" data-price="${minPrice.toFixed(2)}"></div>
-    ` : ''}
 
     <!-- Trend Alert -->
     ${trendMessage ? `
@@ -461,6 +466,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('priceChart').getContext('2d');
+        const chartMin = ${chartYMin};
+        const chartMax = ${chartYMax};
         new Chart(ctx, {
           type: 'line',
           data: {
@@ -491,6 +498,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
             },
             scales: {
               y: {
+                min: chartMin,
+                max: chartMax,
                 beginAtZero: false,
                 ticks: {
                   callback: function(value) {
@@ -509,6 +518,15 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
       <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_alerts&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">Get price alerts in the free iPhone app →</a>
       <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat for quick access →</a>
     </p>
+    ` : ''}
+
+    ${medianPrice ? `
+    <section class="county-alert-section">
+      <h3>Get Email Alerts When Heating Oil Prices Drop</h3>
+      <p class="county-alert-hook">Prices change daily. Save $40-$120 per delivery by timing it right.</p>
+      <div class="price-alert-card" data-zip="${zipPrefixes[0] || ''}" data-price="${minPrice ? minPrice.toFixed(2) : ''}"></div>
+      <p class="county-alert-trust">We check prices daily. No newsletters. Only price drops.</p>
+    </section>
     ` : ''}
 
     <!-- Market Snapshot -->
@@ -554,6 +572,30 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
     </p>
     ` : ''}
 
+    ${medianPrice ? `
+    <section class="county-seo-text">
+      <p>Heating oil prices in ${countyName} County, ${stateName} typically range from
+      $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)} per gallon depending on season,
+      delivery size, and supplier competition.${stateComparison ? ` ${stateComparison.text}.` : ''}</p>
+
+      <p>HomeHeat tracks ${supplierCount} heating oil suppliers across
+      ${zipCount} ZIP codes in ${countyName} County.
+      Prices are updated daily using supplier reports and verified market data.</p>
+
+      <p>Homeowners in ${countyName} County typically use between 600 and 1,000 gallons
+      of heating oil per year depending on home size and insulation. Monitoring price
+      trends can help households save $100-$300 annually by timing deliveries during
+      lower price periods.</p>
+
+      <p>Heating oil prices across ${stateName} can fluctuate significantly throughout
+      the winter heating season. Cold weather spikes, regional supply changes, and
+      delivery demand often influence short-term pricing trends. Many residents
+      searching for heating oil prices today in ${countyName} County use these
+      daily updates to compare local supplier rates before placing their next
+      delivery order.</p>
+    </section>
+    ` : ''}
+
     <!-- FAQ Section -->
     <section class="faq-section">
       <h2>Frequently Asked Questions</h2>
@@ -561,16 +603,16 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
         <details class="faq-item">
           <summary>What is the current heating oil price in ${escapeHtml(countyName)} County?</summary>
           <p>${medianPrice
-            ? `The current median heating oil price in ${countyName} County, ${stateName} is <strong>$${medianPrice.toFixed(2)} per gallon</strong>, based on ${supplierCount} suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
+            ? `The current median heating oil price in ${countyName} County, ${stateName} is <strong>$${medianPrice.toFixed(2)} per gallon</strong>, based on ${supplierCount} tracked suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
             : `Price data is being collected for ${countyName} County. Check back soon for updates.`}</p>
         </details>
         <details class="faq-item">
           <summary>Why are ${escapeHtml(countyName)} County prices ${medianPrice > 3.5 ? 'higher than average' : 'competitive'}?</summary>
-          <p>Heating oil prices in ${countyName} County are influenced by proximity to terminals, local supplier competition, and seasonal demand. With ${supplierCount} active suppliers, homeowners have options to compare prices and find competitive rates.</p>
+          <p>Heating oil prices in ${countyName} County are influenced by proximity to terminals, local supplier competition, and seasonal demand. HomeHeat currently tracks ${supplierCount} suppliers in ${countyName} County, giving homeowners options to compare prices and find competitive rates.</p>
         </details>
         <details class="faq-item">
           <summary>How many heating oil suppliers operate in ${escapeHtml(countyName)} County?</summary>
-          <p>There are <strong>${supplierCount} heating oil suppliers</strong> with published pricing in ${countyName} County, serving ${zipCount} ZIP codes across ${zipPrefixes.length} ZIP prefix areas (${zipPrefixes.join(', ')}).</p>
+          <p>HomeHeat tracks <strong>${supplierCount} heating oil suppliers</strong> with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.</p>
         </details>
       </div>
     </section>
@@ -774,7 +816,7 @@ function generateCountyEliteCSS() {
 /* Extends base styles from style.min.css */
 
 .county-elite-page {
-  max-width: 800px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 1rem;
 }
@@ -976,6 +1018,9 @@ function generateCountyEliteCSS() {
 .chart-container {
   height: 250px;
   position: relative;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
 }
 
 .chart-caption {
@@ -1215,6 +1260,59 @@ function generateCountyEliteCSS() {
   color: #FF6B35;
 }
 
+/* Price Alert Section */
+.county-alert-section {
+  max-width: 640px;
+  margin: 1.5rem auto;
+  padding: 1.25rem 1.25rem 1rem;
+  background: linear-gradient(180deg, #fff5f0 0%, #fff 100%);
+  border-top: 1px solid #ffe5d9;
+  border-radius: 12px;
+  text-align: center;
+  overflow: hidden;
+}
+.county-alert-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px;
+}
+.county-alert-hook { font-size: 0.85rem; color: #666; margin: 0 0 12px; }
+.county-alert-trust { font-size: 0.78rem; color: #999; margin: 8px 0 0; }
+
+.county-alert-section .price-alert-card input {
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.county-alert-section .price-alert-card button {
+  border-radius: 6px;
+}
+
+/* SEO Text Section */
+.county-seo-text {
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #444;
+}
+.county-seo-text p { margin-bottom: 1rem; }
+
+/* Trust Line */
+.price-trust-line {
+  text-align: center;
+  font-size: 0.82rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+/* Desktop Typography */
+@media (min-width: 960px) {
+  .page-header h1 { font-size: 2rem; }
+  .price-value { font-size: 3.5rem; }
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .page-header h1 {
@@ -1240,6 +1338,12 @@ function generateCountyEliteCSS() {
 
   .zip-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .county-alert-section {
+    margin: 1rem 0;
+    border-radius: 0;
+    padding: 1rem;
   }
 }
 `;

@@ -139,7 +139,7 @@ class CountyStatsComputer {
         sc.county_name,
         sc.state_code,
         'heating_oil' as fuel_type,
-        DATE_TRUNC('week', sp.created_at)::date as week_start,
+        DATE_TRUNC('week', sp.scraped_at)::date as week_start,
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sp.price_per_gallon::numeric)::numeric(5,3) as median_price,
         MIN(sp.price_per_gallon::numeric)::numeric(5,3) as min_price,
         MAX(sp.price_per_gallon::numeric)::numeric(5,3) as max_price,
@@ -152,8 +152,8 @@ class CountyStatsComputer {
       JOIN supplier_counties sc ON sc.supplier_id = sp.supplier_id
       LEFT JOIN county_zip_counts czc ON czc.county_name = sc.county_name AND czc.state_code = sc.state_code
       WHERE sp.is_valid = true
-        AND sp.created_at >= DATE_TRUNC('week', NOW()) - INTERVAL '12 weeks'
-      GROUP BY sc.county_name, sc.state_code, czc.zip_count, DATE_TRUNC('week', sp.created_at)::date
+        AND sp.scraped_at >= DATE_TRUNC('week', NOW()) - INTERVAL '12 weeks'
+      GROUP BY sc.county_name, sc.state_code, czc.zip_count, DATE_TRUNC('week', sp.scraped_at)::date
       ON CONFLICT (county_name, state_code, week_start, fuel_type)
       DO UPDATE SET
         median_price = EXCLUDED.median_price,
