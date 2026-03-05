@@ -109,6 +109,7 @@
   const retryBtn = document.getElementById('retry-btn');
   const priceMovement = document.getElementById('price-movement');
   const defaultLeaderboard = document.getElementById('default-leaderboard');
+  const lowestPriceCard = document.getElementById('lowest-price-card');
   const pulseSuppliers = document.getElementById('pulse-suppliers');
   const pulseStates = document.getElementById('pulse-states');
 
@@ -700,28 +701,29 @@
       case 'results':
         resultsSection.style.display = 'block';
         appCta.style.display = 'block';
-        // Hide leaderboard when showing ZIP-specific results
+        // Hide leaderboard and lowest-price card when showing ZIP-specific results
         if (defaultLeaderboard) {
           defaultLeaderboard.style.opacity = '0';
           setTimeout(() => { defaultLeaderboard.style.display = 'none'; }, 300);
         }
+        if (lowestPriceCard) lowestPriceCard.style.display = 'none';
         break;
       case 'empty':
         emptyState.style.display = 'block';
         appCta.style.display = 'block';
-        // Hide leaderboard when showing empty state
         if (defaultLeaderboard) {
           defaultLeaderboard.style.opacity = '0';
           setTimeout(() => { defaultLeaderboard.style.display = 'none'; }, 300);
         }
+        if (lowestPriceCard) lowestPriceCard.style.display = 'none';
         break;
       case 'error':
         errorState.style.display = 'block';
-        // Hide leaderboard on error
         if (defaultLeaderboard) {
           defaultLeaderboard.style.opacity = '0';
           setTimeout(() => { defaultLeaderboard.style.display = 'none'; }, 300);
         }
+        if (lowestPriceCard) lowestPriceCard.style.display = 'none';
         break;
     }
   }
