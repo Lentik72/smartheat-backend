@@ -238,8 +238,6 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
   // Confidence badge - NEVER show numeric score
   const confidenceLabel = getConfidenceLabel(dataQuality);
   const confidenceClass = getConfidenceClass(dataQuality);
-  const confidenceTooltip = 'Based on supplier coverage, data depth, and price history maturity.';
-
   // Trend messaging
   const trendMessage = getTrendMessage(percentChange6w, weeksAvailable);
   const trendClass = getTrendClass(percentChange6w);
@@ -413,7 +411,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
       <h1>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode}</h1>
       <p class="county-meta">${supplierCount} suppliers · ${zipPrefixes.length} ZIP areas · Updated ${lastUpdate}</p>
       ${zipPrefixes.length > 0 ? `<p class="geographic-context">Covering ${formatZipPrefixRange(zipPrefixes)} across ${zipCount} ZIP codes</p>` : ''}
-      <span class="confidence-badge ${confidenceClass}" title="${confidenceTooltip}">${confidenceLabel} Confidence</span>
+      <span class="confidence-badge ${confidenceClass}">${confidenceLabel} Confidence</span>
     </header>
 
     <!-- Price Summary -->
@@ -527,7 +525,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
     <section class="county-alert-section">
       <h3>Get Email Alerts When Heating Oil Prices Drop</h3>
       <p class="county-alert-hook">Prices change daily. Save $40-$120 per delivery by timing it right.</p>
-      <div class="price-alert-card" data-zip="${zipPrefixes[0] || ''}" data-price="${minPrice ? minPrice.toFixed(2) : ''}"></div>
+      <div class="price-alert-card" data-zip="" data-price="${minPrice ? minPrice.toFixed(2) : ''}"></div>
       <p class="county-alert-trust">We check prices daily. No newsletters. Only price drops.</p>
     </section>
     ` : ''}
@@ -883,7 +881,6 @@ function generateCountyEliteCSS() {
   border-radius: 1rem;
   font-size: 0.8rem;
   font-weight: 500;
-  cursor: help;
 }
 
 .confidence-high {
@@ -1280,29 +1277,21 @@ function generateCountyEliteCSS() {
 .county-alert-section {
   max-width: 640px;
   margin: 1.5rem auto;
-  padding: 1.25rem 1.25rem 1rem;
-  background: linear-gradient(180deg, #fff5f0 0%, #fff 100%);
-  border-top: 1px solid #ffe5d9;
-  border-radius: 12px;
+  padding: 24px 20px;
+  background: linear-gradient(135deg, #fff5f0 0%, #fff 100%);
+  border-top: 2px solid #ffe0d0;
+  border-radius: 0 0 12px 12px;
   text-align: center;
   overflow: hidden;
 }
 .county-alert-section h3 {
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: #1a1a1a;
   margin: 0 0 4px;
 }
-.county-alert-hook { font-size: 0.85rem; color: #666; margin: 0 0 12px; }
-.county-alert-trust { font-size: 0.78rem; color: #999; margin: 8px 0 0; }
-
-.county-alert-section .price-alert-card input {
-  padding: 8px 10px;
-  border-radius: 6px;
-}
-.county-alert-section .price-alert-card button {
-  border-radius: 6px;
-}
+.county-alert-hook { font-size: 13px; color: #666; margin: 0 0 12px; }
+.county-alert-trust { font-size: 12px; color: #999; margin: 8px 0 0; }
 
 /* SEO Text Section */
 .county-seo-text {
