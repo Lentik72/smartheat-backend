@@ -158,7 +158,7 @@
       }
 
       // Update state averages table
-      const stateTable = document.querySelector('.averages-table tbody');
+      const stateTable = document.querySelector('.averages-table-v2 tbody');
       if (stateTable && data.stateAverages && data.stateAverages.length > 0) {
         const stateRows = data.stateAverages.map(function(s) {
           const stateSlug = s.stateName.toLowerCase().replace(/\s+/g, '-');
@@ -174,7 +174,7 @@
       }
 
       // Update top deals list
-      const dealsList = document.querySelector('.deals-list');
+      const dealsList = document.querySelector('.deals-list-v2');
       if (dealsList && data.topDeals && data.topDeals.length > 0) {
         const dealItems = data.topDeals.map(function(d) {
           return '<li class="deal-item">' +
@@ -184,6 +184,20 @@
             '</li>';
         }).join('\n');
         dealsList.innerHTML = dealItems;
+      }
+
+      // Initialize non-iOS leaderboard alert form with cheapest deal price
+      var leaderboardAlert = document.getElementById('leaderboard-alert-container');
+      if (leaderboardAlert && data.topDeals && data.topDeals.length > 0) {
+        var cheapest = data.topDeals[0];
+        leaderboardAlert.setAttribute('data-price', cheapest.price);
+        if (typeof initPriceAlertForm === 'function') {
+          initPriceAlertForm('#leaderboard-alert-container', {
+            zip: '',
+            lowestPrice: parseFloat(cheapest.price),
+            defaultThreshold: Math.max(parseFloat(cheapest.price) - 0.15, 1.50)
+          });
+        }
       }
 
     } catch (err) {

@@ -120,18 +120,24 @@ router.post('/subscribe', async (req, res) => {
 
     const isNew = rows[0]?.is_new;
 
+    const hasCoverage = currentMinPrice !== null;
+
     // Send welcome email only on new subscriber (not threshold updates)
     if (isNew) {
       const PriceAlertService = require('../services/PriceAlertService');
       const alertService = new PriceAlertService(sequelize, logger);
       // Fire and forget — don't block the response
-      alertService.sendWelcomeEmail(email.toLowerCase().trim(), zip_code, price).catch(err => {
+      alertService.sendWelcomeEmail(email.toLowerCase().trim(), zip_code, price, currentMinPrice).catch(err => {
         logger.error('[PriceAlert] Welcome email error:', err.message);
       });
     }
 
-    logger.info(`[PriceAlert] ${isNew ? 'New' : 'Updated'} subscriber: ${zip_code} at $${price.toFixed(2)}`);
-    res.json({ success: true });
+    logger.info(`[PriceAlert] ${isNew ? 'New' : 'Updated'} subscriber: ${zip_code} at $${price.toFixed(2)} (coverage: ${hasCoverage})`);
+    res.json({
+      success: true,
+      has_coverage: hasCoverage,
+      current_price: currentMinPrice
+    });
 
   } catch (err) {
     logger.error('[PriceAlert] Subscribe error:', err.message);

@@ -253,9 +253,9 @@ class PriceAlertService {
   /**
    * Send welcome email confirming alert setup.
    */
-  async sendWelcomeEmail(email, zipCode, thresholdPrice) {
+  async sendWelcomeEmail(email, zipCode, thresholdPrice, currentMinPrice = null) {
     const subject = `Price alert set for ZIP ${zipCode}`;
-    const html = this.buildWelcomeEmailHtml({ zip_code: zipCode, threshold_price: thresholdPrice });
+    const html = this.buildWelcomeEmailHtml({ zip_code: zipCode, threshold_price: thresholdPrice, current_price: currentMinPrice });
 
     if (DRY_RUN) {
       this.logger.info(`[PriceAlert] DRY RUN - Would send welcome to ${email}`);
@@ -329,12 +329,43 @@ class PriceAlertService {
   }
 
   /**
+   * Shared branded email header with app icon + wordmark.
+   */
+  buildEmailHeader() {
+    return `
+  <div style="background: #f8f9fa; padding: 16px 20px; margin-bottom: 24px; border-radius: 8px 8px 0 0;">
+    <a href="${SITE_URL}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 10px;">
+      <img src="${SITE_URL}/images/app-icon-192.png" alt="HomeHeat" width="40" height="40" style="border-radius: 10px;">
+      <span style="font-size: 20px; font-weight: 700; color: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">HomeHeat</span>
+    </a>
+  </div>`;
+  }
+
+  /**
+   * Shared email footer with update/unsubscribe links, privacy, and CAN-SPAM address.
+   */
+  buildEmailFooter({ zip_code, unsubscribe_token } = {}) {
+    const updateUrl = zip_code ? `${SITE_URL}/prices.html?zip=${zip_code}&update_alert=1&utm_source=price_alert` : null;
+    const unsubUrl = unsubscribe_token ? `${SITE_URL}/api/price-alerts/unsubscribe?token=${unsubscribe_token}` : null;
+
+    let links = '';
+    if (updateUrl) links += `<a href="${updateUrl}" style="color: #888;">Update your alert</a>`;
+    if (updateUrl && unsubUrl) links += ' · ';
+    if (unsubUrl) links += `<a href="${unsubUrl}" style="color: #888;">Unsubscribe</a>`;
+    if (links) links += '<br>';
+
+    return `
+  <p style="font-size: 12px; color: #888; margin-top: 32px; border-top: 1px solid #eee; padding-top: 16px;">
+    ${links}<a href="${SITE_URL}/privacy.html" style="color: #888;">Privacy Policy</a>
+    <br><br>HomeHeat · Katonah, NY 10536
+  </p>`;
+  }
+
+  /**
    * Build the price drop alert email HTML.
    */
   buildAlertEmailHtml({ zip_code, threshold_price, minPrice, topSuppliers, unsubscribe_token }) {
     const priceUrl = `${SITE_URL}/prices.html?zip=${zip_code}&utm_source=price_alert&utm_campaign=price_drop`;
-    const updateUrl = `${SITE_URL}/prices.html?zip=${zip_code}&update_alert=1&utm_source=price_alert`;
-    const unsubUrl = `${SITE_URL}/api/price-alerts/unsubscribe?token=${unsubscribe_token}`;
     const appUrl = 'https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=price_alert&utm_campaign=price_drop';
 
     const supplierRows = topSuppliers.map(s => {
@@ -349,6 +380,8 @@ class PriceAlertService {
 
     return `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
+  ${this.buildEmailHeader()}
+
   <p>Good news — heating oil prices in <strong>${zip_code}</strong> dropped below your target of <strong>$${threshold_price.toFixed(2)}/gal</strong>.</p>
 
   <div style="background: #f0f7ff; border-radius: 8px; padding: 16px; margin: 16px 0; text-align: center;">
@@ -369,42 +402,58 @@ class PriceAlertService {
     </tbody>
   </table>
 
-  <p><a href="${priceUrl}" style="color: #2563eb;">See all prices in ${zip_code} →</a></p>
+  <p><a href="${priceUrl}" style="color: #2563eb;">See today's cheapest heating oil in ${zip_code} →</a></p>
 
   <div style="background: #fef3c7; border-radius: 8px; padding: 12px 16px; margin: 20px 0; font-size: 13px;">
     📱 <strong>Want smarter alerts?</strong> The HomeHeat app predicts when your tank runs out and finds the best time to order.
     <a href="${appUrl}" style="color: #2563eb;">Download free →</a>
   </div>
 
-  <p style="font-size: 12px; color: #888; margin-top: 32px; border-top: 1px solid #eee; padding-top: 16px;">
-    You set this alert on gethomeheat.com. We check prices daily and only email when they drop.
-    <br><a href="${updateUrl}" style="color: #888;">Update your alert</a> · <a href="${unsubUrl}" style="color: #888;">Unsubscribe</a>
-    <br><a href="${SITE_URL}/privacy.html" style="color: #888;">Privacy Policy</a>
-    <br><br>HomeHeat · Katonah, NY 10536
-  </p>
+  ${this.buildEmailFooter({ zip_code, unsubscribe_token })}
 </div>`;
   }
 
   /**
    * Build the welcome confirmation email HTML.
    */
-  buildWelcomeEmailHtml({ zip_code, threshold_price }) {
+  buildWelcomeEmailHtml({ zip_code, threshold_price, current_price }) {
     const priceUrl = `${SITE_URL}/prices.html?zip=${zip_code}&utm_source=price_alert&utm_campaign=welcome`;
+    const appUrl = 'https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=price_alert&utm_campaign=welcome';
+    const formattedThreshold = parseFloat(threshold_price).toFixed(2);
+    const hasCoverage = current_price !== null && current_price !== undefined;
+
+    // Coverage-dependent sections
+    const currentPriceSection = hasCoverage
+      ? `<div style="font-size: 13px; color: #666; margin-top: 8px;">Current lowest price in ${zip_code}: <strong style="color: #1a56db;">$${parseFloat(current_price).toFixed(2)}/gal</strong></div>
+    <div style="font-size: 13px; color: #666; margin-top: 4px;">We check prices daily and email you when they drop below your threshold.</div>`
+      : `<div style="font-size: 13px; color: #666; margin-top: 8px;">We don't have supplier data for ${zip_code} yet, but we're expanding coverage daily. We'll email you when we add suppliers in your area and prices match your threshold.</div>`;
+
+    const ctaSection = hasCoverage
+      ? `<p><a href="${priceUrl}" style="color: #2563eb;">See today's cheapest heating oil in ${zip_code} →</a></p>`
+      : `<p><a href="${priceUrl}" style="color: #2563eb;">Check back for prices in ${zip_code} →</a></p>`;
 
     return `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
-  <p>Your price alert is set.</p>
+  ${this.buildEmailHeader()}
 
-  <p>We check heating oil prices daily. You'll hear from us when prices in <strong>${zip_code}</strong> drop below <strong>$${parseFloat(threshold_price).toFixed(2)}/gal</strong>.</p>
+  <h2 style="font-size: 20px; color: #1a1a1a; margin: 0 0 16px;">Your price alert is set for ${zip_code}</h2>
+
+  <div style="background: #f0f7ff; border-radius: 8px; padding: 16px; margin: 16px 0; text-align: center;">
+    <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Alert threshold</div>
+    <div style="font-size: 28px; font-weight: 700; color: #1a56db;">$${formattedThreshold}/gal</div>
+    ${currentPriceSection}
+  </div>
 
   <p>That's it — no newsletters, no spam. Just a heads-up when it's a good time to order.</p>
 
-  <p><a href="${priceUrl}" style="color: #2563eb;">Check current prices in ${zip_code} →</a></p>
+  ${ctaSection}
 
-  <p style="font-size: 12px; color: #888; margin-top: 32px; border-top: 1px solid #eee; padding-top: 16px;">
-    HomeHeat · Katonah, NY 10536
-    <br><a href="${SITE_URL}/privacy.html" style="color: #888;">Privacy Policy</a>
-  </p>
+  <div style="background: #fef3c7; border-radius: 8px; padding: 12px 16px; margin: 20px 0; font-size: 13px;">
+    📱 <strong>Track your tank level and get smarter alerts.</strong> The HomeHeat app predicts when you'll run out and finds the best time to order.
+    <a href="${appUrl}" style="color: #2563eb;">Download free →</a>
+  </div>
+
+  ${this.buildEmailFooter({ zip_code })}
 </div>`;
   }
 }

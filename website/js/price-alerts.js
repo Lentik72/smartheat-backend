@@ -205,11 +205,14 @@
         .then(function (result) {
           if (result.ok && result.data.success) {
             saveAlert(formZip, formThreshold);
+            var successMeta = result.data.has_coverage === false
+              ? 'No suppliers in your area yet — we\'ll notify you when we add coverage.'
+              : 'We check prices daily. No spam, no newsletters.';
             container.innerHTML =
               '<div class="price-alert-inner price-alert-success">' +
                 '<span class="price-alert-check">&#10003;</span> Alert set for ZIP ' + formZip +
                 ' &mdash; we\'ll email you when prices drop below $' + formThreshold.toFixed(2) + '.' +
-                '<div class="price-alert-meta">We check prices daily. No spam, no newsletters.</div>' +
+                '<div class="price-alert-meta">' + successMeta + '</div>' +
               '</div>';
           } else {
             showError(errorEl, result.data.error || 'Something went wrong. Please try again.');
