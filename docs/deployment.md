@@ -6,13 +6,15 @@ constants:
   rate_limit_max_prod: "100 requests/IP"
   html_cache: "1 hour"
   db_pool_max: "10"
+  healthcheck_timeout: "120 seconds"
+  generator_timeout: "90 seconds"
 ---
 
 # Deployment
 
 ## Overview
 
-Railway deploys from `Lentik72/smartheat-backend` main branch. Build takes ~25s. Healthcheck has a 30s retry window at `/health`. Failed deploys keep the last healthy version active.
+Railway deploys from `Lentik72/smartheat-backend` main branch. Build takes ~25s. Healthcheck has a 120s retry window at `/health`. Failed deploys keep the last healthy version active. Generated pages (supplier profiles, SEO city/county/state pages, ZIP/county elite) are gitignored — they're regenerated on every startup from the database.
 
 ## Middleware Order
 
@@ -36,7 +38,7 @@ Order matters — changing it can break the app. Listed by registration order in
 
 ## Health Endpoint
 
-GET `/health` returns:
+GET `/health` returns 503 `{ "status": "starting" }` while pages are generating, then 200 once ready:
 ```json
 {
   "status": "healthy",
@@ -44,6 +46,8 @@ GET `/health` returns:
   "system": { "uptime": 1234, "memory": { "used": "128MB" }, "cache": { "hitRate": 0.85 } }
 }
 ```
+
+Health is gated on page generation: all 4 generators (SEO, supplier, ZIP elite, county elite) must complete successfully before `/health` returns 200. Each generator has a 90s timeout. If any fails, health stays 503 and Railway keeps the old deploy.
 
 Railway's internal healthcheck uses `*.railway.app` URL. The redirect middleware at step 1 MUST `return next()` for `/health` — otherwise it redirects to `www.gethomeheat.com` and the healthcheck fails.
 
@@ -60,11 +64,12 @@ Railway's internal healthcheck uses `*.railway.app` URL. The redirect middleware
 
 ## Startup Sequence
 
-1. Server starts, healthcheck passes
-2. After 10s delay: regenerate all static pages (SEO, supplier, ZIP Elite, County Elite)
-3. Distributed scheduler begins (scrapes spread across 8AM–6PM EST)
+1. Server starts listening, health returns 503 ("starting")
+2. All 4 page generators run in parallel (SEO, supplier, ZIP Elite, County Elite) with 90s per-generator timeout
+3. When all generators succeed, `pagesReady = true` → health returns 200 → Railway routes traffic
+4. Distributed scheduler begins (scrapes spread across 8AM–6PM EST)
 
-Page regeneration on startup is essential — Railway containers start fresh from git, so generated pages don't persist.
+Generated pages (`website/prices/`, `website/supplier/`, `website/sitemap.xml`) are gitignored. Each deploy starts with no pages — generation typically takes 40–80s.
 
 ## Route Mounting Order
 
@@ -80,7 +85,7 @@ Missing required vars → server runs in "degraded mode" (starts but logs warnin
 
 ## Deploy Verification
 
-After pushing, run `npm run verify-deploy` (waits 75s, checks health + spot-checks pages).
+After pushing, run `npm run verify-deploy` (waits 75s, checks health + spot-checks pages). Page generation adds ~60s to startup, so the first healthcheck may take up to 90s.
 
 ## Key Rules
 
