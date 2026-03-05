@@ -416,7 +416,6 @@
     // v1.1 Features
     priceMovement.style.display = 'none'; // Reset before showing
     showPriceMovement(zip, lowestPrice);
-    updateAuthorityLine(suppliers.length);
     updateSchemaMarkup(zip, suppliers);
 
     // Initialize price alert form
@@ -914,12 +913,6 @@
     }));
   }
 
-  // Update authority line with supplier count
-  function updateAuthorityLine(supplierCount) {
-    if (pricesTrust && supplierCount > 0) {
-      pricesTrust.textContent = `Based on live pricing from ${supplierCount} verified supplier${supplierCount > 1 ? 's' : ''} in your area.`;
-    }
-  }
 
   // Update schema markup for SEO
   function updateSchemaMarkup(zip, suppliers) {
