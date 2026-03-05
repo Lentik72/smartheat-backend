@@ -1515,6 +1515,13 @@ body {
     padding: 2rem 1rem;
 }
 
+@media (min-width: 1024px) {
+    .prices-section {
+        max-width: 960px;
+        padding: 2rem 20px;
+    }
+}
+
 /* Loading State */
 .loading-spinner {
     width: 40px;
@@ -2001,22 +2008,32 @@ body {
 }
 .price-alert-form {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    align-items: flex-end;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 6px;
 }
-.price-alert-row {
+.price-alert-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-items: flex-end;
+}
+.price-alert-field {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
 }
+.price-alert-field-email {
+    flex: 1;
+    min-width: 180px;
+}
 .price-alert-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    color: #666;
+    color: #888;
     text-transform: uppercase;
     letter-spacing: 0.03em;
 }
@@ -2056,6 +2073,7 @@ body {
     border: 1px solid #d0d5dd;
     border-radius: 8px;
     font-size: 0.9rem;
+    width: 100%;
     min-width: 180px;
     height: 40px;
     box-sizing: border-box;
@@ -2067,11 +2085,13 @@ body {
     box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.15);
 }
 .price-alert-zip {
-    padding: 8px 12px;
+    padding: 0 12px;
     border: 1px solid #d0d5dd;
     border-radius: 8px;
     font-size: 0.9rem;
     width: 90px;
+    height: 40px;
+    box-sizing: border-box;
     outline: none;
 }
 .price-alert-btn {
@@ -2127,15 +2147,19 @@ body {
     text-decoration: underline;
 }
 @media (max-width: 600px) {
-    .price-alert-form {
+    .price-alert-fields {
         flex-direction: column;
         align-items: stretch;
+        width: 100%;
+    }
+    .price-alert-field {
+        width: 100%;
+    }
+    .price-alert-field-email {
+        min-width: unset;
     }
     .price-alert-email {
         min-width: unset;
-    }
-    .price-alert-row {
-        width: 100%;
     }
     .price-alert-input-wrap,
     .price-alert-email,
@@ -2248,8 +2272,18 @@ body {
 /* FAQ Section */
 .faq-section {
     max-width: 600px;
-    margin: 0 auto;
+    margin: 50px auto 0;
     padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+@media (min-width: 1024px) {
+    .faq-section {
+        max-width: 960px;
+        padding: 1rem 20px;
+    }
 }
 
 .faq-details {
@@ -2305,6 +2339,13 @@ body {
     text-align: center;
 }
 
+@media (min-width: 1024px) {
+    .related-guides {
+        max-width: 960px;
+        padding: 1.5rem 20px 2rem;
+    }
+}
+
 .related-guides h3 {
     font-size: var(--font-base);
     color: var(--text-gray);
@@ -2330,6 +2371,51 @@ body {
 
 .related-guides a:hover {
     text-decoration: underline;
+}
+
+.guide-links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+}
+
+.guide-link {
+    display: block;
+    padding: 12px 16px;
+    background: var(--background-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: border-color 0.2s;
+}
+
+.guide-link:hover {
+    border-color: var(--primary-orange);
+    text-decoration: none;
+}
+
+.guide-title {
+    display: block;
+    font-weight: 600;
+    font-size: var(--font-sm);
+    color: var(--primary-blue);
+    margin-bottom: 2px;
+}
+
+.guide-desc {
+    display: block;
+    font-size: 12px;
+    color: var(--text-gray);
+}
+
+@media (min-width: 768px) {
+    .guide-links {
+        flex-direction: row;
+    }
+    .guide-link {
+        flex: 1;
+    }
 }
 
 /* Responsive */

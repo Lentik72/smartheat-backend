@@ -205,6 +205,7 @@ router.get('/leaderboard', async (req, res) => {
         AND s.allow_price_display = true
         AND sp.is_valid = true
         AND sp.expires_at > NOW()
+        AND sp.scraped_at > NOW() - INTERVAL '36 hours'
         AND sp.price_per_gallon BETWEEN 2.00 AND 6.00
         AND sp.scraped_at = (
           SELECT MAX(sp2.scraped_at)
@@ -212,6 +213,7 @@ router.get('/leaderboard', async (req, res) => {
           WHERE sp2.supplier_id = s.id
             AND sp2.is_valid = true
             AND sp2.expires_at > NOW()
+            AND sp2.scraped_at > NOW() - INTERVAL '36 hours'
         )
       GROUP BY s.state
       HAVING COUNT(DISTINCT s.id) >= 3
@@ -236,6 +238,7 @@ router.get('/leaderboard', async (req, res) => {
     }));
 
     // Top 5 deals - lowest priced suppliers with valid displayable prices
+    // V2.35.0: 36-hour scraped_at filter ensures we never show stale prices
     const [topDeals] = await sequelize.query(`
       SELECT DISTINCT ON (s.id)
         s.name as supplier_name,
@@ -249,6 +252,7 @@ router.get('/leaderboard', async (req, res) => {
         AND s.allow_price_display = true
         AND sp.is_valid = true
         AND sp.expires_at > NOW()
+        AND sp.scraped_at > NOW() - INTERVAL '36 hours'
         AND sp.price_per_gallon BETWEEN 2.00 AND 6.00
       ORDER BY s.id, sp.scraped_at DESC
     `);

@@ -372,6 +372,7 @@ async function getCurrentPrices(sequelize) {
     JOIN suppliers s ON sp.supplier_id = s.id
     WHERE sp.is_valid = true
       AND sp.expires_at > NOW()
+      AND sp.scraped_at > NOW() - INTERVAL '36 hours'
       AND sp.price_per_gallon BETWEEN $1 AND $2
       AND s.active = true
       AND s.allow_price_display = true
@@ -1329,21 +1330,24 @@ async function updatePricesHtml(pricesHtmlPath, states, prices, suppliers) {
 
   // Generate new state averages table rows (escape $ as $$ for regex replacement)
   const stateRows = stateData.map(s =>
-    `            <tr>\n` +
-    `              <td><a href="prices/${s.abbrev}/">${s.name}</a></td>\n` +
-    `              <td>$$${s.avg} avg</td>\n` +
-    `              <td>${s.count} suppliers</td>\n` +
-    `              <td><a href="prices/${s.abbrev}/">See all →</a></td>\n` +
-    `            </tr>`
+    `                        <tr>\n` +
+    `                            <td><a href="prices/${s.abbrev}/">${s.name}</a></td>\n` +
+    `                            <td>$$${s.avg} avg</td>\n` +
+    `                            <td>${s.count} suppliers</td>\n` +
+    `                            <td><a href="prices/${s.abbrev}/">See all →</a></td>\n` +
+    `                        </tr>`
   ).join('\n');
 
   // Generate new top deals items (escape $ as $$ for regex replacement)
+  // Must match the HTML structure: deal-info wrapper with deal-supplier/deal-location divs
   const dealItems = topDeals.map(d =>
-    `            <li class="deal-item">\n` +
-    `              <span class="deal-price">$$${d.price}/gal</span>\n` +
-    `              <span class="deal-supplier">${escapeHtml(d.supplier)}</span>\n` +
-    `              <span class="deal-location">${escapeHtml(d.city)}, ${d.state}</span>\n` +
-    `            </li>`
+    `                    <li>\n` +
+    `                        <span class="deal-price">$$${d.price}/gal</span>\n` +
+    `                        <div class="deal-info">\n` +
+    `                            <div class="deal-supplier">${escapeHtml(d.supplier)}</div>\n` +
+    `                            <div class="deal-location">${escapeHtml(d.city)}, ${d.state}</div>\n` +
+    `                        </div>\n` +
+    `                    </li>`
   ).join('\n');
 
   // Update leaderboard date
@@ -1354,19 +1358,98 @@ async function updatePricesHtml(pricesHtmlPath, states, prices, suppliers) {
   );
 
   // Replace state averages table body content (between <tbody> and </tbody>)
-  // Use function replacer to avoid $ interpretation issues
-  const stateTableRegex = /<table class="averages-table">\s*<tbody>[\s\S]*?<\/tbody>\s*<\/table>/;
+  // Class name must match HTML: averages-table-v2
+  const stateTableRegex = /<table class="averages-table-v2">\s*<tbody>[\s\S]*?<\/tbody>\s*<\/table>/;
   if (stateTableRegex.test(html)) {
     html = html.replace(stateTableRegex,
-      `<table class="averages-table">\n            <tbody>\n${stateRows}\n            </tbody>\n          </table>`
+      `<table class="averages-table-v2">\n                    <tbody>\n${stateRows}\n                    </tbody>\n                </table>`
     );
   }
 
-  // Replace top deals list content (between <ul class="deals-list"> and </ul>)
-  const dealsListRegex = /<ul class="deals-list">[\s\S]*?<\/ul>/;
+  // Replace top deals list content (between <ul class="deals-list-v2"> and </ul>)
+  const dealsListRegex = /<ul class="deals-list-v2">[\s\S]*?<\/ul>/;
   if (dealsListRegex.test(html)) {
     html = html.replace(dealsListRegex,
-      `<ul class="deals-list">\n${dealItems}\n          </ul>`
+      `<ul class="deals-list-v2">\n${dealItems}\n                </ul>`
+    );
+  }
+
+  // Update lowest-price-card with #1 deal data
+  if (topDeals.length > 0) {
+    const best = topDeals[0];
+    const overallAvg = prices.length > 0
+      ? (prices.reduce((sum, p) => sum + p.price, 0) / prices.length)
+      : 0;
+    const delta = overallAvg > 0 ? (overallAvg - parseFloat(best.price)).toFixed(2) : null;
+
+    // Find ZIP for the best deal supplier
+    const bestSupplier = suppliers.find(s => s.name === best.supplier || s.id === (validPrices[0] && validPrices[0].supplier_id));
+    const bestZip = bestSupplier?.postal_code || '';
+
+    const lowestCardRegex = /<div class="lowest-price-card" id="lowest-price-card"[^>]*>[\s\S]*?<\/div>/;
+    const lowestCardHtml = `<div class="lowest-price-card" id="lowest-price-card" style="min-height: 120px;">
+                <p class="lowest-label">Lowest Heating Oil Price Today</p>
+                <span class="lowest-value">$$${best.price}/gal</span>
+                ${delta ? `<span class="lowest-vs-avg">$$${delta} below Northeast average</span>` : ''}
+                <p class="lowest-supplier">${escapeHtml(best.supplier)} — ${escapeHtml(best.city)}, ${best.state}${bestZip ? ' (' + bestZip + ')' : ''}</p>
+            </div>`;
+    if (lowestCardRegex.test(html)) {
+      html = html.replace(lowestCardRegex, lowestCardHtml);
+    }
+  }
+
+  // Update market pulse counts
+  const totalSuppliers = suppliers.filter(s => s.allow_price_display !== false).length;
+  const totalStates = new Set(suppliers.map(s => s.state)).size;
+  html = html.replace(/<span id="pulse-suppliers">[^<]*<\/span>/, `<span id="pulse-suppliers">${totalSuppliers}+</span>`);
+  html = html.replace(/<span id="pulse-states">[^<]*<\/span>/, `<span id="pulse-states">${totalStates}</span>`);
+
+  // Update ItemList schema with top deals data
+  const schemaRegex = /<script id="schema-markup" type="application\/ld\+json">[\s\S]*?<\/script>/;
+  if (schemaRegex.test(html) && topDeals.length > 0) {
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Heating Oil Prices Near You",
+      "description": "Compare current heating oil prices from local suppliers across the Northeast United States.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "HomeHeat",
+        "url": "https://www.gethomeheat.com"
+      },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.gethomeheat.com/"},
+          {"@type": "ListItem", "position": 2, "name": "Prices"}
+        ]
+      },
+      "mainEntity": {
+        "@type": "ItemList",
+        "name": "Heating Oil Price Comparison",
+        "description": "Current heating oil prices from local suppliers",
+        "itemListOrder": "https://schema.org/ItemListOrderAscending",
+        "numberOfItems": topDeals.length,
+        "itemListElement": topDeals.map((d, i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "item": {
+            "@type": "Product",
+            "name": `Heating Oil from ${d.supplier}`,
+            "description": `Heating oil delivery in ${d.city}, ${d.state}`,
+            "offers": {
+              "@type": "Offer",
+              "price": d.price,
+              "priceCurrency": "USD",
+              "unitCode": "GLL",
+              "availability": "https://schema.org/InStock"
+            }
+          }
+        }))
+      }
+    };
+    html = html.replace(schemaRegex,
+      `<script id="schema-markup" type="application/ld+json">\n    ${JSON.stringify(schema, null, 4)}\n    </script>`
     );
   }
 

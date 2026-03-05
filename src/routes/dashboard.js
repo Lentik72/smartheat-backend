@@ -1625,8 +1625,8 @@ router.put('/suppliers/:id', async (req, res) => {
       if (!isNaN(price) && price >= 1.50 && price <= 8.00) {
         // Insert manual price into supplier_prices (expires in 7 days)
         await sequelize.query(`
-          INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, is_valid, expires_at)
-          VALUES (:id, :price, 100, NOW(), true, NOW() + INTERVAL '7 days')
+          INSERT INTO supplier_prices (supplier_id, price_per_gallon, min_gallons, scraped_at, is_valid, expires_at, source_type)
+          VALUES (:id, :price, 100, NOW(), true, NOW() + INTERVAL '7 days', 'manual')
         `, { replacements: { id, price } });
         logger.info(`[Dashboard] Manual price set for supplier ${id}: $${price.toFixed(2)}`);
       } else if (!isNaN(price)) {

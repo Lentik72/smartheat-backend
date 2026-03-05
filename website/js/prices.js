@@ -108,7 +108,6 @@
   const shareFeedback = document.getElementById('share-feedback');
   const retryBtn = document.getElementById('retry-btn');
   const priceMovement = document.getElementById('price-movement');
-  const pricesTrust = document.getElementById('prices-trust');
   const defaultLeaderboard = document.getElementById('default-leaderboard');
   const pulseSuppliers = document.getElementById('pulse-suppliers');
   const pulseStates = document.getElementById('pulse-states');
@@ -133,11 +132,11 @@
       if (pulseStates && data.stateCount) {
         pulseStates.textContent = data.stateCount;
       }
-
-      // Update trust line with actual count
-      if (pricesTrust && data.supplierCount) {
-        pricesTrust.textContent = 'Tracking prices from ' + data.supplierCount + '+ active heating oil suppliers in our network.';
-      }
+      // Also update leaderboard trust line
+      var lbSuppliers = document.getElementById('leaderboard-suppliers');
+      var lbStates = document.getElementById('leaderboard-states');
+      if (lbSuppliers && data.supplierCount) lbSuppliers.textContent = data.supplierCount;
+      if (lbStates && data.stateCount) lbStates.textContent = data.stateCount;
     } catch (err) {
       // Silently fail - fallback to static values in HTML
     }
@@ -177,22 +176,41 @@
       const dealsList = document.querySelector('.deals-list-v2');
       if (dealsList && data.topDeals && data.topDeals.length > 0) {
         const dealItems = data.topDeals.map(function(d) {
-          return '<li class="deal-item">' +
+          return '<li>' +
             '<span class="deal-price">$' + d.price + '/gal</span>' +
-            '<span class="deal-supplier">' + escapeHtml(d.supplierName) + '</span>' +
-            '<span class="deal-location">' + escapeHtml(d.city) + ', ' + d.state + '</span>' +
+            '<div class="deal-info">' +
+            '<div class="deal-supplier">' + escapeHtml(d.supplierName) + '</div>' +
+            '<div class="deal-location">' + escapeHtml(d.city) + ', ' + d.state + '</div>' +
+            '</div>' +
             '</li>';
         }).join('\n');
         dealsList.innerHTML = dealItems;
       }
 
-      // Initialize non-iOS leaderboard alert form with cheapest deal price
-      var leaderboardAlert = document.getElementById('leaderboard-alert-container');
-      if (leaderboardAlert && data.topDeals && data.topDeals.length > 0) {
+      // Update "Lowest Price Today" card with freshest data
+      if (data.topDeals && data.topDeals.length > 0) {
+        var best = data.topDeals[0];
+        var lowestCard = document.getElementById('lowest-price-card');
+        if (lowestCard) {
+          var avgPrice = data.stateAverages && data.stateAverages.length > 0
+            ? data.stateAverages.reduce(function(sum, s) { return sum + s.avgPrice; }, 0) / data.stateAverages.length
+            : 0;
+          var delta = avgPrice > 0 ? (avgPrice - parseFloat(best.price)).toFixed(2) : null;
+          lowestCard.innerHTML =
+            '<p class="lowest-label">Lowest Heating Oil Price Today</p>' +
+            '<span class="lowest-value">$' + best.price + '/gal</span>' +
+            (delta && parseFloat(delta) > 0 ? '<span class="lowest-vs-avg">$' + delta + ' below Northeast average</span>' : '') +
+            '<p class="lowest-supplier">' + escapeHtml(best.supplierName) + ' — ' + escapeHtml(best.city) + ', ' + best.state + (best.zip ? ' (' + best.zip + ')' : '') + '</p>';
+        }
+      }
+
+      // Initialize default alert form with cheapest deal price
+      var defaultAlert = document.getElementById('default-alert-container');
+      if (defaultAlert && data.topDeals && data.topDeals.length > 0) {
         var cheapest = data.topDeals[0];
-        leaderboardAlert.setAttribute('data-price', cheapest.price);
+        defaultAlert.setAttribute('data-price', cheapest.price);
         if (typeof initPriceAlertForm === 'function') {
-          initPriceAlertForm('#leaderboard-alert-container', {
+          initPriceAlertForm('#default-alert-container', {
             zip: '',
             lowestPrice: parseFloat(cheapest.price),
             defaultThreshold: Math.max(parseFloat(cheapest.price) - 0.15, 1.50)

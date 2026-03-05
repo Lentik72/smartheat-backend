@@ -117,6 +117,7 @@ const getLatestPrice = async (supplierId) => {
   if (!SupplierPrice) return null;
 
   const { Op } = require('sequelize');
+  const freshnessCutoff = new Date(Date.now() - 36 * 60 * 60 * 1000);
 
   try {
     const price = await SupplierPrice.findOne({
@@ -124,6 +125,7 @@ const getLatestPrice = async (supplierId) => {
         supplierId,
         isValid: true,
         expiresAt: { [Op.gt]: new Date() },
+        scrapedAt: { [Op.gt]: freshnessCutoff },
         // V2.1.0: Never show aggregator prices to users
         sourceType: { [Op.ne]: 'aggregator_signal' }
       },
@@ -139,63 +141,29 @@ const getLatestPrice = async (supplierId) => {
 // Helper function to get latest prices for multiple suppliers
 // V2.1.0: Excludes aggregator_signal prices (those are for market intelligence only)
 // V2.35.15: Auto-heal expired prices if recent scrapes exist
+// V2.36.0: 36-hour scraped_at freshness filter — prices must be confirmed
+// within 36 hours to display. Applies uniformly to all source types.
+// Auto-heal removed: extending stale prices hides data quality problems.
 const getLatestPrices = async (supplierIds) => {
   if (!supplierIds || supplierIds.length === 0) return {};
   if (!SupplierPrice) return {};
 
   const { Op } = require('sequelize');
+  const freshnessCutoff = new Date(Date.now() - 36 * 60 * 60 * 1000);
 
   try {
-    // Get all valid, non-expired prices (excluding aggregator signals)
-    let prices = await SupplierPrice.findAll({
+    // Get all valid, non-expired, fresh prices (excluding aggregator signals)
+    const prices = await SupplierPrice.findAll({
       where: {
         supplierId: { [Op.in]: supplierIds },
         isValid: true,
         expiresAt: { [Op.gt]: new Date() },
+        scrapedAt: { [Op.gt]: freshnessCutoff },
         // V2.1.0: Never show aggregator prices to users
         sourceType: { [Op.ne]: 'aggregator_signal' }
       },
       order: [['scrapedAt', 'DESC']]
     });
-
-    // V2.35.15: Auto-heal if no valid prices but recent scrapes exist
-    if (prices.length === 0) {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-      // Check if there are expired but recently scraped prices
-      const expiredPrices = await SupplierPrice.findAll({
-        where: {
-          supplierId: { [Op.in]: supplierIds },
-          isValid: true,
-          scrapedAt: { [Op.gte]: sevenDaysAgo },
-          expiresAt: { [Op.lte]: new Date() },
-          sourceType: { [Op.ne]: 'aggregator_signal' }
-        },
-        order: [['scrapedAt', 'DESC']]
-      });
-
-      if (expiredPrices.length > 0) {
-        console.log(`[SupplierPrice] Auto-healing ${expiredPrices.length} expired prices`);
-
-        // Extend expiration for these prices
-        const expiredIds = expiredPrices.map(p => p.id);
-        await SupplierPrice.update(
-          { expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000) },
-          { where: { id: { [Op.in]: expiredIds } } }
-        );
-
-        // Re-fetch the now-valid prices
-        prices = await SupplierPrice.findAll({
-          where: {
-            supplierId: { [Op.in]: supplierIds },
-            isValid: true,
-            expiresAt: { [Op.gt]: new Date() },
-            sourceType: { [Op.ne]: 'aggregator_signal' }
-          },
-          order: [['scrapedAt', 'DESC']]
-        });
-      }
-    }
 
     // Group by supplier, keep only the latest for each
     const priceMap = {};

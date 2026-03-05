@@ -104,26 +104,29 @@
       '<div class="price-alert-inner">' +
         '<div class="price-alert-title">Get alerted when prices drop</div>' +
         '<form class="price-alert-form">' +
-          (isPartialZip
-            ? '<div class="price-alert-row">' +
-                '<label class="price-alert-label">ZIP code</label>' +
-                '<input type="text" class="price-alert-zip" maxlength="5" pattern="\\d{5}" placeholder="' + zip + 'XX" value="' + zip + '" required>' +
-              '</div>'
-            : '<input type="hidden" class="price-alert-zip" value="' + zip + '">') +
-          '<div class="price-alert-row">' +
-            '<label class="price-alert-label">Alert me below</label>' +
-            '<div class="price-alert-input-wrap">' +
-              '<span class="price-alert-dollar">$</span>' +
-              '<input type="number" class="price-alert-threshold" step="0.01" min="2.00" max="6.00" value="' + roundedThreshold.toFixed(2) + '" required>' +
+          '<div class="price-alert-fields">' +
+            (isPartialZip
+              ? '<div class="price-alert-field">' +
+                  '<label class="price-alert-label">Your ZIP</label>' +
+                  '<input type="text" class="price-alert-zip" maxlength="5" pattern="\\d{5}" placeholder="' + (zip || 'ZIP') + '" value="' + zip + '" required>' +
+                '</div>'
+              : '<input type="hidden" class="price-alert-zip" value="' + zip + '">') +
+            '<div class="price-alert-field">' +
+              '<label class="price-alert-label">Target price</label>' +
+              '<div class="price-alert-input-wrap">' +
+                '<span class="price-alert-dollar">$</span>' +
+                '<input type="number" class="price-alert-threshold" step="0.01" min="2.00" max="6.00" value="' + roundedThreshold.toFixed(2) + '" required>' +
+              '</div>' +
             '</div>' +
-          '</div>' +
-          '<div class="price-alert-row">' +
-            '<input type="email" class="price-alert-email" placeholder="your@email.com" required>' +
+            '<div class="price-alert-field price-alert-field-email">' +
+              '<label class="price-alert-label">Email</label>' +
+              '<input type="email" class="price-alert-email" placeholder="you@email.com" required>' +
+            '</div>' +
           '</div>' +
           '<button type="submit" class="price-alert-btn">Set Alert &rarr;</button>' +
         '</form>' +
         '<div class="price-alert-meta">' +
-          (savings ? 'Save ~$' + savings + ' on a 275-gal fill &middot; ' : '') +
+          (savings ? 'A $0.15 drop saves ~$' + savings + ' on a 275-gal fill &middot; ' : '') +
           'No spam, only price drops.' +
         '</div>' +
         '<div class="price-alert-error" style="display:none;"></div>' +
@@ -144,7 +147,7 @@
       if (isNaN(val)) return;
       var s = calcSavings(lowestPrice, val);
       var parts = [];
-      if (s && s > 0) parts.push('Save ~$' + s + ' on a 275-gal fill');
+      if (s && s > 0) parts.push('A $0.15 drop saves ~$' + s + ' on a 275-gal fill');
       parts.push('No spam, only price drops.');
       metaEl.textContent = parts.join(' \u00b7 ');
 
