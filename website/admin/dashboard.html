@@ -1164,6 +1164,11 @@
               <div class="card-value" id="cov-gaps">--</div>
               <div class="card-sub">ZIPs with demand, no suppliers</div>
             </div>
+            <div class="card">
+              <div class="card-label">Alert Subscribers</div>
+              <div class="card-value" id="cov-alert-subs">--</div>
+              <div class="card-sub">Active email alerts</div>
+            </div>
           </div>
 
           <!-- Map with View Toggle -->
@@ -1175,6 +1180,7 @@
                 <button class="map-toggle-btn" data-view="demand">Demand</button>
                 <button class="map-toggle-btn" data-view="gaps">Gaps</button>
                 <button class="map-toggle-btn" data-view="suppliers">Suppliers</button>
+                <button class="map-toggle-btn" data-view="alerts">Alerts</button>
               </div>
             </div>
             <div id="map-stats" class="map-legend"></div>
@@ -1241,6 +1247,44 @@
               </thead>
               <tbody id="coverage-gaps-body"></tbody>
             </table>
+          </div>
+
+          <!-- Alert Subscribers - Top ZIPs -->
+          <div class="coverage-tables-grid">
+            <div class="panel">
+              <h3>🔔 Top ZIPs by Alert Subscribers</h3>
+              <div class="table-scroll" style="max-height: 300px;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ZIP</th>
+                      <th>Subscribers</th>
+                      <th>Has Coverage</th>
+                      <th>Last Alert</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alert-top-zips-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h3>📧 Recent Alert Signups</h3>
+              <div class="table-scroll" style="max-height: 300px;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>ZIP</th>
+                      <th>Threshold</th>
+                      <th>Source</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alert-recent-body"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </section>

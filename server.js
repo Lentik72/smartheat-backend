@@ -44,6 +44,9 @@ const ScrapeConfigSync = require('./src/services/ScrapeConfigSync');
 // V2.18.0: Import SMS Price Service for supplier price updates via text
 const SmsPriceService = require('./src/services/sms-price-service');
 
+// Price alert email service for website subscribers
+const PriceAlertService = require('./src/services/PriceAlertService');
+
 // Import route modules with error handling
 let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes, dashboardRoutes, smsWebhookRoutes;
 
@@ -494,6 +497,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/091-add-upstate-ny-suppliers', label: 'Upstate NY suppliers' },
           { path: './src/migrations/092-add-northern-virginia-suppliers', label: 'Northern Virginia suppliers' },
           { path: './src/migrations/093-fix-stale-price-display-flags', label: 'Fix stale price display flags' },
+          { path: './src/migrations/094-add-price-alert-subscribers', label: 'Price alert subscribers' },
         ];
 
         let migrationErrors = 0;
@@ -694,6 +698,7 @@ app.use('/api/zip', require('./src/routes/zip-stats'));  // V2.32.0: ZIP price i
 app.use('/api/webhook/twilio', smsWebhookRoutes);  // V2.18.0: SMS price updates via Twilio
 app.use('/api/outreach', require('./src/routes/outreach'));  // Supplier email unsubscribe
 app.use('/api/webhook', require('./src/routes/outreach'));  // Resend bounce/complaint webhook
+app.use('/api/price-alerts', require('./src/routes/price-alerts'));  // Price alert subscribe/unsubscribe
 
 // V2.10.0: Serve static files for admin tools
 app.use(express.static(path.join(__dirname, 'public')));
@@ -1053,6 +1058,23 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     }
   }, { timezone: 'America/New_York' });
   logger.info('📊 Platform metrics scheduled: daily at 2:15 AM ET');
+
+  // Price alert daily check (8:00 AM ET)
+  cron.schedule('0 8 * * *', async () => {
+    logger.info('[PriceAlert] Starting daily check...');
+    try {
+      const alertService = new PriceAlertService(sequelize, logger);
+      const result = await alertService.runDailyCheck();
+      if (result.success) {
+        logger.info(`[PriceAlert] Complete: sent=${result.alerts_sent}, skipped=${result.alerts_skipped}, zips=${result.zips_checked} (${result.durationMs}ms)`);
+      } else {
+        logger.info(`[PriceAlert] Skipped: ${result.reason}`);
+      }
+    } catch (error) {
+      logger.error('[PriceAlert] Cron failed:', error.message);
+    }
+  }, { timezone: 'America/New_York' });
+  logger.info('🔔 Price alerts scheduled: daily at 8:00 AM ET');
 
   // V2.6.0: Distributed scheduler - ACTIVE MODE
   // Spreads scrapes across 8AM-6PM to reduce detection risk

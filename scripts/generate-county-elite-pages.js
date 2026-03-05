@@ -436,6 +436,10 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
     </section>
     `}
 
+    ${medianPrice ? `
+    <div class="price-alert-card" data-zip="${zipPrefixes[0] || ''}" data-price="${minPrice.toFixed(2)}"></div>
+    ` : ''}
+
     <!-- Trend Alert -->
     ${trendMessage ? `
     <section class="trend-alert ${trendClass}">
@@ -612,6 +616,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
   </footer>
 
   <script src="${assetPath}js/nav.js"></script>
+  <script src="${assetPath}js/price-alerts.js?v=1"></script>
   <script src="${assetPath}js/platform-detection.js?v=1"></script>
   <script src="${assetPath}js/widgets.js"></script>
 </body>

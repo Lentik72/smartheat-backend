@@ -107,7 +107,6 @@
   const shareBtn = document.getElementById('share-btn');
   const shareFeedback = document.getElementById('share-feedback');
   const retryBtn = document.getElementById('retry-btn');
-  const bookmarkHint = document.getElementById('bookmark-hint');
   const priceMovement = document.getElementById('price-movement');
   const pricesTrust = document.getElementById('prices-trust');
   const defaultLeaderboard = document.getElementById('default-leaderboard');
@@ -382,17 +381,20 @@
 
     cardsContainer.innerHTML = cardsHtml;
 
-    // Show bookmark hint (once per session)
-    if (!sessionStorage.getItem('homeheat_bookmark_shown')) {
-      bookmarkHint.style.display = 'block';
-      sessionStorage.setItem('homeheat_bookmark_shown', 'true');
-    }
-
     // v1.1 Features
     priceMovement.style.display = 'none'; // Reset before showing
     showPriceMovement(zip, lowestPrice);
     updateAuthorityLine(suppliers.length);
     updateSchemaMarkup(zip, suppliers);
+
+    // Initialize price alert form
+    if (typeof window.initPriceAlertForm === 'function') {
+      window.initPriceAlertForm('#price-alert-container', {
+        zip: zip,
+        lowestPrice: lowestPrice,
+        defaultThreshold: Math.max(lowestPrice - 0.15, 1.50)
+      });
+    }
 
     // Show PWA install banner after user has seen value (Android only)
     if (typeof window.showPwaInstallBanner === 'function') {
@@ -425,11 +427,6 @@
       ${unpricedSuppliers.map(s => createUnpricedSupplierCard(s)).join('')}
     `;
 
-    // Show bookmark hint
-    if (!sessionStorage.getItem('homeheat_bookmark_shown')) {
-      bookmarkHint.style.display = 'block';
-      sessionStorage.setItem('homeheat_bookmark_shown', 'true');
-    }
   }
 
   // V3.0.0: Generate supplier initials for avatar

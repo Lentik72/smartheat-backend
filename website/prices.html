@@ -22,7 +22,7 @@
     <meta name="keywords" content="heating oil prices, heating oil cost, oil prices by zip code, cheap heating oil, heating oil comparison, heating oil NY, heating oil CT, heating oil MA, heating oil NJ, heating oil PA">
     <link rel="canonical" href="https://www.gethomeheat.com/prices">
 
-    <link rel="stylesheet" href="style.min.css?v=03d296db">
+    <link rel="stylesheet" href="style.min.css?v=ea6765cc">
 
     <!-- Schema markup for SEO -->
     <script id="schema-markup" type="application/ld+json">
@@ -734,9 +734,12 @@
         <p class="leaderboard-disclaimer-v2">Prices shown are COD (cash on delivery) rates reported by suppliers. Actual prices may vary.</p>
 
         <!-- Price Alerts CTA -->
-        <div class="price-alerts-cta ios-only">
+        <div class="price-alerts-cta price-alerts-cta-ios ios-only">
             <p>Want to know when prices drop in your area?</p>
-            <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_prices&utm_medium=website&utm_campaign=price_alerts">Get price alerts in the app →</a>
+            <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_prices&utm_medium=website&utm_campaign=price_alerts">Get price alerts in the app &rarr;</a>
+        </div>
+        <div class="price-alerts-cta price-alerts-cta-web non-ios-only">
+            <div id="leaderboard-alert-container" class="price-alert-card" data-price="0" data-zip=""></div>
         </div>
     </section>
 
@@ -777,6 +780,9 @@
             </div>
 
             <p class="min-gallons-note">Most suppliers require a 150-200 gallon minimum order.</p>
+
+            <!-- Price Alert -->
+            <div id="price-alert-container" class="price-alert-card" style="display: none;"></div>
         </div>
 
         <!-- Supplier List -->
@@ -808,10 +814,6 @@
             <span id="share-feedback" class="share-feedback"></span>
         </div>
 
-        <!-- Bookmark Hint -->
-        <div id="bookmark-hint" class="bookmark-hint" style="display: none;">
-            Tip: Bookmark this page to quickly check prices in your area.
-        </div>
     </section>
 
     <!-- Empty State -->
@@ -942,6 +944,7 @@
     </footer>
 
     <script src="js/nav.js"></script>
+    <script src="js/price-alerts.js?v=1"></script>
     <script src="js/prices.js?v=12"></script>
     <script src="js/widgets.js?v=3"></script>
     <script src="js/pwa.js"></script>

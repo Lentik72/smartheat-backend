@@ -1973,15 +1973,179 @@ body {
     font-size: 1.1rem;
 }
 
-/* Bookmark Hint */
-.bookmark-hint {
-    background: rgba(255, 107, 53, 0.08);
-    color: var(--text-dark);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    text-align: center;
+/* Price Alert Card — inside price-summary (prices.html) */
+.price-summary .price-alert-card {
     margin-top: 1rem;
+    padding: 1rem 0 0;
+    border-top: 1px solid var(--border-color);
+}
+/* Price Alert Card — standalone (elite pages) */
+.price-alert-card {
+    max-width: 600px;
+    margin: 1rem auto;
+    padding: 1rem 1.25rem;
+    background: var(--background-card, #fff);
+    border: 1px solid var(--border-color, #E5D8D0);
+    border-radius: 12px;
+    text-align: center;
+}
+.price-alert-inner {
+    font-size: 0.9rem;
+    color: var(--text-dark);
+}
+.price-alert-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: var(--text-dark);
+}
+.price-alert-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 6px;
+}
+.price-alert-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+.price-alert-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.price-alert-input-wrap {
+    display: flex;
+    align-items: center;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+    height: 40px;
+    box-sizing: border-box;
+}
+.price-alert-dollar {
+    padding: 0 0 0 10px;
+    color: #666;
+    font-weight: 600;
+    line-height: 40px;
+}
+.price-alert-threshold {
+    width: 80px;
+    padding: 0 10px 0 4px;
+    border: none;
+    font-size: 0.9rem;
+    outline: none;
+    background: transparent;
+    height: 100%;
+    -moz-appearance: textfield;
+}
+.price-alert-threshold::-webkit-inner-spin-button,
+.price-alert-threshold::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.price-alert-email {
+    padding: 0 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    min-width: 180px;
+    height: 40px;
+    box-sizing: border-box;
+    outline: none;
+}
+.price-alert-email:focus,
+.price-alert-input-wrap:focus-within {
+    border-color: #2E7D32;
+    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.15);
+}
+.price-alert-zip {
+    padding: 8px 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    width: 90px;
+    outline: none;
+}
+.price-alert-btn {
+    padding: 0 24px;
+    height: 40px;
+    background: #2E7D32;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.price-alert-btn:hover {
+    background: #1B5E20;
+}
+.price-alert-btn:disabled {
+    background: #a5d6a7;
+    cursor: not-allowed;
+}
+.price-alert-meta {
+    font-size: 0.78rem;
+    color: #888;
+    margin-top: 6px;
+}
+.price-alert-error {
+    color: #dc2626;
+    font-size: 0.82rem;
+    margin-top: 8px;
+}
+.price-alert-warning {
+    color: #b45309;
+    font-size: 0.8rem;
+    margin-top: 6px;
+    font-style: italic;
+}
+.price-alert-check {
+    color: #16a34a;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+.price-alert-success {
+    padding: 8px 0;
+}
+.price-alert-update-link {
+    color: #2E7D32;
+    text-decoration: none;
+    font-weight: 500;
+}
+.price-alert-update-link:hover {
+    text-decoration: underline;
+}
+@media (max-width: 600px) {
+    .price-alert-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .price-alert-email {
+        min-width: unset;
+    }
+    .price-alert-row {
+        width: 100%;
+    }
+    .price-alert-input-wrap,
+    .price-alert-email,
+    .price-alert-zip {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .price-alert-btn {
+        width: 100%;
+    }
 }
 
 /* Empty State */
@@ -3294,6 +3458,11 @@ body {
 
 .platform-ios .android-only,
 .platform-desktop .android-only { display: none !important; }
+
+.non-ios-only { display: none; }
+.platform-desktop .non-ios-only,
+.platform-android .non-ios-only { display: block !important; }
+.platform-ios .non-ios-only { display: none !important; }
 
 .desktop-only { display: none; }
 .platform-ios .desktop-only,

@@ -391,6 +391,10 @@ function generateZipPageHTML(stats, history, county = null) {
     </section>
     `}
 
+    ${medianPrice ? `
+    <div class="price-alert-card" data-zip="${zipPrefix}" data-price="${minPrice.toFixed(2)}"></div>
+    ` : ''}
+
     <!-- Trend Alert -->
     ${trendMessage ? `
     <section class="trend-alert ${trendClass}">
@@ -578,6 +582,7 @@ function generateZipPageHTML(stats, history, county = null) {
   </footer>
 
   <script src="${assetPath}js/nav.js"></script>
+  <script src="${assetPath}js/price-alerts.js?v=1"></script>
   <script src="${assetPath}js/widgets.js"></script>
   <script src="${assetPath}js/seo-tracking.js"></script>
   <script src="${assetPath}js/pwa.js"></script>

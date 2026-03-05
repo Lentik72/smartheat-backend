@@ -4637,4 +4637,96 @@ router.get('/price-diagnostic', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/alert-subscribers - Price alert subscriber stats
+router.get('/alert-subscribers', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    // Check if table exists first
+    const [tableCheck] = await sequelize.query(`
+      SELECT 1 FROM information_schema.tables WHERE table_name = 'price_alert_subscribers'
+    `);
+    if (tableCheck.length === 0) {
+      return res.json({ total: 0, topZips: [], recent: [], zipDensity: [] });
+    }
+
+    // Total active subscribers
+    const [[{ total }]] = await sequelize.query(`
+      SELECT COUNT(*) AS total FROM price_alert_subscribers WHERE active = true
+    `);
+
+    // Top 10 ZIPs by subscriber count
+    const [topZips] = await sequelize.query(`
+      SELECT
+        pas.zip_code,
+        COUNT(*) AS subscribers,
+        MAX(pas.last_alert_sent_at) AS last_alert_sent,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM suppliers s
+          WHERE s.active = true AND s.allow_price_display = true
+          AND EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) z WHERE z = pas.zip_code
+          )
+        ) THEN true ELSE false END AS has_coverage
+      FROM price_alert_subscribers pas
+      WHERE pas.active = true
+      GROUP BY pas.zip_code
+      ORDER BY COUNT(*) DESC
+      LIMIT 10
+    `);
+
+    // Recent 20 signups
+    const [recent] = await sequelize.query(`
+      SELECT
+        LEFT(email, 3) || '***@' || SPLIT_PART(email, '@', 2) AS email_masked,
+        zip_code,
+        threshold_price,
+        source_page,
+        created_at
+      FROM price_alert_subscribers
+      ORDER BY created_at DESC
+      LIMIT 20
+    `);
+
+    // ZIP density for map view (active subscribers grouped by ZIP with coordinates)
+    const [zipDensity] = await sequelize.query(`
+      SELECT zip_code, COUNT(*) AS subscriber_count
+      FROM price_alert_subscribers
+      WHERE active = true
+      GROUP BY zip_code
+      HAVING COUNT(*) >= 1
+      ORDER BY COUNT(*) DESC
+    `);
+
+    res.json({
+      total: parseInt(total),
+      topZips: topZips.map(z => ({
+        zip: z.zip_code,
+        subscribers: parseInt(z.subscribers),
+        hasCoverage: z.has_coverage,
+        lastAlertSent: z.last_alert_sent
+      })),
+      recent: recent.map(r => ({
+        email: r.email_masked,
+        zip: r.zip_code,
+        threshold: parseFloat(r.threshold_price),
+        source: r.source_page,
+        createdAt: r.created_at
+      })),
+      zipDensity: zipDensity.map(z => ({
+        zip: z.zip_code,
+        count: parseInt(z.subscriber_count)
+      }))
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Alert subscribers error:', error.message);
+    res.status(500).json({ error: 'Failed to load alert subscribers', details: error.message });
+  }
+});
+
 module.exports = router;

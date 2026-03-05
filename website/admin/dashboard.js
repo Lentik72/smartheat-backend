@@ -3325,17 +3325,19 @@ let currentMapView = 'engagement';
 // Load Coverage tab
 async function loadCoverage() {
   try {
-    const [overview, geographic, unified] = await Promise.all([
+    const [overview, geographic, unified, alertSubs] = await Promise.all([
       api(`/overview?days=${currentDays}`),
       api(`/geographic?days=${currentDays}`),
-      api(`/unified?days=${currentDays}`)
+      api(`/unified?days=${currentDays}`),
+      api('/alert-subscribers').catch(() => ({ total: 0, topZips: [], recent: [], zipDensity: [] }))
     ]);
 
     // Store for map view switching
     coverageData = {
       geographic,
       geoHeatmap: unified?.geoHeatmap?.data || null,
-      overview
+      overview,
+      alertSubs
     };
 
     // Get geo stats from unified data
@@ -3425,6 +3427,48 @@ async function loadCoverage() {
         `;
         gapsBody.appendChild(row);
       });
+    }
+
+    // Alert subscribers card + tables
+    document.getElementById('cov-alert-subs').textContent = alertSubs.total || '0';
+
+    const alertZipsBody = document.getElementById('alert-top-zips-body');
+    if (alertZipsBody) {
+      alertZipsBody.innerHTML = '';
+      if (alertSubs.topZips.length === 0) {
+        alertZipsBody.innerHTML = '<tr><td colspan="4" class="no-data">No alert subscribers yet</td></tr>';
+      } else {
+        alertSubs.topZips.forEach(z => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${z.zip}</td>
+            <td>${z.subscribers}</td>
+            <td>${z.hasCoverage ? '<span style="color:#22c55e">Yes</span>' : '<span style="color:#ef4444">No</span>'}</td>
+            <td>${z.lastAlertSent ? new Date(z.lastAlertSent).toLocaleDateString() : '—'}</td>
+          `;
+          alertZipsBody.appendChild(row);
+        });
+      }
+    }
+
+    const alertRecentBody = document.getElementById('alert-recent-body');
+    if (alertRecentBody) {
+      alertRecentBody.innerHTML = '';
+      if (alertSubs.recent.length === 0) {
+        alertRecentBody.innerHTML = '<tr><td colspan="5" class="no-data">No signups yet</td></tr>';
+      } else {
+        alertSubs.recent.forEach(r => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${r.email}</td>
+            <td>${r.zip}</td>
+            <td>$${r.threshold.toFixed(2)}</td>
+            <td>${r.source || '—'}</td>
+            <td>${new Date(r.createdAt).toLocaleDateString()}</td>
+          `;
+          alertRecentBody.appendChild(row);
+        });
+      }
     }
 
     // Setup map view toggle
@@ -3565,6 +3609,53 @@ function loadCoverageMapWithView(view) {
     if (allPoints.length > 0) {
       const bounds = L.latLngBounds(allPoints.map(c => [c.lat, c.lng]));
       map.fitBounds(bounds, { padding: [30, 30] });
+    }
+
+  } else if (view === 'alerts') {
+    // Show alert subscriber density
+    const alertSubs = coverageData.alertSubs;
+    const zipDensity = alertSubs?.zipDensity || [];
+
+    statsEl.innerHTML = `<span style="color: #7c3aed">●</span> Alert Subscribers (${alertSubs?.total || 0} total across ${zipDensity.length} ZIPs)`;
+
+    if (zipDensity.length === 0) {
+      statsEl.innerHTML += ' &nbsp; (No subscribers yet)';
+    } else {
+      // Cross-reference with demand heatmap for coordinates
+      const demandData = geographic?.demandHeatmap || [];
+      const engagementPoints = geoHeatmap?.points || [];
+      const coordMap = {};
+      demandData.forEach(d => { if (d.lat && d.lng) coordMap[d.zip] = { lat: d.lat, lng: d.lng, city: d.city, state: d.state }; });
+      engagementPoints.forEach(p => { if (p.lat && p.lng && !coordMap[p.zip]) coordMap[p.zip] = { lat: p.lat, lng: p.lng, city: p.city, state: p.state }; });
+
+      const maxCount = Math.max(...zipDensity.map(z => z.count), 1);
+      let mapped = 0;
+      zipDensity.forEach(z => {
+        const coord = coordMap[z.zip];
+        if (!coord) return;
+        mapped++;
+        const ratio = z.count / maxCount;
+        const radius = 8 + ratio * 16;
+        L.circleMarker([coord.lat, coord.lng], {
+          radius,
+          fillColor: '#7c3aed',
+          color: '#6d28d9',
+          weight: 1,
+          fillOpacity: 0.6
+        })
+        .bindPopup(`<b>${coord.city || z.zip}, ${coord.state || ''}</b><br>ZIP: ${z.zip}<br>Alert subscribers: ${z.count}`)
+        .addTo(map);
+      });
+
+      if (mapped > 0) {
+        const allCoords = zipDensity.map(z => coordMap[z.zip]).filter(Boolean);
+        const bounds = L.latLngBounds(allCoords.map(c => [c.lat, c.lng]));
+        map.fitBounds(bounds, { padding: [30, 30] });
+      }
+
+      if (mapped < zipDensity.length) {
+        statsEl.innerHTML += ` &nbsp; (${mapped} of ${zipDensity.length} ZIPs mapped)`;
+      }
     }
 
   } else if (view === 'suppliers') {
