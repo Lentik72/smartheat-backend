@@ -74,6 +74,8 @@ async function build() {
 
   // Auto-version CSS: replace ?v=N with content hash of style.min.css
   const minCssPath = path.join(WEBSITE_DIR, 'style.min.css');
+  const htmlFiles = findHtmlFiles(WEBSITE_DIR);
+
   if (fs.existsSync(minCssPath)) {
     const cssContent = fs.readFileSync(minCssPath);
     const hash = crypto.createHash('md5').update(cssContent).digest('hex').slice(0, 8);
@@ -81,7 +83,6 @@ async function build() {
     const replacement = `style.min.css?v=${hash}`;
 
     let updatedCount = 0;
-    const htmlFiles = findHtmlFiles(WEBSITE_DIR);
 
     for (const htmlFile of htmlFiles) {
       const content = fs.readFileSync(htmlFile, 'utf-8');
@@ -96,6 +97,33 @@ async function build() {
     }
 
     console.log(`\n  🔄 CSS version: ?v=${hash} (updated ${updatedCount} HTML files)`);
+  }
+
+  // Auto-version JS: replace ?v=N with content hash for each JS file
+  let jsUpdatedTotal = 0;
+  for (const file of jsFiles) {
+    const srcPath = path.join(jsDir, file);
+    const srcContent = fs.readFileSync(srcPath);
+    const hash = crypto.createHash('md5').update(srcContent).digest('hex').slice(0, 8);
+    // Match e.g. prices.js?v=12 or price-alerts.js?v=1 in HTML src attributes
+    const pattern = new RegExp(file.replace('.', '\\.') + '\\?v=[^\\s"\']*', 'g');
+    const replacement = `${file}?v=${hash}`;
+
+    for (const htmlFile of htmlFiles) {
+      const content = fs.readFileSync(htmlFile, 'utf-8');
+      if (pattern.test(content)) {
+        pattern.lastIndex = 0;
+        const updated = content.replace(pattern, replacement);
+        if (updated !== content) {
+          fs.writeFileSync(htmlFile, updated);
+          jsUpdatedTotal++;
+        }
+      }
+    }
+  }
+
+  if (jsUpdatedTotal > 0) {
+    console.log(`  🔄 JS versions: updated ${jsUpdatedTotal} HTML file references`);
   }
 
   // Summary
