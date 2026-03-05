@@ -30,6 +30,11 @@ After changing key constants, run `npm run audit-docs`.
 - No shortcuts, no patches, no hacks. Implement the proper solution on the first attempt.
 - Research official documentation before implementing. Don't guess at APIs or library behavior.
 - When something breaks, find the root cause — don't layer workarounds.
+- **Patch test — ask BEFORE writing any fix:**
+  1. Does this discard data or signal? (If yes → keep it, classify it instead)
+  2. Does this hide a problem from the operator? (If yes → surface it, don't suppress it)
+  3. Does this only work because of today's assumptions? (If yes → design for the general case)
+  4. Would I need a second fix if the assumption changes? (If yes → it's a patch)
 - MANDATORY: Local preview before every push. Never debug CSS/UI in production.
   1. Edit style.css → inspect in local sandbox → iterate with DevTools
   2. Verify in local Express server with real data (`node server.js` at localhost:3000)

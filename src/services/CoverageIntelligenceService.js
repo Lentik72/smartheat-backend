@@ -16,6 +16,9 @@ const { getUserLocationModel, getNewLocations, getCoverageGaps } = require('../m
 const { getSupplierModel } = require('../models/Supplier');
 const { findSuppliersForZip } = require('./supplierMatcher');
 
+// V2.8.0: Full US ZIP lookup for classifying verified vs unverified ZIPs
+const usZipLookup = require('../data/us-zip-lookup.json');
+
 // V2.5.2: Commercial/non-market ZIPs to exclude from gap reporting
 // These are downtown business districts with no residential oil heat customers
 const EXCLUDED_ZIPS = new Set([
@@ -171,8 +174,10 @@ class CoverageIntelligenceService {
 
       const result = findSuppliersForZip(loc.zipCode, allSuppliers, { includeRadius: false });
 
-      // V2.7.0: Determine market type
-      const marketType = LOW_OIL_MARKET_STATES.has(loc.state) ? 'low_oil' : 'high_oil';
+      // V2.8.0: Classify market type — unverified ZIPs get their own category
+      const marketType = !usZipLookup[loc.zipCode] ? 'unverified'
+        : LOW_OIL_MARKET_STATES.has(loc.state) ? 'low_oil'
+        : 'high_oil';
 
       enriched.push({
         zipCode: loc.zipCode,
@@ -207,11 +212,30 @@ class CoverageIntelligenceService {
     for (const loc of locations) {
       // V2.5.2: Skip excluded commercial ZIPs
       if (EXCLUDED_ZIPS.has(loc.zipCode)) {
-        // Update as "excluded" but don't report as gap
         await loc.update({
           supplierCount: 0,
           coverageQuality: 'excluded',
           lastCoverageCheck: new Date()
+        });
+        continue;
+      }
+
+      // V2.8.0: Mark unverified ZIPs (not in US ZIP database) — still track as gaps
+      if (!usZipLookup[loc.zipCode]) {
+        await loc.update({
+          supplierCount: 0,
+          coverageQuality: 'unverified',
+          lastCoverageCheck: new Date()
+        });
+        gaps.push({
+          zipCode: loc.zipCode,
+          city: loc.city,
+          county: loc.county,
+          state: loc.state,
+          supplierCount: 0,
+          requestCount: loc.requestCount,
+          firstSeenAt: loc.firstSeenAt,
+          marketType: 'unverified'
         });
         continue;
       }
@@ -368,8 +392,11 @@ class CoverageIntelligenceService {
     const recs = [];
 
     // V2.7.0: Separate gaps by market type
-    const highOilGaps = report.coverageGaps.filter(g => g.marketType === 'high_oil');
-    const lowOilGaps = report.coverageGaps.filter(g => g.marketType === 'low_oil');
+    // V2.8.0: Classify by verified (in US ZIP database) vs unverified, not just null state
+    const verifiedGaps = report.coverageGaps.filter(g => usZipLookup[g.zipCode]);
+    const unverifiedGaps = report.coverageGaps.filter(g => !usZipLookup[g.zipCode]);
+    const highOilGaps = verifiedGaps.filter(g => g.marketType === 'high_oil');
+    const lowOilGaps = verifiedGaps.filter(g => g.marketType === 'low_oil');
 
     // Priority gaps in HIGH OIL markets (users with no coverage) - actionable
     const criticalHighOil = highOilGaps.filter(g => g.supplierCount === 0);
@@ -400,6 +427,16 @@ class CoverageIntelligenceService {
         type: 'low_oil_market',
         message: `${lowOilGaps.length} searches in low-oil markets (potential propane users)`,
         details: lowOilGaps.slice(0, 5).map(g => `${g.city || 'Unknown'}, ${g.state} (${g.zipCode}) - ${g.requestCount} requests`)
+      });
+    }
+
+    // V2.8.0: Unverified ZIPs (not in US ZIP database — likely fake/invalid)
+    if (unverifiedGaps.length > 0) {
+      recs.push({
+        priority: 'LOW',
+        type: 'unverified_zips',
+        message: `${unverifiedGaps.length} gap${unverifiedGaps.length > 1 ? 's' : ''} from unverified ZIPs (not in US ZIP database)`,
+        details: unverifiedGaps.slice(0, 5).map(g => `${g.city || 'Unknown'}, ${g.state || '??'} (${g.zipCode}) - ${g.requestCount} requests`)
       });
     }
 

@@ -43,6 +43,7 @@ module.exports = {
           '18234', // Lattimer Mines
           '18239', // Milnesville
           '18246', // Rock Glen
+          '18247', // Saint Johns
           '18249', // Sugarloaf
           '18251', // Sybertsville
           '18256', // Weston
@@ -169,6 +170,7 @@ module.exports = {
           '18234', // Lattimer Mines
           '18239', // Milnesville
           '18246', // Rock Glen
+          '18247', // Saint Johns
           '18249', // Sugarloaf
           '18251', // Sybertsville
           '18256', // Weston
@@ -274,6 +276,7 @@ module.exports = {
           '18234', // Lattimer Mines
           '18239', // Milnesville
           '18246', // Rock Glen
+          '18247', // Saint Johns
           '18249', // Sugarloaf
           '18251', // Sybertsville
           // Lehigh County (partial — western)

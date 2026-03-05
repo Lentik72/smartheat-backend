@@ -7,6 +7,9 @@
  */
 const { DataTypes, Op } = require('sequelize');
 
+// Full US ZIP lookup (41K entries) for validation and city/state resolution
+const usZipLookup = require('../data/us-zip-lookup.json');
+
 let UserLocation;
 
 const initUserLocationModel = (sequelize) => {
@@ -100,21 +103,31 @@ const trackLocation = async (zipCode, userInfo = {}) => {
     return null;
   }
 
+  // V2.8.0: Resolve city/state from full US ZIP lookup when caller doesn't provide
+  const zipInfo = usZipLookup[zipCode] || null;
+  const city = userInfo.city || (zipInfo && zipInfo.city) || null;
+  const county = userInfo.county || (zipInfo && zipInfo.county) || null;
+  const state = userInfo.state || (zipInfo && zipInfo.state) || null;
+
   try {
     // Try to find existing
     let location = await UserLocation.findOne({ where: { zipCode } });
 
     if (location) {
-      // Update existing
+      // Update existing — also backfill null city/state from lookup
+      const updates = { lastSeenAt: new Date() };
+      if (!location.city && city) updates.city = city;
+      if (!location.county && county) updates.county = county;
+      if (!location.state && state) updates.state = state;
       await location.increment('requestCount');
-      await location.update({ lastSeenAt: new Date() });
+      await location.update(updates);
     } else {
       // Create new
       location = await UserLocation.create({
         zipCode,
-        city: userInfo.city || null,
-        county: userInfo.county || null,
-        state: userInfo.state || null,
+        city,
+        county,
+        state,
         firstSeenAt: new Date(),
         lastSeenAt: new Date(),
         requestCount: 1
