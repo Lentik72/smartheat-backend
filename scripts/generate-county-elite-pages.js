@@ -18,7 +18,9 @@
  */
 
 const { Sequelize } = require('sequelize');
+const crypto = require('crypto');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
 require('dotenv').config();
 
@@ -344,6 +346,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
   };
 
   const assetPath = '../../../';
+  const cssVersion = getCssVersion();
   const slug = slugify(countyName);
 
   return `<!DOCTYPE html>
@@ -365,7 +368,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
   <meta property="og:type" content="website">
 
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="${assetPath}style.min.css?v=38">
+  <link rel="stylesheet" href="${assetPath}style.min.css?v=${cssVersion}">
   <link rel="stylesheet" href="../county-elite.css?v=2">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
@@ -668,6 +671,19 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
 // ═══════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════
+
+let _cssVersionCache = null;
+function getCssVersion() {
+  if (_cssVersionCache) return _cssVersionCache;
+  const cssPath = path.join(WEBSITE_DIR, 'style.min.css');
+  if (fsSync.existsSync(cssPath)) {
+    const content = fsSync.readFileSync(cssPath);
+    _cssVersionCache = crypto.createHash('md5').update(content).digest('hex').slice(0, 8);
+  } else {
+    _cssVersionCache = Date.now().toString(36);
+  }
+  return _cssVersionCache;
+}
 
 function getConfidenceLabel(score) {
   if (score >= 0.80) return 'High';
