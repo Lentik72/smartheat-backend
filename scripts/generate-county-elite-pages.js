@@ -253,11 +253,12 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
   const chartLabels = chartHistory.map(h => formatWeekLabel(h.week));
   const chartData = chartHistory.map(h => parseFloat(h.median) || null);
 
-  // Chart y-axis clamping
-  const chartValues = chartData.filter(v => v !== null);
+  // Chart y-axis clamping (only the displayed 6 weeks, not all 12)
+  const chartDisplayData = chartData.slice(-6);
+  const chartValues = chartDisplayData.filter(v => v !== null);
   const chartMinVal = chartValues.length ? Math.min(...chartValues) : 0;
   const chartMaxVal = chartValues.length ? Math.max(...chartValues) : 5;
-  const chartPadVal = (chartMaxVal - chartMinVal) * 0.15 || 0.10;
+  const chartPadVal = (chartMaxVal - chartMinVal) * 0.05 || 0.05;
   const chartYMin = Math.max(0, Math.floor((chartMinVal - chartPadVal) * 100) / 100);
   const chartYMax = Math.ceil((chartMaxVal + chartPadVal) * 100) / 100;
 
@@ -503,6 +504,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
                 max: chartMax,
                 beginAtZero: false,
                 ticks: {
+                  stepSize: 0.10,
                   callback: function(value) {
                     return '$' + value.toFixed(2);
                   }
