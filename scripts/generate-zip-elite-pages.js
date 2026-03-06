@@ -18,6 +18,8 @@
 
 const { Sequelize } = require('sequelize');
 const fs = require('fs').promises;
+const fsSync = require('fs');
+const crypto = require('crypto');
 const path = require('path');
 require('dotenv').config();
 
@@ -25,6 +27,15 @@ require('dotenv').config();
 const WEBSITE_DIR = path.join(__dirname, '../website');
 const ZIP_DIR = path.join(WEBSITE_DIR, 'prices/zip');
 const MIN_QUALITY_SCORE = 0.3;  // Minimum data quality to generate a page
+
+// Compute CSS content hash for cache-busting (matches build.js logic)
+const CSS_HASH = (() => {
+  const minCssPath = path.join(WEBSITE_DIR, 'style.min.css');
+  if (fsSync.existsSync(minCssPath)) {
+    return crypto.createHash('md5').update(fsSync.readFileSync(minCssPath)).digest('hex').slice(0, 8);
+  }
+  return '1';
+})();
 
 // Parse CLI args
 const args = process.argv.slice(2);
@@ -315,7 +326,7 @@ function generateZipPageHTML(stats, history, county = null) {
   <meta property="og:type" content="website">
 
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="${assetPath}style.min.css?v=38">
+  <link rel="stylesheet" href="${assetPath}style.min.css?v=${CSS_HASH}">
   <link rel="stylesheet" href="zip-elite.css?v=1">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">

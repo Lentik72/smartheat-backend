@@ -19,6 +19,8 @@
 
 const { Sequelize } = require('sequelize');
 const fs = require('fs').promises;
+const fsSync = require('fs');
+const crypto = require('crypto');
 const path = require('path');
 require('dotenv').config();
 
@@ -31,6 +33,15 @@ const PRICES_DIR = path.join(WEBSITE_DIR, 'prices');
 const MIN_SUPPLIERS_FOR_PAGE = 3;  // Threshold for generating a page
 const MIN_VALID_PRICE = 2.00;       // Filter out data errors
 const MAX_VALID_PRICE = 6.00;       // Filter out data errors
+
+// Compute CSS content hash for cache-busting (matches build.js logic)
+const CSS_HASH = (() => {
+  const minCssPath = path.join(WEBSITE_DIR, 'style.min.css');
+  if (fsSync.existsSync(minCssPath)) {
+    return crypto.createHash('md5').update(fsSync.readFileSync(minCssPath)).digest('hex').slice(0, 8);
+  }
+  return '1';
+})();
 
 // State configuration
 const STATES = {
@@ -1412,7 +1423,7 @@ function generatePageHTML(data) {
   <meta property="og:type" content="website">
 
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="${assetPath}style.min.css?v=38">
+  <link rel="stylesheet" href="${assetPath}style.min.css?v=${CSS_HASH}">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
 
