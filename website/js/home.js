@@ -78,8 +78,8 @@
             }
 
             if (covered) {
-                // Redirect to state prices page with ZIP
-                window.location.href = '/prices/' + state + '/?zip=' + zip;
+                // Redirect to dynamic prices page filtered by ZIP
+                window.location.href = '/prices?zip=' + zip;
             } else {
                 // Show expansion email capture
                 zipForm.style.display = 'none';
