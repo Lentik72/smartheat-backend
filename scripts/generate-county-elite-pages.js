@@ -121,6 +121,10 @@ async function generateCountyElitePages(options = {}) {
       stateMedianMap[s.state_code] = parseFloat(s.state_median);
     });
 
+    // Compute county CSS hash for cache-busting
+    const countyCssContent = generateCountyEliteCSS();
+    const countyCssHash = crypto.createHash('md5').update(countyCssContent).digest('hex').slice(0, 8);
+
     // Generate pages
     let generated = 0;
     for (const stats of countyStats) {
@@ -154,7 +158,7 @@ async function generateCountyElitePages(options = {}) {
       }
 
       const stateMedian = stateMedianMap[stats.state_code] || null;
-      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian);
+      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash);
 
       // Create state subdirectory
       const stateDir = path.join(COUNTY_DIR, stats.state_code.toLowerCase());
@@ -178,7 +182,7 @@ async function generateCountyElitePages(options = {}) {
     // Generate CSS
     if (!dryRun) {
       const cssPath = path.join(COUNTY_DIR, 'county-elite.css');
-      await fs.writeFile(cssPath, generateCountyEliteCSS(), 'utf-8');
+      await fs.writeFile(cssPath, countyCssContent, 'utf-8');
       log('✅ Generated county-elite.css');
     }
 
@@ -214,7 +218,7 @@ async function generateCountyElitePages(options = {}) {
 /**
  * Generate HTML for a County Elite page
  */
-function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) {
+function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1') {
   const countyName = stats.county_name;
   const stateCode = stats.state_code;
   const stateName = getStateName(stateCode);
@@ -368,7 +372,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null) 
 
   <meta name="color-scheme" content="light only">
   <link rel="stylesheet" href="${assetPath}style.min.css?v=${cssVersion}">
-  <link rel="stylesheet" href="../county-elite.css?v=2">
+  <link rel="stylesheet" href="../county-elite.css?v=${countyCssHash}">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
 
