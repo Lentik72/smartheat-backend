@@ -404,6 +404,7 @@ function getSuppliersForZips(suppliers, zips, priceMap) {
         ...supplier,
         price: priceInfo?.price || null,
         minGallons: priceInfo?.min_gallons || null,
+        scrapedAt: priceInfo?.scraped_at || null,
         priceSource: priceInfo?.source_type || null,
         hasPrice: !!priceInfo
       });
@@ -510,6 +511,8 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
       SELECT
         county_name,
         median_price,
+        min_price,
+        max_price,
         supplier_count,
         percent_change_6w,
         data_quality_score
@@ -524,6 +527,8 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
       name: toTitleCase(c.county_name),
       slug: slugify(c.county_name),
       medianPrice: parseFloat(c.median_price),
+      minPrice: c.min_price ? parseFloat(c.min_price) : null,
+      maxPrice: c.max_price ? parseFloat(c.max_price) : null,
       supplierCount: c.supplier_count,
       trend: c.percent_change_6w ? parseFloat(c.percent_change_6w) : null,
       hasElite: true  // These counties have Elite pages
@@ -531,6 +536,29 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
   } catch (e) {
     // If county stats not available, fall back to supplier-only data
     console.log(`   ⚠️  Could not fetch county stats for ${stateCode}: ${e.message}`);
+  }
+
+  // Get state weekly price history for trend chart
+  let stateHistory = [];
+  try {
+    const [historyRows] = await sequelize.query(`
+      SELECT
+        week_start as week,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY median_price) as state_median
+      FROM county_price_stats
+      WHERE state_code = :stateCode
+        AND fuel_type = 'heating_oil'
+        AND median_price IS NOT NULL
+      GROUP BY week_start
+      ORDER BY week_start DESC
+      LIMIT 8
+    `, { replacements: { stateCode } });
+    stateHistory = historyRows.map(r => ({
+      week: r.week,
+      median: parseFloat(r.state_median)
+    })).reverse();  // chronological order
+  } catch (e) {
+    console.log(`   ⚠️  Could not fetch state history for ${stateCode}: ${e.message}`);
   }
 
   // Get regions with enough suppliers for links
@@ -568,9 +596,9 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
   }
   countyLinks.sort((a, b) => b.count - a.count);
 
-  // V2.34.0: Intelligence-first description
+  // Intelligence-first description — highlights county comparison for SEO
   const description = stateMedian
-    ? `Current heating oil prices in ${stateInfo.name}: $${stateMedian.toFixed(2)}/gal median across ${countyEliteData.length} counties. Compare trends, prices by county, and ${suppliers.length} suppliers. Updated daily.`
+    ? `Compare heating oil prices across ${countyEliteData.length} counties in ${stateInfo.name}. Updated daily with prices from ${suppliers.length} suppliers.`
     : `Compare ${suppliers.length} heating oil suppliers in ${stateInfo.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Updated daily.`;
 
   const html = generatePageHTML({
@@ -595,6 +623,7 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
     // V2.34.0: Elite data for intelligence-first layout
     stateMedian,
     stateTrend,
+    stateHistory,
     countyEliteData,
     otherStates: Object.entries(STATES)
       .filter(([code]) => code !== stateCode)
@@ -828,6 +857,23 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
 }
 
 /**
+ * Compute freshness display from a scraped_at timestamp
+ * Returns { dotClass, text } for rendering freshness indicators
+ */
+function computeFreshness(scrapedAt) {
+  if (!scrapedAt) return { dotClass: 'stale', text: '—' };
+  const date = new Date(scrapedAt);
+  if (isNaN(date.getTime())) return { dotClass: 'stale', text: '—' };
+  const diff = Date.now() - date.getTime();
+  if (diff < 0) return { dotClass: 'stale', text: '—' };
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (hours < 24) return { dotClass: 'fresh', text: hours < 1 ? 'Now' : `${hours}h ago` };
+  if (days <= 3) return { dotClass: 'recent', text: days === 1 ? '1d ago' : `${days}d ago` };
+  return { dotClass: 'stale', text: days < 7 ? `${days}d ago` : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) };
+}
+
+/**
  * Generate page HTML (shared template)
  */
 function generatePageHTML(data) {
@@ -857,6 +903,7 @@ function generatePageHTML(data) {
     // V2.34.0: Elite data for intelligence-first state pages
     stateMedian,
     stateTrend,
+    stateHistory,
     countyEliteData
   } = data;
 
@@ -914,6 +961,42 @@ function generatePageHTML(data) {
     ]
   } : null;
 
+  // FAQPage schema for state pages
+  const faqSchema = (type === 'state' && stateMedian) ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `What is the current heating oil price in ${stateInfo.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The median heating oil price in ${stateInfo.name} today is $${stateMedian.toFixed(2)} per gallon${stats ? `, with prices ranging from $${stats.min} to $${stats.max}` : ''}. Prices are based on data from ${suppliers.filter(s => s.hasPrice).length} reporting suppliers across ${countyEliteData?.length || 0} counties.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `How many heating oil suppliers are in ${stateInfo.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `HomeHeat tracks ${suppliers.length} heating oil suppliers across ${countyEliteData?.length || 0} counties in ${stateInfo.name}. Pricing data is updated daily from verified COD suppliers.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Are heating oil prices going up or down in ${stateInfo.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": stateTrend
+            ? (Math.abs(stateTrend) < 2
+              ? `Heating oil prices in ${stateInfo.name} have been relatively stable over the past 6 weeks. The statewide median is currently $${stateMedian.toFixed(2)} per gallon.`
+              : `Heating oil prices in ${stateInfo.name} are ${stateTrend > 0 ? 'up' : 'down'} approximately ${Math.abs(stateTrend).toFixed(1)}% over the past 6 weeks. The current statewide median is $${stateMedian.toFixed(2)} per gallon.`)
+            : `The current statewide median heating oil price in ${stateInfo.name} is $${stateMedian.toFixed(2)} per gallon. Check back for trend data as more weekly pricing is collected.`
+        }
+      }
+    ]
+  } : null;
+
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -956,9 +1039,29 @@ function generatePageHTML(data) {
       : `<span>${escapeHtml(b.name)}</span>`
   ).join(' › ');
 
-  // Generate supplier table
+  // Generate supplier table rows
+  // State pages get enhanced 7-column table; others keep 5-column
+  const isEnhancedTable = type === 'state';
   const supplierRows = suppliers.map(s => {
     const hasValidWebsite = s.website && s.website.startsWith('https://');
+    const freshness = computeFreshness(s.scrapedAt);
+    const minGalText = s.minGallons ? `${s.minGallons}+` : '—';
+    const freshnessHtml = s.hasPrice
+      ? `<span class="freshness-dot ${freshness.dotClass}"></span> ${escapeHtml(freshness.text)}`
+      : '—';
+
+    if (isEnhancedTable) {
+      return `
+        <tr>
+          <td class="supplier-name">${s.slug ? `<a href="/supplier/${s.slug}" class="supplier-profile-link">${escapeHtml(s.name)}</a>` : escapeHtml(s.name)}</td>
+          <td class="supplier-city">${escapeHtml(s.city || '')}</td>
+          <td class="supplier-price">${s.hasPrice ? `$${s.price.toFixed(2)}` : '<span class="call-for-price">Call</span>'}</td>
+          <td class="supplier-min-gal">${minGalText}</td>
+          <td class="supplier-freshness">${freshnessHtml}</td>
+          <td class="supplier-phone">${s.phone ? `<a href="tel:${s.phone}" class="phone-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="call">${escapeHtml(s.phone)}</a>` : '—'}</td>
+          <td class="supplier-website">${hasValidWebsite ? `<a href="${escapeHtml(s.website)}" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="website">Website</a>` : ''}</td>
+        </tr>`;
+    }
     return `
         <tr>
           <td class="supplier-name">${s.slug ? `<a href="/supplier/${s.slug}" class="supplier-profile-link">${escapeHtml(s.name)}</a>` : escapeHtml(s.name)}</td>
@@ -1005,20 +1108,27 @@ function generatePageHTML(data) {
   // Hub links section
   let hubLinksHtml = '';
 
-  // V2.34.0: State intelligence section for state pages
+  // State-only sections
   let stateIntelligenceHtml = '';
+  let stateStatsBarHtml = '';
+  let trendAlertHtml = '';
+  let countyComparisonHtml = '';
+  let chartSectionHtml = '';
+  let priceAlertHtml = '';
+  let countyLinkListHtml = '';
+  let seoTextHtml = '';
+  let faqSectionHtml = '';
 
   if (type === 'state') {
-    // V2.34.0: State price intelligence hero (if data available)
+    // State price intelligence hero
     if (stateMedian) {
       const trendText = stateTrend
-        ? (stateTrend > 2 ? `<span class="trend-up">↑ ${stateTrend.toFixed(1)}%</span>` :
-           stateTrend < -2 ? `<span class="trend-down">↓ ${Math.abs(stateTrend).toFixed(1)}%</span>` :
-           '<span class="trend-stable">→ stable</span>')
+        ? (stateTrend > 2 ? `<span class="trend-up">&uarr; ${stateTrend.toFixed(1)}%</span>` :
+           stateTrend < -2 ? `<span class="trend-down">&darr; ${Math.abs(stateTrend).toFixed(1)}%</span>` :
+           '<span class="trend-stable">&rarr; stable</span>')
         : '';
 
       stateIntelligenceHtml = `
-    <!-- State Price Intelligence (Primary) -->
     <section class="state-intelligence">
       <div class="state-price-hero">
         <div class="price-main">
@@ -1030,25 +1140,198 @@ function generatePageHTML(data) {
     </section>`;
     }
 
-    // V2.34.0: County Elite cards (PRIMARY - links to price intelligence pages)
-    const countyEliteSection = countyEliteData && countyEliteData.length > 0 ? `
-    <section class="county-elite-grid">
-      <h2>Heating Oil Prices by County</h2>
-      <div class="elite-card-grid">
-        ${countyEliteData.slice(0, 12).map(c => {
-          const trendIndicator = c.trend
-            ? (c.trend > 2 ? `<span class="trend-indicator trend-up">↑${c.trend.toFixed(0)}%</span>` :
-               c.trend < -2 ? `<span class="trend-indicator trend-down">↓${Math.abs(c.trend).toFixed(0)}%</span>` : '')
-            : '';
-          return `
-        <a href="/prices/county/${stateCode.toLowerCase()}/${c.slug}" class="elite-county-card">
-          <span class="county-name">${escapeHtml(c.name)} County</span>
-          <span class="county-price">$${c.medianPrice.toFixed(2)}/gal ${trendIndicator}</span>
-          <span class="county-suppliers">${c.supplierCount} suppliers</span>
-        </a>`;
-        }).join('')}
-      </div>
-    </section>` : '';
+    // State Stats Bar
+    const lowestPrice = stats ? parseFloat(stats.min) : null;
+    stateStatsBarHtml = `
+    <section class="state-stats-bar">
+      <div class="stat"><span class="stat-label">Median Price</span><span class="stat-value">${stateMedian ? '$' + stateMedian.toFixed(2) + '/gal' : '—'}</span></div>
+      <div class="stat"><span class="stat-label">Lowest Price</span><span class="stat-value">${stats ? '$' + stats.min : '—'}</span></div>
+      <div class="stat"><span class="stat-label">Suppliers</span><span class="stat-value">${suppliers.length}</span></div>
+      <div class="stat"><span class="stat-label">Counties</span><span class="stat-value">${countyEliteData?.length || 0}</span></div>
+    </section>`;
+
+    // Trend Alert Banner (conditional)
+    if (stateHistory && stateHistory.length >= 2 && countyEliteData.length >= 3 && stateTrend && Math.abs(stateTrend) >= 2) {
+      const isUp = stateTrend > 0;
+      const firstPrice = stateHistory[0].median;
+      const lastPrice = stateHistory[stateHistory.length - 1].median;
+      trendAlertHtml = `
+    <section class="trend-alert ${isUp ? 'trend-up' : 'trend-down'}">
+      <span class="trend-icon">${isUp ? '&uarr;' : '&darr;'}</span>
+      <span class="trend-text">${stateInfo.name} heating oil prices are ${isUp ? 'up' : 'down'} ${Math.abs(stateTrend).toFixed(1)}% over the past 6 weeks (from $${firstPrice.toFixed(2)} to $${lastPrice.toFixed(2)})</span>
+    </section>`;
+    }
+
+    // County Price Comparison Table (PRIMARY SEO feature)
+    if (countyEliteData && countyEliteData.length > 0) {
+      const sortedCounties = [...countyEliteData].sort((a, b) => a.medianPrice - b.medianPrice);
+      const countyRows = sortedCounties.map(c => {
+        let rangeText;
+        if (c.supplierCount === 1) {
+          rangeText = 'Single supplier';
+        } else if (c.minPrice && c.maxPrice && c.minPrice !== c.maxPrice) {
+          rangeText = `$${c.minPrice.toFixed(2)}&ndash;$${c.maxPrice.toFixed(2)}`;
+          if (c.supplierCount === 2) rangeText += ' (2 suppliers)';
+        } else {
+          rangeText = '—';
+        }
+        return `
+          <tr>
+            <td><a href="/prices/county/${stateCode.toLowerCase()}/${c.slug}">${escapeHtml(c.name)} County</a></td>
+            <td class="county-price">$${c.medianPrice.toFixed(2)}</td>
+            <td>${c.supplierCount} supplier${c.supplierCount !== 1 ? 's' : ''}</td>
+            <td>${rangeText}</td>
+          </tr>`;
+      }).join('');
+
+      countyComparisonHtml = `
+    <section class="county-price-section">
+      <h2>Heating Oil Prices by County in ${stateInfo.name}</h2>
+      <table class="county-comparison-table">
+        <thead>
+          <tr>
+            <th>County</th>
+            <th>Avg Price Today</th>
+            <th>Suppliers</th>
+            <th>Price Range</th>
+          </tr>
+        </thead>
+        <tbody>${countyRows}
+        </tbody>
+      </table>
+    </section>`;
+    }
+
+    // Trend Chart (conditional on data depth)
+    const showChart = stateHistory && stateHistory.length >= 3 && countyEliteData.length >= 3;
+    if (showChart) {
+      const chartLabels = JSON.stringify(stateHistory.map(h => {
+        const d = new Date(h.week);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }));
+      const chartData = JSON.stringify(stateHistory.map(h => h.median));
+      const minVal = Math.min(...stateHistory.map(h => h.median));
+      const maxVal = Math.max(...stateHistory.map(h => h.median));
+      const yPadding = (maxVal - minVal) * 0.15 || 0.05;
+
+      chartSectionHtml = `
+    <section class="chart-section">
+      <h2>6-Week Price Trend</h2>
+      <div class="chart-container"><canvas id="stateChart"></canvas></div>
+      <p class="chart-caption">Statewide median heating oil price across ${countyEliteData.length} counties (last ${stateHistory.length} weeks)</p>
+    </section>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+    (function() {
+      if (typeof Chart === 'undefined') return;
+      var ctx = document.getElementById('stateChart');
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ${chartLabels},
+          datasets: [{
+            label: 'Median Price',
+            data: ${chartData},
+            borderColor: '#FF6B35',
+            backgroundColor: 'rgba(255,107,53,0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: '#FF6B35'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              min: ${(minVal - yPadding).toFixed(2)},
+              max: ${(maxVal + yPadding).toFixed(2)},
+              ticks: { callback: function(v) { return '$' + v.toFixed(2); } }
+            }
+          }
+        }
+      });
+    })();
+    </script>`;
+    } else if (stateHistory && stateHistory.length > 0 && stateHistory.length < 3) {
+      chartSectionHtml = `
+    <section class="chart-section">
+      <p class="chart-caption" style="text-align:center;color:var(--text-gray);font-size:0.9rem;">Price trend chart available as more data is collected.</p>
+    </section>`;
+    }
+
+    // Price Alert Signup (only when lowestPrice > 0)
+    if (lowestPrice && lowestPrice > 0) {
+      priceAlertHtml = `
+    <section class="state-alert-section">
+      <h3>Get Email Alerts When Heating Oil Prices Drop in ${escapeHtml(stateInfo.name)}</h3>
+      <p>Get alerted when heating oil prices drop in your area. No newsletters, only price alerts.</p>
+      <div class="price-alert-card" data-zip="" data-price="${lowestPrice}"></div>
+    </section>`;
+    }
+
+    // County Link List (lightweight secondary links)
+    if (countyEliteData && countyEliteData.length > 0) {
+      const countyLinkItems = countyEliteData.map(c =>
+        `<a href="/prices/county/${stateCode.toLowerCase()}/${c.slug}">${escapeHtml(c.name)} County</a>`
+      ).join(' &middot; ');
+      countyLinkListHtml = `
+    <section class="county-links-section">
+      <h3>Browse by County</h3>
+      <p class="county-link-list">${countyLinkItems}</p>
+    </section>`;
+    }
+
+    // SEO Text Block
+    const pricedCount = suppliers.filter(s => s.hasPrice).length;
+    const trendContext = stateTrend
+      ? (Math.abs(stateTrend) < 2 ? 'Prices have been stable over the past 6 weeks.'
+        : `Prices are ${stateTrend > 0 ? 'up' : 'down'} ${Math.abs(stateTrend).toFixed(1)}% over the past 6 weeks.`)
+      : '';
+    const supplierPhrase = suppliers.length < 3
+      ? `Currently tracking pricing data from ${pricedCount} supplier${pricedCount !== 1 ? 's' : ''} across ${countyEliteData?.length || 0} counties`
+      : `based on pricing data from ${pricedCount} suppliers across ${countyEliteData?.length || 0} counties`;
+    seoTextHtml = `
+    <section class="seo-text">
+      <h2>About Heating Oil Prices in ${escapeHtml(stateInfo.name)}</h2>
+      <p>The average heating oil price today in ${escapeHtml(stateInfo.name)} is ${stateMedian ? '$' + stateMedian.toFixed(2) : 'N/A'} per gallon, ${supplierPhrase}. ${stats ? `Prices range from $${stats.min} to $${stats.max} per gallon.` : ''} ${trendContext}</p>
+      <p>HomeHeat updates pricing daily from verified COD suppliers. All prices shown are for cash-on-delivery, will-call orders.</p>
+    </section>`;
+
+    // FAQ Section
+    if (stateMedian) {
+      const faqTrendAnswer = stateTrend
+        ? (Math.abs(stateTrend) < 2
+          ? `Heating oil prices in ${stateInfo.name} have been relatively stable over the past 6 weeks. The statewide median is currently $${stateMedian.toFixed(2)} per gallon. Prices typically peak in winter (December\u2013February) and dip in summer.`
+          : `Heating oil prices in ${stateInfo.name} are ${stateTrend > 0 ? 'up' : 'down'} approximately ${Math.abs(stateTrend).toFixed(1)}% over the past 6 weeks. The current statewide median is $${stateMedian.toFixed(2)} per gallon. Prices typically peak in winter and dip in summer.`)
+        : `The current statewide median is $${stateMedian.toFixed(2)} per gallon. Check back for trend data as more weekly pricing is collected.`;
+
+      faqSectionHtml = `
+    <section class="faq-section">
+      <h2>Frequently Asked Questions</h2>
+      <details class="faq-details">
+        <summary>What is the current heating oil price in ${escapeHtml(stateInfo.name)}?</summary>
+        <div class="faq-content">
+          <p>The median heating oil price in ${escapeHtml(stateInfo.name)} today is $${stateMedian.toFixed(2)} per gallon${stats ? `, with prices ranging from $${stats.min} to $${stats.max}` : ''}. Prices are based on data from ${pricedCount} reporting suppliers across ${countyEliteData?.length || 0} counties.</p>
+        </div>
+      </details>
+      <details class="faq-details">
+        <summary>How many heating oil suppliers are in ${escapeHtml(stateInfo.name)}?</summary>
+        <div class="faq-content">
+          <p>HomeHeat tracks ${suppliers.length} heating oil suppliers across ${countyEliteData?.length || 0} counties in ${escapeHtml(stateInfo.name)}. Pricing data is updated daily from verified COD suppliers.</p>
+        </div>
+      </details>
+      <details class="faq-details">
+        <summary>Are heating oil prices going up or down in ${escapeHtml(stateInfo.name)}?</summary>
+        <div class="faq-content">
+          <p>${faqTrendAnswer}</p>
+        </div>
+      </details>
+    </section>`;
+    }
 
     // Show regional links if available (e.g., Long Island, Hudson Valley)
     const regionSection = regionLinks && regionLinks.length > 0 ? `
@@ -1061,18 +1344,7 @@ function generatePageHTML(data) {
       </div>
     </section>` : '';
 
-    // V2.34.0: County directory links (SECONDARY - supplier discovery)
-    const countyDirectorySection = countyLinks && countyLinks.length > 0 ? `
-    <section class="hub-links supplier-directory-links">
-      <h3>Find Suppliers by County</h3>
-      <div class="link-grid">
-        ${countyLinks.slice(0, 20).map(c =>
-          `<a href="${c.slug}">${escapeHtml(c.name)} County <span class="count">(${c.count})</span></a>`
-        ).join('\n        ')}
-      </div>
-    </section>` : '';
-
-    hubLinksHtml = countyEliteSection + regionSection + countyDirectorySection;
+    hubLinksHtml = regionSection;
   }
 
   if (type === 'region' && countyLinks && countyLinks.length > 0) {
@@ -1148,6 +1420,7 @@ function generatePageHTML(data) {
   <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
   ${datasetSchema ? `<script type="application/ld+json">${JSON.stringify(datasetSchema)}</script>` : ''}
   <script type="application/ld+json">${JSON.stringify(itemListSchema)}</script>
+  ${faqSchema ? `<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>` : ''}
 </head>
 <body${zips && zips[0] ? ` data-zip="${zips[0]}"` : ''}>
   <nav class="nav">
@@ -1179,11 +1452,17 @@ function generatePageHTML(data) {
 
     <header class="page-header">
       <h1>${escapeHtml(h1)}</h1>
-      <p class="supplier-count">${type === 'state' && countyEliteData?.length ? `${countyEliteData.length} counties with price data` : `${suppliers.length} suppliers`} · Updated ${dateStr}</p>
+      <p class="supplier-count">${type === 'state' && countyEliteData?.length ? `Prices updated daily &mdash; last updated ${dateStr}` : `${suppliers.length} suppliers · Updated ${dateStr}`}</p>
     </header>
 
-    <!-- V2.34.0: State Price Intelligence (state pages only) -->
+    <!-- State Price Intelligence (state pages only) -->
     ${stateIntelligenceHtml}
+
+    <!-- State Stats Bar (state pages only) -->
+    ${stateStatsBarHtml}
+
+    <!-- Trend Alert Banner (state pages only, conditional) -->
+    ${trendAlertHtml}
 
     <!-- Market Intelligence Stats (non-state pages) -->
     ${type !== 'state' ? statsHtml : ''}
@@ -1191,18 +1470,34 @@ function generatePageHTML(data) {
     <!-- Elite Page Banner (County directory pages only) -->
     ${eliteBannerHtml}
 
-    <!-- V2.34.0: For state pages, show hub links (Elite county cards) BEFORE suppliers -->
+    <!-- County Price Comparison Table (state pages only — PRIMARY SEO feature) -->
+    ${countyComparisonHtml}
+
+    <!-- Regional Links (state pages only) -->
     ${type === 'state' ? hubLinksHtml : ''}
+
+    <!-- Trend Chart (state pages only, conditional) -->
+    ${chartSectionHtml}
+
+    <!-- Price Alert Signup (state pages only, conditional) -->
+    ${priceAlertHtml}
 
     <!-- Supplier Table -->
     <section class="supplier-table-section">
-      <h2>${type === 'state' ? 'Compare All Suppliers' : 'Compare Suppliers'}</h2>
-      <table class="supplier-table">
+      <h2>${type === 'state' ? (suppliers.length < 3 ? `Heating Oil Suppliers Currently Reporting in ${stateInfo.name}` : 'Compare All Suppliers') : 'Compare Suppliers'}</h2>
+      ${suppliers.length === 1 ? `
+      <div class="single-supplier-detail">
+        <p><strong>${escapeHtml(suppliers[0].name)}</strong> — ${escapeHtml(suppliers[0].city || '')}</p>
+        ${suppliers[0].hasPrice ? `<p class="supplier-price">$${suppliers[0].price.toFixed(2)}/gal</p>` : ''}
+        ${suppliers[0].phone ? `<p><a href="tel:${suppliers[0].phone}" class="phone-link">${escapeHtml(suppliers[0].phone)}</a></p>` : ''}
+      </div>` : `
+      <table class="supplier-table${isEnhancedTable ? ' supplier-table-enhanced' : ''}">
         <thead>
           <tr>
             <th>Supplier</th>
             <th>Location</th>
             <th>Price/Gal</th>
+            ${isEnhancedTable ? '<th>Min Gal</th><th>Updated</th>' : ''}
             <th>Phone</th>
             <th>Website</th>
           </tr>
@@ -1210,13 +1505,22 @@ function generatePageHTML(data) {
         <tbody>
 ${supplierRows}
         </tbody>
-      </table>
+      </table>`}
     </section>
+
+    <!-- County Link List (state pages only) -->
+    ${countyLinkListHtml}
 
     <!-- Disclaimer -->
     <p class="disclaimer">
       Prices shown are reported by suppliers. Actual delivered prices may vary by volume and payment method. Always confirm when ordering.
     </p>
+
+    <!-- SEO Text Block (state pages only) -->
+    ${seoTextHtml}
+
+    <!-- FAQ Section (state pages only) -->
+    ${faqSectionHtml}
 
     <!-- App CTA -->
     <section class="zip-cta app-cta-inline">
@@ -1235,7 +1539,7 @@ ${supplierRows}
     <section class="zip-cta">
       <h3>Find prices in your exact area</h3>
       <p>Enter your ZIP code for suppliers that deliver to your address.</p>
-      <a href="/prices" class="cta-button">Check My ZIP Code →</a>
+      <a href="/prices" class="cta-button">Check My ZIP Code &rarr;</a>
     </section>
 
     <!-- Other States -->
@@ -1276,6 +1580,7 @@ ${supplierRows}
   <script src="${assetPath}js/widgets.js"></script>
   <script src="${assetPath}js/seo-tracking.js"></script>
   <script src="${assetPath}js/pwa.js"></script>
+  ${priceAlertHtml ? `<script src="${assetPath}js/price-alerts.js?v=1"></script>\n  <script src="${assetPath}js/platform-detection.js?v=1"></script>` : ''}
 </body>
 </html>`;
 }
