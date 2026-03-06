@@ -10,6 +10,19 @@
  *   user_locations, supplier_engagements
  */
 
+const TZ = 'America/New_York';
+
+// Eastern time "today" string for JS-side comparisons
+function easternToday() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+}
+
+function easternYesterday() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toLocaleDateString('en-CA', { timeZone: TZ });
+}
+
 class CommandCenterService {
   /**
    * Get all Command Center data in parallel
@@ -104,13 +117,13 @@ class CommandCenterService {
       ),
       daily_connections AS (
         SELECT
-          sc.created_at::date as day,
+          (sc.created_at AT TIME ZONE '${TZ}')::date as day,
           COUNT(*) as total_clicks,
           COUNT(*) FILTER (WHERE fs.supplier_id IS NOT NULL) as quality_connections
         FROM supplier_clicks sc
         LEFT JOIN fresh_suppliers fs ON sc.supplier_id = fs.supplier_id
-        WHERE sc.created_at > CURRENT_DATE - INTERVAL '8 days'
-        GROUP BY sc.created_at::date
+        WHERE sc.created_at > (NOW() AT TIME ZONE '${TZ}')::date - INTERVAL '8 days'
+        GROUP BY (sc.created_at AT TIME ZONE '${TZ}')::date
         ORDER BY day ASC
       )
       SELECT * FROM daily_connections
@@ -120,11 +133,8 @@ class CommandCenterService {
     const trend = [];
     let today = 0;
     let yesterday = 0;
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const yesterdayDate = new Date(now);
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+    const todayStr = easternToday();
+    const yesterdayStr = easternYesterday();
 
     for (const row of dailyData) {
       const dayStr = new Date(row.day).toISOString().split('T')[0];
@@ -695,17 +705,17 @@ class CommandCenterService {
       ),
       daily AS (
         SELECT
-          sc.created_at::date as day,
+          (sc.created_at AT TIME ZONE '${TZ}')::date as day,
           COUNT(*) FILTER (WHERE fs.supplier_id IS NOT NULL) as qc
         FROM supplier_clicks sc
         LEFT JOIN fresh_suppliers fs ON sc.supplier_id = fs.supplier_id
-        WHERE sc.created_at > CURRENT_DATE - INTERVAL '30 days'
-        GROUP BY sc.created_at::date
+        WHERE sc.created_at > (NOW() AT TIME ZONE '${TZ}')::date - INTERVAL '30 days'
+        GROUP BY (sc.created_at AT TIME ZONE '${TZ}')::date
       )
       SELECT
-        AVG(qc) FILTER (WHERE day > CURRENT_DATE - INTERVAL '7 days') as recent_avg,
-        AVG(qc) FILTER (WHERE day <= CURRENT_DATE - INTERVAL '7 days'
-                           AND day > CURRENT_DATE - INTERVAL '14 days') as prev_avg,
+        AVG(qc) FILTER (WHERE day > (NOW() AT TIME ZONE '${TZ}')::date - INTERVAL '7 days') as recent_avg,
+        AVG(qc) FILTER (WHERE day <= (NOW() AT TIME ZONE '${TZ}')::date - INTERVAL '7 days'
+                           AND day > (NOW() AT TIME ZONE '${TZ}')::date - INTERVAL '14 days') as prev_avg,
         AVG(qc) as month_avg
       FROM daily
     `);
@@ -932,8 +942,7 @@ class CommandCenterService {
     const trend = northStar.trend || [];
     if (trend.length < 3) return null;
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const complete = trend.filter(d => d.date !== todayStr);
+    const complete = trend.filter(d => d.date !== easternToday());
     const recent = complete.slice(-3);
     if (recent.length < 2) return null;
 
@@ -958,29 +967,29 @@ class CommandCenterService {
   async _getMarketPulse(sequelize) {
     const [medianPrices, demandVolume, callVolume] = await Promise.all([
       sequelize.query(`
-        SELECT scraped_at::date as day,
+        SELECT (scraped_at AT TIME ZONE '${TZ}')::date as day,
           PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY price_per_gallon) as median_price
         FROM supplier_prices
-        WHERE is_valid = true AND scraped_at > CURRENT_DATE - INTERVAL '30 days'
-        GROUP BY scraped_at::date
+        WHERE is_valid = true AND scraped_at > (NOW() AT TIME ZONE '${TZ}')::date - INTERVAL '30 days'
+        GROUP BY (scraped_at AT TIME ZONE '${TZ}')::date
         ORDER BY day ASC
       `).then(([r]) => r),
 
       sequelize.query(`
-        SELECT first_seen_at::date as day, COUNT(*) as count
+        SELECT (first_seen_at AT TIME ZONE '${TZ}')::date as day, COUNT(*) as count
         FROM user_locations
-        WHERE first_seen_at > CURRENT_DATE - INTERVAL '30 days'
-        GROUP BY first_seen_at::date
+        WHERE first_seen_at > (NOW() AT TIME ZONE '${TZ}')::date - INTERVAL '30 days'
+        GROUP BY (first_seen_at AT TIME ZONE '${TZ}')::date
         ORDER BY day ASC
       `).then(([r]) => r),
 
       sequelize.query(`
-        SELECT (created_at AT TIME ZONE 'America/New_York')::date as day,
+        SELECT (created_at AT TIME ZONE '${TZ}')::date as day,
                COUNT(*) as count
         FROM supplier_clicks
         WHERE action_type = 'call'
-          AND created_at >= (CURRENT_DATE - INTERVAL '29 days')
-        GROUP BY (created_at AT TIME ZONE 'America/New_York')::date
+          AND created_at >= (NOW() AT TIME ZONE '${TZ}')::date - INTERVAL '29 days'
+        GROUP BY (created_at AT TIME ZONE '${TZ}')::date
         ORDER BY day ASC
       `).then(([r]) => r)
     ]);
