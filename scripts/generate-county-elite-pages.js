@@ -1299,6 +1299,159 @@ function generateCountyEliteCSS() {
 .county-alert-hook { font-size: 13px; color: #666; margin: 0 0 12px; }
 .county-alert-trust { font-size: 12px; color: #999; margin: 8px 0 0; }
 
+/* Alert form layout — self-contained, does not depend on style.css */
+.county-alert-section .price-alert-card {
+  max-width: 600px;
+  margin: 1rem auto;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid #E5D8D0;
+  border-radius: 12px;
+  text-align: center;
+}
+.county-alert-section .price-alert-inner {
+  font-size: 0.9rem;
+  color: #1a1a1a;
+}
+.county-alert-section .price-alert-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+.county-alert-section .price-alert-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.county-alert-section .price-alert-fields {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: flex-end;
+}
+.county-alert-section .price-alert-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.county-alert-section .price-alert-field-email {
+  flex: 1;
+  min-width: 180px;
+}
+.county-alert-section .price-alert-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.county-alert-section .price-alert-input-wrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  height: 40px;
+  box-sizing: border-box;
+}
+.county-alert-section .price-alert-dollar {
+  padding: 0 0 0 10px;
+  color: #666;
+  font-weight: 600;
+  line-height: 40px;
+}
+.county-alert-section .price-alert-threshold {
+  width: 80px;
+  padding: 0 10px 0 4px;
+  border: none;
+  font-size: 0.9rem;
+  outline: none;
+  background: transparent;
+  height: 100%;
+  -moz-appearance: textfield;
+}
+.county-alert-section .price-alert-threshold::-webkit-inner-spin-button,
+.county-alert-section .price-alert-threshold::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.county-alert-section .price-alert-email {
+  padding: 0 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  width: 100%;
+  min-width: 180px;
+  height: 40px;
+  box-sizing: border-box;
+  outline: none;
+}
+.county-alert-section .price-alert-zip {
+  padding: 0 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  width: 90px;
+  height: 40px;
+  box-sizing: border-box;
+  outline: none;
+}
+.county-alert-section .price-alert-btn {
+  padding: 0 24px;
+  height: 40px;
+  background: #2E7D32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.county-alert-section .price-alert-btn:hover {
+  background: #1B5E20;
+}
+.county-alert-section .price-alert-btn:disabled {
+  background: #a5d6a7;
+  cursor: not-allowed;
+}
+.county-alert-section .price-alert-meta {
+  font-size: 0.78rem;
+  color: #888;
+  margin-top: 6px;
+}
+.county-alert-section .price-alert-error {
+  color: #dc2626;
+  font-size: 0.82rem;
+  margin-top: 8px;
+}
+.county-alert-section .price-alert-warning {
+  color: #b45309;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  font-style: italic;
+}
+.county-alert-section .price-alert-check {
+  color: #16a34a;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.county-alert-section .price-alert-success {
+  padding: 8px 0;
+}
+.county-alert-section .price-alert-email:focus,
+.county-alert-section .price-alert-input-wrap:focus-within {
+  border-color: #2E7D32;
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.15);
+}
+
 /* SEO Text Section */
 .county-seo-text {
   max-width: 720px;
@@ -1355,6 +1508,29 @@ function generateCountyEliteCSS() {
     margin: 1rem 0;
     border-radius: 0;
     padding: 1rem;
+  }
+  .county-alert-section .price-alert-fields {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .county-alert-section .price-alert-field {
+    width: 100%;
+  }
+  .county-alert-section .price-alert-field-email {
+    min-width: unset;
+  }
+  .county-alert-section .price-alert-email {
+    min-width: unset;
+  }
+  .county-alert-section .price-alert-input-wrap,
+  .county-alert-section .price-alert-email,
+  .county-alert-section .price-alert-zip {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .county-alert-section .price-alert-btn {
+    width: 100%;
   }
 }
 `;
