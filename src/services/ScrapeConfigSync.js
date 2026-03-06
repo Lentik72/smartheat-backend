@@ -83,12 +83,15 @@ class ScrapeConfigSync {
         const websiteUrl = `https://${normalizedDomain}`;
 
         // Check if supplier exists (match by website domain)
+        // ORDER BY active DESC so we always update the active record first,
+        // avoiding sync drift when duplicates exist
         const [existing] = await this.sequelize.query(`
           SELECT id, name, phone, postal_codes_served, active,
                  allow_price_display, scrape_status, consecutive_scrape_failures
           FROM suppliers
           WHERE LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE $1
              OR LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE $2
+          ORDER BY active DESC, created_at ASC
           LIMIT 1
         `, {
           bind: [`%${normalizedDomain}%`, `%www.${normalizedDomain}%`],
