@@ -666,8 +666,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   </footer>
 
   <script src="${assetPath}js/nav.js"></script>
-  <script src="${assetPath}js/price-alerts.js?v=1"></script>
-  <script src="${assetPath}js/platform-detection.js?v=1"></script>
+  <script src="${assetPath}js/price-alerts.js?v=${getFileHash('js/price-alerts.js')}"></script>
+  <script src="${assetPath}js/platform-detection.js?v=${getFileHash('js/platform-detection.js')}"></script>
   <script src="${assetPath}js/widgets.js"></script>
 </body>
 </html>`;
@@ -677,17 +677,21 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════
 
-let _cssVersionCache = null;
-function getCssVersion() {
-  if (_cssVersionCache) return _cssVersionCache;
-  const cssPath = path.join(WEBSITE_DIR, 'style.min.css');
-  if (fsSync.existsSync(cssPath)) {
-    const content = fsSync.readFileSync(cssPath);
-    _cssVersionCache = crypto.createHash('md5').update(content).digest('hex').slice(0, 8);
+const _fileHashCache = {};
+function getFileHash(relativePath) {
+  if (_fileHashCache[relativePath]) return _fileHashCache[relativePath];
+  const fullPath = path.join(WEBSITE_DIR, relativePath);
+  if (fsSync.existsSync(fullPath)) {
+    const content = fsSync.readFileSync(fullPath);
+    _fileHashCache[relativePath] = crypto.createHash('md5').update(content).digest('hex').slice(0, 8);
   } else {
-    _cssVersionCache = Date.now().toString(36);
+    _fileHashCache[relativePath] = Date.now().toString(36);
   }
-  return _cssVersionCache;
+  return _fileHashCache[relativePath];
+}
+
+function getCssVersion() {
+  return getFileHash('style.min.css');
 }
 
 function getConfidenceLabel(score) {
