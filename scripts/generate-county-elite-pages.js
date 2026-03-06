@@ -125,6 +125,14 @@ async function generateCountyElitePages(options = {}) {
     const countyCssContent = generateCountyEliteCSS();
     const countyCssHash = crypto.createHash('md5').update(countyCssContent).digest('hex').slice(0, 8);
 
+    // Write CSS BEFORE HTML pages to prevent CDN race condition:
+    // If HTML is served before CSS is written, CDN caches stale CSS under new hash
+    if (!dryRun) {
+      const cssPath = path.join(COUNTY_DIR, 'county-elite.css');
+      await fs.writeFile(cssPath, countyCssContent, 'utf-8');
+      log('✅ Generated county-elite.css (hash: ' + countyCssHash + ')');
+    }
+
     // Generate pages
     let generated = 0;
     for (const stats of countyStats) {
@@ -177,13 +185,6 @@ async function generateCountyElitePages(options = {}) {
       if (generated <= 10 || generated % 10 === 0) {
         log(`  [${generated}/${countyStats.length}] ${stats.county_name}, ${stats.state_code} (quality: ${stats.data_quality_score})`);
       }
-    }
-
-    // Generate CSS
-    if (!dryRun) {
-      const cssPath = path.join(COUNTY_DIR, 'county-elite.css');
-      await fs.writeFile(cssPath, countyCssContent, 'utf-8');
-      log('✅ Generated county-elite.css');
     }
 
     // Update sitemap to include county pages
