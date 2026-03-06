@@ -34,14 +34,18 @@ const MIN_SUPPLIERS_FOR_PAGE = 3;  // Threshold for generating a page
 const MIN_VALID_PRICE = 2.00;       // Filter out data errors
 const MAX_VALID_PRICE = 6.00;       // Filter out data errors
 
-// Compute CSS content hash for cache-busting (matches build.js logic)
-const CSS_HASH = (() => {
-  const minCssPath = path.join(WEBSITE_DIR, 'style.min.css');
-  if (fsSync.existsSync(minCssPath)) {
-    return crypto.createHash('md5').update(fsSync.readFileSync(minCssPath)).digest('hex').slice(0, 8);
+// Content hash for cache-busting (matches build.js logic)
+const _fileHashCache = {};
+function getFileHash(relativePath) {
+  if (_fileHashCache[relativePath]) return _fileHashCache[relativePath];
+  const fullPath = path.join(WEBSITE_DIR, relativePath);
+  if (fsSync.existsSync(fullPath)) {
+    _fileHashCache[relativePath] = crypto.createHash('md5').update(fsSync.readFileSync(fullPath)).digest('hex').slice(0, 8);
+  } else {
+    _fileHashCache[relativePath] = Date.now().toString(36);
   }
-  return '1';
-})();
+  return _fileHashCache[relativePath];
+}
 
 // State configuration
 const STATES = {
@@ -1423,7 +1427,7 @@ function generatePageHTML(data) {
   <meta property="og:type" content="website">
 
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="${assetPath}style.min.css?v=${CSS_HASH}">
+  <link rel="stylesheet" href="${assetPath}style.min.css?v=${getFileHash('style.min.css')}">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
 
@@ -1591,7 +1595,7 @@ ${supplierRows}
   <script src="${assetPath}js/widgets.js"></script>
   <script src="${assetPath}js/seo-tracking.js"></script>
   <script src="${assetPath}js/pwa.js"></script>
-  ${priceAlertHtml ? `<script src="${assetPath}js/price-alerts.js?v=1"></script>\n  <script src="${assetPath}js/platform-detection.js?v=1"></script>` : ''}
+  ${priceAlertHtml ? `<script src="${assetPath}js/price-alerts.js?v=${getFileHash('js/price-alerts.js')}"></script>\n  <script src="${assetPath}js/platform-detection.js?v=${getFileHash('js/platform-detection.js')}"></script>` : ''}
 </body>
 </html>`;
 }

@@ -24,15 +24,19 @@ require('dotenv').config();
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 
-// Compute CSS content hash for cache-busting (matches build.js logic)
+// Content hash for cache-busting (matches build.js logic)
 const WEBSITE_DIR = path.join(__dirname, '../website');
-const CSS_HASH = (() => {
-  const minCssPath = path.join(WEBSITE_DIR, 'style.min.css');
-  if (fs.existsSync(minCssPath)) {
-    return crypto.createHash('md5').update(fs.readFileSync(minCssPath)).digest('hex').slice(0, 8);
+const _fileHashCache = {};
+function getFileHash(relativePath) {
+  if (_fileHashCache[relativePath]) return _fileHashCache[relativePath];
+  const fullPath = path.join(WEBSITE_DIR, relativePath);
+  if (fs.existsSync(fullPath)) {
+    _fileHashCache[relativePath] = crypto.createHash('md5').update(fs.readFileSync(fullPath)).digest('hex').slice(0, 8);
+  } else {
+    _fileHashCache[relativePath] = Date.now().toString(36);
   }
-  return '1';
-})();
+  return _fileHashCache[relativePath];
+}
 
 // ─── Utility Functions ─────────────────────────────────────────
 
@@ -576,8 +580,8 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="/style.min.css?v=${CSS_HASH}">
-  <link rel="stylesheet" href="/supplier/supplier.css?v=25">
+  <link rel="stylesheet" href="/style.min.css?v=${getFileHash('style.min.css')}">
+  <link rel="stylesheet" href="/supplier/supplier.css?v=${getFileHash('supplier/supplier.css')}">
 
   <script type="application/ld+json">${JSON.stringify(schemaData)}</script>
 </head>
