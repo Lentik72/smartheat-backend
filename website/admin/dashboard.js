@@ -3621,34 +3621,26 @@ function loadCoverageMapWithView(view) {
     if (zipDensity.length === 0) {
       statsEl.innerHTML += ' &nbsp; (No subscribers yet)';
     } else {
-      // Cross-reference with demand heatmap for coordinates
-      const demandData = geographic?.demandHeatmap || [];
-      const engagementPoints = geoHeatmap?.points || [];
-      const coordMap = {};
-      demandData.forEach(d => { if (d.lat && d.lng) coordMap[d.zip] = { lat: d.lat, lng: d.lng, city: d.city, state: d.state }; });
-      engagementPoints.forEach(p => { if (p.lat && p.lng && !coordMap[p.zip]) coordMap[p.zip] = { lat: p.lat, lng: p.lng, city: p.city, state: p.state }; });
-
       const maxCount = Math.max(...zipDensity.map(z => z.count), 1);
       let mapped = 0;
       zipDensity.forEach(z => {
-        const coord = coordMap[z.zip];
-        if (!coord) return;
+        if (!z.lat || !z.lng) return;
         mapped++;
         const ratio = z.count / maxCount;
         const radius = 8 + ratio * 16;
-        L.circleMarker([coord.lat, coord.lng], {
+        L.circleMarker([z.lat, z.lng], {
           radius,
           fillColor: '#7c3aed',
           color: '#6d28d9',
           weight: 1,
           fillOpacity: 0.6
         })
-        .bindPopup(`<b>${coord.city || z.zip}, ${coord.state || ''}</b><br>ZIP: ${z.zip}<br>Alert subscribers: ${z.count}`)
+        .bindPopup(`<b>${z.city || z.zip}, ${z.state || ''}</b><br>ZIP: ${z.zip}<br>Alert subscribers: ${z.count}`)
         .addTo(map);
       });
 
       if (mapped > 0) {
-        const allCoords = zipDensity.map(z => coordMap[z.zip]).filter(Boolean);
+        const allCoords = zipDensity.filter(z => z.lat && z.lng);
         const bounds = L.latLngBounds(allCoords.map(c => [c.lat, c.lng]));
         map.fitBounds(bounds, { padding: [30, 30] });
       }

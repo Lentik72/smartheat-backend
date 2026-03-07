@@ -4718,10 +4718,23 @@ router.get('/alert-subscribers', async (req, res) => {
         source: r.source_page,
         createdAt: r.created_at
       })),
-      zipDensity: zipDensity.map(z => ({
-        zip: z.zip_code,
-        count: parseInt(z.subscriber_count)
-      }))
+      zipDensity: (() => {
+        let zipCoords = {};
+        try {
+          zipCoords = require('../data/zip-database.json');
+        } catch (e) { /* zip-database not available */ }
+        return zipDensity.map(z => {
+          const coord = zipCoords[z.zip_code];
+          return {
+            zip: z.zip_code,
+            count: parseInt(z.subscriber_count),
+            lat: coord?.lat || null,
+            lng: coord?.lng || null,
+            city: coord?.city || null,
+            state: coord?.state || null
+          };
+        });
+      })()
     });
   } catch (error) {
     logger.error('[Dashboard] Alert subscribers error:', error.message);
