@@ -4721,8 +4721,9 @@ router.get('/alert-subscribers', async (req, res) => {
       zipDensity: (() => {
         let zipCoords = {};
         try {
-          zipCoords = require('../data/zip-database.json');
-        } catch (e) { /* zip-database not available */ }
+          const zipDbPath = path.join(__dirname, '../data/zip-database.json');
+          zipCoords = JSON.parse(fs.readFileSync(zipDbPath, 'utf8'));
+        } catch (e) { logger.warn('[Dashboard] Could not load zip-database for alert map:', e.message); }
         return zipDensity.map(z => {
           const coord = zipCoords[z.zip_code];
           return {
