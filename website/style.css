@@ -3136,11 +3136,6 @@ body {
         font-size: 1rem;
     }
 
-    /* Also hide location on enhanced table at very small screens */
-    .supplier-table-enhanced th:nth-child(2),
-    .supplier-table-enhanced td:nth-child(2) {
-        display: none;
-    }
 }
 
 /* Disclaimer */
@@ -3540,12 +3535,55 @@ body {
     .trend-alert {
         font-size: 0.8rem;
     }
-    /* Hide min gal (col 4) and website (col 7) on mobile for enhanced table */
+    /* Enhanced table: force fit within viewport */
+    .supplier-table-enhanced {
+        display: table !important;
+        table-layout: fixed !important;
+        width: 100% !important;
+        overflow-x: visible !important;
+    }
+
+    .supplier-table-enhanced th,
+    .supplier-table-enhanced td {
+        padding: 0.6rem 0.3rem;
+        font-size: 0.78rem;
+    }
+
+    /* Hide location (col 2), min gal (col 4), updated (col 5), website (col 7) */
+    .supplier-table-enhanced th:nth-child(2),
+    .supplier-table-enhanced td:nth-child(2),
     .supplier-table-enhanced th:nth-child(4),
     .supplier-table-enhanced td:nth-child(4),
+    .supplier-table-enhanced th:nth-child(5),
+    .supplier-table-enhanced td:nth-child(5),
     .supplier-table-enhanced th:nth-child(7),
     .supplier-table-enhanced td:nth-child(7) {
         display: none;
+    }
+
+    /* Col 1: Supplier name */
+    .supplier-table-enhanced th:nth-child(1),
+    .supplier-table-enhanced td:nth-child(1) {
+        width: 45% !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Col 3: Price/Gal */
+    .supplier-table-enhanced th:nth-child(3),
+    .supplier-table-enhanced td:nth-child(3) {
+        width: 20% !important;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    /* Col 6: Phone */
+    .supplier-table-enhanced th:nth-child(6),
+    .supplier-table-enhanced td:nth-child(6) {
+        width: 35% !important;
+        white-space: nowrap;
+        font-size: 0.75rem;
     }
     .state-alert-section {
         margin: 1rem 0;
