@@ -24,7 +24,15 @@ const fsSync = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+// Shared supplier data queries
+const { getAllSuppliers, getCurrentPrices, getSuppliersForZips } = require('./lib/supplier-data');
+
+// Location resolver for ZIP lookups
+const locationResolver = require('../src/services/locationResolver');
+
 // Configuration
+const MIN_VALID_PRICE = 2.00;
+const MAX_VALID_PRICE = 6.00;
 const WEBSITE_DIR = path.join(__dirname, '../website');
 const COUNTY_DIR = path.join(WEBSITE_DIR, 'prices/county');
 const MIN_QUALITY_SCORE = 0.45;  // Tier 1 + Tier 2 only (quality counties)
@@ -133,6 +141,15 @@ async function generateCountyElitePages(options = {}) {
       log('✅ Generated county-elite.css (hash: ' + countyCssHash + ')');
     }
 
+    // Fetch all suppliers + prices once (shared with SEO generator)
+    const allSuppliers = await getAllSuppliers(sequelize);
+    const allPrices = await getCurrentPrices(sequelize, MIN_VALID_PRICE, MAX_VALID_PRICE);
+    const priceMap = new Map();
+    for (const p of allPrices) {
+      priceMap.set(p.supplier_id, p);
+    }
+    log(`📊 Loaded ${allSuppliers.length} suppliers, ${allPrices.length} prices for table generation`);
+
     // Generate pages
     let generated = 0;
     for (const stats of countyStats) {
@@ -165,8 +182,42 @@ async function generateCountyElitePages(options = {}) {
         `, { replacements: { prefixes: zipPrefixes } });
       }
 
+      // Get suppliers for this county via 5-digit ZIP matching
+      const countyZips = locationResolver.getZipsForCounty(stats.county_name, stats.state_code);
+      let countySuppliers = [];
+      if (countyZips.length > 0) {
+        countySuppliers = getSuppliersForZips(allSuppliers, countyZips, priceMap);
+      } else {
+        // Fallback: match suppliers by service_counties field
+        countySuppliers = allSuppliers
+          .filter(s => {
+            const counties = s.service_counties || [];
+            return counties.some(c =>
+              c.toLowerCase().includes(stats.county_name.toLowerCase()) &&
+              c.toUpperCase().includes(stats.state_code)
+            );
+          })
+          .map(s => {
+            const priceInfo = priceMap.get(s.id);
+            return {
+              ...s,
+              price: priceInfo?.price || null,
+              minGallons: priceInfo?.min_gallons || null,
+              scrapedAt: priceInfo?.scraped_at || null,
+              priceSource: priceInfo?.source_type || null,
+              hasPrice: !!priceInfo
+            };
+          })
+          .sort((a, b) => {
+            if (a.hasPrice && !b.hasPrice) return -1;
+            if (!a.hasPrice && b.hasPrice) return 1;
+            if (a.hasPrice && b.hasPrice) return a.price - b.price;
+            return a.name.localeCompare(b.name);
+          });
+      }
+
       const stateMedian = stateMedianMap[stats.state_code] || null;
-      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash);
+      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers);
 
       // Create state subdirectory
       const stateDir = path.join(COUNTY_DIR, stats.state_code.toLowerCase());
@@ -183,7 +234,7 @@ async function generateCountyElitePages(options = {}) {
       generated++;
 
       if (generated <= 10 || generated % 10 === 0) {
-        log(`  [${generated}/${countyStats.length}] ${stats.county_name}, ${stats.state_code} (quality: ${stats.data_quality_score})`);
+        log(`  [${generated}/${countyStats.length}] ${stats.county_name}, ${stats.state_code} (quality: ${stats.data_quality_score}, ${countySuppliers.length} suppliers)`);
       }
     }
 
@@ -219,7 +270,7 @@ async function generateCountyElitePages(options = {}) {
 /**
  * Generate HTML for a County Elite page
  */
-function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1') {
+function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = []) {
   const countyName = stats.county_name;
   const stateCode = stats.state_code;
   const stateName = getStateName(stateCode);
@@ -331,7 +382,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
         "name": `How many heating oil suppliers operate in ${countyName} County?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `HomeHeat tracks ${supplierCount} heating oil suppliers with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.`
+          "text": `HomeHeat tracks ${Math.max(supplierCount, countySuppliers.length)} heating oil suppliers with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.`
         }
       }
     ]
@@ -348,6 +399,42 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
       { "@type": "ListItem", "position": 4, "name": `${countyName} County` }
     ]
   };
+
+  // Schema.org ItemList for priced suppliers (min 2 items)
+  const pricedSuppliers = countySuppliers.filter(s => s.hasPrice && s.slug);
+  const itemListSchema = pricedSuppliers.length >= 2 ? {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": `Heating Oil Suppliers in ${countyName} County, ${stateName}`,
+    "numberOfItems": pricedSuppliers.length,
+    "itemListElement": pricedSuppliers.map((s, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "item": {
+        "@type": "LocalBusiness",
+        "name": s.name,
+        "url": `https://www.gethomeheat.com/supplier/${s.slug}`,
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": s.city || '',
+          "addressRegion": s.state || stateCode
+        },
+        "offers": {
+          "@type": "Offer",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": s.price.toFixed(2),
+            "priceCurrency": "USD",
+            "unitCode": "GLL",
+            "unitText": "gallon"
+          }
+        }
+      }
+    }))
+  } : null;
+
+  // Use actual supplier count from table when larger than aggregated stats
+  const displaySupplierCount = Math.max(supplierCount, countySuppliers.length);
 
   const assetPath = '../../../';
   const cssVersion = getCssVersion();
@@ -384,6 +471,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
   <script type="application/ld+json">${JSON.stringify(datasetSchema)}</script>
   <script type="application/ld+json">${JSON.stringify(faqSchema)}</script>
+  ${itemListSchema ? `<script type="application/ld+json">${JSON.stringify(itemListSchema)}</script>` : ''}
 </head>
 <body>
   <nav class="nav">
@@ -415,7 +503,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
 
     <header class="page-header">
       <h1>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode}</h1>
-      <p class="county-meta">${supplierCount} suppliers · ${zipPrefixes.length} ZIP areas · Updated ${lastUpdate}</p>
+      <p class="county-meta">${displaySupplierCount} suppliers · ${zipPrefixes.length} ZIP areas · Updated ${lastUpdate}</p>
       ${zipPrefixes.length > 0 ? `<p class="geographic-context">Covering ${formatZipPrefixRange(zipPrefixes)} across ${zipCount} ZIP codes</p>` : ''}
       <span class="confidence-badge ${confidenceClass}">${confidenceLabel} Confidence</span>
     </header>
@@ -573,6 +661,45 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
     </section>
     ` : ''}
 
+    <!-- Supplier Table -->
+    ${countySuppliers.length > 0 ? `
+    <section class="supplier-table-section">
+      <h2>Heating Oil Suppliers Serving ${escapeHtml(countyName)} County</h2>
+      <p class="supplier-table-intro">Below are heating oil suppliers currently serving ${escapeHtml(countyName)} County, ${stateName} based on ZIP code coverage.</p>
+        <table class="supplier-table">
+          <thead>
+            <tr>
+              <th>Supplier</th>
+              <th>Location</th>
+              <th>Price/Gal</th>
+              <th>Phone</th>
+              <th>Website</th>
+            </tr>
+          </thead>
+          <tbody>
+${countySuppliers.map(s => {
+  const hasValidWebsite = s.website && s.website.startsWith('https://');
+  return `            <tr>
+              <td class="supplier-name">${s.slug ? `<a href="/supplier/${s.slug}" class="supplier-profile-link">${escapeHtml(s.name)}</a>` : escapeHtml(s.name)}</td>
+              <td class="supplier-city">${escapeHtml(s.city || '')}</td>
+              <td class="supplier-price">${s.hasPrice ? `$${s.price.toFixed(2)}` : '<span class="call-for-price">Call</span>'}</td>
+              <td class="supplier-phone">${s.phone ? `<a href="tel:${s.phone}" class="phone-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="call">${escapeHtml(s.phone)}</a>` : '\u2014'}</td>
+              <td class="supplier-website">${hasValidWebsite ? `<a href="${escapeHtml(s.website)}" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="website">Website</a>` : ''}</td>
+            </tr>`;
+}).join('\n')}
+          </tbody>
+        </table>
+      <p class="supplier-directory-link">
+        <a href="/prices/${stateCode.toLowerCase()}/${slugify(countyName)}-county">View full ${escapeHtml(countyName)} County supplier directory &rarr;</a>
+      </p>
+    </section>
+    ` : `
+    <section class="supplier-table-section supplier-empty-state">
+      <h2>Heating Oil Suppliers Serving ${escapeHtml(countyName)} County</h2>
+      <p>No suppliers currently reporting prices in ${escapeHtml(countyName)} County. <a href="/prices">Search heating oil prices by ZIP code</a> to find suppliers delivering to your area.</p>
+    </section>
+    `}
+
     <!-- Social Proof (gated by threshold, explicit iPhone) -->
     ${showUserCount ? `
     <p class="social-proof">
@@ -586,7 +713,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
       $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)} per gallon depending on season,
       delivery size, and supplier competition.${stateComparison ? ` ${stateComparison.text}.` : ''}</p>
 
-      <p>HomeHeat tracks ${supplierCount} heating oil suppliers across
+      <p>HomeHeat tracks ${displaySupplierCount} heating oil suppliers across
       ${zipCount} ZIP codes in ${countyName} County.
       Prices are updated daily using supplier reports and verified market data.</p>
 
@@ -616,11 +743,11 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
         </details>
         <details class="faq-item">
           <summary>Why are ${escapeHtml(countyName)} County prices ${medianPrice > 3.5 ? 'higher than average' : 'competitive'}?</summary>
-          <p>Heating oil prices in ${countyName} County are influenced by proximity to terminals, local supplier competition, and seasonal demand. HomeHeat currently tracks ${supplierCount} suppliers in ${countyName} County, giving homeowners options to compare prices and find competitive rates.</p>
+          <p>Heating oil prices in ${countyName} County are influenced by proximity to terminals, local supplier competition, and seasonal demand. HomeHeat currently tracks ${displaySupplierCount} suppliers in ${countyName} County, giving homeowners options to compare prices and find competitive rates.</p>
         </details>
         <details class="faq-item">
           <summary>How many heating oil suppliers operate in ${escapeHtml(countyName)} County?</summary>
-          <p>HomeHeat tracks <strong>${supplierCount} heating oil suppliers</strong> with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.</p>
+          <p>HomeHeat tracks <strong>${displaySupplierCount} heating oil suppliers</strong> with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.</p>
         </details>
       </div>
     </section>
@@ -1476,6 +1603,63 @@ function generateCountyEliteCSS() {
   margin-top: 0.5rem;
 }
 
+/* Supplier Table Section */
+.county-elite-page .supplier-table-section {
+  margin: 2rem 0;
+}
+
+.county-elite-page .supplier-table-section h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.supplier-table-intro {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.supplier-directory-link {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.supplier-directory-link a {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.supplier-directory-link a:hover {
+  text-decoration: underline;
+}
+
+.supplier-empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.supplier-empty-state p {
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.supplier-empty-state a {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.supplier-empty-state a:hover {
+  text-decoration: underline;
+}
+
 /* Desktop Typography */
 @media (min-width: 960px) {
   .page-header h1 { font-size: 2rem; }
@@ -1500,6 +1684,48 @@ function generateCountyEliteCSS() {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
   }
+
+  /* Supplier table: override base display:block + overflow-x:auto from style.css */
+  .county-elite-page .supplier-table {
+    display: table !important;
+    table-layout: fixed !important;
+    width: 100% !important;
+    overflow-x: visible !important;
+  }
+
+  .county-elite-page .supplier-table th,
+  .county-elite-page .supplier-table td {
+    padding: 0.6rem 0.3rem;
+    font-size: 0.78rem;
+  }
+
+  /* Col 1: Supplier name (visible) */
+  .county-elite-page .supplier-table th:nth-child(1),
+  .county-elite-page .supplier-table td:nth-child(1) {
+    width: 40% !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Col 2: Location — hidden by base style.css */
+  /* Col 3: Price/Gal (visible) */
+  .county-elite-page .supplier-table th:nth-child(3),
+  .county-elite-page .supplier-table td:nth-child(3) {
+    width: 22% !important;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Col 4: Phone (visible) */
+  .county-elite-page .supplier-table th:nth-child(4),
+  .county-elite-page .supplier-table td:nth-child(4) {
+    width: 38% !important;
+    white-space: nowrap;
+    font-size: 0.75rem;
+  }
+
+  /* Col 5: Website — hidden by base style.css */
 
   .snapshot-value {
     font-size: 1.25rem;

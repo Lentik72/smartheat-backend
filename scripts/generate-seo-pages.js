@@ -27,6 +27,9 @@ require('dotenv').config();
 // Import location resolver for ZIP lookups
 const locationResolver = require('../src/services/locationResolver');
 
+// Shared supplier data queries
+const { getAllSuppliers, getCurrentPrices, getSuppliersForZips } = require('./lib/supplier-data');
+
 // Configuration
 const WEBSITE_DIR = path.join(__dirname, '../website');
 const PRICES_DIR = path.join(WEBSITE_DIR, 'prices');
@@ -150,7 +153,7 @@ async function generateSEOPages(options = {}) {
     log(`📊 Found ${suppliers.length} active suppliers`);
 
     // 2. Get all current prices
-    const prices = await getCurrentPrices(sequelize);
+    const prices = await getCurrentPrices(sequelize, MIN_VALID_PRICE, MAX_VALID_PRICE);
     log(`💰 Found ${prices.length} current prices`);
 
     // Create price lookup map
@@ -347,95 +350,7 @@ async function generateSEOPages(options = {}) {
   }
 }
 
-/**
- * Get all active suppliers with service areas
- * V2.17.1: Get ALL active suppliers (allow_price_display filtering is done at price level)
- * Suppliers without displayable prices will show as "Call for price"
- */
-async function getAllSuppliers(sequelize) {
-  const [results] = await sequelize.query(`
-    SELECT
-      id,
-      name,
-      city,
-      state,
-      phone,
-      website,
-      slug,
-      postal_codes_served,
-      service_counties,
-      allow_price_display
-    FROM suppliers
-    WHERE active = true
-    ORDER BY name
-  `);
-  return results;
-}
-
-/**
- * Get current valid prices - V2.17.0: Only for suppliers with allow_price_display = true
- */
-async function getCurrentPrices(sequelize) {
-  const [results] = await sequelize.query(`
-    SELECT DISTINCT ON (sp.supplier_id)
-      sp.supplier_id,
-      sp.price_per_gallon as price,
-      sp.min_gallons,
-      sp.scraped_at,
-      sp.source_type
-    FROM supplier_prices sp
-    JOIN suppliers s ON sp.supplier_id = s.id
-    WHERE sp.is_valid = true
-      AND sp.expires_at > NOW()
-      AND sp.scraped_at > NOW() - INTERVAL '36 hours'
-      AND sp.price_per_gallon BETWEEN $1 AND $2
-      AND s.active = true
-      AND s.allow_price_display = true
-    ORDER BY sp.supplier_id, sp.scraped_at DESC
-  `, {
-    bind: [MIN_VALID_PRICE, MAX_VALID_PRICE]
-  });
-
-  return results.map(r => ({
-    ...r,
-    price: parseFloat(r.price)
-  }));
-}
-
-/**
- * Get suppliers serving a specific set of ZIP codes
- */
-function getSuppliersForZips(suppliers, zips, priceMap) {
-  const zipSet = new Set(zips);
-  const matching = [];
-
-  for (const supplier of suppliers) {
-    const servedZips = supplier.postal_codes_served || [];
-    const servesArea = servedZips.some(z => zipSet.has(z));
-
-    if (servesArea) {
-      const priceInfo = priceMap.get(supplier.id);
-      matching.push({
-        ...supplier,
-        price: priceInfo?.price || null,
-        minGallons: priceInfo?.min_gallons || null,
-        scrapedAt: priceInfo?.scraped_at || null,
-        priceSource: priceInfo?.source_type || null,
-        hasPrice: !!priceInfo
-      });
-    }
-  }
-
-  // Sort: priced suppliers first (by price), then phone-only
-  matching.sort((a, b) => {
-    if (a.hasPrice && !b.hasPrice) return -1;
-    if (!a.hasPrice && b.hasPrice) return 1;
-    if (a.hasPrice && b.hasPrice) return a.price - b.price;
-    return a.name.localeCompare(b.name);
-  });
-
-  return matching;
-}
+// getAllSuppliers, getCurrentPrices, getSuppliersForZips — imported from ./lib/supplier-data.js
 
 /**
  * Calculate market stats with outlier filtering
