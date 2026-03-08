@@ -198,6 +198,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // V2.27.0: Clean URL support - Redirect .html to clean URLs (301)
 // V2.28.0: Also redirect /index to / (Google found /index as separate page)
+// V2.35.0: Redirect old full-state-name URLs to abbreviated (SEO consolidation)
+const OLD_STATE_NAMES = {
+  'connecticut': 'ct', 'new-york': 'ny', 'new-jersey': 'nj', 'new-hampshire': 'nh',
+  'maine': 'me', 'massachusetts': 'ma', 'pennsylvania': 'pa', 'rhode-island': 'ri',
+  'alaska': 'ak', 'delaware': 'de', 'maryland': 'md', 'virginia': 'va', 'vermont': 'vt'
+};
 app.use((req, res, next) => {
   if (req.path.startsWith('/api') ||
       req.path.match(/\.(js|css|png|jpg|jpeg|webp|gif|ico|svg|woff2?|json|xml|txt)$/)) {
@@ -206,6 +212,18 @@ app.use((req, res, next) => {
   // Redirect /index to / (homepage canonical)
   if (req.path === '/index') {
     return res.redirect(301, '/' + (req._parsedUrl.search || ''));
+  }
+  // Redirect old full-state-name price URLs to abbreviated form
+  // e.g. /prices/connecticut/fairfield-county → /prices/ct/fairfield-county
+  //      /prices/new-york → /prices/ny
+  const stateMatch = req.path.match(/^\/prices\/([\w-]+)(\/.*)?$/);
+  if (stateMatch && OLD_STATE_NAMES[stateMatch[1]]) {
+    const abbr = OLD_STATE_NAMES[stateMatch[1]];
+    let rest = stateMatch[2] || '';
+    // Strip .html from subpath to minimize redirect chains
+    if (rest.endsWith('.html')) rest = rest.slice(0, -5);
+    const qs = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+    return res.redirect(301, `/prices/${abbr}${rest}${qs}`);
   }
   // Redirect .html to clean URL (except functional pages like update-price.html)
   if (req.path.endsWith('.html') && !req.path.includes('update-price') && !req.path.includes('price-review') && !req.path.startsWith('/admin')) {
@@ -216,6 +234,7 @@ app.use((req, res, next) => {
 });
 
 // V2.27.0: Clean URL support - Serve clean URLs by resolving to .html files
+// V2.35.0: Supplier slug normalization — redirect old/variant slugs to canonical
 app.use((req, res, next) => {
   if (req.path.startsWith('/api') ||
       req.path.match(/\.(js|css|png|jpg|jpeg|webp|gif|ico|svg|woff2?|json|xml|txt|html)$/) ||
@@ -225,7 +244,43 @@ app.use((req, res, next) => {
   const htmlPath = path.join(__dirname, 'website', req.path + '.html');
   if (fs.existsSync(htmlPath)) {
     req.url = req.path + '.html';
+    return next();
   }
+
+  // Supplier slug normalization: try common variations before giving up
+  // Handles apostrophe slugification differences and trailing-hyphen artifacts
+  if (req.path.startsWith('/supplier/')) {
+    const slug = req.path.slice('/supplier/'.length);
+    const candidates = new Set();
+
+    // Strip trailing hyphens: "dan-s-oil-co-" → "dan-s-oil-co"
+    const stripped = slug.replace(/-+$/, '');
+    if (stripped !== slug) candidates.add(stripped);
+
+    // Collapse apostrophe pattern: "joel-s-oil" → "joels-oil", "john-s" → "johns"
+    // Matches -s before another hyphen or end of string
+    const collapsed = slug.replace(/-s(?=-|$)/g, 's');
+    if (collapsed !== slug) candidates.add(collapsed);
+
+    // Both: strip trailing + collapse apostrophe
+    const both = stripped.replace(/-s(?=-|$)/g, 's');
+    if (both !== slug) candidates.add(both);
+
+    // Remove duplicate-suffix: "express-cod-1" → "express-cod"
+    const noSuffix = slug.replace(/-\d+$/, '');
+    if (noSuffix !== slug) candidates.add(noSuffix);
+
+    for (const candidate of candidates) {
+      const candidatePath = path.join(__dirname, 'website', 'supplier', candidate + '.html');
+      if (fs.existsSync(candidatePath)) {
+        const qs = req.originalUrl.includes('?')
+          ? req.originalUrl.slice(req.originalUrl.indexOf('?'))
+          : '';
+        return res.redirect(301, `/supplier/${candidate}${qs}`);
+      }
+    }
+  }
+
   next();
 });
 
@@ -800,12 +855,16 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
+// V2.35.0: 404 handler — HTML for website visitors, JSON for API consumers
 app.use((req, res) => {
-  res.status(404).json({ 
-    error: 'Endpoint not found',
-    suggestion: 'Visit /api/docs for available endpoints'
-  });
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({
+      error: 'Endpoint not found',
+      suggestion: 'Visit /api/docs for available endpoints'
+    });
+  }
+  // Serve the branded 404 page for all non-API requests
+  res.status(404).sendFile(path.join(__dirname, 'website', '404.html'));
 });
 
 // Start server

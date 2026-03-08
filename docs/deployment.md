@@ -34,7 +34,8 @@ Order matters — changing it can break the app. Listed by registration order in
 12. **API route mounting** (see below)
 13. **Public assets** (`public/` directory)
 14. **Error handler** (500 with dev message)
-15. **404 handler**
+15. **404 handler** — serves `website/404.html` for non-API requests (branded page, absolute asset paths), JSON for `/api/*` requests
+16. **Old state name redirects** — `/prices/connecticut` → `/prices/ct` etc. (301, 13 states in `OLD_STATE_NAMES` map)
 
 ## Health Endpoint
 
