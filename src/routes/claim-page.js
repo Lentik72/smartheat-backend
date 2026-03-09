@@ -269,7 +269,7 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
     // Price vs market
     let priceVsHtml;
     if (!marketData.currentPrice) {
-      priceVsHtml = '<span class="stat-value stat-neutral" style="font-size:14px">No price listed</span>';
+      priceVsHtml = '<span class="stat-value stat-negative" style="font-size:14px">&#9888; No price listed</span>';
     } else if (!marketData.marketAvgPrice) {
       priceVsHtml = '<span class="stat-value stat-neutral" style="font-size:14px">No market data</span>';
     } else {
@@ -289,7 +289,7 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
       : -1;
     let teaseText;
     if (!hasPrice) {
-      teaseText = "Without a price, you're invisible in comparisons.";
+      teaseText = "Suppliers without prices don\u2019t appear in comparisons. Add yours to start getting clicks.";
     } else if (clickShare >= 0 && clickShare < 30) {
       const competitorShare = 100 - clickShare;
       teaseText = `Competitors are capturing ${competitorShare}% of clicks in your area. Claim to display your price.`;
@@ -316,8 +316,8 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
           ${priceNudge}
         </div>` : `
         <div class="demand-own">
-          <p class="demand-headline" style="color:#DC2626;font-weight:600">Your listing received 0 clicks in the last 30 days</p>
-          <p class="demand-intent">But homeowners <em>are</em> searching in your area.</p>
+          <p class="demand-headline" style="color:#555;font-weight:600">Your listing hasn't received clicks yet</p>
+          <p class="demand-intent">Homeowners are searching in your area${!hasPrice ? ', but suppliers without prices rarely get clicks.' : '. Claim your listing to start appearing in comparisons.'}</p>
           ${priceNudge}
         </div>`}
         <div class="locked-grid">
