@@ -153,6 +153,12 @@
         setDynamic('stat-suppliers', count);
         setDynamic('stat-states', states);
         setDynamic('stat-avg-price', avg);
+        // As-of date
+        if (data.asOf) {
+            var asOfDate = new Date(data.asOf);
+            var asOfStr = 'As of ' + asOfDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            setDynamic('stat-as-of', asOfStr);
+        }
     }
 
     var controller = new AbortController();

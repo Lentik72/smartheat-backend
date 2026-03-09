@@ -279,7 +279,7 @@ router.get('/', async (req, res) => {
     }
   }
 
-  const maxLimit = Math.min(parseInt(limit) || 15, 30);
+  const maxLimit = Math.min(parseInt(limit) || 100, 200);
   const ambiguousLocation = resolvedZips.length > 30;
 
   try {
@@ -648,6 +648,7 @@ router.get('/', async (req, res) => {
       // Existing fields
       zip: resolvedZips[0] || null,
       count: limitedSuppliers.length,
+      totalMatched: aggregatedSuppliers.length,
       // V2.4.0: Price sorting metadata
       pricedCount,
       version: directoryMeta.version,

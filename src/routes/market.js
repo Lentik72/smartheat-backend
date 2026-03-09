@@ -134,19 +134,28 @@ router.get('/pulse', async (req, res) => {
     }
 
     // Query live stats from database - V2.17.0: Filter by allow_price_display
+    // V2.18.0: Use DISTINCT ON to pick latest valid price per supplier (no double-counting)
     const [stats] = await sequelize.query(`
       SELECT
         (SELECT COUNT(*) FROM suppliers WHERE active = true) as supplier_count,
         (SELECT COUNT(DISTINCT state) FROM suppliers WHERE active = true) as state_count,
-        MIN(sp.price_per_gallon) as price_min,
-        MAX(sp.price_per_gallon) as price_max,
-        AVG(sp.price_per_gallon) as price_avg
-      FROM supplier_prices sp
-      JOIN suppliers s ON sp.supplier_id = s.id
-      WHERE s.active = true
-        AND s.allow_price_display = true
-        AND sp.scraped_at > NOW() - INTERVAL '14 days'
-        AND sp.price_per_gallon BETWEEN 2.00 AND 6.00
+        COUNT(*) as price_count,
+        MIN(price_per_gallon) as price_min,
+        MAX(price_per_gallon) as price_max,
+        AVG(price_per_gallon) as price_avg,
+        MAX(scraped_at) as as_of
+      FROM (
+        SELECT DISTINCT ON (sp.supplier_id) sp.price_per_gallon, sp.scraped_at
+        FROM supplier_prices sp
+        JOIN suppliers s ON sp.supplier_id = s.id
+        WHERE s.active = true
+          AND s.allow_price_display = true
+          AND sp.is_valid = true
+          AND sp.expires_at > NOW()
+          AND sp.scraped_at > NOW() - INTERVAL '36 hours'
+          AND sp.price_per_gallon BETWEEN 2.00 AND 6.00
+        ORDER BY sp.supplier_id, sp.scraped_at DESC
+      ) latest
     `);
 
     const row = stats[0] || {};
@@ -157,6 +166,7 @@ router.get('/pulse', async (req, res) => {
       priceMin: row.price_min ? parseFloat(row.price_min).toFixed(2) : null,
       priceMax: row.price_max ? parseFloat(row.price_max).toFixed(2) : null,
       priceAvg: row.price_avg ? parseFloat(row.price_avg).toFixed(2) : null,
+      ...(row.as_of ? { asOf: new Date(row.as_of).toISOString() } : {}),
       lastUpdated: new Date().toISOString()
     };
 
