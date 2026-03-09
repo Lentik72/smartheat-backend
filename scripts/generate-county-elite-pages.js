@@ -217,7 +217,7 @@ async function generateCountyElitePages(options = {}) {
       }
 
       const stateMedian = stateMedianMap[stats.state_code] || null;
-      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers);
+      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips);
 
       // Create state subdirectory
       const stateDir = path.join(COUNTY_DIR, stats.state_code.toLowerCase());
@@ -270,7 +270,7 @@ async function generateCountyElitePages(options = {}) {
 /**
  * Generate HTML for a County Elite page
  */
-function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = []) {
+function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = []) {
   const countyName = stats.county_name;
   const stateCode = stats.state_code;
   const stateName = getStateName(stateCode);
@@ -434,7 +434,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   } : null;
 
   // Use actual supplier count from table when larger than aggregated stats
-  const displaySupplierCount = Math.max(supplierCount, countySuppliers.length);
+  const displaySupplierCount = countySuppliers.length;
 
   const assetPath = '../../../';
   const cssVersion = getCssVersion();
@@ -611,7 +611,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
 
     <!-- App Hook 2: Price alerts -->
     <p class="app-hook">
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_alerts&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">Get price alerts in the free iPhone app →</a>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=hook_alerts&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="hook-link ios-only">Track your tank and compare prices in the free app →</a>
       <a href="/prices" class="hook-link android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat for quick access →</a>
     </p>
     ` : ''}
@@ -620,7 +620,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
     <section class="county-alert-section">
       <h3>Get Email Alerts When Heating Oil Prices Drop</h3>
       <p class="county-alert-hook">Prices change daily. Save $40-$120 per delivery by timing it right.</p>
-      <div class="price-alert-card" data-zip="" data-price="${minPrice ? minPrice.toFixed(2) : ''}"></div>
+      <div class="price-alert-card" data-zip="${countyZips.length > 0 ? countyZips[Math.floor(countyZips.length / 2)] : ''}" data-price="${minPrice ? minPrice.toFixed(2) : ''}"></div>
       <p class="county-alert-trust">We check prices daily. No newsletters. Only price drops.</p>
     </section>
     ` : ''}

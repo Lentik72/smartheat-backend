@@ -67,6 +67,16 @@
         const nearYouCount = document.getElementById('near-you-count');
 
         if (bar && nearYou && nearYouLink) {
+            if (region) {
+                var countyDisplayNames = {
+                    'New York County': 'Manhattan',
+                    'Kings County': 'Brooklyn',
+                    'Queens County': 'Queens',
+                    'Bronx County': 'The Bronx',
+                    'Richmond County': 'Staten Island'
+                };
+                region = countyDisplayNames[region] || region.replace(/\s+County$/i, '').trim();
+            }
             nearYouLink.textContent = region || COVERED_STATES[state]?.name || state;
             nearYouLink.href = COVERED_STATES[state]?.path || '#';
             nearYouCount.textContent = supplierCount || COVERED_STATES[state]?.suppliers || '10+';
