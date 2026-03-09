@@ -28,6 +28,12 @@ SMS inbound → sms-price-service.js (parse + match by phone_last10)
            → supplier_prices (source_type='supplier_sms', expires 7 days)
 ```
 
+## Leaderboard Verification Scrape
+
+The `/api/market/leaderboard` endpoint shows Top 5 cheapest suppliers. On cache miss (every 30 min), any top-5 supplier whose price is >4 hours stale is re-scraped inline before caching. This ensures the most visible prices are fresh. Re-scraped prices are stored with `notes='leaderboard-verify'`. Max latency: ~15s (5 suppliers × ~3s each, worst case).
+
+Constant: `LEADERBOARD_STALE_THRESHOLD_MS = 4 hours` (in `src/routes/market.js`)
+
 ## Scraper Extraction Patterns
 
 Four pattern types in scrape-config.json:

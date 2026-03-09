@@ -3,6 +3,10 @@ const express = require('express');
 const { param, query, validationResult } = require('express-validator');
 const router = express.Router();
 
+// V2.18.1: Priority re-scrape for leaderboard accuracy
+const { scrapeSupplierPrice, loadScrapeConfig, getConfigForSupplier } = require('../services/priceScraper');
+const LEADERBOARD_STALE_THRESHOLD_MS = 4 * 60 * 60 * 1000; // 4 hours
+
 // Validation middleware
 const validateZipCode = param('zipCode').matches(/^\d{5}$/).withMessage('Invalid ZIP code format');
 
@@ -249,13 +253,17 @@ router.get('/leaderboard', async (req, res) => {
 
     // Top 5 deals - lowest priced suppliers with valid displayable prices
     // V2.35.0: 36-hour scraped_at filter ensures we never show stale prices
+    // V2.18.1: Include supplier_id, website, scraped_at for priority re-scrape
     const [topDeals] = await sequelize.query(`
       SELECT DISTINCT ON (s.id)
+        s.id as supplier_id,
         s.name as supplier_name,
         s.city,
         s.state,
         s.slug,
-        sp.price_per_gallon as price
+        s.website,
+        sp.price_per_gallon as price,
+        sp.scraped_at
       FROM suppliers s
       JOIN supplier_prices sp ON s.id = sp.supplier_id
       WHERE s.active = true
@@ -267,8 +275,68 @@ router.get('/leaderboard', async (req, res) => {
       ORDER BY s.id, sp.scraped_at DESC
     `);
 
-    // Sort by price and take top 5
-    const sortedDeals = topDeals
+    // Sort by price and take top 5 candidates
+    const top5Candidates = topDeals
+      .sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
+      .slice(0, 5);
+
+    // V2.18.1: Priority re-scrape stale leaderboard suppliers
+    // If any top-5 supplier was scraped > 4 hours ago, re-scrape to verify price
+    const now = Date.now();
+    const scrapeConfig = loadScrapeConfig();
+    let rescrapeCount = 0;
+
+    for (const deal of top5Candidates) {
+      const scrapedAge = now - new Date(deal.scraped_at).getTime();
+      if (scrapedAge > LEADERBOARD_STALE_THRESHOLD_MS && deal.website) {
+        const config = getConfigForSupplier(deal.website, scrapeConfig);
+        if (config && config.enabled) {
+          try {
+            const result = await scrapeSupplierPrice(
+              { id: deal.supplier_id, name: deal.supplier_name, website: deal.website },
+              config,
+              { maxRetries: 1, retryDelay: 2000 }
+            );
+            if (result.success) {
+              // Save the fresh price
+              await sequelize.query(`
+                INSERT INTO supplier_prices (
+                  id, supplier_id, price_per_gallon, min_gallons, fuel_type,
+                  source_type, source_url, scraped_at, expires_at, is_valid, notes,
+                  created_at, updated_at
+                ) VALUES (
+                  gen_random_uuid(), $1, $2, $3, 'heating_oil',
+                  'scraped', $4, $5, $6, true, 'leaderboard-verify',
+                  NOW(), NOW()
+                )
+              `, {
+                bind: [
+                  result.supplierId,
+                  result.pricePerGallon,
+                  result.minGallons,
+                  result.sourceUrl,
+                  result.scrapedAt.toISOString(),
+                  result.expiresAt.toISOString()
+                ]
+              });
+              deal.price = result.pricePerGallon;
+              deal.scraped_at = result.scrapedAt.toISOString();
+              rescrapeCount++;
+              logger.info(`🔄 Leaderboard verify: ${deal.supplier_name} → $${result.pricePerGallon}`);
+            }
+          } catch (err) {
+            logger.warn(`⚠️ Leaderboard verify failed for ${deal.supplier_name}: ${err.message}`);
+          }
+        }
+      }
+    }
+
+    if (rescrapeCount > 0) {
+      logger.info(`🔄 Leaderboard: re-scraped ${rescrapeCount} stale supplier(s)`);
+    }
+
+    // Re-sort after potential price updates, then format
+    const sortedDeals = top5Candidates
       .sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
       .slice(0, 5)
       .map(d => ({
