@@ -138,6 +138,104 @@
             margin-bottom: 6px;
         }
         .hidden { display: none; }
+
+    /* Supplier search in CTA section */
+    .supplier-search-section {
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+    .supplier-search-section h2 {
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+    .supplier-search-section .search-subtext {
+        color: var(--text-gray);
+        margin-bottom: 1.5rem;
+    }
+    .supplier-search-wrap {
+        position: relative;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+    .supplier-search-input {
+        width: 100%;
+        padding: 14px 16px;
+        font-size: 16px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--background-card);
+        color: var(--text-dark);
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+    .supplier-search-input:focus {
+        outline: none;
+        border-color: var(--primary-orange);
+        box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+    }
+    .supplier-search-helper {
+        color: var(--text-gray);
+        font-size: 14px;
+        margin-top: 8px;
+    }
+    .supplier-search-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 4px;
+        background: var(--background-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: var(--shadow-md);
+        max-height: 360px;
+        overflow-y: auto;
+        z-index: 100;
+        text-align: left;
+    }
+    .supplier-search-wrap.has-results .supplier-search-dropdown {
+        display: block;
+    }
+    .supplier-search-result {
+        display: block;
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-color);
+        text-decoration: none;
+        color: inherit;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+    .supplier-search-result:last-child {
+        border-bottom: none;
+    }
+    .supplier-search-result:hover,
+    .supplier-search-result.active {
+        background: var(--primary-orange-light);
+    }
+    .supplier-search-result-name {
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+    .supplier-search-result-location {
+        font-size: 13px;
+        color: var(--text-gray);
+        margin-top: 2px;
+    }
+    .supplier-search-status {
+        padding: 12px 16px;
+        color: var(--text-gray);
+        font-size: 14px;
+    }
+    .supplier-search-fallback {
+        color: var(--text-gray);
+        font-size: 14px;
+        margin-top: 16px;
+    }
+    .supplier-search-fallback a {
+        color: var(--primary-orange);
+    }
     </style>
 </head>
 <body>
@@ -242,7 +340,7 @@
                 <div class="step-number">1</div>
                 <div class="step-content">
                     <h3>Claim Your Listing</h3>
-                    <p>Find your business on our prices page and click "Claim This Listing." Submit your contact info.</p>
+                    <p>Search for your business below and click your company name. Submit your contact info on the claim page.</p>
                 </div>
             </div>
             <div class="step">
@@ -287,10 +385,15 @@
         </div>
     </section>
 
-    <section class="cta-section">
-        <h2>Ready to Get Started?</h2>
-        <p>Find your business on our prices page and claim your listing.</p>
-        <a href="/prices" class="cta-btn">Find My Business</a>
+    <section class="supplier-search-section">
+        <h2>Search for Your Business</h2>
+        <p class="search-subtext">Find your heating oil company and claim your free listing.</p>
+        <div class="supplier-search-wrap" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <input type="text" class="supplier-search-input" aria-label="Search for your business" placeholder="Type your business name..." autocomplete="off" aria-autocomplete="list" aria-controls="supplier-search-results">
+            <p class="supplier-search-helper" id="supplier-search-helper">Start typing your company name to see matches.</p>
+            <div class="supplier-search-dropdown" id="supplier-search-results" role="listbox"></div>
+        </div>
+        <p class="supplier-search-fallback">Don't see your business? <a href="mailto:support@gethomeheat.com" id="supplier-not-listed-link">Email support@gethomeheat.com</a> and we'll add it.</p>
     </section>
 
     <section class="supplier-faq-section">
@@ -351,5 +454,158 @@
     <script src="js/widgets.js"></script>
     <script src="js/pwa.js"></script>
     <script src="js/supplier-claim.js"></script>
+    <script>
+    (function() {
+        var input = document.querySelector('.supplier-search-input');
+        var wrap = document.querySelector('.supplier-search-wrap');
+        var dropdown = document.getElementById('supplier-search-results');
+        var helper = document.getElementById('supplier-search-helper');
+        var notListedLink = document.getElementById('supplier-not-listed-link');
+        var debounceTimer = null;
+        var abortCtrl = null;
+        var activeIndex = -1;
+        var results = [];
+        var searchInitiated = false;
+
+        function gtagSafe(event, params) {
+            if (typeof gtag === 'function') gtag('event', event, params || {});
+        }
+
+        notListedLink.addEventListener('click', function() {
+            gtagSafe('supplier_not_listed_clicked');
+        });
+
+        input.addEventListener('input', function() {
+            var query = input.value.trim();
+            clearTimeout(debounceTimer);
+            activeIndex = -1;
+
+            if (query.length < 2) {
+                hideDropdown();
+                helper.textContent = query.length === 0 ? 'Start typing your company name to see matches.' : '';
+                helper.style.display = '';
+                return;
+            }
+
+            helper.style.display = 'none';
+
+            if (!searchInitiated) {
+                searchInitiated = true;
+                gtagSafe('supplier_search_initiated');
+            }
+
+            debounceTimer = setTimeout(function() { doSearch(query); }, 300);
+        });
+
+        function doSearch(query) {
+            if (abortCtrl) abortCtrl.abort();
+            abortCtrl = new AbortController();
+
+            showStatus('Searching...');
+
+            fetch('/api/v1/suppliers?name=' + encodeURIComponent(query) + '&limit=8', { signal: abortCtrl.signal })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    results = (data.data || []).filter(function(s) { return s.slug; });
+                    if (results.length > 0) {
+                        gtagSafe('supplier_search_results_shown', { result_count: results.length });
+                        renderResults(results);
+                    } else {
+                        gtagSafe('supplier_search_no_results', { search_query: query });
+                        showStatus('No businesses found matching \u201c' + escapeHtml(query) + '.\u201d');
+                    }
+                })
+                .catch(function(err) {
+                    if (err.name === 'AbortError') return;
+                    showStatus('Something went wrong. Try again.');
+                });
+        }
+
+        function renderResults(items) {
+            var html = '';
+            for (var i = 0; i < items.length; i++) {
+                var s = items[i];
+                var loc = [s.city, s.state].filter(Boolean).join(', ');
+                html += '<a class="supplier-search-result" role="option" id="ssr-' + i + '" href="/claim/' + encodeURIComponent(s.slug) + '" data-slug="' + escapeAttr(s.slug) + '">'
+                    + '<div class="supplier-search-result-name">' + escapeHtml(s.name) + '</div>'
+                    + (loc ? '<div class="supplier-search-result-location">' + escapeHtml(loc) + '</div>' : '')
+                    + '</a>';
+            }
+            dropdown.innerHTML = html;
+            wrap.classList.add('has-results');
+            wrap.setAttribute('aria-expanded', 'true');
+
+            var links = dropdown.querySelectorAll('.supplier-search-result');
+            for (var j = 0; j < links.length; j++) {
+                links[j].addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    gtagSafe('supplier_search_result_clicked', { supplier_slug: this.dataset.slug });
+                    window.location.href = this.href;
+                });
+            }
+        }
+
+        function showStatus(msg) {
+            dropdown.innerHTML = '<div class="supplier-search-status">' + escapeHtml(msg) + '</div>';
+            wrap.classList.add('has-results');
+            wrap.setAttribute('aria-expanded', 'true');
+            results = [];
+        }
+
+        function hideDropdown() {
+            wrap.classList.remove('has-results');
+            wrap.setAttribute('aria-expanded', 'false');
+            dropdown.innerHTML = '';
+            results = [];
+            activeIndex = -1;
+            input.removeAttribute('aria-activedescendant');
+        }
+
+        input.addEventListener('blur', function() {
+            setTimeout(hideDropdown, 150);
+        });
+
+        input.addEventListener('keydown', function(e) {
+            if (!results.length) return;
+            var items = dropdown.querySelectorAll('.supplier-search-result');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = Math.min(activeIndex + 1, items.length - 1);
+                updateActive(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, 0);
+                updateActive(items);
+            } else if (e.key === 'Enter' && activeIndex >= 0) {
+                e.preventDefault();
+                gtagSafe('supplier_search_result_clicked', { supplier_slug: items[activeIndex].dataset.slug });
+                window.location.href = items[activeIndex].href;
+            } else if (e.key === 'Escape') {
+                hideDropdown();
+                input.blur();
+            }
+        });
+
+        function updateActive(items) {
+            for (var i = 0; i < items.length; i++) {
+                items[i].classList.toggle('active', i === activeIndex);
+            }
+            if (activeIndex >= 0) {
+                input.setAttribute('aria-activedescendant', 'ssr-' + activeIndex);
+                items[activeIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function escapeHtml(str) {
+            var d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        function escapeAttr(str) {
+            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        }
+    })();
+    </script>
 </body>
 </html>
