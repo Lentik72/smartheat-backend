@@ -162,7 +162,7 @@ const stripForSignature = (supplier) => {
  * V2.0.1: Added name search parameter
  */
 router.get('/', async (req, res) => {
-  const { zip, city, county, state, name, limit = 15 } = req.query;
+  const { zip, city, county, state, name, limit } = req.query;
   const logger = req.app.locals.logger;
   const sequelize = req.app.locals.sequelize;
 
