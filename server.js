@@ -555,6 +555,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/094-add-price-alert-subscribers', label: 'Price alert subscribers' },
           { path: './src/migrations/095-merge-duplicate-suppliers', label: 'Merge duplicate suppliers' },
           { path: './src/migrations/096-add-walker-valley-suppliers', label: 'Walker Valley area suppliers' },
+          { path: './src/migrations/097-add-staffordville-coverage', label: 'Staffordville coverage' },
         ];
 
         let migrationErrors = 0;
