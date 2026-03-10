@@ -24,54 +24,50 @@ module.exports = {
   name: '096-add-walker-valley-suppliers',
 
   async up(sequelize) {
+    // Helper: append a ZIP and city to an existing supplier's coverage
+    async function appendCoverage(sequelize, domainPattern, zip, city) {
+      const [rows] = await sequelize.query(`
+        SELECT id, postal_codes_served, service_cities
+        FROM suppliers
+        WHERE LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE $1
+        LIMIT 1
+      `, { bind: [`%${domainPattern}%`] });
+
+      if (!rows || rows.length === 0) {
+        console.log(`[Migration 096] Supplier matching ${domainPattern} not found — skipping coverage update`);
+        return;
+      }
+
+      const supplier = rows[0];
+      let zips = [];
+      let cities = [];
+      try { zips = JSON.parse(supplier.postal_codes_served || '[]'); } catch (e) { zips = []; }
+      try { cities = JSON.parse(supplier.service_cities || '[]'); } catch (e) { cities = []; }
+
+      if (!zips.includes(zip)) zips.push(zip);
+      if (!cities.includes(city)) cities.push(city);
+
+      await sequelize.query(`
+        UPDATE suppliers
+        SET postal_codes_served = $1, service_cities = $2, updated_at = NOW()
+        WHERE id = $3
+      `, { bind: [JSON.stringify(zips), JSON.stringify(cities), supplier.id] });
+
+      return supplier.id;
+    }
+
     // ============================================
     // 1. UPDATE VALLEY OIL — add 12588 to coverage
     // Serves "Dutchess and Ulster counties" — Walker Valley is in Ulster County
     // ============================================
-    await sequelize.query(`
-      UPDATE suppliers
-      SET postal_codes_served = (
-        CASE
-          WHEN postal_codes_served IS NULL THEN '["12588"]'::jsonb
-          WHEN NOT postal_codes_served::jsonb ? '12588' THEN postal_codes_served::jsonb || '"12588"'::jsonb
-          ELSE postal_codes_served::jsonb
-        END
-      )::text,
-      service_cities = (
-        CASE
-          WHEN service_cities IS NULL THEN '["Walker Valley"]'::jsonb
-          WHEN NOT service_cities::text ILIKE '%Walker Valley%' THEN service_cities::jsonb || '"Walker Valley"'::jsonb
-          ELSE service_cities::jsonb
-        END
-      )::text,
-      updated_at = NOW()
-      WHERE LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE '%valleyoilpok.com%'
-    `);
+    await appendCoverage(sequelize, 'valleyoilpok.com', '12588', 'Walker Valley');
     console.log('[Migration 096] Updated Valley Oil coverage — added 12588 (Walker Valley)');
 
     // ============================================
     // 2. UPDATE BEE'S OIL — add 12588 to coverage
     // Walker Valley explicitly listed on their service area page
     // ============================================
-    await sequelize.query(`
-      UPDATE suppliers
-      SET postal_codes_served = (
-        CASE
-          WHEN postal_codes_served IS NULL THEN '["12588"]'::jsonb
-          WHEN NOT postal_codes_served::jsonb ? '12588' THEN postal_codes_served::jsonb || '"12588"'::jsonb
-          ELSE postal_codes_served::jsonb
-        END
-      )::text,
-      service_cities = (
-        CASE
-          WHEN service_cities IS NULL THEN '["Walker Valley"]'::jsonb
-          WHEN NOT service_cities::text ILIKE '%Walker Valley%' THEN service_cities::jsonb || '"Walker Valley"'::jsonb
-          ELSE service_cities::jsonb
-        END
-      )::text,
-      updated_at = NOW()
-      WHERE LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE '%beesfueloil.com%'
-    `);
+    await appendCoverage(sequelize, 'beesfueloil.com', '12588', 'Walker Valley');
     console.log('[Migration 096] Updated Bee\'s Oil coverage — added 12588 (Walker Valley)');
 
     // ============================================
