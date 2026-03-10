@@ -33,7 +33,10 @@
     "easternoilcompany.com": "Eastern Oil Company - Peekskill, NY. Full-service automatic delivery + budget plans. Westchester/Putnam counties. Heating oil, kerosene, off-road diesel. Phone: (914) 737-1583.",
     "heritagefuel.com": "Heritage Fuel - Croton Falls, NY. Full-service contract/automatic delivery. Westchester/Putnam/Dutchess counties. Heating oil, diesel, propane. Phone: (914) 277-8088.",
     "mtfuels.com": "MT Fuel Corp - Stony Brook, NY. Full-service delivery. Suffolk/Nassau counties. Heating oil, diesel. Phone: (631) 828-9179.",
-    "villageoilco.com": "Village Oil Co (Santa Energy) - Ridgefield, CT. On-demand but prepay by card only (no COD). Fairfield County CT. Phone: (203) 431-6560."
+    "villageoilco.com": "Village Oil Co (Santa Energy) - Ridgefield, CT. On-demand but prepay by card only (no COD). Fairfield County CT. Phone: (203) 431-6560.",
+    "maincareexpress.com": "Main-Care Express - Upstate NY. Full-service automatic delivery with tank monitors. 11 NY counties incl. Ulster + western VT. Phone: 1-800-542-5552.",
+    "sosxtremecomfort.com": "SOS Xtreme Comfort - Tuxedo, NY. Full-service automatic delivery + price protection. Orange/Rockland/Sullivan/Ulster NY, Bergen/Passaic/Sussex NJ, Pike PA. Phone: (845) 351-4700.",
+    "bottinifuel.com": "Bottini Fuel - Wappingers Falls, NY. Full-service contract/automatic delivery. 7 Hudson Valley locations incl. Kerhonkson. Heating oil, propane, kerosene. Phone: (845) 297-5580."
   },
 
   "_section_NY": "=== NEW YORK ===",
@@ -603,6 +606,34 @@
     "pattern": "direct",
     "notes": "DISABLED: NY Chester/Orange County - Will-call. No prices on site.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "empirefuelny.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NY Poughkeepsie/Hudson Valley - COD. No prices on website. SMS outreach candidate.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "everreadyoilny.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NY Highland/Ulster-Dutchess-Orange - COD. Prices behind Droplet Fuel portal.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "bigofuels.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: NY Middletown/Orange-Sullivan-Ulster - COD. ZIP-form via Droplet Fuel, potentially scrapable via POST.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+  },
+
+  "abetterchoicefuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY Kingston/Ulster-Greene-Orange-Sullivan-Delaware-Columbia. Price on homepage without $ sign.",
+    "priceRegex": "m-0\">([0-9]+\\.[0-9]{2,3})<"
   },
 
   "_section_NJ": "=== NEW JERSEY ===",

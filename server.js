@@ -554,6 +554,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/093-fix-stale-price-display-flags', label: 'Fix stale price display flags' },
           { path: './src/migrations/094-add-price-alert-subscribers', label: 'Price alert subscribers' },
           { path: './src/migrations/095-merge-duplicate-suppliers', label: 'Merge duplicate suppliers' },
+          { path: './src/migrations/096-add-walker-valley-suppliers', label: 'Walker Valley area suppliers' },
         ];
 
         let migrationErrors = 0;
