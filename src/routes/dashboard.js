@@ -2414,53 +2414,6 @@ router.get('/unified', async (req, res) => {
   }
 });
 
-// GET /api/dashboard/retention - Cohort analysis + recommendations
-router.get('/retention', async (req, res) => {
-  const logger = req.app.locals.logger;
-
-  try {
-    const weeks = parseInt(req.query.weeks) || 6;
-    const analytics = getUnifiedAnalytics(req);
-    const data = await analytics.getRetentionAnalysis(weeks);
-
-    res.json(data);
-  } catch (error) {
-    logger.error('[Dashboard] Retention analysis error:', error.message);
-    res.status(500).json({ error: 'Failed to load retention data', details: error.message });
-  }
-});
-
-// GET /api/dashboard/acquisition - Channel performance + suggestions
-router.get('/acquisition', async (req, res) => {
-  const logger = req.app.locals.logger;
-
-  try {
-    const days = parseDays(req, 30);
-    const analytics = getUnifiedAnalytics(req);
-    const data = await analytics.getAcquisitionAnalysis(days);
-
-    res.json(data);
-  } catch (error) {
-    logger.error('[Dashboard] Acquisition analysis error:', error.message);
-    res.status(500).json({ error: 'Failed to load acquisition data', details: error.message });
-  }
-});
-
-// GET /api/dashboard/growth-signals - Android decision data
-router.get('/growth-signals', async (req, res) => {
-  const logger = req.app.locals.logger;
-
-  try {
-    const analytics = getUnifiedAnalytics(req);
-    const data = await analytics.getAndroidDecisionSignals();
-
-    res.json(data);
-  } catch (error) {
-    logger.error('[Dashboard] Growth signals error:', error.message);
-    res.status(500).json({ error: 'Failed to load growth signals', details: error.message });
-  }
-});
-
 // GET /api/dashboard/zip-users - Analyze unique users by ZIP code
 // Helps identify if activity in a ZIP is from one user or multiple users
 router.get('/zip-users', async (req, res) => {

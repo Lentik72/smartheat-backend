@@ -14,7 +14,6 @@ const suppliersLimit = 50;
 // Charts
 let nsSparklineChart = null;
 let map = null;
-
 // CC Intelligence + Coverage charts
 let ccDemandTrendChart = null;
 let ccChannelMixChart = null;
@@ -299,19 +298,26 @@ document.addEventListener('click', e => {
 
 // Update header metrics when data loads
 function updateHeaderMetrics(unified) {
-  const headerUsers = document.getElementById('header-users');
-  const headerRevenue = document.getElementById('header-revenue');
-  const headerDeliveries = document.getElementById('header-deliveries');
+  if (!unified) return;
 
-  if (headerUsers && unified?.totalUsers !== undefined) {
-    headerUsers.textContent = unified.totalUsers.toLocaleString();
-  }
-  if (headerRevenue && unified?.revenue?.current !== undefined) {
-    headerRevenue.textContent = '$' + unified.revenue.current.toLocaleString();
-  }
-  if (headerDeliveries && unified?.deliveries?.total !== undefined) {
-    headerDeliveries.textContent = unified.deliveries.total.toLocaleString();
-  }
+  const headerUsers = document.getElementById('header-users');
+  const headerClicks = document.getElementById('header-clicks');
+  const headerDeliveries = document.getElementById('header-deliveries');
+  const headerPwa = document.getElementById('header-pwa');
+
+  // Users: website active users + app total users
+  const webUsers = unified.website?.activeUsers || 0;
+  const appUsers = unified.app?.summary?.totalUsers || unified.app?.uniqueUsers || 0;
+  if (headerUsers) headerUsers.textContent = (webUsers + appUsers).toLocaleString();
+
+  // Clicks: website total clicks
+  if (headerClicks) headerClicks.textContent = (unified.website?.totalClicks || 0).toLocaleString();
+
+  // Deliveries: app delivery total
+  if (headerDeliveries) headerDeliveries.textContent = (unified.app?.deliveries?.total || 0).toLocaleString();
+
+  // PWA Installs
+  if (headerPwa) headerPwa.textContent = (unified.android?.pwa?.installs || 0).toLocaleString();
 }
 
 // Show tab function
@@ -358,7 +364,6 @@ function reloadCurrentTab() {
     case 'growth': loadGrowth(); break;
     case 'coverage': loadCoverage(); break;
     case 'website': loadWebsite(); break;
-    case 'retention': loadGrowth(); break;
     case 'health': loadHealth(); break;
   }
 }
@@ -372,10 +377,11 @@ async function loadWebsite() {
   try {
     // Fetch unified data for GA4 metrics and clicks data
     const [unified, clicks] = await Promise.all([
-      api(`/unified?days=${currentDays}`).catch(() => null),
-      api(`/clicks?days=${currentDays}`)
+      cachedApi(`/unified?days=${currentDays}`).catch(() => null),
+      cachedApi(`/clicks?days=${currentDays}`)
     ]);
 
+    updateHeaderMetrics(unified);
     const website = unified?.website || {};
     const hasGA4 = unified?.dataSources?.ga4 === true;
 
@@ -802,78 +808,6 @@ async function loadSuppliers() {
     if (tbody) {
       tbody.innerHTML = '<tr><td colspan="6" class="error-message">Failed to load suppliers. Please try again.</td></tr>';
     }
-  }
-}
-
-// Supplier map
-let supplierMap = null;
-let supplierMarkers = [];
-
-async function loadSupplierMap() {
-  const mapContainer = document.getElementById('supplier-map');
-  if (!mapContainer) return;
-
-  try {
-    // Initialize map if not already done
-    if (!supplierMap) {
-      supplierMap = L.map('supplier-map').setView([41.2, -73.7], 8); // Center on Westchester
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 18
-      }).addTo(supplierMap);
-    }
-
-    // Clear existing markers
-    supplierMarkers.forEach(m => supplierMap.removeLayer(m));
-    supplierMarkers = [];
-
-    // Fetch supplier locations
-    const data = await api('/suppliers/map');
-
-    if (!data.suppliers || data.suppliers.length === 0) {
-      console.log('No supplier locations available');
-      return;
-    }
-
-    // Add markers (skip suppliers without coordinates)
-    data.suppliers.forEach(supplier => {
-      if (!supplier.lat || !supplier.lng) return;
-
-      const color = !supplier.active ? '#9ca3af' : supplier.price ? '#22c55e' : '#f59e0b';
-
-      const marker = L.circleMarker([supplier.lat, supplier.lng], {
-        radius: 8,
-        fillColor: color,
-        color: '#fff',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.8
-      });
-
-      const priceHtml = supplier.price
-        ? `<span class="supplier-price">$${supplier.price.toFixed(2)}/gal</span>`
-        : '<span class="supplier-no-price">No price</span>';
-
-      marker.bindPopup(`
-        <strong>${supplier.name}</strong><br>
-        ${supplier.city}, ${supplier.state}<br>
-        ${priceHtml}
-      `);
-
-      marker.addTo(supplierMap);
-      supplierMarkers.push(marker);
-    });
-
-    // Fit bounds to show all markers
-    if (supplierMarkers.length > 0) {
-      const group = L.featureGroup(supplierMarkers);
-      supplierMap.fitBounds(group.getBounds().pad(0.1));
-    }
-
-    console.log(`Loaded ${data.mapped} suppliers on map (${data.needsGeocoding} pending geocoding)`);
-  } catch (error) {
-    console.error('Failed to load supplier map:', error);
   }
 }
 
@@ -1909,27 +1843,6 @@ function ccRenderCommunityDeliveries(liquidity) {
   }
 }
 
-function ccRenderDiagTable(anomalies) {
-  const tbody = document.getElementById('cc-diag-tbody');
-  if (!tbody) return;
-  if (!anomalies.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="cc-diag-empty">No anomalies detected</td></tr>';
-    return;
-  }
-  tbody.innerHTML = anomalies.map(a => {
-    const arrow = a.direction === 'up' ? '\u2191' : '\u2193';
-    const sevCls = a.severity === 'high' ? 'red' : 'yellow';
-    const deltaCls = (a.category === 'supplier' ? (a.direction === 'up' ? 'bad' : 'good') : (a.direction === 'up' ? 'good' : 'bad'));
-    return `<tr>
-      <td class="cc-diag-metric">${a.title}</td>
-      <td class="cc-diag-val">${a.today}</td>
-      <td class="cc-diag-val muted">${a.avg7d}</td>
-      <td class="cc-diag-delta ${deltaCls}">${arrow} ${Math.abs(a.deviation)}%</td>
-      <td><span class="cc-sev-dot ${sevCls}"></span></td>
-    </tr>`;
-  }).join('');
-}
-
 function ccRenderPipeline(lifecycle) {
   const states = lifecycle.states || {};
   const total = lifecycle.total || 0;
@@ -2370,10 +2283,11 @@ async function loadAppAnalytics() {
   try {
     // Fetch unified data and app-specific data
     const [unified, appData] = await Promise.all([
-      api(`/unified?days=${currentDays}`).catch(() => null),
+      cachedApi(`/unified?days=${currentDays}`).catch(() => null),
       api(`/ios-app?days=${currentDays}`).catch(() => null)
     ]);
 
+    updateHeaderMetrics(unified);
     const app = unified?.app || {};
     const appSource = unified?.appSource || 'none';
     const isBigQuery = appSource === 'bigquery';
@@ -2831,10 +2745,11 @@ async function loadGrowth() {
 
   try {
     const [unified, recommendations] = await Promise.all([
-      api(`/unified?days=${currentDays}`),
+      cachedApi(`/unified?days=${currentDays}`),
       api(`/recommendations?days=${currentDays}`).catch(() => ({ recommendations: [] }))
     ]);
 
+    updateHeaderMetrics(unified);
     // Platform comparison
     const ios = unified?.app || {};
     const android = unified?.android || {};
@@ -3135,10 +3050,11 @@ async function loadCoverage() {
     const [overview, geographic, unified, alertSubs] = await Promise.all([
       api(`/overview?days=${currentDays}`),
       api(`/geographic?days=${currentDays}`),
-      api(`/unified?days=${currentDays}`),
+      cachedApi(`/unified?days=${currentDays}`),
       api('/alert-subscribers').catch(() => ({ total: 0, topZips: [], recent: [], zipDensity: [] }))
     ]);
 
+    updateHeaderMetrics(unified);
     // Store for map view switching
     coverageData = {
       geographic,
@@ -3820,7 +3736,8 @@ async function loadCoverageSpread() {
 async function loadDashboard() {
   await Promise.all([
     loadCommandCenter(),
-    updateClaimsBadge()
+    updateClaimsBadge(),
+    cachedApi(`/unified?days=${currentDays}`).then(updateHeaderMetrics).catch(() => {})
   ]);
 }
 
