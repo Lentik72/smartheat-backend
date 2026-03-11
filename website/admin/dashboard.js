@@ -1668,15 +1668,6 @@ function formatBehavior(behavior) {
 }
 
 
-function formatThresholdKey(key) {
-  const names = {
-    waitlist: 'Waitlist Size',
-    growthRate: 'Weekly Growth',
-    pwaAdoption: 'PWA Installs'
-  };
-  return names[key] || key;
-}
-
 // ========================================
 // SCOPE 18: NEW TAB LOAD FUNCTIONS
 // ========================================
@@ -3057,11 +3048,6 @@ async function loadGrowth() {
       ? `${retention.data.summary.week1RetentionRate}%`
       : '--%';
 
-    document.getElementById('p-android-status').textContent = android?.recommendation?.status || 'WAIT';
-    document.getElementById('p-android-waitlist').textContent = android?.waitlist?.total ?? '--';
-    document.getElementById('p-android-pwa').textContent = android?.pwa?.installs ?? '--';
-    document.getElementById('p-android-launches').textContent = android?.pwa?.launches ?? '--';
-
     document.getElementById('p-web-visitors').textContent = website.activeUsers || website.users || '--';
     document.getElementById('p-web-clicks').textContent = website.totalClicks ?? '--';
     document.getElementById('p-web-calls').textContent = website.callClicks ?? '--';
@@ -3074,36 +3060,6 @@ async function loadGrowth() {
     } else {
       platformInsight.textContent = '💡 Track both platforms to compare engagement';
     }
-
-    // Android Decision Matrix
-    const waitlistTotal = android?.waitlist?.total || 0;
-    const pwaInstalls = android?.pwa?.installs || 0;
-    const week1Retention = parseFloat(retention?.data?.summary?.week1RetentionRate) || 0;
-
-    const badge = document.getElementById('android-badge');
-    const message = document.getElementById('android-message');
-
-    const goConditions = waitlistTotal >= 200 && pwaInstalls >= 50 && week1Retention >= 20;
-    const nogoConditions = week1Retention < 20 && week1Retention > 0;
-
-    if (goConditions) {
-      badge.textContent = 'GO';
-      badge.className = 'decision-badge go';
-      message.textContent = 'All conditions met - Android development recommended';
-    } else if (nogoConditions) {
-      badge.textContent = 'NO-GO';
-      badge.className = 'decision-badge nogo';
-      message.textContent = 'Fix iOS retention first - don\'t scale a leaky bucket';
-    } else {
-      badge.textContent = 'WAIT';
-      badge.className = 'decision-badge wait';
-      message.textContent = 'Monitor thresholds - continue with PWA';
-    }
-
-    // Conditions
-    updateCondition('cond-waitlist', waitlistTotal >= 200, `${waitlistTotal}/200`);
-    updateCondition('cond-pwa', pwaInstalls >= 50, `${pwaInstalls}/50`);
-    updateCondition('cond-retention', week1Retention >= 20, `${week1Retention}%`);
 
     // Retention by action
     const behaviors = retention?.data?.behaviorRetention || [];
@@ -3150,14 +3106,6 @@ async function loadGrowth() {
   } finally {
     loadingEl.classList.add('hidden');
   }
-}
-
-function updateCondition(id, met, value) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.querySelector('.cond-check').textContent = met ? '✅' : '⏳';
-  el.querySelector('.cond-value').textContent = value;
-  el.classList.toggle('met', met);
 }
 
 function setRetentionBar(id, value, max) {

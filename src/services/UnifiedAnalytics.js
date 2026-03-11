@@ -1207,135 +1207,32 @@ class UnifiedAnalytics {
    * Get Android decision signals
    * Aggregates data relevant for Android app go/no-go decision
    */
-  async getAndroidDecisionSignals() {
+  async getAndroidPwaStats() {
     try {
-      // Get website metrics for platform breakdown
-      const websiteMetrics = await this.getWebsiteMetrics(30);
-
-      const [waitlist, pwa, growth] = await Promise.all([
-        // Waitlist stats (all platforms - total demand matters for Android decision)
+      const [pwa] = await Promise.all([
         this.sequelize.query(`
           SELECT
-            COUNT(*) as total,
-            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_week,
-            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '14 days' AND created_at <= NOW() - INTERVAL '7 days') as prev_week
-          FROM waitlist
-        `, { type: this.sequelize.QueryTypes.SELECT }),
-
-        // PWA adoption
-        this.sequelize.query(`
-          SELECT
+            COUNT(*) FILTER (WHERE event_type = 'prompt_shown') as prompts,
             COUNT(*) FILTER (WHERE event_type = 'installed') as installs,
             COUNT(*) FILTER (WHERE event_type = 'standalone_launch') as launches
           FROM pwa_events
-          WHERE platform ILIKE '%android%'
-        `, { type: this.sequelize.QueryTypes.SELECT }),
-
-        // Weekly growth trend
-        this.sequelize.query(`
-          SELECT
-            DATE_TRUNC('week', created_at) as week,
-            COUNT(*) as signups
-          FROM waitlist
-          WHERE created_at > NOW() - INTERVAL '8 weeks'
-          GROUP BY DATE_TRUNC('week', created_at)
-          ORDER BY week
         `, { type: this.sequelize.QueryTypes.SELECT })
       ]);
 
-      const w = waitlist[0] || {};
       const p = pwa[0] || {};
-
-      // Calculate week-over-week growth
-      const lastWeek = parseInt(w.last_week) || 0;
-      const prevWeek = parseInt(w.prev_week) || 0;
-
-      // Growth rate calculation with edge case handling
-      let growthRate;
-      if (prevWeek > 0) {
-        // Normal case: calculate percentage change
-        growthRate = ((lastWeek - prevWeek) / prevWeek * 100).toFixed(1);
-      } else if (lastWeek > 0) {
-        // Edge case: no signups last period but some this period = 100% growth (new growth)
-        growthRate = 100;
-      } else {
-        // No signups either period
-        growthRate = 0;
-      }
-
-      // Decision thresholds
-      const total = parseInt(w.total) || 0;
-      const thresholds = {
-        waitlist: { value: 200, current: total, met: total >= 200 },
-        growthRate: { value: 5, current: parseFloat(growthRate), met: parseFloat(growthRate) >= 5 },
-        pwaAdoption: { value: 30, current: parseInt(p.installs) || 0, met: (parseInt(p.installs) || 0) >= 30 }
-      };
-
-      // Calculate projection
-      const avgWeeklyGrowth = growth.length >= 2
-        ? (parseInt(growth[growth.length - 1]?.signups) || 0)
-        : lastWeek;
-      const weeksTo200 = total < 200 && avgWeeklyGrowth > 0
-        ? Math.ceil((200 - total) / avgWeeklyGrowth)
-        : 0;
-
-      // Decision recommendation
-      const metCount = Object.values(thresholds).filter(t => t.met).length;
-      let recommendation;
-      if (metCount >= 2) {
-        recommendation = {
-          status: 'GO',
-          message: 'Strong Android demand signals - consider starting development',
-          confidence: 'HIGH'
-        };
-      } else if (metCount === 1) {
-        recommendation = {
-          status: 'WAIT',
-          message: `Monitor for ${weeksTo200} more weeks until 200 waitlist threshold`,
-          confidence: 'MEDIUM'
-        };
-      } else {
-        recommendation = {
-          status: 'WAIT',
-          message: 'Insufficient demand signals - PWA serves Android users adequately',
-          confidence: 'HIGH'
-        };
-      }
-
-      // Get platform breakdown from GA4
-      const platformBreakdown = websiteMetrics.available && websiteMetrics.data?.platformBreakdown
-        ? websiteMetrics.data.platformBreakdown
-        : null;
 
       return {
         available: true,
         data: {
-          waitlist: {
-            total,
-            lastWeek,
-            prevWeek,
-            growthRate: parseFloat(growthRate)
-          },
           pwa: {
+            promptsShown: parseInt(p.prompts) || 0,
             installs: parseInt(p.installs) || 0,
             launches: parseInt(p.launches) || 0
-          },
-          platformBreakdown,
-          weeklyTrend: growth.map(g => ({
-            week: g.week,
-            signups: parseInt(g.signups)
-          })),
-          thresholds,
-          projection: {
-            weeksTo200,
-            expectedConversion: Math.round(total * 0.3), // 30% expected conversion
-            breakEvenUsers: 100
-          },
-          recommendation
+          }
         }
       };
     } catch (error) {
-      this.logger.error('[UnifiedAnalytics] Android signals error:', error.message);
+      this.logger.error('[UnifiedAnalytics] Android PWA stats error:', error.message);
       return {
         available: false,
         reason: error.message,
@@ -2358,7 +2255,7 @@ class UnifiedAnalytics {
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
         this.getRetentionAnalysis(6),
-        this.getAndroidDecisionSignals(),
+        this.getAndroidPwaStats(),
         this.getFuelTypeBreakdown(days),
         this.getDeliveryPatterns(days),
         this.getFVEMetrics(days),

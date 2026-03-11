@@ -13,7 +13,6 @@
  * - GET /api/dashboard/scraper-health - Scraper status and failures
  * - GET /api/dashboard/supplier-health - Comprehensive supplier health report
  * - GET /api/dashboard/command-center - Intelligence hub (North Star, anomalies, lifecycle)
- * - GET /api/dashboard/waitlist - Android waitlist stats
  * - GET /api/dashboard/pwa - PWA install funnel
  * - GET /api/dashboard/suppliers - List all suppliers (for management)
  * - GET /api/dashboard/suppliers/:id - Single supplier details
@@ -218,8 +217,6 @@ router.get('/overview', async (req, res) => {
     const [
       clickStats,
       scraperStats,
-      waitlistStats,
-      pwaStats,
       coverageStats,
       dataFreshness,
       userStats
@@ -261,23 +258,6 @@ router.get('/overview', async (req, res) => {
           ORDER BY supplier_id, scraped_at DESC
         ) sp ON s.id = sp.supplier_id
         WHERE s.active = true AND s.allow_price_display = true
-      `),
-
-      // Waitlist stats
-      safeQuery('waitlistStats', `
-        SELECT
-          COUNT(*) as total,
-          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_7_days
-        FROM waitlist
-      `),
-
-      // PWA stats
-      safeQuery('pwaStats', `
-        SELECT
-          COUNT(*) FILTER (WHERE event_type = 'prompt_shown') as prompts_shown,
-          COUNT(*) FILTER (WHERE event_type = 'installed') as installs
-        FROM pwa_events
-        WHERE created_at > NOW() - INTERVAL '${days} days'
       `),
 
       // Coverage gaps breakdown - true gaps vs engagement gaps
@@ -322,9 +302,7 @@ router.get('/overview', async (req, res) => {
       safeQuery('dataFreshness', `
         SELECT
           (SELECT MAX(created_at) FROM supplier_clicks) as last_click,
-          (SELECT MAX(scraped_at) FROM supplier_prices WHERE is_valid = true) as last_price,
-          (SELECT MAX(created_at) FROM waitlist) as last_waitlist,
-          (SELECT MAX(created_at) FROM pwa_events) as last_pwa
+          (SELECT MAX(scraped_at) FROM supplier_prices WHERE is_valid = true) as last_price
       `),
 
       // User stats (estimate unique users from database activity)
@@ -362,18 +340,12 @@ router.get('/overview', async (req, res) => {
 
     const click = clickStats[0] || {};
     const scraper = scraperStats[0] || {};
-    const waitlist = waitlistStats[0] || {};
-    const pwa = pwaStats[0] || {};
     const coverage = coverageStats[0] || {};
     const freshness = dataFreshness[0] || {};
     const users = userStats[0] || {};
 
     // Debug logging for coverage stats
     logger.info('[Dashboard] Coverage query result:', JSON.stringify(coverage));
-
-    const conversionRate = pwa.prompts_shown > 0
-      ? ((pwa.installs / pwa.prompts_shown) * 100).toFixed(1)
-      : 0;
 
     // Summary mode - compact format for email/Slack
     if (summaryMode) {
@@ -395,15 +367,11 @@ router.get('/overview', async (req, res) => {
           topSupplier: topSupplier ? `${topSupplier.name} (${topSupplier.clicks})` : null,
           scraperHealth: `${parseInt(scraper.with_fresh_prices) || 0}/${parseInt(scraper.total) || 0}`,
           stale: staleCount,
-          waitlist: parseInt(waitlist.total) || 0,
-          waitlistWeek: parseInt(waitlist.last_7_days) || 0,
-          pwaInstalls: parseInt(pwa.installs) || 0,
-          pwaRate: `${conversionRate}%`,
           trueCoverageGaps: trueCoverageGaps,
           engagementGaps: engagementGaps
         },
         alerts: alerts.length > 0 ? alerts : null,
-        oneLiner: `${totalClicks} clicks | ${staleCount} stale | ${parseInt(waitlist.last_7_days) || 0} waitlist | ${parseInt(pwa.installs) || 0} PWA`,
+        oneLiner: `${totalClicks} clicks | ${staleCount} stale`,
         dashboardUrl: 'https://www.gethomeheat.com/admin/dashboard.html'
       });
     }
@@ -429,17 +397,6 @@ router.get('/overview', async (req, res) => {
         suppliersTotal: parseInt(scraper.total) || 0,
         staleCount: parseInt(scraper.stale_count) || 0,
         lastRunAt: freshness.last_scrape || null
-      },
-      waitlist: {
-        total: parseInt(waitlist.total) || 0,
-        last7Days: parseInt(waitlist.last_7_days) || 0,
-        lastUpdated: freshness.last_waitlist || null
-      },
-      pwa: {
-        promptsShown: parseInt(pwa.prompts_shown) || 0,
-        installs: parseInt(pwa.installs) || 0,
-        conversionRate: parseFloat(conversionRate),
-        lastUpdated: freshness.last_pwa || null
       },
       coverage: {
         trueCoverageGaps: parseInt(coverage.true_coverage_gaps) || 0,
@@ -990,61 +947,6 @@ router.get('/command-center', async (req, res) => {
   }
 });
 
-// GET /api/dashboard/waitlist - Android waitlist stats
-router.get('/waitlist', async (req, res) => {
-  const logger = req.app.locals.logger;
-  const sequelize = req.app.locals.sequelize;
-
-  if (!sequelize) {
-    return res.status(503).json({ error: 'Database not available' });
-  }
-
-  try {
-    const [stats, daily, byPlatform] = await Promise.all([
-      // Overall stats
-      sequelize.query(`
-        SELECT
-          COUNT(*) as total,
-          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_7_days,
-          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') as last_30_days
-        FROM waitlist
-      `, { type: sequelize.QueryTypes.SELECT }),
-
-      // Daily signups (last 30 days)
-      sequelize.query(`
-        SELECT DATE(created_at) as date, COUNT(*) as count
-        FROM waitlist
-        WHERE created_at > NOW() - INTERVAL '30 days'
-        GROUP BY DATE(created_at)
-        ORDER BY date
-      `, { type: sequelize.QueryTypes.SELECT }),
-
-      // By platform
-      sequelize.query(`
-        SELECT platform, COUNT(*) as count
-        FROM waitlist
-        GROUP BY platform
-      `, { type: sequelize.QueryTypes.SELECT })
-    ]);
-
-    const s = stats[0] || {};
-
-    res.json({
-      total: parseInt(s.total) || 0,
-      last7Days: parseInt(s.last_7_days) || 0,
-      last30Days: parseInt(s.last_30_days) || 0,
-      daily: daily.map(d => ({ date: d.date, count: parseInt(d.count) })),
-      byPlatform: byPlatform.reduce((acc, p) => {
-        acc[p.platform || 'unknown'] = parseInt(p.count);
-        return acc;
-      }, {})
-    });
-  } catch (error) {
-    logger.error('[Dashboard] Waitlist error:', error.message);
-    res.status(500).json({ error: 'Failed to load waitlist', details: error.message });
-  }
-});
-
 // GET /api/dashboard/pwa - PWA install funnel
 router.get('/pwa', async (req, res) => {
   const logger = req.app.locals.logger;
@@ -1057,34 +959,22 @@ router.get('/pwa', async (req, res) => {
   try {
     const days = parseDays(req, 30);
 
-    const [funnel, daily, byPlatform] = await Promise.all([
-      // Funnel stats
+    const [funnel, daily] = await Promise.all([
       sequelize.query(`
         SELECT
           COUNT(*) FILTER (WHERE event_type = 'prompt_shown') as prompts,
-          COUNT(*) FILTER (WHERE event_type = 'prompt_accepted') as accepted,
-          COUNT(*) FILTER (WHERE event_type = 'prompt_dismissed') as dismissed,
           COUNT(*) FILTER (WHERE event_type = 'installed') as installed,
           COUNT(*) FILTER (WHERE event_type = 'standalone_launch') as standalone_launches
         FROM pwa_events
         WHERE created_at > NOW() - INTERVAL '${days} days'
       `, { type: sequelize.QueryTypes.SELECT }),
 
-      // Daily installs
       sequelize.query(`
         SELECT DATE(created_at) as date, event_type, COUNT(*) as count
         FROM pwa_events
         WHERE created_at > NOW() - INTERVAL '${days} days'
         GROUP BY DATE(created_at), event_type
         ORDER BY date
-      `, { type: sequelize.QueryTypes.SELECT }),
-
-      // By platform
-      sequelize.query(`
-        SELECT platform, event_type, COUNT(*) as count
-        FROM pwa_events
-        WHERE created_at > NOW() - INTERVAL '${days} days'
-        GROUP BY platform, event_type
       `, { type: sequelize.QueryTypes.SELECT })
     ]);
 
@@ -1095,8 +985,6 @@ router.get('/pwa', async (req, res) => {
     res.json({
       funnel: {
         promptsShown: prompts,
-        accepted: parseInt(f.accepted) || 0,
-        dismissed: parseInt(f.dismissed) || 0,
         installed: installed,
         standaloneLaunches: parseInt(f.standalone_launches) || 0,
         conversionRate: prompts > 0 ? ((installed / prompts) * 100).toFixed(1) : 0
@@ -1105,13 +993,7 @@ router.get('/pwa', async (req, res) => {
         date: d.date,
         eventType: d.event_type,
         count: parseInt(d.count)
-      })),
-      byPlatform: byPlatform.reduce((acc, p) => {
-        const platform = p.platform || 'unknown';
-        if (!acc[platform]) acc[platform] = {};
-        acc[platform][p.event_type] = parseInt(p.count);
-        return acc;
-      }, {})
+      }))
     });
   } catch (error) {
     logger.error('[Dashboard] PWA error:', error.message);
@@ -4388,14 +4270,6 @@ router.get('/platforms', async (req, res) => {
       WHERE created_at > NOW() - INTERVAL '${days} days'
     `);
 
-    // Android waitlist
-    const [waitlistData] = await sequelize.query(`
-      SELECT
-        COUNT(*) as total,
-        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '${days} days') as recent
-      FROM waitlist
-    `);
-
     // PWA data
     const [pwaData] = await sequelize.query(`
       SELECT
@@ -4440,7 +4314,6 @@ router.get('/platforms', async (req, res) => {
     `);
 
     const ios = iosData[0] || {};
-    const waitlist = waitlistData[0] || {};
     const pwa = pwaData[0] || {};
     const web = webData[0] || {};
     const retention = iosRetention[0] || {};
@@ -4448,26 +4321,6 @@ router.get('/platforms', async (req, res) => {
     const iosRetentionRate = parseInt(retention.cohort_size) > 0
       ? Math.round((parseInt(retention.retained) / parseInt(retention.cohort_size)) * 100)
       : 0;
-
-    // Android decision logic
-    const waitlistTotal = parseInt(waitlist.total) || 0;
-    const pwaInstalls = parseInt(pwa.installs) || 0;
-
-    let androidStatus = 'WAIT';
-    let androidMessage = '';
-
-    // NO-GO conditions
-    if (iosRetentionRate < 20) {
-      androidStatus = 'NO-GO';
-      androidMessage = `iOS retention at ${iosRetentionRate}% - fix core product first`;
-    } else if (waitlistTotal >= 200 && pwaInstalls >= 50) {
-      androidStatus = 'GO';
-      androidMessage = 'All conditions met - ready to build MVP';
-    } else {
-      const waitlistProgress = Math.round((waitlistTotal / 200) * 100);
-      const pwaProgress = Math.round((pwaInstalls / 50) * 100);
-      androidMessage = `Waitlist ${waitlistProgress}% (${waitlistTotal}/200), PWA ${pwaProgress}% (${pwaInstalls}/50)`;
-    }
 
     res.json({
       period: `${days}d`,
@@ -4479,16 +4332,9 @@ router.get('/platforms', async (req, res) => {
         retention: iosRetentionRate
       },
       android: {
-        status: androidStatus,
-        message: androidMessage,
-        waitlist: waitlistTotal,
-        pwaInstalls,
+        pwaInstalls: parseInt(pwa.installs) || 0,
         pwaLaunches: parseInt(pwa.launches) || 0,
-        conditions: {
-          waitlist: { current: waitlistTotal, target: 200, met: waitlistTotal >= 200 },
-          pwaInstalls: { current: pwaInstalls, target: 50, met: pwaInstalls >= 50 },
-          iosRetention: { current: iosRetentionRate, target: 20, met: iosRetentionRate >= 20 }
-        }
+        pwaPromptsShown: parseInt(pwa.prompts) || 0
       },
       web: {
         status: 'live',
@@ -4496,11 +4342,6 @@ router.get('/platforms', async (req, res) => {
         clicks: parseInt(web.total_clicks) || 0,
         calls: parseInt(web.calls) || 0,
         websites: parseInt(web.websites) || 0
-      },
-      comparison: {
-        insight: waitlistTotal > parseInt(ios.unique_users)
-          ? `Android waitlist (${waitlistTotal}) exceeds iOS users (${ios.unique_users}) - strong demand signal`
-          : 'iOS currently larger user base'
       },
       generatedAt: new Date().toISOString()
     });

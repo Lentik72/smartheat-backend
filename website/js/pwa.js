@@ -14,11 +14,31 @@
   let deferredPrompt = null;
   const isAndroid = /Android/i.test(navigator.userAgent);
 
-  // Only run banner logic on Android
+  // Only run on Android
   if (!isAndroid) return;
 
-  // Check if already installed (standalone mode or previously installed)
-  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  // Helper: fire-and-forget POST to /api/track-pwa
+  function trackPwa(event) {
+    fetch('/api/track-pwa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: event, platform: 'android' })
+    }).catch(() => {});
+  }
+
+  // Track standalone launches (must run BEFORE the early return below)
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (!sessionStorage.getItem('pwa-launch-tracked')) {
+      sessionStorage.setItem('pwa-launch-tracked', 'true');
+      trackPwa('standalone_launch');
+      if (typeof gtag === 'function') {
+        gtag('event', 'pwa_standalone_launch', { platform: 'android' });
+      }
+    }
+    return; // In standalone mode — no banner needed
+  }
+
+  // Already installed in this browser
   if (localStorage.getItem('pwa-installed')) return;
 
   // Check if dismissed recently (3 days)
@@ -80,7 +100,8 @@
       banner.classList.add('visible');
     });
 
-    // Track
+    // Track banner shown
+    trackPwa('prompt_shown');
     if (typeof gtag === 'function') {
       gtag('event', 'pwa_banner_shown', { platform: 'android' });
     }
@@ -147,6 +168,7 @@
     // Mark as installed so banner never shows again on this browser
     localStorage.setItem('pwa-installed', 'true');
 
+    trackPwa('installed');
     if (typeof gtag === 'function') {
       gtag('event', 'pwa_app_installed', { platform: 'android' });
     }
@@ -154,14 +176,4 @@
     // Clear dismiss so they don't see banner on other devices
     localStorage.removeItem('pwa-banner-dismissed');
   });
-
-  // Track standalone launches
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    if (!sessionStorage.getItem('pwa-launch-tracked')) {
-      sessionStorage.setItem('pwa-launch-tracked', 'true');
-      if (typeof gtag === 'function') {
-        gtag('event', 'pwa_standalone_launch', { platform: 'android' });
-      }
-    }
-  }
 })();

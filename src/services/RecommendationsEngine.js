@@ -411,52 +411,12 @@ class RecommendationsEngine {
   }
 
   /**
-   * Analyze growth signals (Android decision)
+   * Analyze growth signals
+   * Android decision matrix removed — GA4 traffic data (16% Android) is the demand signal.
+   * PWA install tracking is now passive (no thresholds/gates).
    */
   async analyzeGrowth(data, recommendations) {
-    const android = data?.android;
-
-    if (!android?.data) return;
-
-    const { thresholds, recommendation, waitlist } = android.data;
-
-    if (recommendation?.status === 'GO') {
-      recommendations.push({
-        id: 'growth-android-go',
-        priority: 'OPPORTUNITY',
-        category: 'growth',
-        title: 'Android demand signals are strong',
-        insight: recommendation.message,
-        impact: 'HIGH',
-        actions: [
-          { type: 'business', text: 'Consider starting Android development' },
-          { type: 'business', text: `Expected launch users: ${android.data.projection.expectedConversion}` },
-          { type: 'business', text: 'Use React Native to share code with iOS' }
-        ],
-        metrics: {
-          waitlist: waitlist.total,
-          growthRate: `${waitlist.growthRate}%/week`,
-          thresholdsMet: Object.values(thresholds).filter(t => t.met).length
-        }
-      });
-    } else if (waitlist.total > 100) {
-      recommendations.push({
-        id: 'growth-android-monitor',
-        priority: 'LOW',
-        category: 'growth',
-        title: `Android waitlist at ${waitlist.total} (target: 200)`,
-        insight: recommendation.message,
-        impact: 'LOW',
-        actions: [
-          { type: 'monitoring', text: 'Continue monitoring waitlist growth' },
-          { type: 'business', text: 'PWA serves Android users adequately for now' }
-        ],
-        metrics: {
-          waitlist: waitlist.total,
-          weeksToThreshold: android.data.projection.weeksTo200
-        }
-      });
-    }
+    // No automated recommendations — Android decision is a business call, not a threshold
   }
 
   /**
