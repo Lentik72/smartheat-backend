@@ -556,6 +556,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/095-merge-duplicate-suppliers', label: 'Merge duplicate suppliers' },
           { path: './src/migrations/096-add-walker-valley-suppliers', label: 'Walker Valley area suppliers' },
           { path: './src/migrations/097-add-staffordville-coverage', label: 'Staffordville coverage' },
+          { path: './src/migrations/098-backfill-limited-coverage-zips', label: 'Backfill limited-coverage ZIPs + Hilton Oil' },
         ];
 
         let migrationErrors = 0;
