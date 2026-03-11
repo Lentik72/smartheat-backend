@@ -524,6 +524,13 @@
     "lat": 40.632943,
     "lng": -74.118669
   },
+  "10311": {
+    "city": "Staten Island",
+    "county": "Richmond",
+    "state": "NY",
+    "lat": 40.6052,
+    "lng": -74.1795
+  },
   "10312": {
     "city": "Staten island",
     "county": "Richmond",
@@ -832,6 +839,13 @@
     "lat": 41.122622,
     "lng": -73.867258
   },
+  "10521": {
+    "city": "Croton On Hudson",
+    "county": "Westchester",
+    "state": "NY",
+    "lat": 41.2343,
+    "lng": -73.9262
+  },
   "10522": {
     "city": "Dobbs Ferry",
     "county": "Westchester",
@@ -922,6 +936,13 @@
     "state": "NY",
     "lat": 41.090197,
     "lng": -73.755284
+  },
+  "10540": {
+    "city": "Lincolndale",
+    "county": "Putnam",
+    "state": "NY",
+    "lat": 41.3334,
+    "lng": -73.7243
   },
   "10541": {
     "city": "Mahopac",
@@ -1146,6 +1167,13 @@
     "state": "NY",
     "lat": 41.090218,
     "lng": -73.784768
+  },
+  "10596": {
+    "city": "Verplanck",
+    "county": "Westchester",
+    "state": "NY",
+    "lat": 41.2548,
+    "lng": -73.9587
   },
   "10597": {
     "city": "Waccabuc",
@@ -1504,6 +1532,13 @@
     "lat": 41.370586,
     "lng": -74.354017
   },
+  "10949": {
+    "city": "Monroe",
+    "county": "Orange",
+    "state": "NY",
+    "lat": 41.3274,
+    "lng": -74.1911
+  },
   "10950": {
     "city": "Monroe",
     "county": "Orange",
@@ -1517,6 +1552,13 @@
     "state": "NY",
     "lat": 41.118595,
     "lng": -74.084536
+  },
+  "10953": {
+    "city": "Mountainville",
+    "county": "Rockland",
+    "state": "NY",
+    "lat": 41.4009,
+    "lng": -74.0785
   },
   "10954": {
     "city": "Nanuet",
@@ -1770,6 +1812,13 @@
     "lat": 40.720051,
     "lng": -73.706783
   },
+  "11002": {
+    "city": "Floral Park",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.7237,
+    "lng": -73.7049
+  },
   "11003": {
     "city": "Elmont",
     "county": "Nassau",
@@ -1812,6 +1861,13 @@
     "lat": 40.754757,
     "lng": -73.601772
   },
+  "11022": {
+    "city": "Great Neck",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.7548,
+    "lng": -73.6018
+  },
   "11023": {
     "city": "Great Neck",
     "county": "Nassau",
@@ -1825,6 +1881,27 @@
     "state": "NY",
     "lat": 40.754757,
     "lng": -73.601772
+  },
+  "11025": {
+    "city": "American Express",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.8,
+    "lng": -73.72
+  },
+  "11026": {
+    "city": "Great Neck",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.7548,
+    "lng": -73.6018
+  },
+  "11027": {
+    "city": "Great Neck",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.8007,
+    "lng": -73.7285
   },
   "11030": {
     "city": "Manhasset",
@@ -1882,12 +1959,26 @@
     "lat": 40.754757,
     "lng": -73.601772
   },
+  "11055": {
+    "city": "Port Washington",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.7548,
+    "lng": -73.6018
+  },
   "11096": {
     "city": "Inwood",
     "county": "Nassau",
     "state": "NY",
     "lat": 40.620492,
     "lng": -73.747376
+  },
+  "11099": {
+    "city": "Eastern States Bkcard Assoc",
+    "county": "Queens",
+    "state": "NY",
+    "lat": 40.73,
+    "lng": -73.68
   },
   "11101": {
     "city": "Astoria",
@@ -1930,6 +2021,13 @@
     "state": "NY",
     "lat": 40.760601,
     "lng": -73.930984
+  },
+  "11109": {
+    "city": "Long Island City",
+    "county": "Queens",
+    "state": "NY",
+    "lat": 40.7454,
+    "lng": -73.9575
   },
   "11201": {
     "city": "Brooklyn",
@@ -2190,6 +2288,13 @@
     "lat": 40.649207,
     "lng": -73.876754
   },
+  "11249": {
+    "city": "Brooklyn",
+    "county": "Kings",
+    "state": "NY",
+    "lat": 40.6451,
+    "lng": -73.945
+  },
   "11354": {
     "city": "Flushing",
     "county": "Queens",
@@ -2224,6 +2329,13 @@
     "state": "NY",
     "lat": 40.760426,
     "lng": -73.795788
+  },
+  "11359": {
+    "city": "Bayside",
+    "county": "Queens",
+    "state": "NY",
+    "lat": 40.7928,
+    "lng": -73.7767
   },
   "11360": {
     "city": "Bayside",
@@ -2456,6 +2568,13 @@
     "lat": 40.716888,
     "lng": -73.766897
   },
+  "11424": {
+    "city": "Jamaica",
+    "county": "Queens",
+    "state": "NY",
+    "lat": 40.6514,
+    "lng": -73.8708
+  },
   "11426": {
     "city": "Bellerose",
     "county": "Queens",
@@ -2596,6 +2715,20 @@
     "lat": 40.754757,
     "lng": -73.601772
   },
+  "11535": {
+    "city": "Garden City",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.72,
+    "lng": -73.64
+  },
+  "11536": {
+    "city": "Select And Save",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.67,
+    "lng": -73.7
+  },
   "11542": {
     "city": "Glen Cove",
     "county": "Nassau",
@@ -2665,6 +2798,13 @@
     "state": "NY",
     "lat": 40.72135,
     "lng": -73.55877
+  },
+  "11555": {
+    "city": "Uniondale",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.7004,
+    "lng": -73.5929
   },
   "11556": {
     "city": "Uniondale",
@@ -2820,12 +2960,40 @@
     "lat": 40.74505,
     "lng": -73.571521
   },
+  "11592": {
+    "city": "Rockville Center",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.75,
+    "lng": -73.57
+  },
+  "11594": {
+    "city": "115 Firms",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.75,
+    "lng": -73.58
+  },
+  "11595": {
+    "city": "Cheeselovers",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.75,
+    "lng": -73.58
+  },
   "11596": {
     "city": "Williston Park",
     "county": "Nassau",
     "state": "NY",
     "lat": 40.754757,
     "lng": -73.601772
+  },
+  "11597": {
+    "city": "115 Crm Firms",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.75,
+    "lng": -73.58
   },
   "11598": {
     "city": "Woodmere",
@@ -2835,6 +3003,13 @@
     "lng": -73.712025
   },
   "11599": {
+    "city": "Garden City",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.607574,
+    "lng": -73.742691
+  },
+  "11601": {
     "city": "Garden City",
     "county": "Nassau",
     "state": "NY",
@@ -3128,6 +3303,13 @@
     "lat": 40.867647,
     "lng": -73.410218
   },
+  "11745": {
+    "city": "Huntington Station",
+    "county": "Suffolk",
+    "state": "NY",
+    "lat": 40.814348,
+    "lng": -73.363363
+  },
   "11746": {
     "city": "Huntington Station",
     "county": "Suffolk",
@@ -3148,6 +3330,13 @@
     "state": "NY",
     "lat": 40.922326,
     "lng": -72.637078
+  },
+  "11750": {
+    "city": "Huntington Station",
+    "county": "Suffolk",
+    "state": "NY",
+    "lat": 40.83,
+    "lng": -73.37
   },
   "11751": {
     "city": "Islip",
@@ -3204,6 +3393,13 @@
     "state": "NY",
     "lat": 40.754757,
     "lng": -73.601772
+  },
+  "11760": {
+    "city": "Massapequa",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.7934,
+    "lng": -73.4151
   },
   "11762": {
     "city": "Massapequa Park",
@@ -3281,6 +3477,27 @@
     "state": "NY",
     "lat": 40.922326,
     "lng": -72.637078
+  },
+  "11773": {
+    "city": "Syosset",
+    "county": "Suffolk",
+    "state": "NY",
+    "lat": 40.8262,
+    "lng": -73.5021
+  },
+  "11774": {
+    "city": "Farmingdale",
+    "county": "Suffolk",
+    "state": "NY",
+    "lat": 40.73,
+    "lng": -73.44
+  },
+  "11775": {
+    "city": "Melville",
+    "county": "Suffolk",
+    "state": "NY",
+    "lat": 40.7934,
+    "lng": -73.4151
   },
   "11776": {
     "city": "Port Jefferson Station",
@@ -3456,6 +3673,41 @@
     "state": "NY",
     "lat": 40.754757,
     "lng": -73.601772
+  },
+  "11815": {
+    "city": "Hicksville",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.7548,
+    "lng": -73.6018
+  },
+  "11819": {
+    "city": "Hicksville",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.7684,
+    "lng": -73.5251
+  },
+  "11853": {
+    "city": "Jericho",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.792,
+    "lng": -73.5398
+  },
+  "11854": {
+    "city": "Hicksville",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.76,
+    "lng": -73.52
+  },
+  "11855": {
+    "city": "Hicksville",
+    "county": "Nassau",
+    "state": "NY",
+    "lat": 40.76,
+    "lng": -73.52
   },
   "11901": {
     "city": "Riverhead",
@@ -4163,6 +4415,13 @@
     "state": "NY",
     "lat": 42.411114,
     "lng": -73.881515
+  },
+  "12089": {
+    "city": "Hoosick",
+    "county": "Rensselaer",
+    "state": "NY",
+    "lat": 42.8667,
+    "lng": -73.3181
   },
   "12090": {
     "city": "Hoosick",
@@ -4969,6 +5228,13 @@
     "lat": 42.336112,
     "lng": -74.024147
   },
+  "12432": {
+    "city": "Glasco",
+    "county": "Ulster",
+    "state": "NY",
+    "lat": 42.0437,
+    "lng": -73.9474
+  },
   "12433": {
     "city": "Glenford",
     "county": "Ulster",
@@ -4990,6 +5256,20 @@
     "lat": 41.727613,
     "lng": -74.515647
   },
+  "12436": {
+    "city": "Haines Falls",
+    "county": "Ulster",
+    "state": "NY",
+    "lat": 42.1955,
+    "lng": -74.1023
+  },
+  "12438": {
+    "city": "Halcottsville",
+    "county": "Greene",
+    "state": "NY",
+    "lat": 42.2079,
+    "lng": -74.6012
+  },
   "12439": {
     "city": "East windham",
     "county": "Greene",
@@ -5003,6 +5283,13 @@
     "state": "NY",
     "lat": 41.872233,
     "lng": -74.146678
+  },
+  "12441": {
+    "city": "Highmount",
+    "county": "Greene",
+    "state": "NY",
+    "lat": 42.1443,
+    "lng": -74.4899
   },
   "12442": {
     "city": "Hunter",
@@ -5059,6 +5346,20 @@
     "state": "NY",
     "lat": 42.304064,
     "lng": -73.930812
+  },
+  "12452": {
+    "city": "Lexington",
+    "county": "Greene",
+    "state": "NY",
+    "lat": 42.2404,
+    "lng": -74.3654
+  },
+  "12453": {
+    "city": "Malden On Hudson",
+    "county": "Greene",
+    "state": "NY",
+    "lat": 42.0987,
+    "lng": -73.9354
   },
   "12454": {
     "city": "Maplecrest",
@@ -5186,6 +5487,13 @@
     "lat": 42.295703,
     "lng": -74.563088
   },
+  "12475": {
+    "city": "Ruby",
+    "county": "Delaware",
+    "state": "NY",
+    "lat": 42.0176,
+    "lng": -74.0079
+  },
   "12477": {
     "city": "Saugerties",
     "county": "Ulster",
@@ -5213,6 +5521,13 @@
     "state": "NY",
     "lat": 42.267617,
     "lng": -73.986354
+  },
+  "12483": {
+    "city": "Spring Glen",
+    "county": "Ulster",
+    "state": "NY",
+    "lat": 41.6639,
+    "lng": -74.4245
   },
   "12484": {
     "city": "Stone Ridge",
@@ -5248,6 +5563,13 @@
     "state": "NY",
     "lat": 41.760604,
     "lng": -74.353531
+  },
+  "12490": {
+    "city": "West Camp",
+    "county": "Ulster",
+    "state": "NY",
+    "lat": 42.1231,
+    "lng": -73.9349
   },
   "12491": {
     "city": "West Hurley",
@@ -5326,6 +5648,13 @@
     "lat": 42.035434,
     "lng": -73.909234
   },
+  "12506": {
+    "city": "Bangall",
+    "county": "Dutchess",
+    "state": "NY",
+    "lat": 41.8756,
+    "lng": -73.6912
+  },
   "12507": {
     "city": "Bangall",
     "county": "Dutchess",
@@ -5339,6 +5668,20 @@
     "state": "NY",
     "lat": 41.712677,
     "lng": -73.773082
+  },
+  "12510": {
+    "city": "Billings",
+    "county": "Dutchess",
+    "state": "NY",
+    "lat": 41.6712,
+    "lng": -73.7632
+  },
+  "12512": {
+    "city": "Chelsea",
+    "county": "Columbia",
+    "state": "NY",
+    "lat": 41.5528,
+    "lng": -73.9682
   },
   "12513": {
     "city": "Claverack",
@@ -5430,6 +5773,13 @@
     "state": "NY",
     "lat": 42.121298,
     "lng": -73.792924
+  },
+  "12527": {
+    "city": "Glenham",
+    "county": "Ulster",
+    "state": "NY",
+    "lat": 41.5202,
+    "lng": -73.9333
   },
   "12528": {
     "city": "Highland",
@@ -5542,6 +5892,20 @@
     "state": "NY",
     "lat": 41.38537,
     "lng": -74.185363
+  },
+  "12551": {
+    "city": "Newburgh",
+    "county": "Orange",
+    "state": "NY",
+    "lat": 41.5034,
+    "lng": -74.0104
+  },
+  "12552": {
+    "city": "Newburgh",
+    "county": "Orange",
+    "state": "NY",
+    "lat": 41.5034,
+    "lng": -74.0104
   },
   "12553": {
     "city": "New Windsor",
@@ -5683,6 +6047,13 @@
     "lat": 41.909683,
     "lng": -73.749214
   },
+  "12584": {
+    "city": "Vails Gate",
+    "county": "Dutchess",
+    "state": "NY",
+    "lat": 41.4641,
+    "lng": -74.0591
+  },
   "12585": {
     "city": "Verbank",
     "county": "Dutchess",
@@ -5787,6 +6158,13 @@
     "state": "NY",
     "lat": 41.63868,
     "lng": -74.721754
+  },
+  "12722": {
+    "city": "Burlingham",
+    "county": "Sullivan",
+    "state": "NY",
+    "lat": 41.5901,
+    "lng": -74.3821
   },
   "12723": {
     "city": "Callicoon",
@@ -5935,6 +6313,13 @@
     "lat": 41.687384,
     "lng": -74.835807
   },
+  "12750": {
+    "city": "Kenoza Lake",
+    "county": "Sullivan",
+    "state": "NY",
+    "lat": 41.7296,
+    "lng": -74.9611
+  },
   "12751": {
     "city": "Kiamesha lake",
     "county": "Sullivan",
@@ -6019,6 +6404,13 @@
     "lat": 41.841414,
     "lng": -74.857261
   },
+  "12769": {
+    "city": "Phillipsport",
+    "county": "Sullivan",
+    "state": "NY",
+    "lat": 41.6515,
+    "lng": -74.4362
+  },
   "12770": {
     "city": "Pond eddy",
     "county": "Sullivan",
@@ -6074,6 +6466,13 @@
     "state": "NY",
     "lat": 41.376892,
     "lng": -74.459687
+  },
+  "12781": {
+    "city": "Summitville",
+    "county": "Orange",
+    "state": "NY",
+    "lat": 41.6215,
+    "lng": -74.4507
   },
   "12783": {
     "city": "Swan lake",
@@ -8195,6 +8594,13 @@
     "state": "NY",
     "lat": 42.991124,
     "lng": -75.270758
+  },
+  "13457": {
+    "city": "Schuyler Lake",
+    "county": "Oneida",
+    "state": "NY",
+    "lat": 42.7758,
+    "lng": -75.0485
   },
   "13459": {
     "city": "Sharon springs",
@@ -10366,6 +10772,13 @@
     "lat": 42.570794,
     "lng": -77.12259
   },
+  "14479": {
+    "city": "Knowlesville",
+    "county": "Livingston",
+    "state": "NY",
+    "lat": 43.2363,
+    "lng": -78.3138
+  },
   "14480": {
     "city": "Lakeville",
     "county": "Livingston",
@@ -10723,6 +11136,20 @@
     "lat": 42.818578,
     "lng": -78.102549
   },
+  "14602": {
+    "city": "Rochester",
+    "county": "Monroe",
+    "state": "NY",
+    "lat": 43.286,
+    "lng": -77.6843
+  },
+  "14603": {
+    "city": "Rochester",
+    "county": "Monroe",
+    "state": "NY",
+    "lat": 43.1616,
+    "lng": -77.6068
+  },
   "14604": {
     "city": "Rochester",
     "county": "Monroe",
@@ -10883,6 +11310,13 @@
     "state": "NY",
     "lat": 43.190312,
     "lng": -77.720018
+  },
+  "14627": {
+    "city": "Rochester",
+    "county": "Monroe",
+    "state": "NY",
+    "lat": 43.1275,
+    "lng": -77.6277
   },
   "14701": {
     "city": "Jamestown",
@@ -17702,6 +18136,13 @@
     "lat": 40.168495,
     "lng": -77.228817
   },
+  "17015": {
+    "city": "Carlisle",
+    "county": "Lebanon",
+    "state": "PA",
+    "lat": 40.1772,
+    "lng": -77.2312
+  },
   "17016": {
     "city": "Cornwall",
     "county": "Lebanon",
@@ -17799,6 +18240,13 @@
     "state": "PA",
     "lat": 40.550937,
     "lng": -77.626095
+  },
+  "17030": {
+    "city": "Gratz",
+    "county": "Mifflin",
+    "state": "PA",
+    "lat": 40.6082,
+    "lng": -76.7375
   },
   "17032": {
     "city": "Halifax",
@@ -17918,6 +18366,13 @@
     "state": "PA",
     "lat": 40.651725,
     "lng": -77.306056
+  },
+  "17050": {
+    "city": "Mechanicsburg",
+    "county": "Mifflin",
+    "state": "PA",
+    "lat": 40.2122,
+    "lng": -77.0265
   },
   "17051": {
     "city": "Mc veytown",
@@ -18219,6 +18674,34 @@
     "state": "PA",
     "lat": 40.253639,
     "lng": -76.857944
+  },
+  "17105": {
+    "city": "Harrisburg",
+    "county": "Dauphin",
+    "state": "PA",
+    "lat": 40.2785,
+    "lng": -76.8752
+  },
+  "17106": {
+    "city": "Harrisburg",
+    "county": "Dauphin",
+    "state": "PA",
+    "lat": 40.2927,
+    "lng": -76.8501
+  },
+  "17107": {
+    "city": "Harrisburg",
+    "county": "Dauphin",
+    "state": "PA",
+    "lat": 40.297,
+    "lng": -76.8764
+  },
+  "17108": {
+    "city": "Harrisburg",
+    "county": "Dauphin",
+    "state": "PA",
+    "lat": 40.3086,
+    "lng": -76.8017
   },
   "17109": {
     "city": "Colonial park",
@@ -18689,6 +19172,13 @@
     "lat": 39.935502,
     "lng": -76.672739
   },
+  "17332": {
+    "city": "Hanover",
+    "county": "York",
+    "state": "PA",
+    "lat": 39.8007,
+    "lng": -76.983
+  },
   "17339": {
     "city": "Lewisberry",
     "county": "York",
@@ -18773,6 +19263,13 @@
     "lat": 39.905747,
     "lng": -76.615805
   },
+  "17358": {
+    "city": "Rossville",
+    "county": "York",
+    "state": "PA",
+    "lat": 39.973,
+    "lng": -76.6878
+  },
   "17360": {
     "city": "Seven valleys",
     "county": "York",
@@ -18836,6 +19333,13 @@
     "lat": 40.067766,
     "lng": -76.720322
   },
+  "17371": {
+    "city": "York New Salem",
+    "county": "Adams",
+    "state": "PA",
+    "lat": 39.9006,
+    "lng": -76.7896
+  },
   "17372": {
     "city": "York springs",
     "county": "Adams",
@@ -18892,6 +19396,13 @@
     "lat": 39.897907,
     "lng": -76.662569
   },
+  "17408": {
+    "city": "York",
+    "county": "York",
+    "state": "PA",
+    "lat": 39.9492,
+    "lng": -76.8018
+  },
   "17501": {
     "city": "Akron",
     "county": "Lancaster",
@@ -18906,12 +19417,40 @@
     "lat": 40.088469,
     "lng": -76.462434
   },
+  "17503": {
+    "city": "Bart",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0185,
+    "lng": -76.2976
+  },
+  "17504": {
+    "city": "Bausman",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.024,
+    "lng": -76.3281
+  },
   "17505": {
     "city": "Bird in hand",
     "county": "Lancaster",
     "state": "PA",
     "lat": 40.066647,
     "lng": -76.187926
+  },
+  "17506": {
+    "city": "Blue Ball",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.1173,
+    "lng": -76.0524
+  },
+  "17507": {
+    "city": "Bowmansville",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.1966,
+    "lng": -76.016
   },
   "17508": {
     "city": "Brownstown",
@@ -18969,6 +19508,13 @@
     "lat": 40.097468,
     "lng": -76.356832
   },
+  "17521": {
+    "city": "Elm",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.2044,
+    "lng": -76.3464
+  },
   "17522": {
     "city": "Ephrata",
     "county": "Lancaster",
@@ -18982,6 +19528,13 @@
     "state": "PA",
     "lat": 40.011961,
     "lng": -76.021595
+  },
+  "17528": {
+    "city": "Goodville",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.1257,
+    "lng": -76.0033
   },
   "17529": {
     "city": "Gordonville",
@@ -18997,6 +19550,20 @@
     "lat": 39.86632,
     "lng": -76.28062
   },
+  "17533": {
+    "city": "Hopeland",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.2339,
+    "lng": -76.2607
+  },
+  "17534": {
+    "city": "Intercourse",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0367,
+    "lng": -76.1069
+  },
   "17535": {
     "city": "Kinzers",
     "county": "Lancaster",
@@ -19010,6 +19577,13 @@
     "state": "PA",
     "lat": 39.842724,
     "lng": -76.080469
+  },
+  "17537": {
+    "city": "Lampeter",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 39.9885,
+    "lng": -76.2387
   },
   "17538": {
     "city": "Salunga",
@@ -19045,6 +19619,20 @@
     "state": "PA",
     "lat": 40.061596,
     "lng": -76.485935
+  },
+  "17549": {
+    "city": "Martindale",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.1545,
+    "lng": -76.0876
+  },
+  "17550": {
+    "city": "Maytown",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0754,
+    "lng": -76.5822
   },
   "17551": {
     "city": "Millersville",
@@ -19102,6 +19690,13 @@
     "lat": 39.844788,
     "lng": -76.155069
   },
+  "17564": {
+    "city": "Penryn",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0185,
+    "lng": -76.2976
+  },
   "17565": {
     "city": "Pequea",
     "county": "Lancaster",
@@ -19115,6 +19710,20 @@
     "state": "PA",
     "lat": 39.856368,
     "lng": -76.148506
+  },
+  "17567": {
+    "city": "Reamstown",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.2099,
+    "lng": -76.1164
+  },
+  "17568": {
+    "city": "Refton",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 39.9469,
+    "lng": -76.2322
   },
   "17569": {
     "city": "Reinholds",
@@ -19137,6 +19746,20 @@
     "lat": 40.015026,
     "lng": -76.149994
   },
+  "17573": {
+    "city": "Lancaster",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0262,
+    "lng": -76.1686
+  },
+  "17575": {
+    "city": "Silver Spring",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0647,
+    "lng": -76.4343
+  },
   "17576": {
     "city": "Smoketown",
     "county": "Lancaster",
@@ -19158,6 +19781,13 @@
     "lat": 40.082226,
     "lng": -76.113772
   },
+  "17580": {
+    "city": "Talmage",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.1168,
+    "lng": -76.2131
+  },
   "17581": {
     "city": "Terre hill",
     "county": "Lancaster",
@@ -19172,12 +19802,26 @@
     "lat": 39.990664,
     "lng": -76.43485
   },
+  "17583": {
+    "city": "West Willow",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 39.9723,
+    "lng": -76.2873
+  },
   "17584": {
     "city": "Willow street",
     "county": "Lancaster",
     "state": "PA",
     "lat": 39.959349,
     "lng": -76.259779
+  },
+  "17585": {
+    "city": "Witmer",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0484,
+    "lng": -76.2114
   },
   "17601": {
     "city": "Neffsville",
@@ -19199,6 +19843,48 @@
     "state": "PA",
     "lat": 40.009147,
     "lng": -76.367132
+  },
+  "17604": {
+    "city": "Lancaster",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0651,
+    "lng": -76.3356
+  },
+  "17605": {
+    "city": "Lancaster",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0185,
+    "lng": -76.2976
+  },
+  "17606": {
+    "city": "Lancaster",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.1102,
+    "lng": -76.3054
+  },
+  "17607": {
+    "city": "Lancaster",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0185,
+    "lng": -76.2976
+  },
+  "17608": {
+    "city": "Lancaster",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0185,
+    "lng": -76.2976
+  },
+  "17611": {
+    "city": "Lancaster",
+    "county": "Lancaster",
+    "state": "PA",
+    "lat": 40.0379,
+    "lng": -76.3055
   },
   "17701": {
     "city": "South williamspo",
@@ -19515,6 +20201,13 @@
     "lat": 40.991968,
     "lng": -76.647082
   },
+  "17822": {
+    "city": "Danville",
+    "county": "Northumberland",
+    "state": "PA",
+    "lat": 40.9674,
+    "lng": -76.6049
+  },
   "17823": {
     "city": "Dornsife",
     "county": "Northumberland",
@@ -19556,6 +20249,13 @@
     "state": "PA",
     "lat": 40.889632,
     "lng": -76.664574
+  },
+  "17831": {
+    "city": "Hummels Wharf",
+    "county": "Northumberland",
+    "state": "PA",
+    "lat": 40.8344,
+    "lng": -76.8354
   },
   "17832": {
     "city": "Marion heights",
@@ -19690,6 +20390,13 @@
     "lat": 40.90805,
     "lng": -76.784197
   },
+  "17858": {
+    "city": "Numidia",
+    "county": "Columbia",
+    "state": "PA",
+    "lat": 40.8806,
+    "lng": -76.4022
+  },
   "17859": {
     "city": "Orangeville",
     "county": "Columbia",
@@ -19767,12 +20474,33 @@
     "lat": 40.791953,
     "lng": -76.601592
   },
+  "17876": {
+    "city": "Shamokin Dam",
+    "county": "Columbia",
+    "state": "PA",
+    "lat": 40.8459,
+    "lng": -76.8224
+  },
+  "17877": {
+    "city": "Snydertown",
+    "county": "Columbia",
+    "state": "PA",
+    "lat": 40.879,
+    "lng": -76.6673
+  },
   "17878": {
     "city": "Stillwater",
     "county": "Columbia",
     "state": "PA",
     "lat": 41.120644,
     "lng": -76.412386
+  },
+  "17880": {
+    "city": "Swengel",
+    "county": "Northumberland",
+    "state": "PA",
+    "lat": 40.8923,
+    "lng": -77.1266
   },
   "17881": {
     "city": "Trevorton",
@@ -19899,6 +20627,13 @@
     "state": "PA",
     "lat": 40.692869,
     "lng": -76.348699
+  },
+  "17932": {
+    "city": "Frackville",
+    "county": "Schuylkill",
+    "state": "PA",
+    "lat": 40.784,
+    "lng": -76.2302
   },
   "17933": {
     "city": "Friedensburg",
@@ -20060,6 +20795,13 @@
     "state": "PA",
     "lat": 40.771333,
     "lng": -76.199259
+  },
+  "17966": {
+    "city": "Ravine",
+    "county": "Schuylkill",
+    "state": "PA",
+    "lat": 40.5745,
+    "lng": -76.4038
   },
   "17967": {
     "city": "Ringtown",
@@ -20298,6 +21040,13 @@
     "state": "PA",
     "lat": 40.79071,
     "lng": -75.482967
+  },
+  "18039": {
+    "city": "Durham",
+    "county": "Northampton",
+    "state": "PA",
+    "lat": 40.5757,
+    "lng": -75.2232
   },
   "18040": {
     "city": "Easton",
@@ -20600,6 +21349,20 @@
     "lat": 40.467193,
     "lng": -75.512091
   },
+  "18098": {
+    "city": "Emmaus",
+    "county": "Lehigh",
+    "state": "PA",
+    "lat": 40.5395,
+    "lng": -75.4969
+  },
+  "18099": {
+    "city": "Emmaus",
+    "county": "Lehigh",
+    "state": "PA",
+    "lat": 40.5395,
+    "lng": -75.4969
+  },
   "18101": {
     "city": "Allentown",
     "county": "Lehigh",
@@ -20901,6 +21664,20 @@
     "lat": 41.089642,
     "lng": -75.199705
   },
+  "18302": {
+    "city": "East Stroudsburg",
+    "county": "Monroe",
+    "state": "PA",
+    "lat": 41.0936,
+    "lng": -75.1187
+  },
+  "18320": {
+    "city": "Analomink",
+    "county": "Monroe",
+    "state": "PA",
+    "lat": 41.0712,
+    "lng": -75.2364
+  },
   "18321": {
     "city": "Bartonsville",
     "county": "Monroe",
@@ -20992,6 +21769,13 @@
     "lat": 41.057236,
     "lng": -75.465137
   },
+  "18335": {
+    "city": "Marshalls Creek",
+    "county": "Pike",
+    "state": "PA",
+    "lat": 41.0508,
+    "lng": -75.2083
+  },
   "18336": {
     "city": "Matamoras",
     "county": "Pike",
@@ -21019,6 +21803,13 @@
     "state": "PA",
     "lat": 40.991053,
     "lng": -75.299256
+  },
+  "18342": {
+    "city": "Mountainhome",
+    "county": "Northampton",
+    "state": "PA",
+    "lat": 41.1737,
+    "lng": -75.271
   },
   "18343": {
     "city": "Mount bethel",
@@ -21048,6 +21839,13 @@
     "lat": 41.13856,
     "lng": -75.562988
   },
+  "18348": {
+    "city": "Pocono Lake Preserve",
+    "county": "Monroe",
+    "state": "PA",
+    "lat": 41.0338,
+    "lng": -75.308
+  },
   "18349": {
     "city": "Pocono manor",
     "county": "Monroe",
@@ -21068,6 +21866,13 @@
     "state": "PA",
     "lat": 40.921386,
     "lng": -75.097007
+  },
+  "18352": {
+    "city": "Reeders",
+    "county": "Monroe",
+    "state": "PA",
+    "lat": 41.019,
+    "lng": -75.336
   },
   "18353": {
     "city": "Saylorsburg",
@@ -21118,6 +21923,13 @@
     "lat": 41.105903,
     "lng": -75.346913
   },
+  "18371": {
+    "city": "Tamiment",
+    "county": "Monroe",
+    "state": "PA",
+    "lat": 41.1423,
+    "lng": -75.0271
+  },
   "18372": {
     "city": "Tannersville",
     "county": "Monroe",
@@ -21146,6 +21958,13 @@
     "lat": 41.583122,
     "lng": -75.505612
   },
+  "18410": {
+    "city": "Chinchilla",
+    "county": "Lackawanna",
+    "state": "PA",
+    "lat": 41.4865,
+    "lng": -75.6933
+  },
   "18411": {
     "city": "Clarks summit",
     "county": "Lackawanna",
@@ -21173,6 +21992,13 @@
     "state": "PA",
     "lat": 41.701677,
     "lng": -75.133727
+  },
+  "18416": {
+    "city": "Elmhurst",
+    "county": "Wayne",
+    "state": "PA",
+    "lat": 41.3756,
+    "lng": -75.548
   },
   "18417": {
     "city": "Equinunk",
@@ -21292,6 +22118,13 @@
     "state": "PA",
     "lat": 41.828081,
     "lng": -75.396741
+  },
+  "18440": {
+    "city": "La Plume",
+    "county": "Susquehanna",
+    "state": "PA",
+    "lat": 41.5516,
+    "lng": -75.7676
   },
   "18441": {
     "city": "Lenoxville",
@@ -22154,6 +22987,13 @@
     "lat": 40.272756,
     "lng": -75.256285
   },
+  "18916": {
+    "city": "Danboro",
+    "county": "Bucks",
+    "state": "PA",
+    "lat": 40.3545,
+    "lng": -75.1327
+  },
   "18917": {
     "city": "Dublin",
     "county": "Bucks",
@@ -22189,6 +23029,13 @@
     "lat": 40.323533,
     "lng": -75.254829
   },
+  "18928": {
+    "city": "Holicong",
+    "county": "Bucks",
+    "state": "PA",
+    "lat": 40.336,
+    "lng": -75.0429
+  },
   "18929": {
     "city": "Jamison",
     "county": "Bucks",
@@ -22209,6 +23056,13 @@
     "state": "PA",
     "lat": 40.299561,
     "lng": -75.254097
+  },
+  "18933": {
+    "city": "Lumberville",
+    "county": "Bucks",
+    "state": "PA",
+    "lat": 40.3286,
+    "lng": -75.1028
   },
   "18936": {
     "city": "Montgomeryville",
@@ -22252,6 +23106,13 @@
     "lat": 40.43014,
     "lng": -75.1172
   },
+  "18950": {
+    "city": "Point Pleasant",
+    "county": "Bucks",
+    "state": "PA",
+    "lat": 40.4226,
+    "lng": -75.0663
+  },
   "18951": {
     "city": "Quakertown",
     "county": "Bucks",
@@ -22293,6 +23154,13 @@
     "state": "PA",
     "lat": 40.344529,
     "lng": -75.268738
+  },
+  "18963": {
+    "city": "Solebury",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 40.3807,
+    "lng": -75.0082
   },
   "18964": {
     "city": "Bethton",
@@ -22448,6 +23316,20 @@
     "lat": 39.909511,
     "lng": -75.366785
   },
+  "19016": {
+    "city": "Chester",
+    "county": "Delaware",
+    "state": "PA",
+    "lat": 39.934,
+    "lng": -75.406
+  },
+  "19017": {
+    "city": "Chester Heights",
+    "county": "Delaware",
+    "state": "PA",
+    "lat": 39.8901,
+    "lng": -75.4755
+  },
   "19018": {
     "city": "Clifton Heights",
     "county": "Delaware",
@@ -22567,6 +23449,13 @@
     "lat": 40.101109,
     "lng": -75.17802
   },
+  "19039": {
+    "city": "Gradyville",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 39.9432,
+    "lng": -75.4694
+  },
   "19040": {
     "city": "Hatboro",
     "county": "Montgomery",
@@ -22616,6 +23505,13 @@
     "lat": 39.914562,
     "lng": -75.29458
   },
+  "19052": {
+    "city": "Lenni",
+    "county": "Bucks",
+    "state": "PA",
+    "lat": 39.8942,
+    "lng": -75.4456
+  },
   "19053": {
     "city": "Trevose",
     "county": "Bucks",
@@ -22651,6 +23547,20 @@
     "lat": 40.143309,
     "lng": -74.846373
   },
+  "19058": {
+    "city": "Levittown",
+    "county": "Bucks",
+    "state": "PA",
+    "lat": 40.1551,
+    "lng": -74.8288
+  },
+  "19060": {
+    "city": "Garnet Valley",
+    "county": "Delaware",
+    "state": "PA",
+    "lat": 39.852,
+    "lng": -75.5007
+  },
   "19061": {
     "city": "Boothwyn",
     "county": "Delaware",
@@ -22671,6 +23581,13 @@
     "state": "PA",
     "lat": 39.931858,
     "lng": -75.341583
+  },
+  "19065": {
+    "city": "Media",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 39.9211,
+    "lng": -75.3861
   },
   "19066": {
     "city": "Merion Station",
@@ -22784,6 +23701,13 @@
     "lat": 39.98596,
     "lng": -75.370934
   },
+  "19088": {
+    "city": "Wayne",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 39.934,
+    "lng": -75.406
+  },
   "19090": {
     "city": "Willow Grove",
     "county": "Montgomery",
@@ -22811,6 +23735,13 @@
     "state": "PA",
     "lat": 40.051411,
     "lng": -75.164822
+  },
+  "19101": {
+    "city": "Philadelphia",
+    "county": "Philadelphia",
+    "state": "PA",
+    "lat": 39.9526,
+    "lng": -75.1652
   },
   "19102": {
     "city": "Philadelphia",
@@ -23239,6 +24170,13 @@
     "lat": 39.916517,
     "lng": -75.925805
   },
+  "19331": {
+    "city": "Concordville",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 39.8823,
+    "lng": -75.5165
+  },
   "19333": {
     "city": "Devon",
     "county": "Chester",
@@ -23252,6 +24190,13 @@
     "state": "PA",
     "lat": 40.031265,
     "lng": -75.722614
+  },
+  "19339": {
+    "city": "Concordville",
+    "county": "Delaware",
+    "state": "PA",
+    "lat": 39.934,
+    "lng": -75.406
   },
   "19340": {
     "city": "Concordville",
@@ -23295,6 +24240,20 @@
     "lat": 39.847803,
     "lng": -75.719347
   },
+  "19346": {
+    "city": "Kelton",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 39.8087,
+    "lng": -75.878
+  },
+  "19347": {
+    "city": "Kemblesville",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 39.749,
+    "lng": -75.8241
+  },
   "19348": {
     "city": "Kennett Square",
     "county": "Chester",
@@ -23309,12 +24268,33 @@
     "lat": 39.771506,
     "lng": -75.799761
   },
+  "19351": {
+    "city": "Lewisville",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 39.7226,
+    "lng": -75.8749
+  },
   "19352": {
     "city": "Lincoln University",
     "county": "Chester",
     "state": "PA",
     "lat": 39.778703,
     "lng": -75.88758
+  },
+  "19353": {
+    "city": "Lionville",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 40.0132,
+    "lng": -75.499
+  },
+  "19354": {
+    "city": "Lyndell",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 40.0582,
+    "lng": -75.7433
   },
   "19355": {
     "city": "Malvern",
@@ -23358,6 +24338,13 @@
     "lat": 40.001064,
     "lng": -75.830891
   },
+  "19366": {
+    "city": "Pocopson",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 39.9004,
+    "lng": -75.6258
+  },
   "19367": {
     "city": "Pomeroy",
     "county": "Chester",
@@ -23393,12 +24380,33 @@
     "lat": 39.872825,
     "lng": -75.848075
   },
+  "19375": {
+    "city": "Unionville",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 39.8954,
+    "lng": -75.7344
+  },
+  "19376": {
+    "city": "Wagontown",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 39.9832,
+    "lng": -75.7481
+  },
   "19380": {
     "city": "West Chester",
     "county": "Chester",
     "state": "PA",
     "lat": 39.980107,
     "lng": -75.610503
+  },
+  "19381": {
+    "city": "West Chester",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 39.961,
+    "lng": -75.608
   },
   "19382": {
     "city": "West Chester",
@@ -23407,12 +24415,26 @@
     "lat": 39.912284,
     "lng": -75.630235
   },
+  "19383": {
+    "city": "West Chester",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 39.961,
+    "lng": -75.608
+  },
   "19390": {
     "city": "West Grove",
     "county": "Chester",
     "state": "PA",
     "lat": 39.841367,
     "lng": -75.847944
+  },
+  "19395": {
+    "city": "Westtown",
+    "county": "Chester",
+    "state": "PA",
+    "lat": 39.9328,
+    "lng": -75.5448
   },
   "19401": {
     "city": "Norristown",
@@ -23428,6 +24450,13 @@
     "lat": 40.124886,
     "lng": -75.357027
   },
+  "19404": {
+    "city": "Norristown",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 40.2119,
+    "lng": -75.3559
+  },
   "19405": {
     "city": "Bridgeport",
     "county": "Montgomery",
@@ -23441,6 +24470,27 @@
     "state": "PA",
     "lat": 40.179242,
     "lng": -75.388022
+  },
+  "19407": {
+    "city": "Audubon",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 40.2119,
+    "lng": -75.3559
+  },
+  "19408": {
+    "city": "Eagleville",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 40.1566,
+    "lng": -75.4131
+  },
+  "19409": {
+    "city": "Fairview Village",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 40.1579,
+    "lng": -75.3871
   },
   "19421": {
     "city": "Birchrunville",
@@ -23939,6 +24989,13 @@
     "lat": 40.326546,
     "lng": -75.915919
   },
+  "19603": {
+    "city": "Reading",
+    "county": "Berks",
+    "state": "PA",
+    "lat": 40.3884,
+    "lng": -75.9631
+  },
   "19604": {
     "state": "PA",
     "county": "Berks",
@@ -24065,12 +25122,33 @@
     "lat": 39.668282,
     "lng": -75.688489
   },
+  "19712": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
   "19713": {
     "city": "Newark",
     "county": "New Castle",
     "state": "DE",
     "lat": 39.665662,
     "lng": -75.719349
+  },
+  "19714": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
+  "19715": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
   },
   "19716": {
     "city": "Newark",
@@ -24099,6 +25177,27 @@
     "state": "DE",
     "lat": 39.592895,
     "lng": -75.651466
+  },
+  "19721": {
+    "city": "New Castle",
+    "county": "New Castle",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
+  "19725": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
+  "19726": {
+    "city": "Newark",
+    "county": "New Castle",
+    "state": "DE",
+    "lat": 39.6621,
+    "lng": -75.5663
   },
   "19730": {
     "city": "Odessa",
@@ -24219,6 +25318,111 @@
     "lat": 39.763961,
     "lng": -75.527812
   },
+  "19850": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
+  "19880": {
+    "city": "Wilmington",
+    "county": "New Castle",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
+  "19884": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.7459,
+    "lng": -75.5466
+  },
+  "19885": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.7459,
+    "lng": -75.5466
+  },
+  "19886": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.7459,
+    "lng": -75.5466
+  },
+  "19890": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
+  "19891": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
+  "19892": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
+  "19893": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.7459,
+    "lng": -75.5466
+  },
+  "19894": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.7459,
+    "lng": -75.5466
+  },
+  "19895": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.7459,
+    "lng": -75.5466
+  },
+  "19896": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
+  "19897": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.5645,
+    "lng": -75.597
+  },
+  "19898": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.7459,
+    "lng": -75.5466
+  },
+  "19899": {
+    "city": "Wilmington",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.7459,
+    "lng": -75.5466
+  },
   "19901": {
     "city": "Dover",
     "county": "Kent",
@@ -24233,12 +25437,33 @@
     "lat": 39.10868,
     "lng": -75.448023
   },
+  "19903": {
+    "city": "Dover",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.1087,
+    "lng": -75.448
+  },
   "19904": {
     "city": "19904",
     "county": "Kent",
     "state": "DE",
     "lat": 39.160542,
     "lng": -75.597381
+  },
+  "19905": {
+    "city": "Dover",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.1582,
+    "lng": -75.5244
+  },
+  "19906": {
+    "city": "Dover",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.157,
+    "lng": -75.5294
   },
   "19930": {
     "city": "Bethany beach",
@@ -24267,6 +25492,13 @@
     "state": "DE",
     "lat": 39.086921,
     "lng": -75.612286
+  },
+  "19936": {
+    "city": "Cheswold",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.2184,
+    "lng": -75.5848
   },
   "19938": {
     "city": "Clayton",
@@ -24400,6 +25632,13 @@
     "state": "DE",
     "lat": 38.848792,
     "lng": -75.41087
+  },
+  "19961": {
+    "city": "Little Creek",
+    "county": "Kent",
+    "state": "DE",
+    "lat": 39.1663,
+    "lng": -75.4483
   },
   "19962": {
     "city": "Magnolia",
@@ -28083,6 +29322,13 @@
     "lat": 39.469098,
     "lng": -75.849327
   },
+  "21916": {
+    "city": "Childs",
+    "county": "Cecil",
+    "state": "MD",
+    "lat": 39.6462,
+    "lng": -75.8716
+  },
   "21917": {
     "city": "Colora",
     "county": "Cecil",
@@ -30785,6 +32031,13 @@
     "lat": 37.682224,
     "lng": -78.731156
   },
+  "28405": {
+    "city": "Wilmington",
+    "county": "New Hanover",
+    "state": "NC",
+    "lat": 34.2257,
+    "lng": -77.9447
+  },
   "43002": {
     "city": "Amlin",
     "county": "Franklin",
@@ -31569,6 +32822,13 @@
     "lat": 40.5492,
     "lng": -82.8293
   },
+  "43340": {
+    "city": "Mount Victory",
+    "county": "Marion",
+    "state": "OH",
+    "lat": 40.5232,
+    "lng": -83.4942
+  },
   "43341": {
     "city": "New Bloomington",
     "county": "Marion",
@@ -31576,12 +32836,33 @@
     "lat": 40.5875,
     "lng": -83.3354
   },
+  "43342": {
+    "city": "Prospect",
+    "county": "Champaign",
+    "state": "OH",
+    "lat": 40.4727,
+    "lng": -83.1763
+  },
   "43343": {
     "city": "Quincy",
     "county": "Champaign",
     "state": "OH",
     "lat": 40.2961,
     "lng": -83.989
+  },
+  "43344": {
+    "city": "Richwood",
+    "county": "Champaign",
+    "state": "OH",
+    "lat": 40.437,
+    "lng": -83.3136
+  },
+  "43345": {
+    "city": "Ridgeway",
+    "county": "Hardin",
+    "state": "OH",
+    "lat": 40.5209,
+    "lng": -83.5702
   },
   "43346": {
     "city": "Roundhead",
@@ -31631,6 +32912,13 @@
     "state": "OH",
     "lat": 40.2528,
     "lng": -83.7554
+  },
+  "43358": {
+    "city": "West Mansfield",
+    "county": "Champaign",
+    "state": "OH",
+    "lat": 40.4043,
+    "lng": -83.5243
   },
   "43360": {
     "city": "Zanesfield",
@@ -32031,6 +33319,13 @@
     "lat": 40.3914,
     "lng": -81.4068
   },
+  "44805": {
+    "city": "Ashland",
+    "county": "Ashland",
+    "state": "OH",
+    "lat": 40.8687,
+    "lng": -82.3182
+  },
   "44813": {
     "city": "Bellville",
     "county": "Morrow",
@@ -32066,12 +33361,26 @@
     "lat": 40.6936,
     "lng": -82.5307
   },
+  "45312": {
+    "city": "Casstown",
+    "county": "Clark",
+    "state": "OH",
+    "lat": 40.0716,
+    "lng": -84.1088
+  },
   "45314": {
     "city": "Cedarville",
     "county": "Clark",
     "state": "OH",
     "lat": 39.7506,
     "lng": -83.8065
+  },
+  "45317": {
+    "city": "Conover",
+    "county": "Clark",
+    "state": "OH",
+    "lat": 40.1457,
+    "lng": -84.0283
   },
   "45319": {
     "city": "Donnelsville",
@@ -32094,6 +33403,13 @@
     "lat": 39.8131,
     "lng": -84.0196
   },
+  "45334": {
+    "city": "Jackson Center",
+    "county": "Clark",
+    "state": "OH",
+    "lat": 40.4358,
+    "lng": -84.0457
+  },
   "45341": {
     "city": "Medway",
     "county": "Clark",
@@ -32114,6 +33430,13 @@
     "state": "OH",
     "lat": 39.9953,
     "lng": -83.9451
+  },
+  "45365": {
+    "city": "Sidney",
+    "county": "Clark",
+    "state": "OH",
+    "lat": 40.2874,
+    "lng": -84.1622
   },
   "45368": {
     "city": "South Charleston",
@@ -32142,6 +33465,13 @@
     "state": "OH",
     "lat": 39.8061,
     "lng": -83.8893
+  },
+  "45389": {
+    "city": "Christiansburg",
+    "county": "Clark",
+    "state": "OH",
+    "lat": 40.0564,
+    "lng": -84.0254
   },
   "45501": {
     "city": "Springfield",
@@ -32276,6 +33606,13 @@
     "lat": 40.6958,
     "lng": -83.7779
   },
+  "45895": {
+    "city": "Wapakoneta",
+    "county": "Hardin",
+    "state": "OH",
+    "lat": 40.569,
+    "lng": -84.1774
+  },
   "45896": {
     "city": "Waynesfield",
     "county": "Hardin",
@@ -32289,41 +33626,6 @@
     "state": "WA",
     "lat": 48.02,
     "lng": -117.26
-  },
-  "99701": {
-    "city": "Fairbanks",
-    "county": "Fairbanks North Star",
-    "state": "AK",
-    "lat": 64.644047,
-    "lng": -147.522052
-  },
-  "99705": {
-    "city": "North Pole",
-    "county": "Fairbanks North Star",
-    "state": "AK",
-    "lat": 64.780765,
-    "lng": -147.207748
-  },
-  "99709": {
-    "city": "Fairbanks",
-    "county": "Fairbanks North Star",
-    "state": "AK",
-    "lat": 64.860126,
-    "lng": -147.999791
-  },
-  "99712": {
-    "city": "Fairbanks",
-    "county": "Fairbanks North Star",
-    "state": "AK",
-    "lat": 65.036453,
-    "lng": -147.156588
-  },
-  "99714": {
-    "city": "Salcha",
-    "county": "Fairbanks North Star",
-    "state": "AK",
-    "lat": 64.489102,
-    "lng": -146.924788
   },
   "99501": {
     "city": "Anchorage",
@@ -32556,6 +33858,90 @@
     "lat": 61.63,
     "lng": -149.818
   },
+  "99701": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.644047,
+    "lng": -147.522052
+  },
+  "99702": {
+    "city": "Eielson Afb",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.6735,
+    "lng": -147.0805
+  },
+  "99703": {
+    "city": "Fort Wainwright",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.8283,
+    "lng": -147.6557
+  },
+  "99705": {
+    "city": "North Pole",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.780765,
+    "lng": -147.207748
+  },
+  "99706": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.8521,
+    "lng": -147.9377
+  },
+  "99707": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.8378,
+    "lng": -147.7164
+  },
+  "99708": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.9475,
+    "lng": -147.8564
+  },
+  "99709": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.860126,
+    "lng": -147.999791
+  },
+  "99710": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.8378,
+    "lng": -147.7164
+  },
+  "99711": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.8378,
+    "lng": -147.7164
+  },
+  "99712": {
+    "city": "Fairbanks",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 65.036453,
+    "lng": -147.156588
+  },
+  "99714": {
+    "city": "Salcha",
+    "county": "Fairbanks North Star",
+    "state": "AK",
+    "lat": 64.489102,
+    "lng": -146.924788
+  },
   "99801": {
     "city": "Juneau",
     "county": "Juneau",
@@ -32570,19 +33956,19 @@
     "lat": 58.276,
     "lng": -134.394
   },
-  "99901": {
-    "city": "Ketchikan",
-    "county": "Ketchikan Gateway",
-    "state": "AK",
-    "lat": 55.342,
-    "lng": -131.648
-  },
   "99835": {
     "city": "Sitka",
     "county": "Sitka",
     "state": "AK",
     "lat": 57.053,
     "lng": -135.33
+  },
+  "99901": {
+    "city": "Ketchikan",
+    "county": "Ketchikan Gateway",
+    "state": "AK",
+    "lat": 55.342,
+    "lng": -131.648
   },
   "01001": {
     "state": "MA",
@@ -32843,6 +34229,13 @@
     "lat": 42.095323,
     "lng": -72.282063
   },
+  "01059": {
+    "city": "North Amherst",
+    "county": "Hampshire",
+    "state": "MA",
+    "lat": 42.4104,
+    "lng": -72.5309
+  },
   "01060": {
     "city": "Northampton",
     "county": "Hampshire",
@@ -32919,6 +34312,13 @@
     "state": "MA",
     "lat": 42.230008,
     "lng": -72.728463
+  },
+  "01074": {
+    "city": "South Barre",
+    "county": "Hampshire",
+    "state": "MA",
+    "lat": 42.3854,
+    "lng": -72.0954
   },
   "01075": {
     "city": "South Hadley",
@@ -33286,6 +34686,13 @@
     "state": "MA",
     "lat": 42.470296,
     "lng": -73.08895
+  },
+  "01227": {
+    "city": "Dalton",
+    "county": "Berkshire",
+    "state": "MA",
+    "lat": 42.4737,
+    "lng": -73.1662
   },
   "01229": {
     "city": "Glendale",
@@ -33731,6 +35138,13 @@
     "lat": 42.446396,
     "lng": -71.459405
   },
+  "01434": {
+    "city": "Devens",
+    "county": "Worcester",
+    "state": "MA",
+    "lat": 42.5385,
+    "lng": -71.6115
+  },
   "01436": {
     "city": "Baldwinville",
     "county": "Worcester",
@@ -33904,6 +35318,13 @@
     "lat": 42.13277,
     "lng": -71.972627
   },
+  "01508": {
+    "city": "Charlton City",
+    "county": "Worcester",
+    "state": "MA",
+    "lat": 42.1459,
+    "lng": -71.9884
+  },
   "01510": {
     "city": "Clinton",
     "county": "Worcester",
@@ -33973,6 +35394,20 @@
     "state": "MA",
     "lat": 42.238192,
     "lng": -72.012379
+  },
+  "01525": {
+    "city": "Linwood",
+    "county": "Worcester",
+    "state": "MA",
+    "lat": 42.0973,
+    "lng": -71.6448
+  },
+  "01526": {
+    "city": "Manchaug",
+    "county": "Worcester",
+    "state": "MA",
+    "lat": 42.0945,
+    "lng": -71.7476
   },
   "01527": {
     "city": "Millbury",
@@ -34065,6 +35500,13 @@
     "lat": 42.286992,
     "lng": -71.715313
   },
+  "01546": {
+    "city": "Shrewsbury",
+    "county": "Worcester",
+    "state": "MA",
+    "lat": 42.3648,
+    "lng": -71.8969
+  },
   "01550": {
     "city": "Southbridge",
     "county": "Worcester",
@@ -34128,12 +35570,26 @@
     "lat": 42.059189,
     "lng": -71.937037
   },
+  "01580": {
+    "city": "Westborough",
+    "county": "Worcester",
+    "state": "MA",
+    "lat": 42.26,
+    "lng": -71.61
+  },
   "01581": {
     "city": "Westborough",
     "county": "Worcester",
     "state": "MA",
     "lat": 42.255222,
     "lng": -71.845865
+  },
+  "01582": {
+    "city": "Westborough",
+    "county": "Worcester",
+    "state": "MA",
+    "lat": 42.26,
+    "lng": -71.61
   },
   "01583": {
     "city": "West boylston",
@@ -34148,6 +35604,13 @@
     "state": "MA",
     "lat": 42.235638,
     "lng": -72.172523
+  },
+  "01586": {
+    "city": "West Millbury",
+    "county": "Worcester",
+    "state": "MA",
+    "lat": 42.1712,
+    "lng": -71.8037
   },
   "01588": {
     "city": "Whitinsville",
@@ -34167,6 +35630,13 @@
     "city": "015hh",
     "county": "Worcester",
     "state": "MA"
+  },
+  "01601": {
+    "city": "Worcester",
+    "county": "Worcester",
+    "state": "MA",
+    "lat": 42.2626,
+    "lng": -71.8023
   },
   "01602": {
     "city": "Worcester",
@@ -34459,6 +35929,13 @@
     "state": "MA",
     "lat": 42.446396,
     "lng": -71.459405
+  },
+  "01784": {
+    "city": "Woodville",
+    "county": "Middlesex",
+    "state": "MA",
+    "lat": 42.2376,
+    "lng": -71.562
   },
   "01801": {
     "city": "Woburn",
@@ -34962,6 +36439,13 @@
     "lat": 42.512946,
     "lng": -70.904237
   },
+  "01971": {
+    "city": "Salem",
+    "county": "Essex",
+    "state": "MA",
+    "lat": 42.6354,
+    "lng": -70.8791
+  },
   "01982": {
     "state": "MA",
     "county": "Essex",
@@ -34994,6 +36478,13 @@
     "city": "019hh",
     "county": "Essex",
     "state": "MA"
+  },
+  "02018": {
+    "city": "Accord",
+    "county": "Norfolk",
+    "state": "MA",
+    "lat": 42.1745,
+    "lng": -70.8837
   },
   "02019": {
     "city": "Bellingham",
@@ -35029,6 +36520,13 @@
     "state": "MA",
     "lat": 42.244733,
     "lng": -71.181141
+  },
+  "02027": {
+    "city": "Dedham",
+    "county": "Norfolk",
+    "state": "MA",
+    "lat": 42.18,
+    "lng": -71.0892
   },
   "02030": {
     "city": "Dover",
@@ -35141,6 +36639,13 @@
     "state": "MA",
     "lat": 42.105288,
     "lng": -71.184785
+  },
+  "02070": {
+    "city": "Sheldonville",
+    "county": "Norfolk",
+    "state": "MA",
+    "lat": 42.0348,
+    "lng": -71.387
   },
   "02071": {
     "city": "South Walpole",
@@ -35532,12 +37037,26 @@
     "lat": 42.378447,
     "lng": -70.981679
   },
+  "02153": {
+    "city": "Medford",
+    "county": "Suffolk",
+    "state": "MA",
+    "lat": 42.4184,
+    "lng": -71.1062
+  },
   "02155": {
     "city": "Medford",
     "county": "Middlesex",
     "state": "MA",
     "lat": 42.422095,
     "lng": -71.109297
+  },
+  "02156": {
+    "city": "West Medford",
+    "county": "Middlesex",
+    "state": "MA",
+    "lat": 42.4223,
+    "lng": -71.1328
   },
   "02163": {
     "city": "Cambridge",
@@ -35724,6 +37243,20 @@
     "lat": 41.973741,
     "lng": -70.976558
   },
+  "02325": {
+    "city": "Bridgewater",
+    "county": "Plymouth",
+    "state": "MA",
+    "lat": 41.9873,
+    "lng": -70.9728
+  },
+  "02327": {
+    "city": "Bryantville",
+    "county": "Plymouth",
+    "state": "MA",
+    "lat": 42.0407,
+    "lng": -70.8272
+  },
   "02330": {
     "city": "Carver",
     "county": "Plymouth",
@@ -35744,6 +37277,20 @@
     "state": "MA",
     "lat": 42.02285,
     "lng": -70.931056
+  },
+  "02334": {
+    "city": "Easton",
+    "county": "Plymouth",
+    "state": "MA",
+    "lat": 42.0235,
+    "lng": -71.1324
+  },
+  "02337": {
+    "city": "Elmwood",
+    "county": "Plymouth",
+    "state": "MA",
+    "lat": 42.0098,
+    "lng": -70.962
   },
   "02338": {
     "city": "Halifax",
@@ -35801,6 +37348,13 @@
     "lat": 41.843757,
     "lng": -70.959981
   },
+  "02348": {
+    "city": "Lakeville",
+    "county": "Plymouth",
+    "state": "MA",
+    "lat": 41.8459,
+    "lng": -70.9495
+  },
   "02351": {
     "city": "Abington",
     "county": "Plymouth",
@@ -35814,6 +37368,13 @@
     "state": "MA",
     "lat": 42.053408,
     "lng": -71.12033
+  },
+  "02357": {
+    "city": "North Easton",
+    "county": "Plymouth",
+    "state": "MA",
+    "lat": 42.0645,
+    "lng": -71.0871
   },
   "02358": {
     "city": "North pembroke",
@@ -36311,6 +37872,13 @@
     "lat": 41.859559,
     "lng": -70.0468
   },
+  "02634": {
+    "city": "Centerville",
+    "county": "Barnstable",
+    "state": "MA",
+    "lat": 41.6487,
+    "lng": -70.3481
+  },
   "02635": {
     "city": "Cotuit",
     "county": "Barnstable",
@@ -36339,12 +37907,26 @@
     "lat": 41.750745,
     "lng": -70.071836
   },
+  "02641": {
+    "city": "East Dennis",
+    "county": "Barnstable",
+    "state": "MA",
+    "lat": 41.7426,
+    "lng": -70.162
+  },
   "02642": {
     "city": "Eastham",
     "county": "Barnstable",
     "state": "MA",
     "lat": 41.850612,
     "lng": -70.020648
+  },
+  "02643": {
+    "city": "East Orleans",
+    "county": "Barnstable",
+    "state": "MA",
+    "lat": 41.7843,
+    "lng": -69.962
   },
   "02644": {
     "city": "Forestdale",
@@ -36395,6 +37977,13 @@
     "lat": 41.73497,
     "lng": -70.029065
   },
+  "02651": {
+    "city": "North Eastham",
+    "county": "Barnstable",
+    "state": "MA",
+    "lat": 41.8243,
+    "lng": -69.9818
+  },
   "02652": {
     "city": "North truro",
     "county": "Barnstable",
@@ -36443,6 +38032,20 @@
     "state": "MA",
     "lat": 41.686205,
     "lng": -70.032858
+  },
+  "02662": {
+    "city": "South Orleans",
+    "county": "Barnstable",
+    "state": "MA",
+    "lat": 41.7567,
+    "lng": -69.9841
+  },
+  "02663": {
+    "city": "South Wellfleet",
+    "county": "Barnstable",
+    "state": "MA",
+    "lat": 41.9182,
+    "lng": -69.9953
   },
   "02664": {
     "city": "South Yarmouth",
@@ -36533,12 +38136,26 @@
     "lat": 41.938976,
     "lng": -71.302297
   },
+  "02712": {
+    "city": "Chartley",
+    "county": "Dukes",
+    "state": "MA",
+    "lat": 41.9487,
+    "lng": -71.2259
+  },
   "02713": {
     "city": "Cuttyhunk",
     "county": "Dukes",
     "state": "MA",
     "lat": 41.42178,
     "lng": -70.931309
+  },
+  "02714": {
+    "city": "Dartmouth",
+    "county": "Bristol",
+    "state": "MA",
+    "lat": 41.7562,
+    "lng": -71.0671
   },
   "02715": {
     "city": "Dighton",
@@ -36581,6 +38198,13 @@
     "state": "MA",
     "lat": 41.678895,
     "lng": -71.153648
+  },
+  "02722": {
+    "city": "Fall River",
+    "county": "Bristol",
+    "state": "MA",
+    "lat": 41.7015,
+    "lng": -71.155
   },
   "02723": {
     "city": "Fall river",
@@ -36631,6 +38255,20 @@
     "lat": 41.633416,
     "lng": -70.951045
   },
+  "02741": {
+    "city": "New Bedford",
+    "county": "Bristol",
+    "state": "MA",
+    "lat": 41.6362,
+    "lng": -70.9342
+  },
+  "02742": {
+    "city": "New Bedford",
+    "county": "Bristol",
+    "state": "MA",
+    "lat": 41.6362,
+    "lng": -70.9342
+  },
   "02743": {
     "city": "Acushnet",
     "county": "Bristol",
@@ -36679,6 +38317,13 @@
     "state": "MA",
     "lat": 41.964376,
     "lng": -71.326448
+  },
+  "02761": {
+    "city": "North Attleboro",
+    "county": "Norfolk",
+    "state": "MA",
+    "lat": 41.9834,
+    "lng": -71.3328
   },
   "02762": {
     "city": "Plainville",
@@ -36757,6 +38402,20 @@
     "lat": 41.858851,
     "lng": -71.092827
   },
+  "02781": {
+    "city": "Taunton",
+    "county": "Bristol",
+    "state": "MA",
+    "lat": 41.858851,
+    "lng": -71.092827
+  },
+  "02783": {
+    "city": "Taunton",
+    "county": "Bristol",
+    "state": "MA",
+    "lat": 41.7562,
+    "lng": -71.0671
+  },
   "02790": {
     "city": "Westport",
     "county": "Bristol",
@@ -36764,10 +38423,24 @@
     "lat": 41.61547,
     "lng": -71.079636
   },
+  "02791": {
+    "city": "Westport Point",
+    "county": "Bristol",
+    "state": "MA",
+    "lat": 41.5223,
+    "lng": -71.0745
+  },
   "027HH": {
     "city": "027hh",
     "county": "Bristol",
     "state": "MA"
+  },
+  "02802": {
+    "city": "Albion",
+    "county": "Washington",
+    "state": "RI",
+    "lat": 41.9512,
+    "lng": -71.4545
   },
   "02804": {
     "city": "Ashaway",
@@ -36860,6 +38533,13 @@
     "lat": 41.5469,
     "lng": -71.650262
   },
+  "02823": {
+    "city": "Fiskeville",
+    "county": "Providence",
+    "state": "RI",
+    "lat": 41.7312,
+    "lng": -71.5468
+  },
   "02824": {
     "city": "Forestdale",
     "county": "Providence",
@@ -36874,6 +38554,13 @@
     "lat": 41.790569,
     "lng": -71.70644
   },
+  "02826": {
+    "city": "Glendale",
+    "county": "Kent",
+    "state": "RI",
+    "lat": 41.9762,
+    "lng": -71.6326
+  },
   "02827": {
     "city": "Greene",
     "county": "Kent",
@@ -36887,6 +38574,13 @@
     "state": "RI",
     "lat": 41.879298,
     "lng": -71.551682
+  },
+  "02829": {
+    "city": "Harmony",
+    "county": "Providence",
+    "state": "RI",
+    "lat": 41.8793,
+    "lng": -71.5894
   },
   "02830": {
     "city": "Harrisville",
@@ -37140,6 +38834,13 @@
     "lat": 41.70247,
     "lng": -71.47902
   },
+  "02887": {
+    "city": "Warwick",
+    "county": "Kent",
+    "state": "RI",
+    "lat": 41.7001,
+    "lng": -71.4162
+  },
   "02888": {
     "city": "Warwick",
     "county": "Kent",
@@ -37207,6 +38908,20 @@
     "city": "028hh",
     "county": "Bristol",
     "state": "RI"
+  },
+  "02901": {
+    "city": "Providence",
+    "county": "Providence",
+    "state": "RI",
+    "lat": 41.8227,
+    "lng": -71.4145
+  },
+  "02902": {
+    "city": "Providence",
+    "county": "Providence",
+    "state": "RI",
+    "lat": 41.8184,
+    "lng": -71.4249
   },
   "02903": {
     "city": "Providence",
@@ -37305,6 +39020,13 @@
     "state": "RI",
     "lat": 41.853899,
     "lng": -71.497804
+  },
+  "02918": {
+    "city": "Providence",
+    "county": "Providence",
+    "state": "RI",
+    "lat": 41.8415,
+    "lng": -71.4404
   },
   "02919": {
     "city": "Johnston",
@@ -37409,6 +39131,13 @@
     "lat": 42.94671,
     "lng": -71.687633
   },
+  "03046": {
+    "city": "Dunbarton",
+    "county": "Hillsborough",
+    "state": "NH",
+    "lat": 43.1025,
+    "lng": -71.6169
+  },
   "03047": {
     "city": "Greenfield",
     "county": "Hillsborough",
@@ -37479,6 +39208,13 @@
     "lat": 42.771537,
     "lng": -71.626336
   },
+  "03061": {
+    "city": "Nashua",
+    "county": "Hillsborough",
+    "state": "NH",
+    "lat": 42.7654,
+    "lng": -71.4676
+  },
   "03062": {
     "city": "Nashua",
     "county": "Hillsborough",
@@ -37513,6 +39249,13 @@
     "state": "NH",
     "lat": 42.762946,
     "lng": -71.845164
+  },
+  "03073": {
+    "city": "North Salem",
+    "county": "Hillsborough",
+    "state": "NH",
+    "lat": 42.837,
+    "lng": -71.2206
   },
   "03076": {
     "city": "Pelham",
@@ -37596,12 +39339,33 @@
     "lat": 42.897524,
     "lng": -71.372208
   },
+  "03105": {
+    "city": "Manchester",
+    "county": "Merrimack",
+    "state": "NH",
+    "lat": 42.9956,
+    "lng": -71.4548
+  },
   "03106": {
     "city": "Hooksett",
     "county": "Merrimack",
     "state": "NH",
     "lat": 43.065097,
     "lng": -71.443616
+  },
+  "03107": {
+    "city": "Manchester",
+    "county": "Merrimack",
+    "state": "NH",
+    "lat": 42.99,
+    "lng": -71.45
+  },
+  "03108": {
+    "city": "Manchester",
+    "county": "Hillsborough",
+    "state": "NH",
+    "lat": 42.9956,
+    "lng": -71.4548
   },
   "03109": {
     "city": "Manchester",
@@ -37616,6 +39380,13 @@
     "state": "NH",
     "lat": 42.93743,
     "lng": -71.535515
+  },
+  "03111": {
+    "city": "Manchester",
+    "county": "Hillsborough",
+    "state": "NH",
+    "lat": 42.9956,
+    "lng": -71.4548
   },
   "031HH": {
     "city": "031hh",
@@ -37783,6 +39554,13 @@
     "lat": 43.12295,
     "lng": -71.914287
   },
+  "03245": {
+    "city": "Holderness",
+    "county": "Belknap",
+    "state": "NH",
+    "lat": 43.7378,
+    "lng": -71.6044
+  },
   "03246": {
     "city": "Gilford",
     "county": "Belknap",
@@ -37790,12 +39568,33 @@
     "lat": 43.535461,
     "lng": -71.426997
   },
+  "03247": {
+    "city": "Laconia",
+    "county": "Belknap",
+    "state": "NH",
+    "lat": 43.589,
+    "lng": -71.4455
+  },
+  "03249": {
+    "city": "Gilford",
+    "county": "Grafton",
+    "state": "NH",
+    "lat": 43.5475,
+    "lng": -71.4072
+  },
   "03251": {
     "city": "Lincoln",
     "county": "Grafton",
     "state": "NH",
     "lat": 44.049183,
     "lng": -71.653505
+  },
+  "03252": {
+    "city": "Lochmere",
+    "county": "Belknap",
+    "state": "NH",
+    "lat": 43.4686,
+    "lng": -71.5371
   },
   "03253": {
     "city": "Meredith",
@@ -37831,6 +39630,13 @@
     "state": "NH",
     "lat": 43.301663,
     "lng": -71.733643
+  },
+  "03258": {
+    "city": "Chichester",
+    "county": "Carroll",
+    "state": "NH",
+    "lat": 43.244,
+    "lng": -71.4105
   },
   "03259": {
     "city": "North sandwich",
@@ -37895,6 +39701,13 @@
     "lat": 43.50178,
     "lng": -71.514248
   },
+  "03272": {
+    "city": "South Newbury",
+    "county": "Merrimack",
+    "state": "NH",
+    "lat": 43.2956,
+    "lng": -71.9967
+  },
   "03273": {
     "city": "South sutton",
     "county": "Merrimack",
@@ -37958,12 +39771,26 @@
     "lat": 43.493812,
     "lng": -72.047018
   },
+  "03285": {
+    "city": "Thornton",
+    "county": "Sullivan",
+    "state": "NH",
+    "lat": 43.905,
+    "lng": -71.647
+  },
   "03287": {
     "city": "Wilmot flat",
     "county": "Merrimack",
     "state": "NH",
     "lat": 43.44853,
     "lng": -71.915826
+  },
+  "03289": {
+    "city": "Winnisquam",
+    "county": "Rockingham",
+    "state": "NH",
+    "lat": 43.4964,
+    "lng": -71.5197
   },
   "03290": {
     "city": "Nottingham",
@@ -37978,6 +39805,20 @@
     "state": "NH",
     "lat": 43.182251,
     "lng": -71.139551
+  },
+  "03293": {
+    "city": "Woodstock",
+    "county": "Rockingham",
+    "state": "NH",
+    "lat": 43.9776,
+    "lng": -71.6851
+  },
+  "03298": {
+    "city": "Tilton",
+    "county": "Merrimack",
+    "state": "NH",
+    "lat": 43.5249,
+    "lng": -71.4458
   },
   "032HH": {
     "city": "032hh",
@@ -37996,6 +39837,13 @@
     "lat": 43.230314,
     "lng": -71.536101
   },
+  "03302": {
+    "city": "Concord",
+    "county": "Merrimack",
+    "state": "NH",
+    "lat": 43.3103,
+    "lng": -71.6629
+  },
   "03303": {
     "city": "Boscawen",
     "county": "Merrimack",
@@ -38009,6 +39857,13 @@
     "state": "NH",
     "lat": 43.128256,
     "lng": -71.544599
+  },
+  "03305": {
+    "city": "Concord",
+    "county": "Merrimack",
+    "state": "NH",
+    "lat": 43.2134,
+    "lng": -71.5172
   },
   "03307": {
     "city": "03307",
@@ -38028,6 +39883,13 @@
     "state": "NH",
     "lat": 42.903656,
     "lng": -72.248052
+  },
+  "03435": {
+    "city": "Keene",
+    "county": "Cheshire",
+    "state": "NH",
+    "lat": 42.9337,
+    "lng": -72.2781
   },
   "03440": {
     "city": "Antrim",
@@ -38190,6 +40052,20 @@
     "lat": 42.973867,
     "lng": -72.44256
   },
+  "03468": {
+    "city": "West Peterborough",
+    "county": "Cheshire",
+    "state": "NH",
+    "lat": 42.8908,
+    "lng": -71.9334
+  },
+  "03469": {
+    "city": "West Swanzey",
+    "county": "Cheshire",
+    "state": "NH",
+    "lat": 42.8734,
+    "lng": -72.3151
+  },
   "03470": {
     "city": "Richmond",
     "county": "Cheshire",
@@ -38222,6 +40098,13 @@
     "state": "NH",
     "lat": 44.30632,
     "lng": -71.728049
+  },
+  "03575": {
+    "city": "Bretton Woods",
+    "county": "Coos",
+    "state": "NH",
+    "lat": 44.2581,
+    "lng": -71.4412
   },
   "03576": {
     "city": "Colebrook",
@@ -38279,12 +40162,26 @@
     "lat": 44.245004,
     "lng": -71.888882
   },
+  "03586": {
+    "city": "Sugar Hill",
+    "county": "Grafton",
+    "state": "NH",
+    "lat": 44.2203,
+    "lng": -71.7964
+  },
   "03588": {
     "city": "Milan",
     "county": "Coos",
     "state": "NH",
     "lat": 44.56532,
     "lng": -71.218672
+  },
+  "03589": {
+    "city": "Mount Washington",
+    "county": "Coos",
+    "state": "NH",
+    "lat": 44.6956,
+    "lng": -71.3874
   },
   "03590": {
     "city": "North stratford",
@@ -38300,12 +40197,26 @@
     "lat": 44.695648,
     "lng": -71.387387
   },
+  "03593": {
+    "city": "Randolph",
+    "county": "Coos",
+    "state": "NH",
+    "lat": 44.3753,
+    "lng": -71.2798
+  },
   "03595": {
     "city": "Twin mountain",
     "county": "Coos",
     "state": "NH",
     "lat": 44.26895,
     "lng": -71.547061
+  },
+  "03597": {
+    "city": "West Stewartstown",
+    "county": "Coos",
+    "state": "NH",
+    "lat": 44.6956,
+    "lng": -71.3874
   },
   "03598": {
     "city": "Whitefield",
@@ -38345,6 +40256,13 @@
     "lat": 43.268117,
     "lng": -72.370222
   },
+  "03604": {
+    "city": "Drewsville",
+    "county": "Sullivan",
+    "state": "NH",
+    "lat": 43.1281,
+    "lng": -72.392
+  },
   "03605": {
     "city": "East lempster",
     "county": "Sullivan",
@@ -38377,6 +40295,13 @@
     "city": "036hh",
     "county": "Sullivan",
     "state": "NH"
+  },
+  "03740": {
+    "city": "Bath",
+    "county": "Grafton",
+    "state": "NH",
+    "lat": 44.1808,
+    "lng": -71.9828
   },
   "03741": {
     "city": "Canaan",
@@ -38434,12 +40359,26 @@
     "lat": 43.463101,
     "lng": -72.218445
   },
+  "03754": {
+    "city": "Guild",
+    "county": "Grafton",
+    "state": "NH",
+    "lat": 43.3767,
+    "lng": -72.1381
+  },
   "03755": {
     "city": "Hanover",
     "county": "Grafton",
     "state": "NH",
     "lat": 43.861077,
     "lng": -72.120314
+  },
+  "03756": {
+    "city": "Lebanon",
+    "county": "Grafton",
+    "state": "NH",
+    "lat": 43.6423,
+    "lng": -72.2518
   },
   "03765": {
     "city": "Haverhill",
@@ -38461,6 +40400,13 @@
     "state": "NH",
     "lat": 43.801656,
     "lng": -72.130495
+  },
+  "03769": {
+    "city": "Lyme Center",
+    "county": "Sullivan",
+    "state": "NH",
+    "lat": 43.7863,
+    "lng": -72.1205
   },
   "03770": {
     "city": "Meriden",
@@ -38551,6 +40497,27 @@
     "lat": 43.009222,
     "lng": -70.950742
   },
+  "03802": {
+    "city": "Portsmouth",
+    "county": "Rockingham",
+    "state": "NH",
+    "lat": 43.0718,
+    "lng": -70.7626
+  },
+  "03803": {
+    "city": "Portsmouth",
+    "county": "Rockingham",
+    "state": "NH",
+    "lat": 43.0718,
+    "lng": -70.7626
+  },
+  "03804": {
+    "city": "Portsmouth",
+    "county": "Rockingham",
+    "state": "NH",
+    "lat": 43.0718,
+    "lng": -70.7626
+  },
   "03809": {
     "city": "Alton",
     "county": "Belknap",
@@ -38634,6 +40601,27 @@
     "state": "NH",
     "lat": 43.297309,
     "lng": -70.992042
+  },
+  "03821": {
+    "city": "Dover",
+    "county": "Strafford",
+    "state": "NH",
+    "lat": 43.1979,
+    "lng": -70.8737
+  },
+  "03822": {
+    "city": "Dover",
+    "county": "Strafford",
+    "state": "NH",
+    "lat": 43.1979,
+    "lng": -70.8737
+  },
+  "03823": {
+    "city": "Madbury",
+    "county": "Strafford",
+    "state": "NH",
+    "lat": 43.1729,
+    "lng": -70.9412
   },
   "03824": {
     "city": "Lee",
@@ -38740,6 +40728,13 @@
     "lat": 42.917389,
     "lng": -70.95095
   },
+  "03843": {
+    "city": "Hampton",
+    "county": "Rockingham",
+    "state": "NH",
+    "lat": 43.0059,
+    "lng": -71.0132
+  },
   "03844": {
     "city": "Hampton falls",
     "county": "Rockingham",
@@ -38774,6 +40769,20 @@
     "state": "NH",
     "lat": 43.902311,
     "lng": -71.124612
+  },
+  "03850": {
+    "city": "Melvin Village",
+    "county": "Carroll",
+    "state": "NH",
+    "lat": 43.7077,
+    "lng": -71.3017
+  },
+  "03851": {
+    "city": "Milton",
+    "county": "Strafford",
+    "state": "NH",
+    "lat": 43.4229,
+    "lng": -71.0114
   },
   "03852": {
     "city": "Milton mills",
@@ -38831,6 +40840,13 @@
     "lat": 43.784643,
     "lng": -71.10263
   },
+  "03861": {
+    "city": "Lee",
+    "county": "Rockingham",
+    "state": "NH",
+    "lat": 43.1192,
+    "lng": -70.9969
+  },
   "03862": {
     "city": "North hampton",
     "county": "Rockingham",
@@ -38851,6 +40867,13 @@
     "state": "NH",
     "lat": 42.937838,
     "lng": -70.926206
+  },
+  "03866": {
+    "city": "Rochester",
+    "county": "Strafford",
+    "state": "NH",
+    "lat": 43.3045,
+    "lng": -70.9756
   },
   "03867": {
     "city": "Rochester",
@@ -38879,6 +40902,13 @@
     "state": "NH",
     "lat": 43.010939,
     "lng": -70.764813
+  },
+  "03871": {
+    "city": "Rye Beach",
+    "county": "Carroll",
+    "state": "NH",
+    "lat": 42.9806,
+    "lng": -70.7719
   },
   "03872": {
     "city": "Sanbornville",
@@ -38957,12 +40987,26 @@
     "lat": 43.459999,
     "lng": -71.040842
   },
+  "03890": {
+    "city": "West Ossipee",
+    "county": "Strafford",
+    "state": "NH",
+    "lat": 43.8118,
+    "lng": -71.1946
+  },
   "03894": {
     "city": "Wolfeboro",
     "county": "Carroll",
     "state": "NH",
     "lat": 43.667102,
     "lng": -71.183597
+  },
+  "03896": {
+    "city": "Wolfeboro Falls",
+    "county": "Carroll",
+    "state": "NH",
+    "lat": 43.5892,
+    "lng": -71.2189
   },
   "03897": {
     "city": "Wonalancet",
@@ -39039,6 +41083,20 @@
     "lat": 43.237891,
     "lng": -70.69099
   },
+  "03910": {
+    "city": "York Beach",
+    "county": "York",
+    "state": "ME",
+    "lat": 43.1715,
+    "lng": -70.6089
+  },
+  "03911": {
+    "city": "York Harbor",
+    "county": "York",
+    "state": "ME",
+    "lat": 43.1368,
+    "lng": -70.6456
+  },
   "039HH": {
     "city": "039hh",
     "county": "York",
@@ -39099,6 +41157,13 @@
     "state": "ME",
     "lat": 43.935634,
     "lng": -70.340652
+  },
+  "04014": {
+    "city": "Cape Porpoise",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.3657,
+    "lng": -70.6044
   },
   "04015": {
     "city": "Casco",
@@ -39176,6 +41241,13 @@
     "state": "ME",
     "lat": 43.864477,
     "lng": -70.097543
+  },
+  "04034": {
+    "city": "Freeport",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.857,
+    "lng": -70.1031
   },
   "04037": {
     "city": "Fryeburg",
@@ -39268,12 +41340,26 @@
     "lat": 44.139839,
     "lng": -70.886741
   },
+  "04054": {
+    "city": "Moody",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.2763,
+    "lng": -70.5978
+  },
   "04055": {
     "city": "Naples",
     "county": "Cumberland",
     "state": "ME",
     "lat": 43.957208,
     "lng": -70.639546
+  },
+  "04056": {
+    "city": "Newfield",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.6584,
+    "lng": -70.8689
   },
   "04061": {
     "city": "North waterboro",
@@ -39317,6 +41403,13 @@
     "lat": 43.894983,
     "lng": -70.189159
   },
+  "04070": {
+    "city": "Scarborough",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.577,
+    "lng": -70.2736
+  },
   "04071": {
     "city": "Raymond",
     "county": "Cumberland",
@@ -39351,6 +41444,20 @@
     "state": "ME",
     "lat": 43.510275,
     "lng": -70.77159
+  },
+  "04077": {
+    "city": "South Casco",
+    "county": "York",
+    "state": "ME",
+    "lat": 43.91,
+    "lng": -70.5245
+  },
+  "04078": {
+    "city": "South Freeport",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.8208,
+    "lng": -70.1208
   },
   "04079": {
     "city": "South harpswell",
@@ -39450,6 +41557,13 @@
     "lat": 43.837951,
     "lng": -70.200114
   },
+  "04098": {
+    "city": "Westbrook",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.677,
+    "lng": -70.3712
+  },
   "040HH": {
     "city": "040hh",
     "county": "Cumberland",
@@ -39475,6 +41589,13 @@
     "state": "ME",
     "lat": 43.68826,
     "lng": -70.289844
+  },
+  "04104": {
+    "city": "Portland",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.6615,
+    "lng": -70.2553
   },
   "04105": {
     "city": "Falmouth",
@@ -39504,12 +41625,54 @@
     "lat": 43.662809,
     "lng": -70.188442
   },
+  "04109": {
+    "city": "Portland",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.6783,
+    "lng": -70.1987
+  },
   "04110": {
     "city": "Cumberland fores",
     "county": "Cumberland",
     "state": "ME",
     "lat": 43.759021,
     "lng": -70.199307
+  },
+  "04112": {
+    "city": "Portland",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.6615,
+    "lng": -70.2553
+  },
+  "04116": {
+    "city": "South Portland",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.6415,
+    "lng": -70.2409
+  },
+  "04122": {
+    "city": "Portland",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.6615,
+    "lng": -70.2553
+  },
+  "04123": {
+    "city": "Portland",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.6615,
+    "lng": -70.2553
+  },
+  "04124": {
+    "city": "Portland",
+    "county": "Cumberland",
+    "state": "ME",
+    "lat": 43.6615,
+    "lng": -70.2553
   },
   "041HH": {
     "city": "041hh",
@@ -39841,6 +42004,13 @@
     "lat": 44.351642,
     "lng": -69.803773
   },
+  "04341": {
+    "city": "Coopers Mills",
+    "county": "Lincoln",
+    "state": "ME",
+    "lat": 44.2588,
+    "lng": -69.551
+  },
   "04342": {
     "city": "Dresden",
     "county": "Lincoln",
@@ -39946,6 +42116,13 @@
     "lat": 44.375578,
     "lng": -69.586327
   },
+  "04359": {
+    "city": "South Gardiner",
+    "county": "Kennebec",
+    "state": "ME",
+    "lat": 44.1801,
+    "lng": -69.7567
+  },
   "04360": {
     "city": "Vienna",
     "county": "Kennebec",
@@ -39978,6 +42155,13 @@
     "state": "ME",
     "lat": 45.061744,
     "lng": -68.878893
+  },
+  "04402": {
+    "city": "Bangor",
+    "county": "Penobscot",
+    "state": "ME",
+    "lat": 44.8012,
+    "lng": -68.7778
   },
   "04406": {
     "city": "Abbot village",
@@ -40336,6 +42520,13 @@
     "lat": 45.792364,
     "lng": -69.30463
   },
+  "04481": {
+    "city": "Sebec",
+    "county": "Piscataquis",
+    "state": "ME",
+    "lat": 45.2465,
+    "lng": -69.1021
+  },
   "04487": {
     "city": "Springfield",
     "county": "Penobscot",
@@ -40534,6 +42725,13 @@
     "state": "ME",
     "lat": 43.877877,
     "lng": -69.612725
+  },
+  "04571": {
+    "city": "Trevett",
+    "county": "Lincoln",
+    "state": "ME",
+    "lat": 43.8826,
+    "lng": -69.6801
   },
   "04572": {
     "city": "Waldoboro",
@@ -41040,6 +43238,13 @@
     "lat": 46.516166,
     "lng": -68.886826
   },
+  "04734": {
+    "city": "Blaine",
+    "county": "Aroostook",
+    "state": "ME",
+    "lat": 46.5048,
+    "lng": -67.8686
+  },
   "04735": {
     "city": "Bridgewater",
     "county": "Aroostook",
@@ -41053,6 +43258,20 @@
     "state": "ME",
     "lat": 46.871355,
     "lng": -68.025442
+  },
+  "04737": {
+    "city": "Clayton Lake",
+    "county": "Aroostook",
+    "state": "ME",
+    "lat": 46.6109,
+    "lng": -69.5223
+  },
+  "04738": {
+    "city": "Crouseville",
+    "county": "Aroostook",
+    "state": "ME",
+    "lat": 46.755,
+    "lng": -68.0964
   },
   "04739": {
     "city": "Eagle lake",
@@ -41068,6 +43287,13 @@
     "lat": 46.611101,
     "lng": -67.85582
   },
+  "04741": {
+    "city": "Estcourt Station",
+    "county": "Aroostook",
+    "state": "ME",
+    "lat": 47.4589,
+    "lng": -69.2243
+  },
   "04742": {
     "city": "Fort fairfield",
     "county": "Aroostook",
@@ -41081,6 +43307,13 @@
     "state": "ME",
     "lat": 47.056484,
     "lng": -68.255868
+  },
+  "04744": {
+    "city": "Fort Kent Mills",
+    "county": "Aroostook",
+    "state": "ME",
+    "lat": 47.2389,
+    "lng": -68.5839
   },
   "04745": {
     "city": "Frenchville",
@@ -41109,6 +43342,13 @@
     "state": "ME",
     "lat": 46.906749,
     "lng": -67.851979
+  },
+  "04751": {
+    "city": "Limestone",
+    "county": "Aroostook",
+    "state": "ME",
+    "lat": 46.8929,
+    "lng": -67.9643
   },
   "04756": {
     "city": "Madawaska",
@@ -41144,6 +43384,13 @@
     "state": "ME",
     "lat": 46.516166,
     "lng": -68.886826
+  },
+  "04761": {
+    "city": "New Limerick",
+    "county": "Aroostook",
+    "state": "ME",
+    "lat": 46.1004,
+    "lng": -68.0034
   },
   "04762": {
     "city": "New sweden",
@@ -41214,6 +43461,13 @@
     "state": "ME",
     "lat": 46.516166,
     "lng": -68.886826
+  },
+  "04775": {
+    "city": "Sheridan",
+    "county": "Aroostook",
+    "state": "ME",
+    "lat": 46.6573,
+    "lng": -68.405
   },
   "04776": {
     "city": "Sherman mills",
@@ -41503,6 +43757,13 @@
     "lat": 45.575731,
     "lng": -69.909773
   },
+  "04926": {
+    "city": "China Village",
+    "county": "Kennebec",
+    "state": "ME",
+    "lat": 44.8526,
+    "lng": -69.502
+  },
   "04927": {
     "city": "Clinton",
     "county": "Kennebec",
@@ -41537,6 +43798,13 @@
     "state": "ME",
     "lat": 44.6819,
     "lng": -69.121648
+  },
+  "04935": {
+    "city": "East Vassalboro",
+    "county": "Franklin",
+    "state": "ME",
+    "lat": 44.4478,
+    "lng": -69.6059
   },
   "04936": {
     "city": "Eustis",
@@ -41855,6 +44123,13 @@
     "state": "VT",
     "lat": 43.591821,
     "lng": -72.463589
+  },
+  "05030": {
+    "city": "Ascutney",
+    "county": "Windsor",
+    "state": "VT",
+    "lat": 43.4107,
+    "lng": -72.4298
   },
   "05031": {
     "city": "Barnard",
@@ -42386,6 +44661,27 @@
     "lat": 42.884281,
     "lng": -72.760753
   },
+  "05302": {
+    "city": "Brattleboro",
+    "county": "Windham",
+    "state": "VT",
+    "lat": 42.8509,
+    "lng": -72.5579
+  },
+  "05303": {
+    "city": "Brattleboro",
+    "county": "Windham",
+    "state": "VT",
+    "lat": 42.8509,
+    "lng": -72.5579
+  },
+  "05304": {
+    "city": "Brattleboro",
+    "county": "Windham",
+    "state": "VT",
+    "lat": 42.8509,
+    "lng": -72.5579
+  },
   "05340": {
     "city": "Bondville",
     "county": "Bennington",
@@ -42483,6 +44779,13 @@
     "state": "VT",
     "lat": 43.013041,
     "lng": -72.793787
+  },
+  "05357": {
+    "city": "West Dummerston",
+    "county": "Windham",
+    "state": "VT",
+    "lat": 42.9265,
+    "lng": -72.6154
   },
   "05358": {
     "city": "West halifax",
@@ -42802,6 +45105,13 @@
     "lat": 44.565148,
     "lng": -72.907209
   },
+  "05490": {
+    "city": "Underhill Center",
+    "county": "Addison",
+    "state": "VT",
+    "lat": 44.5047,
+    "lng": -72.8853
+  },
   "05491": {
     "city": "Vergennes",
     "county": "Addison",
@@ -42989,6 +45299,13 @@
     "lat": 44.028005,
     "lng": -73.089655
   },
+  "05670": {
+    "city": "South Barre",
+    "county": "Washington",
+    "state": "VT",
+    "lat": 44.1757,
+    "lng": -72.5025
+  },
   "05672": {
     "city": "Stowe",
     "county": "Lamoille",
@@ -43078,12 +45395,26 @@
     "lat": 43.630346,
     "lng": -72.93586
   },
+  "05702": {
+    "city": "Rutland",
+    "county": "Rutland",
+    "state": "VT",
+    "lat": 43.6106,
+    "lng": -72.9726
+  },
   "05730": {
     "city": "Belmont",
     "county": "Rutland",
     "state": "VT",
     "lat": 43.420978,
     "lng": -72.828524
+  },
+  "05731": {
+    "city": "Benson",
+    "county": "Rutland",
+    "state": "VT",
+    "lat": 43.6877,
+    "lng": -73.2919
   },
   "05732": {
     "city": "Hubbardton",
@@ -43141,6 +45472,13 @@
     "lat": 43.34792,
     "lng": -73.027985
   },
+  "05741": {
+    "city": "East Poultney",
+    "county": "Rutland",
+    "state": "VT",
+    "lat": 43.5265,
+    "lng": -73.2046
+  },
   "05742": {
     "city": "East wallingford",
     "county": "Rutland",
@@ -43161,6 +45499,13 @@
     "state": "VT",
     "lat": 43.576783,
     "lng": -73.107352
+  },
+  "05745": {
+    "city": "Forest Dale",
+    "county": "Windsor",
+    "state": "VT",
+    "lat": 43.8278,
+    "lng": -73.0537
   },
   "05746": {
     "city": "Gaysville",
@@ -43280,6 +45625,13 @@
     "state": "VT",
     "lat": 43.866832,
     "lng": -72.851495
+  },
+  "05768": {
+    "city": "Rupert",
+    "county": "Addison",
+    "state": "VT",
+    "lat": 43.2598,
+    "lng": -73.2229
   },
   "05769": {
     "city": "Salisbury",
@@ -43559,6 +45911,20 @@
     "lat": 44.823782,
     "lng": -72.102019
   },
+  "05862": {
+    "city": "Peacham",
+    "county": "Orleans",
+    "state": "VT",
+    "lat": 44.3289,
+    "lng": -72.169
+  },
+  "05863": {
+    "city": "Saint Johnsbury Center",
+    "county": "Caledonia",
+    "state": "VT",
+    "lat": 44.4567,
+    "lng": -72.0157
+  },
   "05866": {
     "city": "Sheffield",
     "county": "Caledonia",
@@ -43683,6 +46049,13 @@
     "lat": 41.681198,
     "lng": -72.939577
   },
+  "06011": {
+    "city": "Bristol",
+    "county": "Hartford",
+    "state": "CT",
+    "lat": 41.6718,
+    "lng": -72.9493
+  },
   "06013": {
     "city": "Burlington",
     "county": "Hartford",
@@ -43760,6 +46133,13 @@
     "lat": 42.004978,
     "lng": -72.896907
   },
+  "06028": {
+    "city": "East Windsor Hill",
+    "county": "Tolland",
+    "state": "CT",
+    "lat": 41.8592,
+    "lng": -72.603
+  },
   "06029": {
     "city": "Ellington",
     "county": "Tolland",
@@ -43816,6 +46196,13 @@
     "lat": 41.776048,
     "lng": -72.523748
   },
+  "06041": {
+    "city": "Manchester",
+    "county": "Hartford",
+    "state": "CT",
+    "lat": 41.7759,
+    "lng": -72.5215
+  },
   "06042": {
     "city": "Manchester",
     "county": "Hartford",
@@ -43829,6 +46216,13 @@
     "state": "CT",
     "lat": 41.768648,
     "lng": -72.439278
+  },
+  "06050": {
+    "city": "New Britain",
+    "county": "Hartford",
+    "state": "CT",
+    "lat": 41.666,
+    "lng": -72.7784
   },
   "06051": {
     "city": "New britain",
@@ -43942,6 +46336,13 @@
     "lat": 41.919603,
     "lng": -72.433046
   },
+  "06072": {
+    "city": "Somersville",
+    "county": "Hartford",
+    "state": "CT",
+    "lat": 41.9765,
+    "lng": -72.4906
+  },
   "06073": {
     "city": "South glastonbur",
     "county": "Hartford",
@@ -43955,6 +46356,13 @@
     "state": "CT",
     "lat": 41.834198,
     "lng": -72.564632
+  },
+  "06075": {
+    "city": "Stafford",
+    "county": "Tolland",
+    "state": "CT",
+    "lat": 41.9848,
+    "lng": -72.289
   },
   "06076": {
     "city": "Stafford springs",
@@ -43977,6 +46385,13 @@
     "lat": 41.989646,
     "lng": -72.658135
   },
+  "06080": {
+    "city": "Suffield",
+    "county": "Hartford",
+    "state": "CT",
+    "lat": 41.9818,
+    "lng": -72.6506
+  },
   "06081": {
     "city": "Tariffville",
     "county": "Hartford",
@@ -43990,6 +46405,13 @@
     "state": "CT",
     "lat": 41.984646,
     "lng": -72.557731
+  },
+  "06083": {
+    "city": "Enfield",
+    "county": "Tolland",
+    "state": "CT",
+    "lat": 41.9762,
+    "lng": -72.5918
   },
   "06084": {
     "city": "Tolland",
@@ -44073,12 +46495,33 @@
     "county": "Hartford",
     "state": "CT"
   },
+  "06101": {
+    "city": "Hartford",
+    "county": "Hartford",
+    "state": "CT",
+    "lat": 41.7801,
+    "lng": -72.6771
+  },
+  "06102": {
+    "city": "Hartford",
+    "county": "Hartford",
+    "state": "CT",
+    "lat": 41.7918,
+    "lng": -72.7188
+  },
   "06103": {
     "city": "Hartford",
     "county": "Hartford",
     "state": "CT",
     "lat": 41.766349,
     "lng": -72.674636
+  },
+  "06104": {
+    "city": "Hartford",
+    "county": "Hartford",
+    "state": "CT",
+    "lat": 41.7918,
+    "lng": -72.7188
   },
   "06105": {
     "city": "Hartford",
@@ -44143,6 +46586,13 @@
     "lat": 41.747399,
     "lng": -72.672237
   },
+  "06115": {
+    "city": "Hartford",
+    "county": "Hartford",
+    "state": "CT",
+    "lat": 41.7588,
+    "lng": -72.6794
+  },
   "06117": {
     "city": "W hartford",
     "county": "Hartford",
@@ -44182,6 +46632,13 @@
     "state": "CT",
     "lat": 41.845504,
     "lng": -72.091889
+  },
+  "06230": {
+    "city": "Abington",
+    "county": "Tolland",
+    "state": "CT",
+    "lat": 41.8473,
+    "lng": -72.0253
   },
   "06231": {
     "city": "Amston",
@@ -44246,6 +46703,13 @@
     "lat": 41.927524,
     "lng": -72.041112
   },
+  "06243": {
+    "city": "East Killingly",
+    "county": "Windham",
+    "state": "CT",
+    "lat": 41.8452,
+    "lng": -71.8026
+  },
   "06247": {
     "city": "Hampton",
     "county": "Windham",
@@ -44274,6 +46738,13 @@
     "lat": 41.78155,
     "lng": -72.22554
   },
+  "06251": {
+    "city": "Mansfield Depot",
+    "county": "Tolland",
+    "state": "CT",
+    "lat": 41.7993,
+    "lng": -72.3065
+  },
   "06254": {
     "city": "North Franklin",
     "county": "New London",
@@ -44294,6 +46765,13 @@
     "state": "CT",
     "lat": 41.778469,
     "lng": -72.040003
+  },
+  "06258": {
+    "city": "Pomfret",
+    "county": "Windham",
+    "state": "CT",
+    "lat": 41.889,
+    "lng": -71.9682
   },
   "06259": {
     "city": "Pomfret",
@@ -44454,6 +46932,13 @@
     "lat": 41.579548,
     "lng": -72.196273
   },
+  "06338": {
+    "city": "Mashantucket",
+    "county": "New London",
+    "state": "CT",
+    "lat": 41.4757,
+    "lng": -71.9574
+  },
   "06339": {
     "city": "Ledyard",
     "county": "New London",
@@ -44468,12 +46953,33 @@
     "lat": 41.355405,
     "lng": -72.038268
   },
+  "06349": {
+    "city": "Groton",
+    "county": "New London",
+    "state": "CT",
+    "lat": 41.3997,
+    "lng": -72.0904
+  },
+  "06350": {
+    "city": "Hanover",
+    "county": "New London",
+    "state": "CT",
+    "lat": 41.6445,
+    "lng": -72.0677
+  },
   "06351": {
     "city": "Jewett City",
     "county": "New London",
     "state": "CT",
     "lat": 41.599562,
     "lng": -71.982619
+  },
+  "06353": {
+    "city": "Montville",
+    "county": "Windham",
+    "state": "CT",
+    "lat": 41.479,
+    "lng": -72.1512
   },
   "06354": {
     "city": "Moosup",
@@ -44530,6 +47036,13 @@
     "state": "CT",
     "lat": 41.409397,
     "lng": -72.147665
+  },
+  "06372": {
+    "city": "Old Mystic",
+    "county": "Windham",
+    "state": "CT",
+    "lat": 41.3882,
+    "lng": -71.9495
   },
   "06373": {
     "city": "Oneco",
@@ -44594,6 +47107,13 @@
     "lat": 41.424507,
     "lng": -72.069578
   },
+  "06383": {
+    "city": "Versailles",
+    "county": "New London",
+    "state": "CT",
+    "lat": 41.6016,
+    "lng": -72.0404
+  },
   "06384": {
     "city": "Voluntown",
     "county": "New London",
@@ -44614,6 +47134,13 @@
     "state": "CT",
     "lat": 41.744527,
     "lng": -71.913339
+  },
+  "06388": {
+    "city": "West Mystic",
+    "county": "New London",
+    "state": "CT",
+    "lat": 41.3441,
+    "lng": -71.9765
   },
   "06389": {
     "city": "Yantic",
@@ -44655,6 +47182,13 @@
     "lat": 41.284746,
     "lng": -72.796292
   },
+  "06408": {
+    "city": "Cheshire",
+    "county": "Middlesex",
+    "state": "CT",
+    "lat": 41.3657,
+    "lng": -72.9275
+  },
   "06409": {
     "city": "Centerbrook",
     "county": "Middlesex",
@@ -44669,6 +47203,13 @@
     "lat": 41.460167,
     "lng": -72.97222
   },
+  "06411": {
+    "city": "Cheshire",
+    "county": "Middlesex",
+    "state": "CT",
+    "lat": 41.499,
+    "lng": -72.9007
+  },
   "06412": {
     "city": "Chester",
     "county": "Middlesex",
@@ -44682,6 +47223,13 @@
     "state": "CT",
     "lat": 41.298201,
     "lng": -72.532934
+  },
+  "06414": {
+    "city": "Cobalt",
+    "county": "New London",
+    "state": "CT",
+    "lat": 41.5667,
+    "lng": -72.5581
   },
   "06415": {
     "city": "Colchester",
@@ -44781,6 +47329,13 @@
     "lat": 41.471457,
     "lng": -72.511376
   },
+  "06439": {
+    "city": "Hadlyme",
+    "county": "Middlesex",
+    "state": "CT",
+    "lat": 41.4212,
+    "lng": -72.4141
+  },
   "06441": {
     "city": "Higganum",
     "county": "Middlesex",
@@ -44830,12 +47385,26 @@
     "lat": 41.515346,
     "lng": -72.712988
   },
+  "06456": {
+    "city": "Middle Haddam",
+    "county": "Middlesex",
+    "state": "CT",
+    "lat": 41.554,
+    "lng": -72.5501
+  },
   "06457": {
     "city": "Middletown",
     "county": "Middlesex",
     "state": "CT",
     "lat": 41.550139,
     "lng": -72.655357
+  },
+  "06459": {
+    "city": "Middletown",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.5565,
+    "lng": -72.6582
   },
   "06460": {
     "city": "Milford",
@@ -44892,6 +47461,13 @@
     "state": "CT",
     "lat": 41.384381,
     "lng": -72.862644
+  },
+  "06474": {
+    "city": "North Westchester",
+    "county": "Middlesex",
+    "state": "CT",
+    "lat": 41.5809,
+    "lng": -72.4012
   },
   "06475": {
     "city": "Old Saybrook",
@@ -44984,6 +47560,20 @@
     "lat": 41.456205,
     "lng": -72.811047
   },
+  "06493": {
+    "city": "Wallingford",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3657,
+    "lng": -72.9275
+  },
+  "06494": {
+    "city": "Wallingford",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3657,
+    "lng": -72.9275
+  },
   "06498": {
     "city": "Westbrook",
     "county": "Middlesex",
@@ -44996,12 +47586,68 @@
     "county": "Fairfield",
     "state": "CT"
   },
+  "06501": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3082,
+    "lng": -72.9282
+  },
+  "06502": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3082,
+    "lng": -72.9282
+  },
+  "06503": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3082,
+    "lng": -72.9282
+  },
   "06504": {
     "city": "New haven",
     "county": "New Haven",
     "state": "CT",
     "lat": 41.365709,
     "lng": -72.927507
+  },
+  "06505": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3082,
+    "lng": -72.9282
+  },
+  "06506": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3082,
+    "lng": -72.9282
+  },
+  "06507": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3082,
+    "lng": -72.9282
+  },
+  "06508": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3082,
+    "lng": -72.9282
+  },
+  "06509": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3082,
+    "lng": -72.9282
   },
   "06510": {
     "city": "New Haven",
@@ -45072,6 +47718,13 @@
     "state": "CT",
     "lat": 41.296897,
     "lng": -72.938596
+  },
+  "06520": {
+    "city": "New Haven",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.3082,
+    "lng": -72.9282
   },
   "06524": {
     "city": "Bethany",
@@ -45176,10 +47829,31 @@
     "lat": 41.177046,
     "lng": -73.133574
   },
+  "06650": {
+    "city": "Bridgeport",
+    "county": "Fairfield",
+    "state": "CT",
+    "lat": 41.18,
+    "lng": -73.19
+  },
+  "06673": {
+    "city": "Bridgeport",
+    "county": "Fairfield",
+    "state": "CT",
+    "lat": 41.167,
+    "lng": -73.2048
+  },
   "066HH": {
     "city": "066hh",
     "county": "Fairfield",
     "state": "CT"
+  },
+  "06701": {
+    "city": "Waterbury",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.5582,
+    "lng": -73.0515
   },
   "06702": {
     "city": "Waterbury",
@@ -45237,6 +47911,13 @@
     "lat": 41.598347,
     "lng": -72.980578
   },
+  "06720": {
+    "city": "Waterbury",
+    "county": "New Haven",
+    "state": "CT",
+    "lat": 41.5582,
+    "lng": -73.0515
+  },
   "06750": {
     "city": "Bantam",
     "county": "Litchfield",
@@ -45257,6 +47938,13 @@
     "state": "CT",
     "lat": 41.520312,
     "lng": -73.363875
+  },
+  "06753": {
+    "city": "Cornwall",
+    "county": "Litchfield",
+    "state": "CT",
+    "lat": 41.8281,
+    "lng": -73.3323
   },
   "06754": {
     "city": "Warren",
@@ -45543,6 +48231,13 @@
     "lat": 41.152556,
     "lng": -73.243891
   },
+  "06829": {
+    "city": "Georgetown",
+    "county": "Fairfield",
+    "state": "CT",
+    "lat": 41.2555,
+    "lng": -73.4279
+  },
   "06830": {
     "city": "Greenwich",
     "county": "Fairfield",
@@ -45661,6 +48356,13 @@
     "state": "CT",
     "lat": 41.034946,
     "lng": -73.566968
+  },
+  "06875": {
+    "city": "Redding Center",
+    "county": "Fairfield",
+    "state": "CT",
+    "lat": 41.3089,
+    "lng": -73.3637
   },
   "06877": {
     "city": "Ridgefield",
@@ -45842,6 +48544,13 @@
     "lat": 41.308873,
     "lng": -73.363661
   },
+  "06993": {
+    "city": "Georgetown",
+    "county": "Fairfield",
+    "state": "CT",
+    "lat": 40.582845,
+    "lng": -74.27524
+  },
   "07001": {
     "state": "NJ",
     "county": "Middlesex",
@@ -45939,6 +48648,13 @@
     "state": "NJ",
     "lat": 40.832449,
     "lng": -74.136937
+  },
+  "07015": {
+    "city": "Clifton",
+    "county": "Union",
+    "state": "NJ",
+    "lat": 40.8584,
+    "lng": -74.1638
   },
   "07016": {
     "state": "NJ",
@@ -47758,12 +50474,26 @@
     "lat": 40.917598,
     "lng": -74.546651
   },
+  "07802": {
+    "city": "Dover",
+    "county": "Morris",
+    "state": "NJ",
+    "lat": 40.8673,
+    "lng": -74.5783
+  },
   "07803": {
     "city": "Mine Hill",
     "county": "Morris",
     "state": "NJ",
     "lat": 40.877099,
     "lng": -74.584453
+  },
+  "07806": {
+    "city": "Picatinny Arsenal",
+    "county": "Morris",
+    "state": "NJ",
+    "lat": 40.8673,
+    "lng": -74.5783
   },
   "07821": {
     "city": "Andover",
@@ -47820,6 +50550,13 @@
     "state": "NJ",
     "lat": 40.717424,
     "lng": -74.813951
+  },
+  "07831": {
+    "city": "Changewater",
+    "county": "Warren",
+    "state": "NJ",
+    "lat": 40.7394,
+    "lng": -74.9448
   },
   "07832": {
     "city": "Columbia",
@@ -47883,6 +50620,13 @@
     "state": "NJ",
     "lat": 40.936753,
     "lng": -74.659969
+  },
+  "07844": {
+    "city": "Hope",
+    "county": "Morris",
+    "state": "NJ",
+    "lat": 40.9197,
+    "lng": -74.9846
   },
   "07845": {
     "city": "Ironia",
@@ -48059,6 +50803,13 @@
     "lat": 40.955934,
     "lng": -74.788108
   },
+  "07880": {
+    "city": "Vienna",
+    "county": "Sussex",
+    "state": "NJ",
+    "lat": 40.8648,
+    "lng": -74.897
+  },
   "07881": {
     "city": "Wallpack Center",
     "county": "Sussex",
@@ -48099,6 +50850,13 @@
     "lat": 40.71275,
     "lng": -74.361594
   },
+  "07902": {
+    "city": "Summit",
+    "county": "Union",
+    "state": "NJ",
+    "lat": 40.7156,
+    "lng": -74.3647
+  },
   "07920": {
     "state": "NJ",
     "county": "Somerset",
@@ -48126,6 +50884,13 @@
     "city": "Bernardsville",
     "lat": 40.72575,
     "lng": -74.593552
+  },
+  "07926": {
+    "city": "Brookside",
+    "county": "Morris",
+    "state": "NJ",
+    "lat": 40.8004,
+    "lng": -74.5718
   },
   "07927": {
     "city": "Cedar Knolls",
@@ -48469,6 +51234,13 @@
     "state": "NJ",
     "lat": 39.681545,
     "lng": -75.493433
+  },
+  "08025": {
+    "city": "Ewan",
+    "county": "Camden",
+    "state": "NJ",
+    "lat": 39.7015,
+    "lng": -75.1629
   },
   "08026": {
     "city": "Gibbsboro",
@@ -48939,6 +51711,13 @@
     "lat": 39.586,
     "lng": -75.379897
   },
+  "08099": {
+    "city": "Bellmawr",
+    "county": "Salem",
+    "state": "NJ",
+    "lat": 39.8676,
+    "lng": -75.0946
+  },
   "080HH": {
     "city": "080hh",
     "county": "Atlantic",
@@ -49051,6 +51830,13 @@
     "state": "NJ",
     "lat": 39.110337,
     "lng": -74.767939
+  },
+  "08205": {
+    "city": "Absecon",
+    "county": "Cape May",
+    "state": "NJ",
+    "lat": 39.4745,
+    "lng": -74.4575
   },
   "08210": {
     "city": "Cape may court h",
@@ -49171,6 +51957,13 @@
     "lat": 39.09998,
     "lng": -74.848733
   },
+  "08246": {
+    "city": "South Seaville",
+    "county": "Cape May",
+    "state": "NJ",
+    "lat": 39.179,
+    "lng": -74.7599
+  },
   "08247": {
     "city": "Stone harbor",
     "county": "Cape May",
@@ -49184,6 +51977,13 @@
     "state": "NJ",
     "lat": 39.192018,
     "lng": -74.661977
+  },
+  "08250": {
+    "city": "Tuckahoe",
+    "county": "Cape May",
+    "state": "NJ",
+    "lat": 39.2901,
+    "lng": -74.7538
   },
   "08251": {
     "city": "Villas",
@@ -49449,6 +52249,13 @@
     "lat": 39.465465,
     "lng": -74.965279
   },
+  "08362": {
+    "city": "Vineland",
+    "county": "Cumberland",
+    "state": "NJ",
+    "lat": 39.4862,
+    "lng": -75.0257
+  },
   "083HH": {
     "city": "083hh",
     "county": "Atlantic",
@@ -49479,6 +52286,20 @@
     "state": "NJ",
     "lat": 39.324265,
     "lng": -74.513497
+  },
+  "08404": {
+    "city": "Atlantic City",
+    "county": "Atlantic",
+    "state": "NJ",
+    "lat": 39.3643,
+    "lng": -74.4229
+  },
+  "08405": {
+    "city": "Atlantic City",
+    "county": "Atlantic",
+    "state": "NJ",
+    "lat": 39.3643,
+    "lng": -74.4229
   },
   "08406": {
     "city": "Ventnor city",
@@ -49694,6 +52515,13 @@
     "city": "Roosevelt",
     "lat": 40.22136,
     "lng": -74.474745
+  },
+  "08557": {
+    "city": "Sergeantsville",
+    "county": "Somerset",
+    "state": "NJ",
+    "lat": 40.4459,
+    "lng": -74.9435
   },
   "08558": {
     "state": "NJ",
@@ -50464,6 +53292,13 @@
     "lat": 40.585926,
     "lng": -74.976982
   },
+  "08868": {
+    "city": "Quakertown",
+    "county": "Somerset",
+    "state": "NJ",
+    "lat": 40.5655,
+    "lng": -74.9389
+  },
   "08869": {
     "state": "NJ",
     "county": "Somerset",
@@ -50548,6 +53383,13 @@
     "lat": 40.52057,
     "lng": -74.794632
   },
+  "08888": {
+    "city": "Whitehouse",
+    "county": "Hunterdon",
+    "state": "NJ",
+    "lat": 40.6194,
+    "lng": -74.7406
+  },
   "08889": {
     "city": "Whitehouse stati",
     "county": "Hunterdon",
@@ -50601,6 +53443,13 @@
     "city": "Highland Park",
     "lat": 40.499866,
     "lng": -74.428095
+  },
+  "08905": {
+    "city": "New Brunswick",
+    "county": "Middlesex",
+    "state": "NJ",
+    "lat": 40.48,
+    "lng": -74.44
   },
   "08906": {
     "state": "NJ",
@@ -51253,26 +54102,5 @@
     "city": "219hh",
     "county": "Cecil",
     "state": "MD"
-  },
-  "19101": {
-    "city": "Philadelphia",
-    "county": "Philadelphia",
-    "state": "PA",
-    "lat": 39.9526,
-    "lng": -75.1652
-  },
-  "28405": {
-    "city": "Wilmington",
-    "county": "New Hanover",
-    "state": "NC",
-    "lat": 34.2257,
-    "lng": -77.9447
-  },
-  "44805": {
-    "city": "Ashland",
-    "county": "Ashland",
-    "state": "OH",
-    "lat": 40.8687,
-    "lng": -82.3182
   }
 }
