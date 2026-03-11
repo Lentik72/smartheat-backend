@@ -332,7 +332,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
   const breadcrumbHtml = `
     <nav class="sp-breadcrumb" aria-label="Breadcrumb">
       <a href="/">Home</a> <span class="sp-breadcrumb-sep">&rsaquo;</span>
-      ${state ? `<a href="/prices.html?state=${stateSlug}">${escapeHtml(stateName)}</a> <span class="sp-breadcrumb-sep">&rsaquo;</span>` : ''}
+      ${state ? `<a href="/prices?state=${stateSlug}">${escapeHtml(stateName)}</a> <span class="sp-breadcrumb-sep">&rsaquo;</span>` : ''}
       <span>${name}</span>
     </nav>`;
 
@@ -473,7 +473,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
       <h2>${escapeHtml(appCtaText)}</h2>
       <p>${escapeHtml(appCtaSubtext)}</p>
       <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_supplier&utm_medium=website&utm_campaign=supplier_profile" class="btn btn-primary ios-only">Download HomeHeat Free &rarr;</a>
-      <a href="/prices.html" class="btn btn-primary android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat to Your Phone &rarr;</a>
+      <a href="/prices" class="btn btn-primary android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat to Your Phone &rarr;</a>
       <p class="sp-app-micro ios-only">Free. No hardware. No ads.</p>
       <p class="sp-app-micro android-only" style="display:none">Works like an app &mdash; no download needed.</p>
     </section>`;
