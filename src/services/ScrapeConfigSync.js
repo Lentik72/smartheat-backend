@@ -100,6 +100,11 @@ class ScrapeConfigSync {
 
     let driftCount = 0;
     const unresolvableZips = new Set(); // ZIPs in coverage but not in zip-database
+    const zipDb = getZipDatabase();
+    const zipDbLoaded = Object.keys(zipDb).length > 0;
+    if (!zipDbLoaded) {
+      console.error('[ScrapeConfigSync] ZIP database failed to load — skipping coverage cross-check');
+    }
 
     // Filter entries that have postalCodesServed (actual supplier configs)
     const supplierEntries = Object.entries(config).filter(([domain, cfg]) => {
@@ -148,11 +153,9 @@ class ScrapeConfigSync {
               .map(z => normalizeZip(z, supplierLabel))
               .filter(Boolean);
 
-            // Cross-check: flag ZIPs not in zip-database (users can't resolve them)
-            const db = getZipDatabase();
-            const unresolvable = configZips.filter(z => !db[z]);
-            if (unresolvable.length > 0) {
-              unresolvable.forEach(z => unresolvableZips.add(z));
+            // Cross-check: flag ZIPs not in zip-database (users get degraded matching)
+            if (zipDbLoaded) {
+              configZips.forEach(z => { if (!zipDb[z]) unresolvableZips.add(z); });
             }
 
             if (configZips.length === 0 && cfg.postalCodesOverride !== true) {

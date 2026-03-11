@@ -183,7 +183,8 @@ function findSuppliersForZip(userZip, suppliers, options = {}) {
     suppliers: scored,
     gapType,
     userInfo,
-    degraded
+    degraded,
+    ...(degraded && { degradedReason: 'missing_zip_database_entry' })
   };
 }
 
