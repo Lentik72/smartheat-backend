@@ -54,10 +54,6 @@
             <span class="nav-item-icon">📊</span>
             <span class="nav-item-label">App Analytics</span>
           </button>
-          <button class="nav-item" data-tab="retention">
-            <span class="nav-item-icon">🔄</span>
-            <span class="nav-item-label">Retention</span>
-          </button>
           <button class="nav-item" data-tab="growth">
             <span class="nav-item-icon">📈</span>
             <span class="nav-item-label">Growth</span>
@@ -163,8 +159,7 @@
       <nav class="tabs">
         <button class="tab active" data-tab="leaderboard">🏆 Leaderboard</button>
         <button class="tab" data-tab="app-analytics">📊 App Analytics</button>
-        <button class="tab" data-tab="retention">🔄 Retention</button>
-        <button class="tab" data-tab="growth">📈 Growth</button>
+        <button class="tab" data-tab="growth">📈 Growth & Retention</button>
         <button class="tab" data-tab="coverage">🗺️ Coverage</button>
         <button class="tab" data-tab="settings">⚙️ Settings</button>
       </nav>
@@ -873,33 +868,54 @@
               <div class="insight-box" id="platform-insight"></div>
             </div>
 
-            <!-- Retention by Action -->
-            <div class="panel full-width">
-              <h3>📊 Retention by User Action</h3>
-              <div class="retention-by-action" id="retention-by-action">
-                <div class="retention-bar-row">
-                  <span class="rba-label">Logged Delivery</span>
-                  <div class="rba-bar-container"><div class="rba-bar" id="rba-delivery"></div></div>
-                  <span class="rba-value" id="rba-delivery-val">--%</span>
-                </div>
-                <div class="retention-bar-row">
-                  <span class="rba-label">Set Up Tank</span>
-                  <div class="rba-bar-container"><div class="rba-bar" id="rba-tank"></div></div>
-                  <span class="rba-value" id="rba-tank-val">--%</span>
-                </div>
-                <div class="retention-bar-row">
-                  <span class="rba-label">Searched Supplier</span>
-                  <div class="rba-bar-container"><div class="rba-bar" id="rba-search"></div></div>
-                  <span class="rba-value" id="rba-search-val">--%</span>
-                </div>
-                <div class="retention-bar-row">
-                  <span class="rba-label">Just Browsed</span>
-                  <div class="rba-bar-container"><div class="rba-bar browse" id="rba-browse"></div></div>
-                  <span class="rba-value" id="rba-browse-val">--%</span>
-                </div>
+            <!-- Retention Summary -->
+            <div class="panel-grid">
+              <div class="panel">
+                <h3>Day 1 Retention</h3>
+                <div id="day1-retention" class="stat-large retention-stat">--%</div>
+                <div class="hint">Target: 40%+</div>
               </div>
-              <div class="insight-box" id="retention-insight">
-                💡 Users who log a delivery retain significantly better. Your #1 goal: Get users to log one delivery.
+              <div class="panel">
+                <h3>Day 7 Retention</h3>
+                <div id="day7-retention" class="stat-large retention-stat">--%</div>
+                <div class="hint">Target: 20%+</div>
+              </div>
+              <div class="panel">
+                <h3>Day 30 Retention</h3>
+                <div id="day30-retention" class="stat-large retention-stat">--%</div>
+                <div class="hint">Target: 10%+</div>
+              </div>
+              <div class="panel">
+                <h3>Total Users Tracked</h3>
+                <div id="cohort-size" class="stat-large">--</div>
+                <div class="hint">Combined web + app</div>
+              </div>
+            </div>
+
+            <!-- Retention Curve -->
+            <div class="panel full-width">
+              <h3>Retention Curve (30 Days)</h3>
+              <p class="hint">What % of users return each day after first visit</p>
+              <canvas id="retention-curve-chart"></canvas>
+            </div>
+
+            <!-- Cohort Table -->
+            <div class="panel full-width">
+              <h3>Cohort Breakdown</h3>
+              <p class="hint">Retention by user acquisition date</p>
+              <div class="table-scroll">
+                <table id="cohort-table">
+                  <thead>
+                    <tr>
+                      <th>Cohort Date</th>
+                      <th>Users</th>
+                      <th>Day 1</th>
+                      <th>Day 7</th>
+                      <th>Day 30</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cohort-table-body"></tbody>
+                </table>
               </div>
             </div>
 
@@ -1534,95 +1550,6 @@
         </div>
       </section>
 
-      <!-- Retention Tab -->
-      <section id="tab-retention" class="tab-panel">
-        <div class="panel-grid">
-          <!-- Day 1/7/30 Retention Cards -->
-          <div class="panel">
-            <h3>Day 1 Retention</h3>
-            <div id="day1-retention" class="stat-large retention-stat">--%</div>
-            <div class="hint">Target: 40%+</div>
-          </div>
-          <div class="panel">
-            <h3>Day 7 Retention</h3>
-            <div id="day7-retention" class="stat-large retention-stat">--%</div>
-            <div class="hint">Target: 20%+</div>
-          </div>
-          <div class="panel">
-            <h3>Day 30 Retention</h3>
-            <div id="day30-retention" class="stat-large retention-stat">--%</div>
-            <div class="hint">Target: 10%+</div>
-          </div>
-          <div class="panel">
-            <h3>Total Users Tracked</h3>
-            <div id="cohort-size" class="stat-large">--</div>
-            <div class="hint">Combined web + app</div>
-          </div>
-
-          <!-- Retention Curve Chart -->
-          <div class="panel full-width">
-            <h3>Retention Curve (30 Days)</h3>
-            <p class="hint">What % of users return each day after first visit</p>
-            <canvas id="retention-curve-chart"></canvas>
-          </div>
-
-          <!-- Cohort Table -->
-          <div class="panel full-width">
-            <h3>Cohort Breakdown</h3>
-            <p class="hint">Retention by user acquisition date</p>
-            <div class="table-scroll">
-              <table id="cohort-table">
-                <thead>
-                  <tr>
-                    <th>Cohort Date</th>
-                    <th>Users</th>
-                    <th>Day 1</th>
-                    <th>Day 7</th>
-                    <th>Day 30</th>
-                  </tr>
-                </thead>
-                <tbody id="cohort-table-body"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Behavior Retention -->
-          <div class="panel full-width">
-            <h3>Retention by Behavior</h3>
-            <p class="hint">Users who take certain actions stay longer</p>
-            <table id="behavior-retention-table">
-              <thead>
-                <tr>
-                  <th>Behavior</th>
-                  <th>Users</th>
-                  <th>Avg Active Days</th>
-                  <th>Insight</th>
-                </tr>
-              </thead>
-              <tbody id="behavior-retention-body"></tbody>
-            </table>
-          </div>
-
-          <!-- Retention Ideas -->
-          <div class="panel full-width">
-            <h3>Retention Improvement Ideas</h3>
-            <div id="retention-ideas" class="ideas-list">
-              <div class="idea">
-                <span class="idea-icon">1.</span>
-                <span>Push users to log first delivery - retained users make calls</span>
-              </div>
-              <div class="idea">
-                <span class="idea-icon">2.</span>
-                <span>Add price drop alerts to bring users back</span>
-              </div>
-              <div class="idea">
-                <span class="idea-icon">3.</span>
-                <span>Weekly "your area prices" email for opted-in users</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
 
 
@@ -2036,6 +1963,6 @@
     </div>
   </div>
 
-  <script src="dashboard.js?v=1772802901"></script>
+  <script src="dashboard.js?v=1772802902"></script>
 </body>
 </html>
