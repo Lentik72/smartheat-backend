@@ -32,80 +32,21 @@ module.exports = {
         addressLine1: '116 S Main Rd',
         city: 'Mountain Top',
         state: 'PA',
-        postalCodesServed: JSON.stringify([
-          // Luzerne County (core — HQ here)
-          '18201', // West Hazleton
-          '18219', // Conyngham
-          '18221', // Drifton
-          '18222', // Drums
-          '18224', // Freeland
-          '18225', // Harleigh
-          '18234', // Lattimer Mines
-          '18239', // Milnesville
-          '18246', // Rock Glen
-          '18247', // Saint Johns
-          '18249', // Sugarloaf
-          '18251', // Sybertsville
-          '18256', // Weston
-          '18601', // Beach Haven
-          '18602', // Bear Creek
-          '18617', // Glen Lyon
-          '18618', // Harveys Lake
-          '18621', // Hunlock Creek
-          '18622', // Huntington Mills
-          '18634', // Nanticoke
-          '18635', // Nescopeck
-          '18640', // Pittston
-          '18641', // Avoca
-          '18642', // Duryea
-          '18643', // West Pittston
-          '18644', // Wyoming
-          '18651', // Plymouth
-          '18655', // Mocanaqua
-          '18656', // Sweet Valley
-          '18660', // Wapwallopen
-          '18661', // White Haven
-          '18701', // Wilkes-Barre
-          '18702', // Hanover Township
-          '18704', // Kingston
-          '18705', // Wilkes-Barre
-          '18706', // Ashley
-          '18707', // Mountain Top (HQ)
-          '18708', // Shavertown
-          '18709', // Luzerne
-          // Carbon County
-          '18210', // Albrightsville
-          '18216', // Beaver Meadows
-          '18229', // Jim Thorpe
-          '18230', // Junedale
-          '18232', // Lansford
-          '18240', // Nesquehoning
-          '18250', // Summit Hill
-          '18254', // Tresckow
-          '18255', // Weatherly
-          '18624', // Lake Harmony
-          // Schuylkill County (partial)
-          '18218', // Coaldale
-          '18220', // Delano
-          '18231', // Kelayres
-          '18237', // McAdoo
-          '18241', // Fern Glen
-          '18242', // Oneida
-          '18245', // Quakake
-          '18248', // Sheppton
-          '17985', // Zion Grove
-        ]),
+        // postalCodesServed managed by scrape-config.json (219 ZIPs, 13 counties)
         serviceCities: JSON.stringify([
           'Mountain Top', 'Wilkes-Barre', 'White Haven', 'Plymouth', 'Bear Creek',
           'Nanticoke', 'Kingston', 'Luzerne', 'Glen Lyon', 'Shavertown', 'Wapwallopen',
           'Drums', 'Drifton', 'Wyoming', 'Lattimer Mines', 'Pittston', 'Milnesville',
           'Freeland', 'Harleigh', 'Hunlock Creek', 'Hazleton', 'Conyngham', 'Sybertsville',
           'Beaver Meadows', 'Lake Harmony', 'Duryea', 'Beach Haven', 'Weatherly',
-          'Junedale', 'Sugarloaf', 'Harveys Lake', 'Tresckow', 'Nescopeck',
-          'Kelayres', 'Jim Thorpe', 'McAdoo', 'Nesquehoning', 'Rock Glen',
-          'Lansford', 'Summit Hill', 'Coaldale', 'Delano', 'Zion Grove',
+          'Scranton', 'Carbondale', 'Sunbury', 'Bloomsburg', 'Stroudsburg',
+          'Jim Thorpe', 'McAdoo', 'Nesquehoning', 'Lansford', 'Summit Hill',
+          'Coaldale', 'Danville', 'Shamokin', 'Pottsville', 'Shenandoah',
         ]),
-        serviceCounties: JSON.stringify(['Luzerne', 'Carbon', 'Schuylkill']),
+        serviceCounties: JSON.stringify([
+          'Carbon', 'Columbia', 'Dauphin', 'Lackawanna', 'Luzerne', 'Lycoming',
+          'Monroe', 'Montour', 'Northumberland', 'Schuylkill', 'Snyder', 'Union', 'Wyoming'
+        ]),
         serviceAreaRadius: 35,
         lat: 41.1369,
         lng: -75.8997,
