@@ -41,10 +41,13 @@ module.exports = {
       }
 
       const supplier = rows[0];
-      let existingZips = [];
-      let existingCities = [];
-      try { existingZips = JSON.parse(supplier.postal_codes_served || '[]'); } catch (e) { existingZips = []; }
-      try { existingCities = JSON.parse(supplier.service_cities || '[]'); } catch (e) { existingCities = []; }
+      // JSONB columns return JS arrays directly; only parse if string
+      let existingZips = Array.isArray(supplier.postal_codes_served)
+        ? supplier.postal_codes_served
+        : (() => { try { return JSON.parse(supplier.postal_codes_served || '[]'); } catch (e) { return []; } })();
+      let existingCities = Array.isArray(supplier.service_cities)
+        ? supplier.service_cities
+        : (() => { try { return JSON.parse(supplier.service_cities || '[]'); } catch (e) { return []; } })();
 
       for (const zip of zips) {
         if (!existingZips.includes(zip)) existingZips.push(zip);

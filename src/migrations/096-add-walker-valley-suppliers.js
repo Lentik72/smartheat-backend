@@ -39,10 +39,13 @@ module.exports = {
       }
 
       const supplier = rows[0];
-      let zips = [];
-      let cities = [];
-      try { zips = JSON.parse(supplier.postal_codes_served || '[]'); } catch (e) { zips = []; }
-      try { cities = JSON.parse(supplier.service_cities || '[]'); } catch (e) { cities = []; }
+      // JSONB columns return JS arrays directly; only parse if string
+      let zips = Array.isArray(supplier.postal_codes_served)
+        ? [...supplier.postal_codes_served]
+        : (() => { try { return JSON.parse(supplier.postal_codes_served || '[]'); } catch (e) { return []; } })();
+      let cities = Array.isArray(supplier.service_cities)
+        ? [...supplier.service_cities]
+        : (() => { try { return JSON.parse(supplier.service_cities || '[]'); } catch (e) { return []; } })();
 
       if (!zips.includes(zip)) zips.push(zip);
       if (!cities.includes(city)) cities.push(city);

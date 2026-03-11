@@ -37,10 +37,13 @@ module.exports = {
       }
 
       const supplier = rows[0];
-      let zips = [];
-      let cities = [];
-      try { zips = JSON.parse(supplier.postal_codes_served || '[]'); } catch (e) { zips = []; }
-      try { cities = JSON.parse(supplier.service_cities || '[]'); } catch (e) { cities = []; }
+      // JSONB columns return JS arrays directly; only parse if string
+      let zips = Array.isArray(supplier.postal_codes_served)
+        ? [...supplier.postal_codes_served]
+        : (() => { try { return JSON.parse(supplier.postal_codes_served || '[]'); } catch (e) { return []; } })();
+      let cities = Array.isArray(supplier.service_cities)
+        ? [...supplier.service_cities]
+        : (() => { try { return JSON.parse(supplier.service_cities || '[]'); } catch (e) { return []; } })();
 
       if (!zips.includes('06077')) zips.push('06077');
       if (!cities.includes('Staffordville')) cities.push('Staffordville');
@@ -77,10 +80,13 @@ module.exports = {
       if (!rows || rows.length === 0) continue;
 
       const supplier = rows[0];
-      let zips = [];
-      let cities = [];
-      try { zips = JSON.parse(supplier.postal_codes_served || '[]'); } catch (e) { zips = []; }
-      try { cities = JSON.parse(supplier.service_cities || '[]'); } catch (e) { cities = []; }
+      // JSONB columns return JS arrays directly; only parse if string
+      let zips = Array.isArray(supplier.postal_codes_served)
+        ? [...supplier.postal_codes_served]
+        : (() => { try { return JSON.parse(supplier.postal_codes_served || '[]'); } catch (e) { return []; } })();
+      let cities = Array.isArray(supplier.service_cities)
+        ? [...supplier.service_cities]
+        : (() => { try { return JSON.parse(supplier.service_cities || '[]'); } catch (e) { return []; } })();
 
       zips = zips.filter(z => z !== '06077');
       cities = cities.filter(c => c !== 'Staffordville');
