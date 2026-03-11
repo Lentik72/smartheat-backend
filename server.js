@@ -558,6 +558,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/097-add-staffordville-coverage', label: 'Staffordville coverage' },
           { path: './src/migrations/098-backfill-limited-coverage-zips', label: 'Backfill limited-coverage ZIPs + Hilton Oil' },
           { path: './src/migrations/099-fix-overwritten-coverage', label: 'Fix overwritten supplier coverage' },
+          { path: './src/migrations/100-scrapeconfig-coverage-authority', label: 'scrape-config coverage authority' },
         ];
 
         let migrationErrors = 0;

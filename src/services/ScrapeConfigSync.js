@@ -4,11 +4,26 @@
  * This ensures the database always reflects the scrape-config.json file,
  * which is the source of truth for supplier coverage data.
  *
+ * Coverage model: scrape-config.json is authoritative for postal_codes_served.
+ * - Default: union merge (config adds ZIPs, never removes)
+ * - Override: set postalCodesOverride: true in config entry to fully replace
+ * - Kill switch: set SCRAPECONFIG_SKIP_COVERAGE=true env var to skip all coverage writes
+ *
  * Runs on server startup to keep database in sync with git-versioned config.
  */
 
 const fs = require('fs');
 const path = require('path');
+
+/**
+ * Normalize a ZIP code to 5 digits. Logs and drops invalid values.
+ */
+function normalizeZip(z, supplierName) {
+  const s = String(z).trim();
+  if (/^\d{5}/.test(s)) return s.slice(0, 5);
+  if (s.length > 0) console.warn(`[ScrapeConfigSync] Dropped invalid ZIP "${s}" for ${supplierName}`);
+  return null;
+}
 
 class ScrapeConfigSync {
   constructor(sequelize) {
@@ -55,6 +70,11 @@ class ScrapeConfigSync {
       return { success: false, reason: 'config_load_failed' };
     }
 
+    const skipCoverage = process.env.SCRAPECONFIG_SKIP_COVERAGE === 'true';
+    if (skipCoverage) {
+      console.log('[ScrapeConfigSync] Coverage writes disabled via SCRAPECONFIG_SKIP_COVERAGE');
+    }
+
     console.log('[ScrapeConfigSync] Starting sync...');
 
     const stats = {
@@ -64,6 +84,8 @@ class ScrapeConfigSync {
       skipped: 0,
       errors: []
     };
+
+    let driftCount = 0;
 
     // Filter entries that have postalCodesServed (actual supplier configs)
     const supplierEntries = Object.entries(config).filter(([domain, cfg]) => {
@@ -81,6 +103,7 @@ class ScrapeConfigSync {
 
         const normalizedDomain = this.normalizeDomain(domain);
         const websiteUrl = `https://${normalizedDomain}`;
+        const supplierLabel = cfg.name || domain;
 
         // Check if supplier exists (match by website domain)
         // ORDER BY active DESC so we always update the active record first,
@@ -104,9 +127,69 @@ class ScrapeConfigSync {
           const values = [];
           let paramIndex = 1;
 
-          // Update postal_codes_served
-          updates.push(`postal_codes_served = $${paramIndex++}`);
-          values.push(JSON.stringify(cfg.postalCodesServed));
+          // --- Coverage sync ---
+          if (!skipCoverage) {
+            // Normalize config ZIPs
+            const configZips = (cfg.postalCodesServed || [])
+              .map(z => normalizeZip(z, supplierLabel))
+              .filter(Boolean);
+
+            if (configZips.length === 0 && cfg.postalCodesOverride !== true) {
+              // Empty config with no override → skip (protects against accidental wipe)
+              console.log(`[ScrapeConfigSync] Skipping empty coverage for ${supplierLabel}`);
+            } else {
+              // Get existing DB ZIPs (JSONB returns array directly)
+              const existingZips = (Array.isArray(existing.postal_codes_served)
+                ? existing.postal_codes_served
+                : (() => { try { return JSON.parse(existing.postal_codes_served || '[]'); } catch(e) { return []; } })()
+              ).map(z => normalizeZip(z, supplierLabel)).filter(Boolean);
+
+              let finalZips;
+
+              if (cfg.postalCodesOverride === true) {
+                // Override: full replace — intentional coverage change
+                finalZips = configZips;
+                const configSet = new Set(configZips);
+                const removed = existingZips.filter(z => !configSet.has(z));
+                if (removed.length > 0 && existingZips.length > 0 && (removed.length / existingZips.length > 0.3 || removed.length > 20)) {
+                  console.warn(`[ScrapeConfigSync] LARGE SHRINK ${supplierLabel}: removing ${removed.length}/${existingZips.length} ZIPs (${Math.round(removed.length / existingZips.length * 100)}%)`);
+                } else if (removed.length > 0) {
+                  console.log(`[ScrapeConfigSync] OVERRIDE ${supplierLabel}: removed ${removed.length} ZIPs`);
+                }
+              } else {
+                // Default: union merge — config adds, never removes
+                finalZips = [...new Set([...existingZips, ...configZips])];
+
+                // Safety: warn on massive expansion (>3x)
+                if (existingZips.length > 0 && finalZips.length > existingZips.length * 3) {
+                  console.warn(`[ScrapeConfigSync] MASSIVE EXPANSION ${supplierLabel}: ${existingZips.length} → ${finalZips.length} ZIPs`);
+                }
+              }
+
+              // Sort deterministically
+              finalZips.sort((a, b) => Number(a) - Number(b));
+
+              // Idempotency: only write if coverage actually changed
+              const existingSorted = [...existingZips].sort((a, b) => Number(a) - Number(b));
+              if (JSON.stringify(existingSorted) !== JSON.stringify(finalZips)) {
+                updates.push(`postal_codes_served = $${paramIndex++}`);
+                values.push(JSON.stringify(finalZips));
+              }
+
+              // Two-way drift logging
+              const configSet = new Set(configZips);
+              const existingSet = new Set(existingZips);
+              const dbOnly = existingZips.filter(z => !configSet.has(z));
+              const configOnly = configZips.filter(z => !existingSet.has(z));
+              if (dbOnly.length > 0) {
+                console.log(`[ScrapeConfigSync] DRIFT ${supplierLabel}: ${dbOnly.length} ZIPs in DB not in config`);
+              }
+              if (configOnly.length > 0) {
+                console.log(`[ScrapeConfigSync] DRIFT ${supplierLabel}: ${configOnly.length} ZIPs in config not in DB (adding)`);
+              }
+              if (dbOnly.length > 0 || configOnly.length > 0) driftCount++;
+            }
+          }
 
           // Update name if provided in config
           if (cfg.name) {
@@ -129,26 +212,30 @@ class ScrapeConfigSync {
             updates.push(`last_scrape_failure_at = NULL`);
             updates.push(`scrape_failure_dates = NULL`);
             updates.push(`scrape_cooldown_until = NULL`);
-            console.log(`[ScrapeConfigSync] Re-enabling ${cfg.name || domain}: resetting failure counters`);
+            console.log(`[ScrapeConfigSync] Re-enabling ${supplierLabel}: resetting failure counters`);
             stats.reEnabled = (stats.reEnabled || 0) + 1;
           }
 
-          // Always update updated_at
-          updates.push(`updated_at = NOW()`);
+          if (updates.length > 0) {
+            // Always update updated_at
+            updates.push(`updated_at = NOW()`);
 
-          // Add supplier ID for WHERE clause
-          values.push(existing.id);
+            // Add supplier ID for WHERE clause
+            values.push(existing.id);
 
-          await this.sequelize.query(`
-            UPDATE suppliers
-            SET ${updates.join(', ')}
-            WHERE id = $${paramIndex}
-          `, {
-            bind: values,
-            type: this.sequelize.QueryTypes.UPDATE
-          });
+            await this.sequelize.query(`
+              UPDATE suppliers
+              SET ${updates.join(', ')}
+              WHERE id = $${paramIndex}
+            `, {
+              bind: values,
+              type: this.sequelize.QueryTypes.UPDATE
+            });
 
-          stats.updated++;
+            stats.updated++;
+          } else {
+            stats.skipped++;
+          }
         } else {
           // Create new supplier — inactive by default until vetted via migration
           const name = cfg.name || this.domainToName(normalizedDomain);
@@ -179,10 +266,12 @@ class ScrapeConfigSync {
       }
     }
 
+    console.log(`[ScrapeConfigSync] Summary: ${stats.processed} processed, ${stats.updated} updated, ${stats.skipped} unchanged, drift detected: ${driftCount}`);
     console.log(`[ScrapeConfigSync] Sync complete:`, {
       processed: stats.processed,
       created: stats.created,
       updated: stats.updated,
+      skipped: stats.skipped,
       errors: stats.errors.length
     });
 

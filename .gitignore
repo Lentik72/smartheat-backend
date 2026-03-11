@@ -64,3 +64,4 @@ website/sitemap.xml
 
 # Railway
 .railway/.DS_Store
+coverage_export.csv

@@ -54,3 +54,13 @@ CSS version bumping is handled automatically by `build.js` (content-hash based).
 - Notes field is internal-only, never displayed
 - Use `allowPriceDisplay === true` (NOT `!== false`)
 - New suppliers from ScrapeConfigSync default to `active=false`
+
+## Coverage Authority (postal_codes_served)
+
+- `postal_codes_served` is managed exclusively by `scrape-config.json` via ScrapeConfigSync
+- `postal_codes_served` MUST NEVER be written by migrations after migration 100
+- Coverage changes must be done in `scrape-config.json` `postalCodesServed` field
+- To shrink coverage (remove ZIPs): add `"postalCodesOverride": true` to the config entry
+- Default mode is union merge: config adds ZIPs, never removes
+- Emergency kill switch: set `SCRAPECONFIG_SKIP_COVERAGE=true` env var
+- SMS-sourced suppliers also need a scrape-config entry for their coverage

@@ -25,12 +25,29 @@ Research (verify COD, website proof)
   → Dashboard (update prices via magic link, view engagement metrics)
 ```
 
+## Coverage Authority
+
+`scrape-config.json` is the single source of truth for `postal_codes_served`. The DB column is a cached projection of config coverage, synced by ScrapeConfigSync on each deploy.
+
+```
+scrape-config.json → ScrapeConfigSync → DB suppliers.postal_codes_served → supplierMatcher / API
+migrations → supplier identity only (no coverage after migration 100)
+```
+
+- **Default mode**: union merge — config adds ZIPs, never removes from DB
+- **Override mode**: set `"postalCodesOverride": true` in config entry to fully replace (can remove ZIPs)
+- **Kill switch**: `SCRAPECONFIG_SKIP_COVERAGE=true` env var skips all coverage writes
+- **Drift logging**: ScrapeConfigSync logs `DRIFT` when DB and config disagree — update config to eliminate
+- **SMS suppliers**: Need a scrape-config entry (can be `"pattern": "none"`) for their coverage
+
 ## ScrapeConfigSync Behavior
 
 - Matches existing suppliers by normalized domain (strip protocol, www, trailing slash, lowercase)
 - New suppliers created with `active=false` — prevents unvetted listings appearing
 - Re-enable logic: if config has `enabled=true` but DB has `allow_price_display=false`, resets scrape status and clears all failure counters
 - Only processes config entries with `postalCodesServed` array (ignores `_`-prefixed metadata sections)
+- Coverage sync: normalizes ZIPs to 5 digits, deduplicates, sorts deterministically, skips update if no change (idempotent)
+- Warns on large shrink (>30% or >20 ZIPs removed via override) and massive expansion (>3x)
 
 ## Claim Verification Flow
 
