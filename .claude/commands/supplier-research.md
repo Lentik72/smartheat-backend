@@ -2,6 +2,8 @@
 
 You are now in **supplier research mode**. Follow these rules strictly for ALL supplier research and additions.
 
+Full ruleset is in memory at `supplier-research-rules.md`. This is the quick-reference version.
+
 ## CRITICAL: Verification Standard
 
 **Being listed on HeatFleet, FuelWonk, or any COD directory is NOT enough proof.**
@@ -20,7 +22,7 @@ If you cannot find this language on their own site, the supplier **DOES NOT QUAL
 ## Research Workflow
 
 ### Step 1: Check if Already Exists
-Search scrape-config.json and supplier pages for the supplier name.
+Search scrape-config.json, _ignore_list, _future_contract_oil, and supplier pages for the supplier name, phone, and address.
 
 ### Step 2: Visit Company Website
 - Look for COD/will-call language (see above)
@@ -28,52 +30,72 @@ Search scrape-config.json and supplier pages for the supplier name.
 - Find: address, phone, hours, service area, payment methods
 
 ### Step 3: Collect Required Data
-| Field | Source |
-|-------|--------|
-| name, phone, address | Company website |
-| hours | Company website > Yelp/Google |
-| emergencyDelivery | Look for "24/7", "emergency service" |
-| paymentMethods | credit_card, cash, check, etc. |
-| minimumGallons | Often 100 or 125 |
-| seniorDiscount | true if mentioned |
-| postalCodesServed | Company site > HeatFleet > FuelWonk |
-| serviceCities | List of towns |
-| serviceCounties | List of counties |
+| Field | Where it goes |
+|-------|---------------|
+| name, phone, address, hours | Migration |
+| emergencyDelivery, weekendDelivery | Migration |
+| paymentMethods, fuelTypes | Migration |
+| minimumGallons, seniorDiscount | Migration |
+| serviceCities, serviceCounties | Migration |
+| **postalCodesServed** | **scrape-config.json** (NOT migration) |
+| allowPriceDisplay | Migration |
 
 ### Step 4: Price Scraping Decision
-If prices are publicly displayed as static HTML:
-- Set `allowPriceDisplay: true`
-- Add to `scrape-config.json`
+If prices are publicly displayed as static HTML or via got-scraping:
+- Set `allowPriceDisplay: true` in migration
+- Add to `scrape-config.json` with `"enabled": true`
 
-If prices are behind forms, JS, or "call for quote":
-- Set `allowPriceDisplay: false`
-- Do NOT add to scrape-config
+If prices are behind forms, JS, Cloudflare, or "call for quote":
+- Set `allowPriceDisplay: false` in migration
+- **Still add to scrape-config.json** with `"enabled": false, "pattern": "none"`
 
-### Step 5: Create Migration
-File: `src/migrations/0XX-add-[region]-suppliers.js`
-Use existing migrations (049, 050) as templates.
+**Every supplier gets a scrape-config.json entry** — this is where coverage lives.
+
+### Step 5: Create Migration (identity only — no coverage)
+File: `src/migrations/NNN-add-[region]-suppliers.js`
+Use `upsertSupplier` from `./lib/upsert-supplier.js`.
+**Do NOT include `postalCodesServed`** — coverage is managed by scrape-config.json.
 **CRITICAL**: Use `=== true` not `!== false` for boolean fields.
 
-### Step 6: Register & Deploy
-1. Add to `server.js` migration block
-2. Add to `scrape-config.json` if scrapable
-3. Commit and push
+### Step 6: Add scrape-config.json Entry
+Every supplier needs an entry with `postalCodesServed`:
+```json
+"example-domain.com": {
+  "enabled": true,
+  "pattern": "direct",
+  "notes": "NY Kingston/Ulster County - COD price shown",
+  "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+  "postalCodesServed": ["12401", "12402", "12404"]
+}
+```
+
+For non-scrapable suppliers:
+```json
+"example-domain.com": {
+  "enabled": false,
+  "pattern": "none",
+  "notes": "DISABLED: NY Kingston - call for pricing",
+  "postalCodesServed": ["12401", "12402", "12404"]
+}
+```
+
+### Step 7: Register & Deploy
+1. Add migration to `server.js` migration block
+2. Commit and push
+3. Wait ~90s, verify supplier pages return 200
 
 ## DO NOT ADD to Production If:
 - No explicit COD/will-call language on their site
 - HVAC-only company (no fuel delivery)
 - Aggregator/broker/reseller
 - Acquired, closed, or merged
-- Uses Droplet/third-party ordering with no public prices
 - Contract-only company (automatic delivery, budget plans required)
 
 ## Contract Companies: Stage for Future
 
 If you find a quality supplier that is **contract-only** (no COD option):
 1. Do NOT add to database migration
-2. Add to `scrape-config.json` under staging section:
-   - `_future_contract_oil` for heating oil
-   - `_future_contract_propane` for propane
+2. Add to `scrape-config.json` under `_future_contract_oil` section
 3. Include: name, website, notes on why they're contract-only
 
 ## Fuel Type Handling
