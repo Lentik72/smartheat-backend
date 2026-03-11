@@ -15,6 +15,19 @@
 const fs = require('fs');
 const path = require('path');
 
+// Load zip-database once for coverage validation
+let zipDatabase = null;
+function getZipDatabase() {
+  if (!zipDatabase) {
+    try {
+      zipDatabase = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/zip-database.json'), 'utf8'));
+    } catch (e) {
+      zipDatabase = {};
+    }
+  }
+  return zipDatabase;
+}
+
 /**
  * Normalize a ZIP code to 5 digits. Logs and drops invalid values.
  */
@@ -86,6 +99,7 @@ class ScrapeConfigSync {
     };
 
     let driftCount = 0;
+    const unresolvableZips = new Set(); // ZIPs in coverage but not in zip-database
 
     // Filter entries that have postalCodesServed (actual supplier configs)
     const supplierEntries = Object.entries(config).filter(([domain, cfg]) => {
@@ -133,6 +147,13 @@ class ScrapeConfigSync {
             const configZips = (cfg.postalCodesServed || [])
               .map(z => normalizeZip(z, supplierLabel))
               .filter(Boolean);
+
+            // Cross-check: flag ZIPs not in zip-database (users can't resolve them)
+            const db = getZipDatabase();
+            const unresolvable = configZips.filter(z => !db[z]);
+            if (unresolvable.length > 0) {
+              unresolvable.forEach(z => unresolvableZips.add(z));
+            }
 
             if (configZips.length === 0 && cfg.postalCodesOverride !== true) {
               // Empty config with no override → skip (protects against accidental wipe)
@@ -267,15 +288,22 @@ class ScrapeConfigSync {
     }
 
     console.log(`[ScrapeConfigSync] Summary: ${stats.processed} processed, ${stats.updated} updated, ${stats.skipped} unchanged, drift detected: ${driftCount}`);
+    if (unresolvableZips.size > 0) {
+      console.warn(`[ScrapeConfigSync] WARNING: ${unresolvableZips.size} ZIPs in supplier coverage not in zip-database.json — users searching these ZIPs get degraded results (ZIP-exact match only, no city/county/radius)`);
+      if (unresolvableZips.size <= 20) {
+        console.warn(`[ScrapeConfigSync] Unresolvable ZIPs: ${[...unresolvableZips].sort().join(', ')}`);
+      }
+    }
     console.log(`[ScrapeConfigSync] Sync complete:`, {
       processed: stats.processed,
       created: stats.created,
       updated: stats.updated,
       skipped: stats.skipped,
-      errors: stats.errors.length
+      errors: stats.errors.length,
+      unresolvableZips: unresolvableZips.size
     });
 
-    return { success: true, stats };
+    return { success: true, stats, unresolvableZips: unresolvableZips.size };
   }
 
   /**

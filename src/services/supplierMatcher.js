@@ -84,28 +84,25 @@ function detectGap(results) {
  */
 function findSuppliersForZip(userZip, suppliers, options = {}) {
   const normalizedZip = userZip?.trim()?.substring(0, 5);
-  const userInfo = zipDatabase[normalizedZip];
+  const userInfo = zipDatabase[normalizedZip] || null;
 
-  if (!userInfo) {
-    return {
-      suppliers: [],
-      gapType: 'unknown_zip',
-      userInfo: null
-    };
-  }
+  // Degraded mode: ZIP not in database — can only do exact ZIP matching
+  // City/county/radius matching require location data from zip-database
+  const degraded = !userInfo;
 
   const scored = suppliers.map(supplier => {
     let score = 0;
     let matchType = null;
 
-    // Priority 1: Exact ZIP match (100 points)
+    // Priority 1: Exact ZIP match (100 points) — works without userInfo
     const postalCodes = supplier.postalCodesServed || supplier.postal_codes_served || [];
     if (postalCodes.includes(normalizedZip)) {
       score = SCORE.ZIP;
       matchType = 'zip';
     }
-    // Priority 2: City match (80 points)
-    else {
+    // Priority 2-4 require userInfo from zip-database
+    else if (!degraded) {
+      // Priority 2: City match (80 points)
       const serviceCities = supplier.serviceCities || supplier.service_cities || [];
       const supplierCity = supplier.city;
 
@@ -118,41 +115,42 @@ function findSuppliersForZip(userZip, suppliers, options = {}) {
         score = SCORE.CITY;
         matchType = 'city';
       }
-    }
-    // Priority 3: County match (60 points) - EXPLICIT ONLY
-    // V1.1.0: Added state validation to prevent cross-state county matches
-    // (e.g., York County VA supplier matching York County PA users)
-    // Allows match if supplier serves ANY ZIPs in user's state (handles multi-state suppliers)
-    if (score === 0) {
-      const serviceCounties = supplier.serviceCounties || supplier.service_counties || [];
-      if (serviceCounties.includes(userInfo.county)) {
-        // Check if supplier serves user's state (via ZIP codes or home state)
-        const supplierState = supplier.state;
-        const servesUserState = supplierState === userInfo.state ||
-          postalCodes.some(zip => {
-            const zipInfo = zipDatabase[zip];
-            return zipInfo && zipInfo.state === userInfo.state;
-          });
-        if (servesUserState) {
-          score = SCORE.COUNTY;
-          matchType = 'county';
+
+      // Priority 3: County match (60 points) - EXPLICIT ONLY
+      // V1.1.0: Added state validation to prevent cross-state county matches
+      // (e.g., York County VA supplier matching York County PA users)
+      // Allows match if supplier serves ANY ZIPs in user's state (handles multi-state suppliers)
+      if (score === 0) {
+        const serviceCounties = supplier.serviceCounties || supplier.service_counties || [];
+        if (serviceCounties.includes(userInfo.county)) {
+          // Check if supplier serves user's state (via ZIP codes or home state)
+          const supplierState = supplier.state;
+          const servesUserState = supplierState === userInfo.state ||
+            postalCodes.some(zip => {
+              const zipInfo = zipDatabase[zip];
+              return zipInfo && zipInfo.state === userInfo.state;
+            });
+          if (servesUserState) {
+            score = SCORE.COUNTY;
+            matchType = 'county';
+          }
         }
       }
-    }
-    // Priority 4: Radius match (40 points) - BACKEND ONLY
-    if (score === 0 && options.includeRadius) {
-      const supplierLat = supplier.lat || supplier.latitude;
-      const supplierLng = supplier.lng || supplier.longitude;
-      const radius = supplier.serviceAreaRadius || supplier.service_area_radius;
+      // Priority 4: Radius match (40 points) - BACKEND ONLY
+      if (score === 0 && options.includeRadius) {
+        const supplierLat = supplier.lat || supplier.latitude;
+        const supplierLng = supplier.lng || supplier.longitude;
+        const radius = supplier.serviceAreaRadius || supplier.service_area_radius;
 
-      if (radius && supplierLat && supplierLng && userInfo.lat && userInfo.lng) {
-        const distance = calculateDistance(
-          { lat: userInfo.lat, lng: userInfo.lng },
-          { lat: supplierLat, lng: supplierLng }
-        );
-        if (distance <= radius) {
-          score = SCORE.RADIUS;
-          matchType = 'radius';
+        if (radius && supplierLat && supplierLng && userInfo.lat && userInfo.lng) {
+          const distance = calculateDistance(
+            { lat: userInfo.lat, lng: userInfo.lng },
+            { lat: supplierLat, lng: supplierLng }
+          );
+          if (distance <= radius) {
+            score = SCORE.RADIUS;
+            matchType = 'radius';
+          }
         }
       }
     }
@@ -177,12 +175,15 @@ function findSuppliersForZip(userZip, suppliers, options = {}) {
     return (a.name || '').localeCompare(b.name || '');
   });
 
-  const gapType = detectGap(scored);
+  // In degraded mode with no results, the ZIP is truly unknown
+  // In degraded mode with results, we matched on postal_codes_served only
+  const gapType = degraded && scored.length === 0 ? 'unknown_zip' : detectGap(scored);
 
   return {
     suppliers: scored,
     gapType,
-    userInfo
+    userInfo,
+    degraded
   };
 }
 
