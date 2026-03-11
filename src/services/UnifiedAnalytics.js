@@ -1242,65 +1242,6 @@ class UnifiedAnalytics {
   }
 
   /**
-   * Get User Confidence Score metrics
-   * Based on user engagement depth (searches, clicks, comparisons)
-   * @param {number} days - Number of days to look back
-   */
-  async getConfidenceScore(days = 30) {
-    try {
-      // Calculate confidence based on user engagement from supplier_clicks + supplier_engagements
-      // Simplified query - calculate score inline to avoid CTE column reference issues
-      const [engagement] = await this.sequelize.query(`
-        WITH user_activity AS (
-          SELECT
-            COALESCE(sc.ip_address, se.ip_hash) as user_id,
-            COUNT(DISTINCT sc.id) + COUNT(DISTINCT se.id) as total_actions,
-            COUNT(DISTINCT COALESCE(sc.supplier_id, se.supplier_id)) as suppliers_compared
-          FROM (SELECT NULL as ip_address, NULL as id, NULL as supplier_id WHERE FALSE) dummy
-          LEFT JOIN supplier_clicks sc ON sc.created_at > NOW() - INTERVAL '${days} days'
-          LEFT JOIN supplier_engagements se ON se.created_at > NOW() - INTERVAL '${days} days'
-          WHERE sc.ip_address IS NOT NULL OR se.ip_hash IS NOT NULL
-          GROUP BY COALESCE(sc.ip_address, se.ip_hash)
-        )
-        SELECT
-          COUNT(*) as total_users,
-          ROUND(AVG(LEAST(total_actions * 3, 50) + LEAST(suppliers_compared * 10, 50))) as avg_score
-        FROM user_activity
-        WHERE user_id IS NOT NULL
-      `, { type: this.sequelize.QueryTypes.SELECT });
-
-      const stats = engagement[0] || {};
-      const total = parseInt(stats.total_users) || 1;
-      const avgScore = parseInt(stats.avg_score) || 0;
-      // Estimate distribution based on average score
-      const highPct = avgScore >= 60 ? Math.round(avgScore * 0.4) : Math.round(avgScore * 0.2);
-      const medPct = Math.round(avgScore * 0.4);
-      const lowPct = Math.max(0, 100 - highPct - medPct);
-
-      return {
-        avg: avgScore,
-        highPct,
-        medPct,
-        lowPct,
-        factors: {
-          'Price Comparisons': `${Math.min(avgScore * 0.3, 30).toFixed(0)}/30`,
-          'Supplier Research': `${Math.min(avgScore * 0.3, 30).toFixed(0)}/30`,
-          'Multi-day Usage': `${Math.min(avgScore * 0.2, 20).toFixed(0)}/20`,
-          'Geographic Search': `${Math.min(avgScore * 0.2, 20).toFixed(0)}/20`
-        }
-      };
-    } catch (error) {
-      // Log full error with position info for debugging SQL issues
-      this.logger.error(`[UnifiedAnalytics] Confidence score error: ${error.message}`);
-      if (error.position) {
-        this.logger.error(`[UnifiedAnalytics] Error position: ${error.position}`);
-      }
-      // Non-critical feature - return empty metrics silently
-      return { avg: 0, highPct: 0, medPct: 0, lowPct: 0, factors: {} };
-    }
-  }
-
-  /**
    * Get First Value Event (FVE) metrics
    * FVE = user who completed a valuable action (e.g., clicked supplier, made a search)
    * @param {number} days - Number of days to look back
@@ -2250,7 +2191,7 @@ class UnifiedAnalytics {
    */
   async getUnifiedOverview(days = 7) {
     try {
-      const [website, app, backend, retention, android, fuelType, deliveries, fve, confidence, trends, onboardingFunnel, topSuppliers, priceCorrelation, weatherCorrelation, cohortRetention, geoHeatmap, userJourney] = await Promise.all([
+      const [website, app, backend, retention, android, fuelType, deliveries, fve, trends, onboardingFunnel, topSuppliers, priceCorrelation, weatherCorrelation, cohortRetention, geoHeatmap, userJourney] = await Promise.all([
         this.getWebsiteMetrics(days),
         this.getAppMetrics(days),
         this.getBackendMetrics(days),
@@ -2259,7 +2200,6 @@ class UnifiedAnalytics {
         this.getFuelTypeBreakdown(days),
         this.getDeliveryPatterns(days),
         this.getFVEMetrics(days),
-        this.getConfidenceScore(days),
         this.getTrendData(days),
         this.getOnboardingFunnel(days),
         this.getTopSuppliers(days, 0),  // 0 = no limit, show all suppliers with activity
@@ -2274,12 +2214,11 @@ class UnifiedAnalytics {
       const isBigQuery = app.source === 'bigquery';
       const isFirebaseDb = app.available && app.source === 'database';
 
-      // Add fuel type, delivery, FVE, confidence, and onboarding data to app section
+      // Add fuel type, delivery, FVE, and onboarding data to app section
       const appData = app.data || {};
       appData.fuelType = fuelType;
       appData.deliveries = deliveries;
       appData.fve = fve;
-      appData.confidence = confidence;
       appData.onboardingFunnel = onboardingFunnel;
 
       // V2.29.0: Add topEvents from app_events table if not available from BigQuery

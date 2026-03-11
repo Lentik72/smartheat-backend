@@ -2497,27 +2497,6 @@ async function loadAppAnalytics() {
       ? '💡 Users who complete FVE retain significantly better'
       : '💡 Track first value events to measure user activation';
 
-    // Confidence score
-    const confidence = unifiedApp.confidence || {};
-    document.getElementById('cs-avg').textContent = confidence.avg || '--';
-    document.getElementById('cs-high-bar').style.width = `${confidence.highPct || 0}%`;
-    document.getElementById('cs-med-bar').style.width = `${confidence.medPct || 0}%`;
-    document.getElementById('cs-low-bar').style.width = `${confidence.lowPct || 0}%`;
-    document.getElementById('cs-high-pct').textContent = `${confidence.highPct || 0}%`;
-    document.getElementById('cs-med-pct').textContent = `${confidence.medPct || 0}%`;
-    document.getElementById('cs-low-pct').textContent = `${confidence.lowPct || 0}%`;
-
-    const factorsEl = document.getElementById('confidence-factors');
-    factorsEl.innerHTML = '';
-    if (confidence.factors) {
-      Object.entries(confidence.factors).forEach(([factor, score]) => {
-        factorsEl.innerHTML += `<div class="factor"><span>${factor}</span><span>${score}</span></div>`;
-      });
-    }
-    document.getElementById('cs-insight').textContent = confidence.avg && confidence.avg !== '--'
-      ? '💡 Higher confidence = more likely to order through app'
-      : '💡 Confidence builds as users engage more';
-
     // Fuel type breakdown
     const fuel = unifiedApp.fuelType || {};
     document.getElementById('fuel-oil-users').textContent = `${fuel.oil?.users ?? '--'} users`;
