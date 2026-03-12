@@ -762,6 +762,7 @@ app.use('/api/webhook/twilio', smsWebhookRoutes);  // V2.18.0: SMS price updates
 app.use('/api/outreach', require('./src/routes/outreach'));  // Supplier email unsubscribe
 app.use('/api/webhook', require('./src/routes/outreach'));  // Resend bounce/complaint webhook
 app.use('/api/price-alerts', require('./src/routes/price-alerts'));  // Price alert subscribe/unsubscribe
+app.use('/api/v1/heating-cost', require('./src/routes/heating-cost'));  // Multi-fuel cost comparison
 
 // V2.10.0: Serve static files for admin tools
 app.use(express.static(path.join(__dirname, 'public')));
@@ -1022,7 +1023,18 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   }, {
     timezone: 'America/New_York'
   });
+  // Generate heating cost estimator pages (runs after SEO pages so sitemap fragment is fresh)
+  cron.schedule('15 23 * * *', async () => {
+    try {
+      const { generateHeatingCostPages } = require('./scripts/generate-heating-cost-pages');
+      const result = await generateHeatingCostPages({ sequelize, dryRun: false });
+      logger.info(`✅ Heating cost pages generated: ${result.totalStatePages} state, ${result.totalCountyPages} county`);
+    } catch (error) {
+      logger.error('❌ Heating cost page generation failed:', error.message);
+    }
+  }, { timezone: 'America/New_York' });
   logger.info('📄 SEO + Supplier + ZIP/County Elite page generator scheduled: daily at 11:00 PM EST');
+  logger.info('📄 Heating cost page generator scheduled: daily at 11:15 PM EST');
 
   // Regenerate all pages on startup — health endpoint gates on this completing.
   // Generated pages are gitignored; each Railway deploy starts with no pages.
@@ -1061,10 +1073,15 @@ const server = app.listen(PORT, '0.0.0.0', () => {
         withTimeout((async () => {
           const { generateCountyElitePages } = require('./scripts/generate-county-elite-pages');
           return generateCountyElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
-        })(), 'County Elite pages')
+        })(), 'County Elite pages'),
+
+        withTimeout((async () => {
+          const { generateHeatingCostPages } = require('./scripts/generate-heating-cost-pages');
+          return generateHeatingCostPages({ sequelize, dryRun: false });
+        })(), 'Heating Cost pages')
       ]);
 
-      const names = ['SEO', 'Supplier', 'ZIP Elite', 'County Elite'];
+      const names = ['SEO', 'Supplier', 'ZIP Elite', 'County Elite', 'Heating Cost'];
       let allSucceeded = true;
 
       results.forEach((result, i) => {

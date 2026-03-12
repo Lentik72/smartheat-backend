@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
+<script src="../js/analytics.js"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-itunes-app" content="app-id=6747320571">
+    <title>Heating Cost Calculator — Compare Oil, Gas, Heat Pump &amp; Electric | HomeHeat</title>
+    <meta name="description" content="Enter your ZIP code to compare heating costs: oil vs natural gas vs heat pump vs electric. See estimated annual and monthly costs based on local fuel prices and your climate.">
+
+    <meta property="og:title" content="Heating Cost Calculator — Compare Fuel Types">
+    <meta property="og:description" content="Compare heating costs by fuel type for your ZIP code. See annual costs, monthly estimates, and heat pump payback periods.">
+    <meta property="og:url" content="https://www.gethomeheat.com/tools/heating-cost-calculator">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+
+    <link rel="canonical" href="https://www.gethomeheat.com/tools/heating-cost-calculator">
+    <link rel="stylesheet" href="../style.min.css?v=fe8e1a3b">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="icon" type="image/png" sizes="180x180" href="../favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../favicon.png">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Heating Cost Calculator",
+        "description": "Compare heating costs by fuel type for your ZIP code",
+        "url": "https://www.gethomeheat.com/tools/heating-cost-calculator",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "provider": {
+            "@type": "Organization",
+            "name": "HomeHeat",
+            "url": "https://www.gethomeheat.com"
+        }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What is the cheapest way to heat a home?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Natural gas is typically the cheapest fuel per BTU in areas where it's available. Heat pumps are the most efficient option and often the cheapest to operate, especially in moderate climates, but have significant upfront installation costs ($7,000–$15,000). Heating oil and propane costs vary significantly by region and market conditions."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How much does it cost to heat a home with oil vs gas?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Heating costs depend on local fuel prices, your home's size and insulation, and your climate (heating degree days). A typical 2,000 sq ft home in the Northeast might spend $2,200–$3,200/year on heating oil versus $1,200–$1,800/year on natural gas. Use our calculator with your ZIP code for a location-specific estimate."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How long does it take for a heat pump to pay for itself?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Heat pump payback depends on what fuel you're replacing and local electricity rates. Replacing electric baseboard heating, payback can be 3–5 years. Replacing oil heating, payback is typically 10–20 years depending on oil and electricity prices. Federal and state rebates can significantly shorten the payback period."
+                }
+            }
+        ]
+    }
+    </script>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <img src="../images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
+                HomeHeat
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/prices">Prices</a></li>
+                <li><a href="/for-suppliers">For Suppliers</a></li>
+                <li><a href="/learn/">Learn</a></li>
+                <li><a href="/support">Support</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="content-section" style="max-width: 960px;">
+        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">
+            <a href="/learn/">Learn</a> → Heating Cost Calculator
+        </p>
+
+        <h1>Heating Cost Calculator</h1>
+        <p>Compare annual and monthly heating costs for your area. Enter your ZIP code to see local fuel prices and estimated costs for oil, natural gas, heat pump, and electric heating.</p>
+
+        <!-- ZIP Input -->
+        <div class="calc-input-section">
+            <label for="calc-zip" class="calc-label">Your ZIP Code</label>
+            <div class="calc-zip-row">
+                <input type="text" id="calc-zip" maxlength="5" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 10549" autocomplete="postal-code" class="calc-zip-input">
+                <button id="calc-submit" class="calc-btn">Compare Costs</button>
+            </div>
+            <p id="calc-error" class="calc-error" hidden></p>
+        </div>
+
+        <!-- Loading -->
+        <div id="calc-loading" class="calc-loading" hidden>
+            <div class="calc-spinner"></div>
+            <p>Calculating costs for your area...</p>
+        </div>
+
+        <!-- Results -->
+        <div id="calc-results" hidden>
+            <div class="calc-location" id="calc-location"></div>
+
+            <!-- Verdict -->
+            <div class="calc-verdict" id="calc-verdict"></div>
+
+            <!-- Cost Comparison Table -->
+            <h2>Estimated Annual &amp; Monthly Heating Costs</h2>
+            <p class="calc-note">Based on a typical 2,000 sq ft home in your area.</p>
+            <div class="calc-table-wrapper">
+                <table class="calc-table">
+                    <thead>
+                        <tr>
+                            <th>Fuel Type</th>
+                            <th>Price</th>
+                            <th>Annual Cost</th>
+                            <th>Monthly Cost</th>
+                            <th>$/MMBTU</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calc-table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- Payback -->
+            <div id="calc-payback" class="calc-payback" hidden></div>
+
+            <!-- CTA Section -->
+            <div class="calc-cta-section">
+                <div class="calc-cta" id="calc-cta-oil">
+                    <h3>Staying with oil?</h3>
+                    <p>Compare heating oil prices from local suppliers.</p>
+                    <a id="calc-cta-oil-link" href="/prices" class="calc-cta-btn">Compare Oil Prices</a>
+                </div>
+            </div>
+
+            <!-- Email capture -->
+            <div class="calc-email-section">
+                <h3>Get your personalized heating cost breakdown</h3>
+                <p>We'll email you a detailed comparison with seasonal estimates and savings tips for your area.</p>
+                <div class="calc-email-row">
+                    <input type="email" id="calc-email" placeholder="you@example.com" autocomplete="email" class="calc-email-input">
+                    <button id="calc-email-submit" class="calc-btn calc-btn-secondary">Send My Report</button>
+                </div>
+                <p id="calc-email-status" class="calc-email-status" hidden></p>
+                <input type="text" name="website" id="calc-hp" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;">
+            </div>
+
+            <!-- Data Sources -->
+            <details class="calc-sources">
+                <summary>Data sources &amp; methodology</summary>
+                <ul>
+                    <li><strong>Oil prices:</strong> Local median from HomeHeat's daily supplier scrapes</li>
+                    <li><strong>Electricity &amp; gas rates:</strong> EIA residential averages by state (updated monthly)</li>
+                    <li><strong>Heating degree days:</strong> NOAA 30-year Climate Normals by county</li>
+                    <li><strong>Home size:</strong> Assumes 2,000 sq ft with typical insulation (7 BTU/sq-ft/HDD)</li>
+                    <li><strong>Heat pump COP:</strong> 3.0 (cold-climate mini-split average)</li>
+                    <li><strong>Heating season:</strong> 6 months (October–March)</li>
+                </ul>
+                <p>Actual costs depend on home insulation, equipment age, thermostat settings, and weather. Use these estimates as a starting point for comparing fuel options.</p>
+            </details>
+        </div>
+
+        <!-- Related -->
+        <div id="calc-related" class="calc-related" hidden>
+            <hr style="margin: 3rem 0; border: none; border-top: 1px solid var(--border-color);">
+            <h3>Related Articles</h3>
+            <ul>
+                <li><a href="/learn/heating-oil-usage">How to Estimate Heating Oil Usage</a></li>
+                <li><a href="/learn/heating-oil-winter">How Long Does Heating Oil Last in Winter?</a></li>
+            </ul>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="/learn/">Learn</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+            <a href="/support">Support</a>
+            <a href="mailto:support@gethomeheat.com">Contact</a>
+        </div>
+        <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
+        <p>&copy; 2026 HomeHeat. All rights reserved.</p>
+    </footer>
+
+    <script src="../js/nav.js"></script>
+    <script src="../js/widgets.js"></script>
+    <script src="../js/pwa.js"></script>
+    <script src="../js/calculator.js?v=406019d1"></script>
+</body>
+</html>

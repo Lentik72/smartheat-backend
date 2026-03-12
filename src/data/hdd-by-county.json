@@ -1,0 +1,90 @@
+{
+  "source": "NOAA NCEI Climate at a Glance - County Time Series",
+  "sourceUrl": "https://www.ncei.noaa.gov/cag/county/time-series/",
+  "period": "1991-2020 (30-year Climate Normals)",
+  "base": "65°F",
+  "unit": "annual HDD",
+  "lastUpdated": "2026-03-11",
+  "nationalAverage": 4500,
+  "stateAverages": {
+    "NY": 6023, "CT": 5867, "MA": 6061, "NJ": 5230, "PA": 5686,
+    "RI": 5769, "NH": 7451, "VT": 8066, "ME": 7776,
+    "MD": 4591, "DE": 4546, "VA": 4309, "OH": 5682,
+    "IL": 6067, "MI": 6751, "WI": 7509, "MN": 8606
+  },
+  "counties": {
+    "NY": {
+      "Albany": 6764, "Allegany": 7224, "Bronx": 4767, "Broome": 6975,
+      "Cattaraugus": 7340, "Cayuga": 6916, "Chautauqua": 6844,
+      "Chemung": 6987, "Chenango": 7217, "Clinton": 8140,
+      "Columbia": 6433, "Cortland": 7523, "Delaware": 7530,
+      "Dutchess": 6114, "Erie": 6768, "Essex": 8501,
+      "Franklin": 8524, "Fulton": 7565, "Genesee": 6800,
+      "Greene": 7055, "Hamilton": 8707, "Herkimer": 8119,
+      "Jefferson": 7576, "Kings": 4698, "Lewis": 8321,
+      "Livingston": 6739, "Madison": 7440, "Monroe": 6573,
+      "Montgomery": 7020, "Nassau": 4746, "New York": 4648,
+      "Niagara": 6607, "Oneida": 7500, "Onondaga": 6990,
+      "Ontario": 6764, "Orange": 6071, "Orleans": 6650,
+      "Oswego": 7174, "Otsego": 7505, "Putnam": 5915,
+      "Queens": 4751, "Rensselaer": 6814, "Richmond": 4758,
+      "Rockland": 5572, "Saratoga": 7127, "Schenectady": 6843,
+      "Schoharie": 7401, "Schuyler": 7005, "Seneca": 6723,
+      "Steuben": 7110, "Suffolk": 5226, "Sullivan": 6898,
+      "Tioga": 7040, "Tompkins": 7056, "Ulster": 6658,
+      "Warren": 7901, "Washington": 7219, "Wayne": 6755,
+      "Westchester": 5494, "Wyoming": 7262, "Yates": 6816,
+      "St. Lawrence": 8011
+    },
+    "CT": {
+      "Fairfield": 5665, "Hartford": 5963, "Litchfield": 6669,
+      "Middlesex": 5755, "New Haven": 5790, "New London": 5754,
+      "Tolland": 6129, "Windham": 6104
+    },
+    "MA": {
+      "Barnstable": 5657, "Berkshire": 7212, "Bristol": 5704,
+      "Dukes": 5451, "Essex": 6118, "Franklin": 6841,
+      "Hampden": 6491, "Hampshire": 6664, "Middlesex": 6116,
+      "Nantucket": 5545, "Norfolk": 5844, "Plymouth": 5723,
+      "Suffolk": 5809, "Worcester": 6658
+    },
+    "NJ": {
+      "Atlantic": 4688, "Bergen": 5223, "Burlington": 4729,
+      "Camden": 4664, "Cape May": 4573, "Cumberland": 4512,
+      "Essex": 5104, "Gloucester": 4575, "Hudson": 4793,
+      "Hunterdon": 5520, "Mercer": 4955, "Middlesex": 4881,
+      "Monmouth": 4868, "Morris": 5745, "Ocean": 4839,
+      "Passaic": 5705, "Salem": 4563, "Somerset": 5216,
+      "Sussex": 6043, "Union": 4919, "Warren": 5868
+    },
+    "PA": {
+      "Adams": 5316, "Allegheny": 5551, "Armstrong": 6020,
+      "Beaver": 5703, "Bedford": 5791, "Berks": 5507,
+      "Blair": 6113, "Bradford": 6880, "Bucks": 5227,
+      "Butler": 6001, "Cambria": 6576, "Cameron": 6836,
+      "Carbon": 6520, "Centre": 6394, "Chester": 5127,
+      "Clarion": 6451, "Clearfield": 6626, "Clinton": 6461,
+      "Columbia": 6357, "Crawford": 6665, "Cumberland": 5363,
+      "Dauphin": 5563, "Delaware": 4762, "Elk": 6969,
+      "Erie": 6628, "Fayette": 5804, "Forest": 6663,
+      "Franklin": 5372, "Fulton": 5528, "Greene": 5534,
+      "Huntingdon": 5754, "Indiana": 6168, "Jefferson": 6668,
+      "Juniata": 5633, "Lackawanna": 6839, "Lancaster": 5249,
+      "Lawrence": 5915, "Lebanon": 5546, "Lehigh": 5578,
+      "Luzerne": 6664, "Lycoming": 6599, "McKean": 7246,
+      "Mercer": 6361, "Mifflin": 5743, "Monroe": 6640,
+      "Montgomery": 5075, "Montour": 6010, "Northampton": 5714,
+      "Northumberland": 5915, "Perry": 5548, "Philadelphia": 4677,
+      "Pike": 6714, "Potter": 7237, "Schuylkill": 6177,
+      "Snyder": 5784, "Somerset": 6519, "Sullivan": 7277,
+      "Susquehanna": 7013, "Tioga": 7135, "Union": 6041,
+      "Venango": 6486, "Warren": 6955, "Washington": 5578,
+      "Wayne": 6990, "Westmoreland": 5779, "Wyoming": 6761,
+      "York": 5307
+    },
+    "RI": {
+      "Bristol": 5486, "Kent": 5779, "Newport": 5463,
+      "Providence": 5899, "Washington": 5624
+    }
+  }
+}

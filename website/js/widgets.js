@@ -256,4 +256,36 @@
     isDismissedRecently: isDismissedRecently,
     setDismissed: setDismissed
   };
+
+  // ============================================
+  // INLINE ZIP → CALCULATOR REDIRECT
+  // ============================================
+  // Wires up [data-calc-zip] inputs + [data-calc-go] links on learn articles.
+  // Sends user to /tools/heating-cost-calculator?zip=XXXXX
+
+  var calcInputs = document.querySelectorAll('[data-calc-zip]');
+  calcInputs.forEach(function(input) {
+    var container = input.closest('.calc-inline-zip');
+    if (!container) return;
+    var btn = container.querySelector('[data-calc-go]');
+    if (!btn) return;
+
+    function go() {
+      var zip = input.value.trim();
+      if (/^\d{5}$/.test(zip)) {
+        btn.href = '/tools/heating-cost-calculator?zip=' + zip;
+      }
+    }
+
+    input.addEventListener('input', go);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { go(); window.location.href = btn.href; }
+    });
+    btn.addEventListener('click', function(e) {
+      go();
+      if (!/\?zip=/.test(btn.href)) return;
+      e.preventDefault();
+      window.location.href = btn.href;
+    });
+  });
 })();

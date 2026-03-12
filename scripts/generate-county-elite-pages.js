@@ -762,6 +762,13 @@ ${countySuppliers.map(s => {
       <p class="cta-micro android-only" style="display:none">Works like an app — no download needed.</p>
     </section>
 
+    <!-- Cross-sell: Heating Cost Comparison -->
+    <section style="background: var(--primary-orange-light); padding: 1.25rem; border-radius: 8px; margin: 2rem 0;">
+      <strong>Is oil the cheapest option in ${escapeHtml(countyName)} County?</strong>
+      Compare heating oil, natural gas, heat pump, and electric costs side by side.
+      <a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Compare fuels &rarr;</a>
+    </section>
+
     <!-- Trust Footer -->
     <p class="trust-footer">
       Data updated daily by HomeHeat · <a href="/">gethomeheat.com</a>
