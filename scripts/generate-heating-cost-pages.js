@@ -288,7 +288,7 @@ function getFooterHTML(depth) {
     </footer>
 
     <script src="${prefix}js/nav.js"></script>
-    <script src="${prefix}js/widgets.js"></script>
+    <script src="${prefix}js/widgets.js?v=1"></script>
     <script src="${prefix}js/pwa.js"></script>`;
 }
 
