@@ -1033,8 +1033,28 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       logger.error('❌ Heating cost page generation failed:', error.message);
     }
   }, { timezone: 'America/New_York' });
+  // Generate average heating bill pages (C2)
+  cron.schedule('20 23 * * *', async () => {
+    try {
+      const { generateAvgBillPages } = require('./scripts/generate-avg-bill-pages');
+      const result = await generateAvgBillPages({ sequelize, dryRun: false });
+      logger.info(`✅ Avg Bill pages generated: ${result.totalStatePages} state, ${result.totalCountyPages} county`);
+    } catch (error) {
+      logger.error('❌ Avg Bill page generation failed:', error.message);
+    }
+  }, { timezone: 'America/New_York' });
+  // Generate price trend pages (C4)
+  cron.schedule('25 23 * * *', async () => {
+    try {
+      const { generatePriceTrendPages } = require('./scripts/generate-price-trend-pages');
+      const result = await generatePriceTrendPages({ sequelize, dryRun: false });
+      logger.info(`✅ Price Trend pages generated: ${result.totalStatePages} state, ${result.totalCountyPages} county`);
+    } catch (error) {
+      logger.error('❌ Price Trend page generation failed:', error.message);
+    }
+  }, { timezone: 'America/New_York' });
   logger.info('📄 SEO + Supplier + ZIP/County Elite page generator scheduled: daily at 11:00 PM EST');
-  logger.info('📄 Heating cost page generator scheduled: daily at 11:15 PM EST');
+  logger.info('📄 Heating cost + Avg Bill + Price Trend page generators scheduled: daily at 11:15/11:20/11:25 PM EST');
 
   // Regenerate all pages on startup — health endpoint gates on this completing.
   // Generated pages are gitignored; each Railway deploy starts with no pages.
@@ -1078,10 +1098,20 @@ const server = app.listen(PORT, '0.0.0.0', () => {
         withTimeout((async () => {
           const { generateHeatingCostPages } = require('./scripts/generate-heating-cost-pages');
           return generateHeatingCostPages({ sequelize, dryRun: false });
-        })(), 'Heating Cost pages')
+        })(), 'Heating Cost pages'),
+
+        withTimeout((async () => {
+          const { generateAvgBillPages } = require('./scripts/generate-avg-bill-pages');
+          return generateAvgBillPages({ sequelize, dryRun: false });
+        })(), 'Avg Bill pages'),
+
+        withTimeout((async () => {
+          const { generatePriceTrendPages } = require('./scripts/generate-price-trend-pages');
+          return generatePriceTrendPages({ sequelize, dryRun: false });
+        })(), 'Price Trend pages')
       ]);
 
-      const names = ['SEO', 'Supplier', 'ZIP Elite', 'County Elite', 'Heating Cost'];
+      const names = ['SEO', 'Supplier', 'ZIP Elite', 'County Elite', 'Heating Cost', 'Avg Bill', 'Price Trend'];
       let allSucceeded = true;
 
       results.forEach((result, i) => {

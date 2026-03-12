@@ -35,9 +35,9 @@
       desktopElements.forEach(el => el.style.display = 'none');
     } else {
       // Desktop
+      document.body.classList.add('platform-desktop');
       iosElements.forEach(el => el.style.display = 'none');
       androidElements.forEach(el => el.style.display = 'none');
-      desktopElements.forEach(el => el.style.display = '');
     }
   }
 

@@ -555,7 +555,9 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
       <div class="chart-container">
         <canvas id="priceChart"></canvas>
       </div>
-      <p class="chart-caption">County aggregate from ${supplierCount} suppliers</p>
+      <p class="chart-caption">County aggregate from ${supplierCount} suppliers ·
+        <a href="/price-trend/${stateCode.toLowerCase()}/${slugify(countyName)}">See full trend analysis →</a>
+      </p>
     </section>
 
     <script>
@@ -764,9 +766,10 @@ ${countySuppliers.map(s => {
 
     <!-- Cross-sell: Heating Cost Comparison -->
     <section style="background: var(--primary-orange-light); padding: 1.25rem; border-radius: 8px; margin: 2rem 0;">
-      <strong>Is oil the cheapest option in ${escapeHtml(countyName)} County?</strong>
-      Compare heating oil, natural gas, heat pump, and electric costs side by side.
-      <a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Compare fuels &rarr;</a>
+      <strong>What does heating cost in ${escapeHtml(countyName)} County?</strong>
+      <a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Heating costs</a> |
+      <a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Average bill</a> |
+      <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Price trends</a>
     </section>
 
     <!-- Trust Footer -->
