@@ -244,8 +244,9 @@ function getCssPath(depth) {
   return `${prefix}style.min.css?v=${getFileHash('style.min.css')}`;
 }
 
-function getNavHTML(depth) {
+function getNavHTML(depth, activeLink = null) {
   const prefix = '../'.repeat(depth);
+  const active = (link) => activeLink === link ? ' class="active"' : '';
   return `
     <nav class="nav">
         <div class="nav-container">
@@ -259,11 +260,19 @@ function getNavHTML(depth) {
                 <span></span>
             </button>
             <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/prices">Prices</a></li>
-                <li><a href="/for-suppliers">For Suppliers</a></li>
-                <li><a href="/learn/">Learn</a></li>
-                <li><a href="/support">Support</a></li>
+                <li><a href="/"${active('/')}>Home</a></li>
+                <li><a href="/prices"${active('/prices')}>Prices</a></li>
+                <li class="nav-dropdown-parent">
+                    <button class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">Heating Costs</button>
+                    <ul class="nav-dropdown" role="menu">
+                        <li role="menuitem"><a href="/tools/heating-cost-calculator" data-track="nav-calculator" data-referrer="nav">Cost Calculator</a></li>
+                        <li role="menuitem"><a href="/learn/heating-oil-vs-heat-pump" data-track="nav-heat-pump" data-referrer="nav">Oil vs Heat Pump</a></li>
+                        <li role="menuitem"><a href="/average-heating-bill/" data-track="nav-avg-bill" data-referrer="nav">Average Bills</a></li>
+                        <li role="menuitem"><a href="/learn/" data-track="nav-guides" data-referrer="nav">All Guides</a></li>
+                    </ul>
+                </li>
+                <li><a href="/for-suppliers"${active('/for-suppliers')}>For Suppliers</a></li>
+                <li><a href="/support"${active('/support')}>Support</a></li>
             </ul>
         </div>
     </nav>`;

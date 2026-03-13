@@ -8,7 +8,12 @@
 
 const express = require('express');
 const crypto = require('crypto');
+const path = require('path');
 const router = express.Router();
+
+// Shared nav helper
+const { getNavHTML, init: initCountyData } = require('../../scripts/lib/county-data');
+initCountyData(path.join(__dirname, '../../website'));
 
 // ── Caching ──────────────────────────────────────────────────────
 // Activity ranks: precomputed percentile rankings for all suppliers (1h TTL)
@@ -481,24 +486,7 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
   <link rel="stylesheet" href="/claim.css?v=3">
 </head>
 <body>
-  <nav class="nav">
-    <div class="nav-container">
-      <a href="/" class="nav-logo">
-        <img src="/images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
-        HomeHeat
-      </a>
-      <button class="nav-toggle" aria-label="Toggle navigation">
-        <span></span><span></span><span></span>
-      </button>
-      <ul class="nav-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/prices">Prices</a></li>
-        <li><a href="/for-suppliers">For Suppliers</a></li>
-        <li><a href="/learn/">Learn</a></li>
-        <li><a href="/support">Support</a></li>
-      </ul>
-    </div>
-  </nav>
+  ${getNavHTML(0, '/for-suppliers')}
 
   <main class="claim-page">
     <div class="claim-header">
@@ -553,24 +541,7 @@ function render404() {
   <link rel="stylesheet" href="/claim.css?v=3">
 </head>
 <body>
-  <nav class="nav">
-    <div class="nav-container">
-      <a href="/" class="nav-logo">
-        <img src="/images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
-        HomeHeat
-      </a>
-      <button class="nav-toggle" aria-label="Toggle navigation">
-        <span></span><span></span><span></span>
-      </button>
-      <ul class="nav-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/prices">Prices</a></li>
-        <li><a href="/for-suppliers">For Suppliers</a></li>
-        <li><a href="/learn/">Learn</a></li>
-        <li><a href="/support">Support</a></li>
-      </ul>
-    </div>
-  </nav>
+  ${getNavHTML(0, '/for-suppliers')}
 
   <main class="claim-page">
     <div class="claim-card" style="text-align:center; padding:48px 24px;">

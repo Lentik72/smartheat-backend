@@ -27,6 +27,9 @@ require('dotenv').config();
 // Shared supplier data queries
 const { getAllSuppliers, getCurrentPrices, getSuppliersForZips } = require('./lib/supplier-data');
 
+// Fuel cost computation
+const { computeFuelCosts, init: initCountyData, getNavHTML } = require('./lib/county-data');
+
 // Location resolver for ZIP lookups
 const locationResolver = require('../src/services/locationResolver');
 
@@ -36,6 +39,9 @@ const MAX_VALID_PRICE = 6.00;
 const WEBSITE_DIR = path.join(__dirname, '../website');
 const COUNTY_DIR = path.join(WEBSITE_DIR, 'prices/county');
 const MIN_QUALITY_SCORE = 0.45;  // Tier 1 + Tier 2 only (quality counties)
+
+// Initialize county data module for fuel cost lookups
+initCountyData(WEBSITE_DIR);
 
 // Parse CLI args
 const args = process.argv.slice(2);
@@ -436,9 +442,69 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   // Use actual supplier count from table when larger than aggregated stats
   const displaySupplierCount = countySuppliers.length;
 
+  const slug = slugify(countyName);
+
+  // ── Price Status Banner logic ──
+  const lastScrapeAt = stats.last_scrape_at ? new Date(stats.last_scrape_at) : null;
+  const hoursSinceScrape = lastScrapeAt ? (Date.now() - lastScrapeAt.getTime()) / (1000 * 60 * 60) : Infinity;
+  const isFresh = hoursSinceScrape < 36;
+  const absChange = percentChange6w !== null ? Math.abs(percentChange6w) : 0;
+  const showPriceBanner = isFresh && percentChange6w !== null && supplierCount >= 3 && absChange >= 3;
+
+  // Compute 6w-ago price from current + percent change
+  let priceSignal = 'none';
+  let priceBannerHTML = '';
+  if (showPriceBanner && medianPrice) {
+    const priceAgo = medianPrice / (1 + percentChange6w / 100);
+    const weeksLabel = weeksAvailable >= 6 ? '6' : String(weeksAvailable);
+
+    if (percentChange6w <= -3) {
+      priceSignal = 'down';
+      priceBannerHTML = `
+    <section class="price-status-banner price-status-down">
+      <div class="psb-status">Prices Down ${absChange.toFixed(0)}% in ${weeksLabel} Weeks</div>
+      <div class="psb-range">Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal across ${supplierCount} suppliers</div>
+      <div class="psb-timestamp">Based on ${supplierCount} suppliers · Updated ${lastUpdate}</div>
+      <a href="#suppliers" class="psb-cta" data-track="price-status-cta" data-referrer="price_status">Compare ${supplierCount} suppliers &rarr;</a>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=price_banner&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="psb-app-hook ios-only">Track price changes in the app &rarr;</a>
+    </section>`;
+    } else {
+      priceSignal = 'up';
+      priceBannerHTML = `
+    <section class="price-status-banner price-status-up">
+      <div class="psb-status">Prices Trending Up ${absChange.toFixed(0)}% in ${weeksLabel} Weeks</div>
+      <div class="psb-range">Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal across ${supplierCount} suppliers</div>
+      <div class="psb-timestamp">Based on ${supplierCount} suppliers · Updated ${lastUpdate}</div>
+      <a href="#alerts" class="psb-cta" data-track="price-status-cta" data-referrer="price_status">Set a price alert &rarr;</a>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=price_banner&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="psb-app-hook ios-only">Track price changes in the app &rarr;</a>
+    </section>`;
+    }
+  }
+
+  // ── Fuel Cost Insights ──
+  let fuelCosts = null;
+  try {
+    fuelCosts = medianPrice ? computeFuelCosts(medianPrice, stateCode, countyName) : null;
+  } catch (e) {
+    // Non-fatal: skip insights if fuel data unavailable
+  }
+
+  // ── Dynamic meta description ──
+  let metaDescription;
+  if (showPriceBanner && medianPrice) {
+    if (priceSignal === 'down') {
+      metaDescription = `Heating oil in ${countyName} County is down ${absChange.toFixed(0)}% — prices from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal from ${supplierCount} suppliers.`;
+    } else {
+      metaDescription = `Heating oil prices in ${countyName} County trending up ${absChange.toFixed(0)}%. Compare ${supplierCount} suppliers from $${minPrice.toFixed(2)}/gal.`;
+    }
+  } else if (medianPrice) {
+    metaDescription = `Current heating oil price in ${countyName} County, ${stateName}: $${medianPrice.toFixed(2)}/gal median from ${supplierCount} suppliers across ${zipCount} ZIP codes. Updated ${lastUpdate}.`;
+  } else {
+    metaDescription = `Heating oil prices for ${countyName} County, ${stateName}.`;
+  }
+
   const assetPath = '../../../';
   const cssVersion = getCssVersion();
-  const slug = slugify(countyName);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -449,7 +515,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr} | HomeHeat</title>
-  <meta name="description" content="${medianPrice ? `Current heating oil price in ${countyName} County, ${stateName}: $${medianPrice.toFixed(2)}/gal median from ${supplierCount} suppliers across ${zipCount} ZIP codes.` : `Heating oil prices for ${countyName} County, ${stateName}.`} Updated ${lastUpdate}.">
+  <meta name="description" content="${metaDescription}">
   <link rel="canonical" href="https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slug}">
 
   <!-- OpenGraph -->
@@ -473,27 +539,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   <script type="application/ld+json">${JSON.stringify(faqSchema)}</script>
   ${itemListSchema ? `<script type="application/ld+json">${JSON.stringify(itemListSchema)}</script>` : ''}
 </head>
-<body>
-  <nav class="nav">
-    <div class="nav-container">
-      <a href="/" class="nav-logo">
-        <img src="${assetPath}images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
-        HomeHeat
-      </a>
-      <button class="nav-toggle" aria-label="Toggle navigation">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <ul class="nav-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/prices" class="active">Prices</a></li>
-        <li><a href="/for-suppliers">For Suppliers</a></li>
-        <li><a href="/learn/">Learn</a></li>
-        <li><a href="/support">Support</a></li>
-      </ul>
-    </div>
-  </nav>
+<body data-page-type="county_elite" data-price-signal="${priceSignal}">
+  ${getNavHTML(3, '/prices')}
 
   <main class="county-elite-page">
     <!-- Breadcrumb -->
@@ -547,6 +594,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
       <span class="trend-text">${trendMessage}</span>
     </section>
     ` : ''}
+
+    ${priceBannerHTML}
 
     <!-- 6-Week Price History Chart -->
     ${history.length > 1 ? `
@@ -619,11 +668,39 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
     ` : ''}
 
     ${medianPrice ? `
-    <section class="county-alert-section">
+    <section class="county-alert-section" id="alerts">
       <h3>Get Email Alerts When Heating Oil Prices Drop</h3>
       <p class="county-alert-hook">Prices change daily. Save $40-$120 per delivery by timing it right.</p>
       <div class="price-alert-card" data-zip="${countyZips.length > 0 ? countyZips[Math.floor(countyZips.length / 2)] : ''}" data-price="${minPrice ? minPrice.toFixed(2) : ''}"></div>
       <p class="county-alert-trust">We check prices daily. No newsletters. Only price drops.</p>
+    </section>
+    ` : ''}
+
+    ${fuelCosts ? `
+    <!-- Heating Cost Insights -->
+    <section class="insight-section">
+      <div class="insight-grid">
+        <a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-bill" data-referrer="insights_block">
+          <div class="insight-value">$${fuelCosts.fuels['heating-oil'] ? fuelCosts.fuels['heating-oil'].monthlyCost : '—'}/mo</div>
+          <div class="insight-label">Monthly Heating Bill</div>
+          <div class="insight-detail">2,000 sq ft home · Oil heat</div>
+        </a>
+        <a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-fuel" data-referrer="insights_block">
+          ${fuelCosts.cheapest === 'heating-oil' ?
+            `<div class="insight-value insight-value-good">Oil is cheapest</div>
+             <div class="insight-label">Fuel Comparison</div>
+             <div class="insight-detail">See full comparison &rarr;</div>` :
+            `<div class="insight-value">${fuelCosts.fuels[fuelCosts.cheapest] ? '$' + fuelCosts.fuels[fuelCosts.cheapest].annualCost.toLocaleString() + '/yr' : '—'}</div>
+             <div class="insight-label">${{'natural-gas':'Natural Gas','heat-pump':'Heat Pump','electric-baseboard':'Electric'}[fuelCosts.cheapest] || fuelCosts.cheapest}</div>
+             <div class="insight-detail">${fuelCosts.fuels['heating-oil'] && fuelCosts.fuels[fuelCosts.cheapest] ? '$' + (fuelCosts.fuels['heating-oil'].annualCost - fuelCosts.fuels[fuelCosts.cheapest].annualCost).toLocaleString() + ' less than oil' : 'See comparison'}</div>`
+          }
+        </a>
+        <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-trend" data-referrer="insights_block">
+          <div class="insight-value">${percentChange6w !== null ? (percentChange6w > 0 ? '↑' : percentChange6w < 0 ? '↓' : '→') + ' ' + Math.abs(percentChange6w).toFixed(0) + '%' : '—'}</div>
+          <div class="insight-label">Price Trend</div>
+          <div class="insight-detail">${percentChange6w !== null ? 'in ' + (weeksAvailable >= 6 ? '6' : weeksAvailable) + ' weeks' : 'View trend analysis'}</div>
+        </a>
+      </div>
     </section>
     ` : ''}
 
@@ -665,7 +742,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
 
     <!-- Supplier Table -->
     ${countySuppliers.length > 0 ? `
-    <section class="supplier-table-section">
+    <section class="supplier-table-section" id="suppliers">
       <h2>Heating Oil Suppliers Serving ${escapeHtml(countyName)} County</h2>
       <p class="supplier-table-intro">Below are heating oil suppliers currently serving ${escapeHtml(countyName)} County, ${stateName} based on ZIP code coverage.</p>
         <table class="supplier-table">
@@ -685,8 +762,8 @@ ${countySuppliers.map(s => {
               <td class="supplier-name">${s.slug ? `<a href="/supplier/${s.slug}" class="supplier-profile-link">${escapeHtml(s.name)}</a>` : escapeHtml(s.name)}</td>
               <td class="supplier-city">${escapeHtml(s.city || '')}</td>
               <td class="supplier-price">${s.hasPrice ? `$${s.price.toFixed(2)}` : '<span class="call-for-price">Call</span>'}</td>
-              <td class="supplier-phone">${s.phone ? `<a href="tel:${s.phone}" class="phone-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="call">${escapeHtml(s.phone)}</a>` : '\u2014'}</td>
-              <td class="supplier-website">${hasValidWebsite ? `<a href="${escapeHtml(s.website)}" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="website">Website</a>` : ''}</td>
+              <td class="supplier-phone">${s.phone ? `<a href="tel:${s.phone}" class="phone-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="call" data-track="phone-click">${escapeHtml(s.phone)}</a>` : '\u2014'}</td>
+              <td class="supplier-website">${hasValidWebsite ? `<a href="${escapeHtml(s.website)}" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="website" data-track="website-click">Website</a>` : ''}</td>
             </tr>`;
 }).join('\n')}
           </tbody>
@@ -1163,6 +1240,134 @@ function generateCountyEliteCSS() {
 .trend-icon {
   font-weight: bold;
   font-size: 1.1rem;
+}
+
+/* Price Status Banner */
+.price-status-banner {
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid;
+}
+
+.price-status-down {
+  background: #dcfce7;
+  border-left-color: #166534;
+  color: #166534;
+}
+
+.price-status-up {
+  background: #fef3c7;
+  border-left-color: #92400e;
+  color: #92400e;
+}
+
+.psb-status {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.psb-range {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.psb-timestamp {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  margin-bottom: 0.75rem;
+}
+
+.psb-cta {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid currentColor;
+}
+
+.psb-cta:hover {
+  opacity: 0.8;
+}
+
+.psb-app-hook {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.7;
+}
+
+.psb-app-hook:hover {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .psb-timestamp {
+    display: none;
+  }
+}
+
+/* Heating Cost Insights */
+.insight-section {
+  margin-bottom: 2rem;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.insight-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.25rem 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.insight-card:hover {
+  border-color: #FF6B35;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.12);
+}
+
+.insight-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.insight-value-good {
+  color: #166534;
+}
+
+.insight-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.25rem;
+}
+
+.insight-detail {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+@media (max-width: 600px) {
+  .insight-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Chart Section */

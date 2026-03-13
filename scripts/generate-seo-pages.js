@@ -30,12 +30,17 @@ const locationResolver = require('../src/services/locationResolver');
 // Shared supplier data queries
 const { getAllSuppliers, getCurrentPrices, getSuppliersForZips } = require('./lib/supplier-data');
 
+// Shared nav/CSS helpers
+const { getNavHTML, init: initCountyData } = require('./lib/county-data');
+
 // Configuration
 const WEBSITE_DIR = path.join(__dirname, '../website');
 const PRICES_DIR = path.join(WEBSITE_DIR, 'prices');
 const MIN_SUPPLIERS_FOR_PAGE = 3;  // Threshold for generating a page
 const MIN_VALID_PRICE = 2.00;       // Filter out data errors
 const MAX_VALID_PRICE = 6.00;       // Filter out data errors
+
+initCountyData(WEBSITE_DIR);
 
 // Content hash for cache-busting (matches build.js logic)
 const _fileHashCache = {};
@@ -1374,26 +1379,7 @@ function generatePageHTML(data) {
   ${faqSchema ? `<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>` : ''}
 </head>
 <body${zips && zips[0] ? ` data-zip="${zips[0]}"` : ''}>
-  <nav class="nav">
-    <div class="nav-container">
-      <a href="/" class="nav-logo">
-        <img src="${assetPath}images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
-        HomeHeat
-      </a>
-      <button class="nav-toggle" aria-label="Toggle navigation">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <ul class="nav-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/prices" class="active">Prices</a></li>
-        <li><a href="/for-suppliers">For Suppliers</a></li>
-        <li><a href="/learn/">Learn</a></li>
-        <li><a href="/support">Support</a></li>
-      </ul>
-    </div>
-  </nav>
+  ${getNavHTML(2, '/prices')}
 
   <main class="seo-page">
     <!-- Breadcrumb -->

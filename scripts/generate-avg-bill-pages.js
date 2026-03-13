@@ -404,6 +404,367 @@ function generateStatePageHTML(stateCode, stateInfo, stateStats, countyData, cos
 </html>`;
 }
 
+// ── Top-Level Index Page ─────────────────────────────────────────
+
+function generateIndexPageHTML(statesData) {
+  const depth = 1;
+  const today = new Date().toISOString().split('T')[0];
+  const currentYear = today.slice(0, 4);
+  const updateMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const title = `Average Heating Bills by State (${currentYear}) | HomeHeat`;
+  const description = 'Average heating bills vary widely depending on fuel type, home size, and climate. See estimated winter heating costs by state and county.';
+  const canonicalURL = `${BASE_URL}/average-heating-bill/`;
+
+  const schemaBreadcrumb = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Average Heating Bill', item: canonicalURL },
+    ],
+  });
+
+  // Compute range for cost bar visualization
+  const costs = statesData.filter(s => s.monthlyCost).map(s => s.monthlyCost);
+  const minCost = Math.min(...costs);
+  const maxCost = Math.max(...costs);
+  const costRange = maxCost - minCost || 1;
+  const avgCost = Math.round(costs.reduce((a, b) => a + b, 0) / costs.length);
+  const totalCounties = statesData.reduce((sum, s) => sum + (s.countyCount || 0), 0);
+
+  // Sort by cost descending for the ranked list
+  const sorted = [...statesData].filter(s => s.monthlyCost).sort((a, b) => b.monthlyCost - a.monthlyCost);
+
+  let stateRows = '';
+  for (let i = 0; i < sorted.length; i++) {
+    const st = sorted[i];
+    const monthlyCost = formatCurrency(st.monthlyCost);
+    const annualCost = formatCurrency(st.monthlyCost * 6);
+    const countyCount = st.countyCount || 0;
+    const barWidth = Math.round(((st.monthlyCost - minCost) / costRange) * 100);
+    const countyLabel = countyCount === 1 ? '1 county' : `${countyCount} counties`;
+
+    stateRows += `
+                <a href="/average-heating-bill/${st.abbrev}/" class="abi-state-row" data-track="avgbill-state-${st.abbrev}" data-referrer="avg_bill_index">
+                    <div class="abi-state-name">${st.name}</div>
+                    <div class="abi-state-bar-wrap">
+                        <div class="abi-state-bar" style="width:${Math.max(barWidth, 8)}%"></div>
+                    </div>
+                    <div class="abi-state-cost">${monthlyCost}<span>/mo</span></div>
+                    <div class="abi-state-annual">${annualCost}/season</div>
+                    <div class="abi-state-meta">${countyLabel}</div>
+                    <div class="abi-state-arrow">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                </a>`;
+  }
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
+<script src="${'../'.repeat(depth)}js/analytics.js"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-itunes-app" content="app-id=6747320571">
+    <title>${title}</title>
+    <meta name="description" content="${description}">
+
+    <meta property="og:title" content="${title}">
+    <meta property="og:description" content="${description}">
+    <meta property="og:url" content="${canonicalURL}">
+    <meta property="og:type" content="website">
+
+    <link rel="canonical" href="${canonicalURL}">
+    <link rel="stylesheet" href="${getCssPath(depth)}">
+    <link rel="icon" type="image/png" sizes="32x32" href="${'../'.repeat(depth)}favicon-32.png">
+    <link rel="icon" type="image/png" sizes="180x180" href="${'../'.repeat(depth)}favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="${'../'.repeat(depth)}favicon.png">
+
+    <script type="application/ld+json">${schemaBreadcrumb}</script>
+    <style>
+        .abi-hero {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1f14 100%);
+            color: #fff;
+            padding: 3.5rem 1.5rem 3rem;
+            margin: 0 calc(-1 * var(--space-6));
+            text-align: center;
+        }
+        .abi-hero h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 0 0.75rem;
+            letter-spacing: -0.02em;
+            color: #fff;
+        }
+        .abi-hero p {
+            color: rgba(255,255,255,0.7);
+            font-size: 1.05rem;
+            max-width: 540px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        .abi-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        .abi-stat {
+            text-align: center;
+        }
+        .abi-stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #FF6B35;
+        }
+        .abi-stat-label {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-top: 0.15rem;
+        }
+        .abi-section {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 2.5rem 0;
+        }
+        .abi-section-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+        .abi-section-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-dark);
+        }
+        .abi-section-header span {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+        .abi-state-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .abi-state-row {
+            display: grid;
+            grid-template-columns: 140px 1fr auto auto auto auto;
+            grid-template-areas: "name bar cost annual meta arrow";
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            text-decoration: none;
+            color: var(--text-dark);
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.15s;
+        }
+        .abi-state-row:first-child {
+            border-top: 1px solid var(--border-color);
+        }
+        .abi-state-row:hover {
+            background: var(--primary-orange-light);
+        }
+        .abi-state-name {
+            grid-area: name;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .abi-state-bar-wrap {
+            grid-area: bar;
+            height: 6px;
+            background: #f0ebe7;
+            border-radius: 3px;
+            overflow: hidden;
+            min-width: 60px;
+        }
+        .abi-state-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #FF6B35, #ff8f66);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+        .abi-state-cost {
+            grid-area: cost;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            white-space: nowrap;
+            text-align: right;
+        }
+        .abi-state-cost span {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--text-light);
+        }
+        .abi-state-annual {
+            grid-area: annual;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            white-space: nowrap;
+            min-width: 80px;
+            text-align: right;
+        }
+        .abi-state-meta {
+            grid-area: meta;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            white-space: nowrap;
+            min-width: 70px;
+            text-align: right;
+        }
+        .abi-state-arrow {
+            grid-area: arrow;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+        }
+        .abi-state-row:hover .abi-state-arrow {
+            color: var(--primary-orange);
+        }
+        .abi-method {
+            background: var(--background-secondary);
+            border-radius: 10px;
+            padding: 1.5rem 1.75rem;
+            margin-top: 2.5rem;
+        }
+        .abi-method h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem;
+            color: var(--text-dark);
+        }
+        .abi-method p {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            margin: 0;
+            line-height: 1.6;
+        }
+        .abi-related {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .abi-related a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .abi-related a:hover {
+            border-color: var(--primary-orange);
+            box-shadow: 0 2px 8px rgba(255,107,53,0.1);
+        }
+        .abi-related svg {
+            flex-shrink: 0;
+            color: var(--primary-orange);
+        }
+        @media (max-width: 768px) {
+            .abi-hero {
+                padding: 2.5rem 1.25rem 2rem;
+                margin: 0 -1rem;
+            }
+            .abi-hero h1 { font-size: 1.5rem; }
+            .abi-stats { gap: 1.5rem; }
+            .abi-stat-value { font-size: 1.4rem; }
+            .abi-state-row {
+                grid-template-columns: 1fr auto auto;
+                grid-template-areas:
+                    "name cost arrow"
+                    "bar bar arrow";
+                gap: 0.35rem 0.75rem;
+                padding: 0.85rem 1rem;
+            }
+            .abi-state-annual, .abi-state-meta { display: none; }
+            .abi-state-bar-wrap { margin-top: 0.15rem; }
+            .abi-state-arrow { grid-row: 1 / 3; }
+            .abi-related { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    ${getNavHTML(depth)}
+
+    <section class="content-section">
+        <div class="abi-hero">
+            <h1>Average Heating Bills by State</h1>
+            <p>Estimated monthly heating costs for a 2,000 sq ft home based on local fuel prices and climate data.</p>
+            <div class="abi-stats">
+                <div class="abi-stat">
+                    <div class="abi-stat-value">${formatCurrency(avgCost)}</div>
+                    <div class="abi-stat-label">Avg monthly bill</div>
+                </div>
+                <div class="abi-stat">
+                    <div class="abi-stat-value">${formatCurrency(minCost)}–${formatCurrency(maxCost)}</div>
+                    <div class="abi-stat-label">Range across states</div>
+                </div>
+                <div class="abi-stat">
+                    <div class="abi-stat-value">${totalCounties}</div>
+                    <div class="abi-stat-label">Counties tracked</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="abi-section">
+            <div class="abi-section-header">
+                <h2>Heating Bills by State</h2>
+                <span>Updated ${updateMonth}</span>
+            </div>
+            <div class="abi-state-list">
+                ${stateRows}
+            </div>
+
+            <div class="abi-method">
+                <h3>How we calculate these estimates</h3>
+                <p>Based on NOAA 30-year normal heating degree days, EIA state-average energy rates, and local median oil prices from ${totalCounties > 50 ? totalCounties : 'tracked'} counties. Assumes a 2,000 sq ft home, 85% oil furnace efficiency, and 6-month heating season (October–March). Select a state to see county-level breakdowns.</p>
+            </div>
+
+            <div class="abi-section-header" style="margin-top:2.5rem;">
+                <h2>Explore More</h2>
+            </div>
+            <div class="abi-related">
+                <a href="/tools/heating-cost-calculator" data-track="avgbill-explore-calculator" data-referrer="avg_bill_index">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg>
+                    Heating Cost Calculator
+                </a>
+                <a href="/learn/heating-oil-vs-heat-pump" data-track="avgbill-explore-heatpump" data-referrer="avg_bill_index">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                    Oil vs Heat Pump Comparison
+                </a>
+                <a href="/learn/cheapest-way-to-heat-your-home" data-track="avgbill-explore-cheapest" data-referrer="avg_bill_index">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    Cheapest Way to Heat Your Home
+                </a>
+                <a href="/prices" data-track="avgbill-explore-prices" data-referrer="avg_bill_index">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Compare Oil Prices by State
+                </a>
+            </div>
+        </div>
+    </section>
+
+    ${getFooterHTML(depth)}
+    <script src="${'../'.repeat(depth)}js/nav.min.js" defer></script>
+    <script src="${'../'.repeat(depth)}js/widgets.min.js" defer></script>
+</body>
+</html>`;
+}
+
 // ── Sitemap URLs ─────────────────────────────────────────────────
 
 function generateSitemapURLs(generatedPages) {
@@ -556,7 +917,16 @@ async function generateAvgBillPages(options = {}) {
 
       console.log(`  ${stateInfo.abbrev}: ${validCounties.length} counties`);
       totalStatePages++;
-      generatedPages.states.push({ abbrev: stateInfo.abbrev, name: stateInfo.name });
+      const stateMonthlyOil = stateCosts.fuels['heating-oil'] ? stateCosts.fuels['heating-oil'].monthlyCost : null;
+      generatedPages.states.push({ abbrev: stateInfo.abbrev, name: stateInfo.name, monthlyCost: stateMonthlyOil, countyCount: validCounties.length });
+    }
+
+    // Generate top-level index page
+    if (generatedPages.states.length > 0 && !dryRun) {
+      await fs.mkdir(OUTPUT_DIR, { recursive: true });
+      const indexHtml = generateIndexPageHTML(generatedPages.states);
+      await fs.writeFile(path.join(OUTPUT_DIR, 'index.html'), indexHtml, 'utf-8');
+      console.log(`\n✅ Top-level index page generated`);
     }
 
     // Write sitemap fragment

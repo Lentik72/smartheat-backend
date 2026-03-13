@@ -232,6 +232,40 @@
   // INITIALIZATION
   // ============================================
 
+  // ============================================
+  // LIGHTWEIGHT EVENT TRACKING (user_events table)
+  // ============================================
+
+  function trackEvent(event, data) {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/v1/track',
+        new Blob([JSON.stringify({ event: event, zip: data && data.zip || null, supplier_id: data && data.supplier_id || null, page_type: data && data.page_type || null, referrer: data && data.referrer || null, county: data && data.county || null, state: data && data.state || null, meta: data && data.meta || null })], { type: 'application/json' }));
+    }
+  }
+
+  function initEventTracking() {
+    // Delegated click tracking via data-track attribute
+    document.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-track]');
+      if (!el) return;
+      trackEvent(el.dataset.track, {
+        page_type: document.body.dataset.pageType || 'unknown',
+        referrer: el.dataset.referrer || 'organic',
+        supplier_id: el.dataset.supplierId || null,
+        zip: el.dataset.zip || null
+      });
+    });
+
+    // Price status banner impression tracking
+    var signal = document.body.dataset.priceSignal;
+    if (signal && signal !== 'none') {
+      trackEvent('price_status_shown', {
+        page_type: 'county_elite',
+        meta: { signal: signal }
+      });
+    }
+  }
+
   function init() {
     // Handle platform visibility first (JS fallback for CSS-first detection)
     initPlatformHandling();
@@ -241,6 +275,9 @@
 
     // Initialize QR widget for desktop (with delay for better UX)
     setTimeout(initQRWidget, 2000);
+
+    // Initialize event tracking
+    initEventTracking();
   }
 
   // Run when DOM is ready
@@ -253,6 +290,7 @@
   // Expose for external use if needed
   window.HomeHeatWidgets = {
     track: track,
+    trackEvent: trackEvent,
     isDismissedRecently: isDismissedRecently,
     setDismissed: setDismissed
   };

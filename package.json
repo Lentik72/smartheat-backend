@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "node scripts/build.js",
+    "build": "node scripts/sync-static-nav.js && node scripts/build.js",
+    "sync-nav": "node scripts/sync-static-nav.js",
     "deploy": "npm run build && railway up",
     "verify-deploy": "bash scripts/verify-deploy.sh",
     "audit-docs": "bash scripts/audit-docs.sh"
