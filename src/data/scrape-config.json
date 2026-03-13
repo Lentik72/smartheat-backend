@@ -14567,6 +14567,16 @@
       "13475"
     ]
   },
+  "thermoheatingcny.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY Utica/Oneida County - Phone orders + scheduled deliveries (will-call). Prices on homepage. Oil + kerosene. 24hr service.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})/Gal For Home Heating Oil",
+    "postalCodesServed": [
+      "13304","13323","13340","13350","13357","13403","13407","13413",
+      "13416","13424","13461","13476","13490","13495","13501","13502"
+    ]
+  },
 
   "ferrofueloil.com": {
     "enabled": true,

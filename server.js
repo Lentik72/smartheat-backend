@@ -561,6 +561,8 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/100-scrapeconfig-coverage-authority', label: 'scrape-config coverage authority' },
           { path: './src/migrations/101-add-northumberland-pa-suppliers', label: 'Northumberland PA suppliers' },
           { path: './src/migrations/102-add-herkimer-ny-suppliers', label: 'Herkimer NY suppliers' },
+          { path: './src/migrations/103-create-user-events', label: 'User events tracking' },
+          { path: './src/migrations/104-add-utica-ny-suppliers', label: 'Utica NY suppliers' },
         ];
 
         let migrationErrors = 0;
@@ -763,6 +765,7 @@ app.use('/api/outreach', require('./src/routes/outreach'));  // Supplier email u
 app.use('/api/webhook', require('./src/routes/outreach'));  // Resend bounce/complaint webhook
 app.use('/api/price-alerts', require('./src/routes/price-alerts'));  // Price alert subscribe/unsubscribe
 app.use('/api/v1/heating-cost', require('./src/routes/heating-cost'));  // Multi-fuel cost comparison
+app.use('/api/v1', require('./src/routes/user-events'));  // Lightweight user event tracking
 
 // V2.10.0: Serve static files for admin tools
 app.use(express.static(path.join(__dirname, 'public')));
