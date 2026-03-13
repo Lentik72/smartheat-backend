@@ -3449,6 +3449,9 @@ async function loadHealth() {
     // Stale suppliers table
     renderStaleSuppliers(health.staleSuppliers);
 
+    // V2.13.0: Diagnostics (categorized failure analysis)
+    if (health.diagnostics) renderDiagnostics(health.diagnostics);
+
     if (loadingEl) loadingEl.classList.add('hidden');
     if (contentEl) contentEl.classList.remove('hidden');
   } catch (error) {
@@ -3541,6 +3544,36 @@ function renderStaleSuppliers(stale) {
     <td>${s.daysSinceUpdate}d</td>
     <td>${s.website ? '<a href="' + s.website + '" target="_blank" rel="noopener">Visit</a>' : '--'}</td>
   </tr>`).join('');
+}
+
+// V2.13.0: Render diagnostics table (categorized failure analysis)
+function renderDiagnostics(diag) {
+  const panel = document.getElementById('diagnostics-panel');
+  const tbody = document.getElementById('diagnostics-body');
+  const countEl = document.getElementById('h-diag-count');
+  if (!panel || !tbody) return;
+
+  if (!diag.groups || diag.groups.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = '';
+  if (countEl) countEl.textContent = diag.totalIssues;
+
+  const priorityBg = (p) => p <= 1 ? '#fee2e2' : p <= 2 ? '#fffbeb' : '';
+
+  tbody.innerHTML = diag.groups.map(g => {
+    const names = g.suppliers.slice(0, 3).map(s => s.name).join(', ');
+    const more = g.suppliers.length > 3 ? ` <em style="color:#888">+${g.suppliers.length - 3} more</em>` : '';
+    const bg = priorityBg(g.priority);
+    return `<tr${bg ? ' style="background:' + bg + '"' : ''}>
+      <td>${g.icon || ''} ${g.label}</td>
+      <td style="text-align:center;font-weight:700;">${g.suppliers.length}</td>
+      <td>${names}${more}</td>
+      <td style="font-size:12px;color:#666;">${g.action}</td>
+    </tr>`;
+  }).join('');
 }
 
 // Load Settings tab

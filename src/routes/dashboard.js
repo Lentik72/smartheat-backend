@@ -922,6 +922,17 @@ router.get('/supplier-health', async (req, res) => {
 
   try {
     const report = await supplierHealthService.generateHealthReport(sequelize);
+
+    // V2.13.0: Add diagnostics (categorized failure analysis)
+    try {
+      const { SupplierDiagnosticsService } = require('../services/SupplierDiagnosticsService');
+      const diagService = new SupplierDiagnosticsService(sequelize);
+      report.diagnostics = await diagService.generateDiagnostics();
+    } catch (diagErr) {
+      logger.warn('[Dashboard] Diagnostics failed, returning report without:', diagErr.message);
+      report.diagnostics = null;
+    }
+
     res.json(report);
   } catch (error) {
     logger.error('[Dashboard] Supplier health error:', error.message);
