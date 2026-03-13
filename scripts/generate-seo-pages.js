@@ -1980,6 +1980,24 @@ ${cityUrls}
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://www.gethomeheat.com/learn/heating-emergency</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.gethomeheat.com/learn/run-out-of-heating-oil</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.gethomeheat.com/learn/why-people-run-out-of-oil</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://www.gethomeheat.com/tools/heating-cost-calculator</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
