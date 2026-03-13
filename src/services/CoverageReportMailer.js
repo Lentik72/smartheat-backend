@@ -345,14 +345,14 @@ class CoverageReportMailer {
    * V2.12.0: Now includes click tracking stats for "Sniper" outreach
    * Reduces inbox clutter by combining both reports
    */
-  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null) {
+  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null, supplierDiagnostics = null) {
     const recipient = this.getRecipient();
     if (!recipient) {
       console.log('[CoverageReportMailer] No recipient configured');
       return false;
     }
 
-    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel);
+    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics);
     const subject = this.getCombinedSubject(coverageReport, activityReport);
 
     const success = await this.sendEmail(recipient, subject, html);
@@ -390,8 +390,9 @@ class CoverageReportMailer {
    * Format combined daily report HTML
    * V2.10.2: Added priceReviewLink parameter for manual price verification
    * V2.12.0: Added clickStats parameter for "Sniper" outreach tracking
+   * V2.13.0: Added supplierDiagnostics for categorized failure analysis
    */
-  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null) {
+  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null, supplierDiagnostics = null) {
     const styles = `
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 650px; margin: 0 auto; }
       h2 { color: #1a1a1a; border-bottom: 2px solid #007AFF; padding-bottom: 8px; margin-top: 0; }
@@ -690,76 +691,91 @@ class CoverageReportMailer {
     <p><strong>${activity.summary.errors}</strong> API errors in the last 24 hours.</p>
   ` : ''}
 
-  <!-- ===== SCRAPE HEALTH (V2.6.0) ===== -->
-  ${report.scrapeHealth ? `
-    <h3>🔄 Scrape Health</h3>
+  <!-- ===== SUPPLIER HEALTH REPORT (V2.13.0) ===== -->
+  ${supplierDiagnostics ? `
+    <h3>🩺 Supplier Health Report</h3>
     <div class="stat-grid">
       <div class="stat-box">
-        <div class="stat-value">${report.scrapeHealth.scrapedToday}</div>
-        <div class="stat-label">Scraped Today</div>
+        <div class="stat-value">${supplierDiagnostics.backoff.active}</div>
+        <div class="stat-label">Active</div>
       </div>
       <div class="stat-box">
-        <div class="stat-value">${report.scrapeHealth.blockedCount}</div>
-        <div class="stat-label">Blocked/Stale</div>
+        <div class="stat-value" ${supplierDiagnostics.backoff.cooldown > 0 ? 'style="color: #f59e0b;"' : ''}>${supplierDiagnostics.backoff.cooldown}</div>
+        <div class="stat-label">Cooldown</div>
       </div>
       <div class="stat-box">
-        <div class="stat-value">${report.scrapeHealth.successRate}%</div>
-        <div class="stat-label">Success Rate</div>
+        <div class="stat-value" ${supplierDiagnostics.backoff.phoneOnly > 0 ? 'style="color: #ef4444;"' : ''}>${supplierDiagnostics.backoff.phoneOnly}</div>
+        <div class="stat-label">Phone Only</div>
       </div>
       <div class="stat-box">
-        <div class="stat-value">${report.scrapeHealth.weeklyTrend === 'increasing' ? '📈' : report.scrapeHealth.weeklyTrend === 'decreasing' ? '📉' : '➡️'}</div>
-        <div class="stat-label">Blocking Trend</div>
+        <div class="stat-value" ${supplierDiagnostics.backoff.atRisk > 0 ? 'style="color: #f59e0b;"' : ''}>${supplierDiagnostics.backoff.atRisk}</div>
+        <div class="stat-label">At Risk</div>
       </div>
     </div>
-    ${report.scrapeHealth.blockedCount > 0 ? `
-      <p><strong>Blocked sites (${report.scrapeHealth.blockedCount}):</strong></p>
+    <p><strong>${supplierDiagnostics.totalIssues} issues diagnosed</strong> · ${supplierDiagnostics.staleCount} stale (&gt;48h)${supplierDiagnostics.undiagnosedCount > 0 ? ` · ${supplierDiagnostics.undiagnosedCount} undiagnosed` : ''}</p>
+    ${supplierDiagnostics.groups.length > 0 ? `
       <table>
         <tr>
-          <th>Supplier</th>
-          <th>Last Price</th>
-          <th>Days Stale</th>
+          <th>Issue</th>
+          <th style="width: 50px; text-align: center;">Count</th>
+          <th>Suppliers</th>
+          <th>Action</th>
         </tr>
-        ${report.scrapeHealth.blockedSites.slice(0, 10).map(s => `
-          <tr class="warning">
-            <td>${s.name}</td>
-            <td>$${s.lastPrice.toFixed(2)}</td>
-            <td>${s.daysSinceUpdate}d</td>
+        ${supplierDiagnostics.groups.map(g => `
+          <tr class="${g.priority <= 1 ? 'critical' : g.priority <= 2 ? 'warning' : ''}">
+            <td>${g.icon} ${g.label}</td>
+            <td style="text-align: center; font-weight: 700;">${g.suppliers.length}</td>
+            <td>${g.suppliers.slice(0, 3).map(s => s.name).join(', ')}${g.suppliers.length > 3 ? ` <em>+${g.suppliers.length - 3} more</em>` : ''}</td>
+            <td style="font-size: 12px; color: #555;">${g.action}</td>
           </tr>
         `).join('')}
       </table>
-      ${report.scrapeHealth.blockedCount > 10 ? `<p><em>...and ${report.scrapeHealth.blockedCount - 10} more</em></p>` : ''}
-      ${report.scrapeHealth.weeklyTrend === 'increasing' ? `
-        <p class="priority-medium">⚠️ <strong>Blocking trend increasing.</strong> Consider adding rotating proxies if this continues.</p>
-      ` : ''}
-    ` : '<p>✅ All scrapable sites working.</p>'}
-  ` : ''}
-
-  <!-- ===== SCRAPE RESULTS ===== -->
-  ${report.scrapeResults ? `
-    <h3>📋 Yesterday's Scrape Run</h3>
-    <p><strong>${report.scrapeResults.successCount}</strong> successful, <strong>${report.scrapeResults.failedCount}</strong> failed, <strong>${report.scrapeResults.skippedCount}</strong> skipped</p>
-    ${report.scrapeResults.failures && report.scrapeResults.failures.length > 0 ? `
-      <table>
-        <tr>
-          <th>Supplier</th>
-          <th>Error</th>
-        </tr>
-        ${report.scrapeResults.failures.slice(0, 15).map(f => `
-          <tr class="warning">
-            <td>${f.supplierName}</td>
-            <td>${f.error}${f.retriedAttempts > 0 ? ` (retried ${f.retriedAttempts}x)` : ''}</td>
-          </tr>
-        `).join('')}
-      </table>
-      ${report.scrapeResults.failures.length > 15 ? `<p><em>...and ${report.scrapeResults.failures.length - 15} more</em></p>` : ''}
-    ` : '<p>✅ All configured suppliers scraped successfully.</p>'}
-  ` : ''}
-
-  <!-- ===== SUPPLIER HEALTH ===== -->
-  ${report.supplierHealth.length > 0 ? `
-    <h3>🩺 Supplier Health</h3>
-    <p>${report.supplierHealth.length} supplier${report.supplierHealth.length !== 1 ? 's have' : ' has'} no price updates in 7+ days.</p>
-  ` : ''}
+    ` : '<p>✅ All suppliers healthy — no issues detected.</p>'}
+  ` : `
+    <!-- Fallback: legacy scrape health sections if diagnostics unavailable -->
+    ${report.scrapeHealth ? `
+      <h3>🔄 Scrape Health</h3>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-value">${report.scrapeHealth.scrapedToday}</div>
+          <div class="stat-label">Scraped Today</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${report.scrapeHealth.blockedCount}</div>
+          <div class="stat-label">Blocked/Stale</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${report.scrapeHealth.successRate}%</div>
+          <div class="stat-label">Success Rate</div>
+        </div>
+      </div>
+      ${report.scrapeHealth.blockedCount > 0 ? `
+        <p><strong>Blocked sites (${report.scrapeHealth.blockedCount}):</strong></p>
+        <table>
+          <tr><th>Supplier</th><th>Last Price</th><th>Days Stale</th></tr>
+          ${report.scrapeHealth.blockedSites.slice(0, 10).map(s => `
+            <tr class="warning"><td>${s.name}</td><td>$${s.lastPrice.toFixed(2)}</td><td>${s.daysSinceUpdate}d</td></tr>
+          `).join('')}
+        </table>
+      ` : '<p>✅ All scrapable sites working.</p>'}
+    ` : ''}
+    ${report.scrapeResults ? `
+      <h3>📋 Yesterday's Scrape Run</h3>
+      <p><strong>${report.scrapeResults.successCount}</strong> successful, <strong>${report.scrapeResults.failedCount}</strong> failed, <strong>${report.scrapeResults.skippedCount}</strong> skipped</p>
+      ${report.scrapeResults.failures && report.scrapeResults.failures.length > 0 ? `
+        <table>
+          <tr><th>Supplier</th><th>Error</th></tr>
+          ${report.scrapeResults.failures.slice(0, 15).map(f => `
+            <tr class="warning"><td>${f.supplierName}</td><td>${f.error}${f.retriedAttempts > 0 ? ` (retried ${f.retriedAttempts}x)` : ''}</td></tr>
+          `).join('')}
+        </table>
+      ` : '<p>✅ All configured suppliers scraped successfully.</p>'}
+    ` : ''}
+    ${report.supplierHealth.length > 0 ? `
+      <h3>🩺 Supplier Health</h3>
+      <p>${report.supplierHealth.length} supplier${report.supplierHealth.length !== 1 ? 's have' : ' has'} no price updates in 7+ days.</p>
+    ` : ''}
+  `}
 
   <div class="footer">
     <p>

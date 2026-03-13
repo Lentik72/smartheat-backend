@@ -1438,7 +1438,18 @@ function scheduleCoverageIntelligence() {
             logger.warn('[DailyReports] Failed to gather claim funnel data:', err.message);
           }
 
-          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel);
+          // V2.13.0: Generate supplier diagnostics (categorized failure analysis)
+          let supplierDiagnostics = null;
+          try {
+            const { SupplierDiagnosticsService } = require('./src/services/SupplierDiagnosticsService');
+            const diagService = new SupplierDiagnosticsService(sequelize);
+            supplierDiagnostics = await diagService.generateDiagnostics();
+            logger.info(`[DailyReports] Supplier diagnostics: ${supplierDiagnostics.totalIssues} issues in ${supplierDiagnostics.groups.length} categories, ${supplierDiagnostics.probedCount} probed`);
+          } catch (err) {
+            logger.warn('[DailyReports] Failed to generate supplier diagnostics:', err.message);
+          }
+
+          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics);
           logger.info('[DailyReports] Combined report sent');
         } else {
           logger.info('[DailyReports] No actionable items or activity - skipping email');

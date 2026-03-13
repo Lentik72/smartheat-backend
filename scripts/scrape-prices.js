@@ -354,6 +354,8 @@ async function runScraper(options = {}) {
     const runDuration = Date.now() - runStartTime;
     const failuresArray = results.failed.map(f => ({
       supplierName: f.supplierName,
+      supplierId: f.supplierId || null,
+      website: f.sourceUrl || null,
       error: f.error,
       retriedAttempts: f.retriedAttempts || 0
     }));
