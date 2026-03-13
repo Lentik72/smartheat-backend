@@ -587,7 +587,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
     <header class="page-header">
       <h1>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode}</h1>
       <p class="county-meta">${displaySupplierCount} suppliers · ${zipPrefixes.length} ZIP areas · Updated ${lastUpdate}</p>
-      ${zipPrefixes.length > 0 ? `<p class="geographic-context">Covering ${formatZipPrefixRange(zipPrefixes)} across ${zipCount} ZIP codes</p>` : ''}
+      ${zipPrefixes.length > 0 ? `<p class="geographic-context">Covering ${formatZipPrefixRangeLinked(zipPrefixes)} across ${zipCount} ZIP codes</p>` : ''}
       <span class="confidence-badge ${confidenceClass}">${confidenceLabel} Confidence</span>
     </header>
 
@@ -980,7 +980,7 @@ ${countySuppliers.map(s => {
       </div>
       ${stateComparison ? `<p class="state-comparison ${stateComparison.class}">${stateComparison.text}</p>` : ''}
       ` : `<p class="county-meta">Price data is being collected. Check back soon.</p>`}
-      <p class="geographic-context">${zipPrefixes.length > 0 ? `Covering ${formatZipPrefixRange(zipPrefixes)} across ${zipCount} ZIP codes · ` : ''}Updated ${lastUpdate}</p>
+      <p class="geographic-context">${zipPrefixes.length > 0 ? `Covering ${formatZipPrefixRangeLinked(zipPrefixes)} across ${zipCount} ZIP codes · ` : ''}Updated ${lastUpdate}</p>
     </header>
 
     ${countyZips.length > 0 ? `
@@ -1419,6 +1419,23 @@ function formatZipPrefixRange(prefixes) {
   } else {
     // Use range format for many prefixes: 100xx–108xx
     return `${sorted[0]}xx–${sorted[sorted.length - 1]}xx`;
+  }
+}
+
+function formatZipPrefixRangeLinked(prefixes) {
+  if (!prefixes || prefixes.length === 0) return '';
+  const sorted = [...prefixes].sort((a, b) => parseInt(a) - parseInt(b));
+  const link = p => `<a href="/prices/zip/${p}">${p}xx</a>`;
+
+  if (sorted.length === 1) {
+    return link(sorted[0]);
+  } else if (sorted.length === 2) {
+    return `${link(sorted[0])} and ${link(sorted[1])}`;
+  } else if (sorted.length <= 4) {
+    return sorted.map(link).join(', ');
+  } else {
+    // List first 3 linked, then count
+    return sorted.slice(0, 3).map(link).join(', ') + ` and ${sorted.length - 3} more`;
   }
 }
 

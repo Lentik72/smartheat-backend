@@ -451,7 +451,17 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, histo
 
         <h2>Compare Suppliers in ${county} County</h2>
         <p>The spread between cheapest and most expensive supplier in ${county} County can be $0.50–$1.00/gallon.</p>
-        <p><strong><a href="/prices/${stateAbbrev}/${countySlug}-county">Compare ${county} County Oil Prices →</a></strong></p>
+
+        <section style="background: var(--background-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0;">
+          <strong style="display: block; margin-bottom: 0.5rem;">Current Oil Prices in ${county} County</strong>
+          <p style="margin: 0 0 0.75rem; font-size: 0.95rem;">
+            Median: <strong>${formatPrice(medianPrice)}/gal</strong> &middot;
+            ${parseInt(countyStats.supplier_count, 10)} suppliers reporting prices
+          </p>
+          <a href="/prices/${stateAbbrev}/${countySlug}-county" style="font-weight: 600;">
+            Compare ${county} County Suppliers &rarr;
+          </a>
+        </section>
 
         <h2>Data Sources & Methodology</h2>
         <p style="font-size: 0.9rem; color: var(--text-light);">
@@ -462,7 +472,7 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, histo
 
         <h3>Related</h3>
         <ul>
-            <li><a href="/prices/${stateAbbrev}/${countySlug}-county">${county} County Oil Prices</a></li>${crossLinks}
+            <li><a href="/prices/${stateAbbrev}/${countySlug}-county">${county} County Oil Prices — ${formatPrice(medianPrice)}/gal median</a></li>${crossLinks}
             <li><a href="/tools/heating-cost-calculator">Heating Cost Calculator</a></li>
             <li><a href="/learn/cheapest-way-to-heat-your-home">What's the Cheapest Way to Heat Your Home?</a></li>
             <li><a href="/learn/heating-oil-vs-heat-pump">Heating Oil vs Heat Pump: Cost Comparison</a></li>
