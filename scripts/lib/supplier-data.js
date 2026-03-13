@@ -99,8 +99,22 @@ function getSuppliersForZips(suppliers, zips, priceMap) {
   return matching;
 }
 
+/**
+ * Compute freshness label + dot class from a scraped_at timestamp
+ */
+function computeFreshness(scrapedAt) {
+  if (!scrapedAt) return { text: '', dotClass: '' };
+  const hours = (Date.now() - new Date(scrapedAt).getTime()) / 3600000;
+  if (hours < 1) return { text: 'just now', dotClass: 'freshness-green' };
+  if (hours < 12) return { text: Math.round(hours) + 'h ago', dotClass: 'freshness-green' };
+  if (hours < 36) return { text: 'today', dotClass: 'freshness-green' };
+  if (hours < 60) return { text: '1d ago', dotClass: 'freshness-yellow' };
+  return { text: Math.round(hours / 24) + 'd ago', dotClass: 'freshness-gray' };
+}
+
 module.exports = {
   getAllSuppliers,
   getCurrentPrices,
-  getSuppliersForZips
+  getSuppliersForZips,
+  computeFreshness
 };

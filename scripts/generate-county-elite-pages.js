@@ -25,7 +25,7 @@ const path = require('path');
 require('dotenv').config();
 
 // Shared supplier data queries
-const { getAllSuppliers, getCurrentPrices, getSuppliersForZips } = require('./lib/supplier-data');
+const { getAllSuppliers, getCurrentPrices, getSuppliersForZips, computeFreshness } = require('./lib/supplier-data');
 
 // Fuel cost computation
 const { computeFuelCosts, init: initCountyData, getNavHTML } = require('./lib/county-data');
@@ -50,6 +50,7 @@ const countyArg = args.find(a => a.startsWith('--county='));
 const stateArg = args.find(a => a.startsWith('--state='));
 const singleCounty = countyArg ? countyArg.split('=')[1] : null;
 const singleState = stateArg ? stateArg.split('=')[1] : null;
+const legacyLayout = args.includes('--legacy-layout');
 
 /**
  * Main entry point
@@ -120,6 +121,17 @@ async function generateCountyElitePages(options = {}) {
     `, { replacements });
 
     log(`📊 Found ${countyStats.length} counties meeting quality threshold (>= ${MIN_QUALITY_SCORE})`);
+
+    // For nearby county links, we need ALL qualifying counties (not just filtered single)
+    let allQualifyingCounties = countyStats;
+    if (singleCounty && singleState) {
+      const [allQC] = await sequelize.query(`
+        SELECT * FROM county_current_stats
+        WHERE data_quality_score >= :minQuality
+        ORDER BY data_quality_score DESC
+      `, { replacements: { minQuality: MIN_QUALITY_SCORE } });
+      allQualifyingCounties = allQC;
+    }
 
     // Get state-level medians for comparison
     const [stateMedians] = await sequelize.query(`
@@ -223,7 +235,7 @@ async function generateCountyElitePages(options = {}) {
       }
 
       const stateMedian = stateMedianMap[stats.state_code] || null;
-      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips);
+      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips, allQualifyingCounties, legacyLayout);
 
       // Create state subdirectory
       const stateDir = path.join(COUNTY_DIR, stats.state_code.toLowerCase());
@@ -276,7 +288,7 @@ async function generateCountyElitePages(options = {}) {
 /**
  * Generate HTML for a County Elite page
  */
-function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = []) {
+function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = [], allCountyStats = [], legacyLayout = false) {
   const countyName = stats.county_name;
   const stateCode = stats.state_code;
   const stateName = getStateName(stateCode);
@@ -506,6 +518,30 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   const assetPath = '../../../';
   const cssVersion = getCssVersion();
 
+  // ── Best price / savings computation ──
+  const allPricedSuppliers = countySuppliers.filter(s => s.hasPrice);
+  const bestPrice = allPricedSuppliers.length > 0 ? allPricedSuppliers[0].price : null;
+  const highestPrice = allPricedSuppliers.length > 0 ? allPricedSuppliers[allPricedSuppliers.length - 1].price : null;
+  const bestDeliveryCost = bestPrice ? Math.round(bestPrice * 150) : null;
+  const savingsVsMedian = (bestPrice && medianPrice) ? Math.max(0, Math.round((medianPrice - bestPrice) * 150)) : 0;
+  const nearBestCount = bestPrice ? allPricedSuppliers.filter(s => s.price - bestPrice <= 0.05).length : 0;
+
+  // ── Supplier ZIP map for client-side filter ──
+  const supplierZipMap = {};
+  if (countyZips.length > 0) {
+    const czSet = new Set(countyZips);
+    for (const s of countySuppliers) {
+      const szips = s.postal_codes_served || [];
+      const overlap = szips.filter(z => czSet.has(z));
+      if (overlap.length > 0) supplierZipMap[s.id] = overlap;
+    }
+  }
+
+  // ── Nearby counties ──
+  const nearbyCounties = getNearbyCounties(countyName, stateCode, allCountyStats);
+
+  // ── Legacy layout (old section order) ──
+  if (legacyLayout) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -835,9 +871,9 @@ ${countySuppliers.map(s => {
     <section class="app-cta">
       <h3>Track Your Oil Usage</h3>
       <p>Get personalized run-out predictions and price alerts for ${escapeHtml(countyName)} County.</p>
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="cta-button ios-only">Download Free for iPhone &rarr;</a>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="cta-button hide-on-android">Download Free for iPhone &rarr;</a>
       <a href="/prices" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Add to Home Screen &rarr;</a>
-      <p class="cta-micro ios-only">Free app. No hardware. No ads.</p>
+      <p class="cta-micro hide-on-android">Free app. No hardware. No ads.</p>
       <p class="cta-micro android-only" style="display:none">Works like an app — no download needed.</p>
     </section>
 
@@ -883,6 +919,391 @@ ${countySuppliers.map(s => {
   <script src="${assetPath}js/price-alerts.js?v=${getFileHash('js/price-alerts.js')}"></script>
   <script src="${assetPath}js/platform-detection.js?v=${getFileHash('js/platform-detection.js')}"></script>
   <script src="${assetPath}js/widgets.js"></script>
+</body>
+</html>`;
+  } // end legacyLayout
+
+  // ── New action-first layout ──
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
+  <script src="${assetPath}js/analytics.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr} | HomeHeat</title>
+  <meta name="description" content="${metaDescription}">
+  <link rel="canonical" href="https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slug}">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
+  <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : 'Compare local heating oil prices.'}">
+  <meta property="og:url" content="https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slug}">
+  <meta property="og:type" content="website">
+
+  <meta name="color-scheme" content="light only">
+  <link rel="stylesheet" href="${assetPath}style.min.css?v=${cssVersion}">
+  <link rel="stylesheet" href="../county-elite.css?v=${countyCssHash}">
+  <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
+  <meta name="apple-itunes-app" content="app-id=6747320571">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Schema.org Structured Data -->
+  <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
+  <script type="application/ld+json">${JSON.stringify(datasetSchema)}</script>
+  <script type="application/ld+json">${JSON.stringify(faqSchema)}</script>
+  ${itemListSchema ? `<script type="application/ld+json">${JSON.stringify(itemListSchema)}</script>` : ''}
+</head>
+<body data-page-type="county_elite" data-price-signal="${priceSignal}">
+  ${getNavHTML(3, '/prices')}
+
+  <main class="county-elite-page" data-county="${escapeHtml(countyName)}">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/">Home</a> › <a href="/prices">Prices</a> › <a href="/prices/${stateCode.toLowerCase()}">${stateName}</a> › <span>${escapeHtml(countyName)} County</span>
+    </nav>
+
+    <header class="page-header">
+      <h1>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode}</h1>
+      ${medianPrice ? `
+      <div class="price-summary-bar">
+        <p class="summary-line-1">
+          <span class="summary-price">$${medianPrice.toFixed(2)}</span>/gal median <span class="summary-sep">&middot;</span> ${displaySupplierCount} suppliers
+        </p>
+        ${bestPrice ? `<p class="summary-line-2">
+          Lowest price <strong>$${bestPrice.toFixed(2)}</strong>${savingsVsMedian > 0 && allPricedSuppliers.length > 1 ? ` <span class="summary-sep">&middot;</span> <span class="savings-badge">Save ~$${savingsVsMedian} on a typical delivery</span>` : ''}${nearBestCount > 1 ? ` <span class="summary-sep">&middot;</span> <span class="near-best">${nearBestCount} suppliers within $0.05</span>` : ''}
+        </p>` : ''}
+        ${bestPrice ? `<p class="call-prompt"><a href="#suppliers">Call the lowest-price supplier now to order delivery &rarr;</a></p>` : ''}
+      </div>
+      ${stateComparison ? `<p class="state-comparison ${stateComparison.class}">${stateComparison.text}</p>` : ''}
+      ` : `<p class="county-meta">Price data is being collected. Check back soon.</p>`}
+      <p class="geographic-context">${zipPrefixes.length > 0 ? `Covering ${formatZipPrefixRange(zipPrefixes)} across ${zipCount} ZIP codes · ` : ''}Updated ${lastUpdate}</p>
+    </header>
+
+    ${countyZips.length > 0 ? `
+    <!-- ZIP Filter -->
+    <section class="zip-filter-section" id="zip-filter">
+      <label class="zip-filter-label" for="zip-filter-input">Enter your ZIP to see who delivers to you</label>
+      <div class="zip-filter-row">
+        <input id="zip-filter-input" class="zip-filter-input" placeholder="${countyZips[Math.floor(countyZips.length / 2)] || '10601'}" maxlength="5" inputmode="numeric" pattern="[0-9]*">
+        <button id="zip-filter-btn" class="zip-filter-btn">Find Suppliers</button>
+        <button id="zip-filter-clear" class="zip-filter-clear" hidden>Clear</button>
+      </div>
+      <p id="zip-filter-result" class="zip-filter-result" hidden></p>
+    </section>
+    <script>window.__supplierZips=${JSON.stringify(supplierZipMap)};window.__countyName="${escapeHtml(countyName)}";</script>
+    ` : ''}
+
+    <!-- Supplier Table -->
+    ${countySuppliers.length > 0 ? `
+    <section class="supplier-table-section" id="suppliers">
+      <h2>Heating Oil Suppliers Serving ${escapeHtml(countyName)} County</h2>
+        <table class="supplier-table">
+          <thead>
+            <tr>
+              <th>Supplier</th>
+              <th>Location</th>
+              <th>Price/Gal</th>
+              <th>Call to Order</th>
+              <th>Website</th>
+            </tr>
+          </thead>
+          <tbody>
+${countySuppliers.map(s => {
+  const hasValidWebsite = s.website && s.website.startsWith('https://');
+  const freshness = computeFreshness(s.scrapedAt);
+  const sDeliveryCost = s.hasPrice ? Math.round(s.price * (s.minGallons || 150)) : null;
+  const sMinGal = s.minGallons || 150;
+  const isBestPrice = s.hasPrice && bestPrice && s.price === bestPrice;
+  const deltaPerDelivery = (s.hasPrice && bestPrice) ? Math.round((s.price - bestPrice) * (sMinGal)) : null;
+  return `            <tr${isBestPrice ? ' class="best-price-row"' : ''} data-supplier-id="${s.id}">
+              <td class="supplier-name">
+                ${s.slug ? `<a href="/supplier/${s.slug}" class="supplier-profile-link">${escapeHtml(s.name)}</a>` : escapeHtml(s.name)}
+                ${isBestPrice ? '<span class="best-price-badge">Lowest price</span>' : ''}
+                ${freshness.text ? `<span class="supplier-updated"><span class="freshness-dot ${freshness.dotClass}"></span> ${freshness.text}</span>` : ''}
+              </td>
+              <td class="supplier-city">${escapeHtml(s.city || '')}</td>
+              <td class="supplier-price">${s.hasPrice ? `<span class="price-amount">$${s.price.toFixed(2)}</span><span class="price-delivery">~$${sDeliveryCost} for ${sMinGal} gal</span>${isBestPrice ? '<span class="price-delta best">\u2713 Lowest price</span>' : deltaPerDelivery > 0 ? `<span class="price-delta">\u2248$${deltaPerDelivery} more per delivery</span>` : ''}` : '<span class="call-for-price">Call</span>'}</td>
+              <td class="supplier-phone">${s.phone ? `<a href="tel:${s.phone}" class="supplier-call-btn" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="call" data-track="phone-click">Call · ${escapeHtml(s.phone)}</a>` : '\u2014'}</td>
+              <td class="supplier-website">${hasValidWebsite ? `<a href="${escapeHtml(s.website)}" target="_blank" rel="noopener noreferrer" class="website-link" data-supplier-id="${s.id}" data-supplier-name="${escapeHtml(s.name)}" data-action="website" data-track="website-click">Website</a>` : ''}</td>
+            </tr>`;
+}).join('\n')}
+          </tbody>
+        </table>
+      <p class="supplier-trust-line">Prices collected from supplier websites and verified daily. Always confirm price and delivery minimum when ordering.</p>
+      <details class="how-to-order">
+        <summary>New to ordering heating oil?</summary>
+        <ol>
+          <li>Call the supplier and confirm the price and delivery minimum</li>
+          <li>Provide your address and tank location</li>
+          <li>Delivery is typically within 24–72 hours</li>
+        </ol>
+      </details>
+      <p class="supplier-claim-link">
+        Are you a supplier in ${escapeHtml(countyName)} County? <a href="/for-suppliers">Claim your free listing &rarr;</a>
+      </p>
+      <p class="supplier-directory-link">
+        <a href="/prices/${stateCode.toLowerCase()}/${slugify(countyName)}-county">View full ${escapeHtml(countyName)} County supplier directory &rarr;</a>
+      </p>
+    </section>
+    ` : `
+    <section class="supplier-table-section supplier-empty-state">
+      <h2>Heating Oil Suppliers Serving ${escapeHtml(countyName)} County</h2>
+      <p>No suppliers currently reporting prices in ${escapeHtml(countyName)} County. <a href="/prices">Search heating oil prices by ZIP code</a> to find suppliers delivering to your area.</p>
+    </section>
+    `}
+
+    ${nearbyCounties.length > 0 ? `
+    <div class="nearby-counties">
+      <strong>Heating oil prices nearby:</strong>
+      ${nearbyCounties.map(nc => {
+        const ncSlug = slugify(nc.county_name);
+        const ncMedian = nc.median_price ? parseFloat(nc.median_price) : null;
+        return `<a href="/prices/county/${nc.state_code.toLowerCase()}/${ncSlug}">${escapeHtml(nc.county_name)} County${nc.state_code !== stateCode ? ', ' + nc.state_code : ''}${ncMedian ? ' – $' + ncMedian.toFixed(2) + '/gal' : ''}</a>`;
+      }).join(' · ')}
+    </div>
+    ` : ''}
+
+    ${priceBannerHTML}
+
+    <!-- App CTA -->
+    <section class="app-cta">
+      <h3>Never Run Out of Oil</h3>
+      <p>Track your tank level and get price alerts for ${escapeHtml(countyName)} County.</p>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="cta-button hide-on-android">Download Free for iPhone &rarr;</a>
+      <a href="/prices" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Add to Home Screen &rarr;</a>
+      <p class="cta-micro hide-on-android">Free app. No hardware. No ads.</p>
+      <p class="cta-micro android-only" style="display:none">Works like an app — no download needed.</p>
+    </section>
+
+    <!-- 6-Week Price History Chart -->
+    ${history.length > 1 ? `
+    <section class="chart-section">
+      <h2>6-Week Price Trend</h2>
+      <div class="chart-container">
+        <canvas id="priceChart"></canvas>
+      </div>
+      <p class="chart-caption">County aggregate from ${supplierCount} suppliers ·
+        <a href="/price-trend/${stateCode.toLowerCase()}/${slugify(countyName)}">See full trend analysis →</a>
+      </p>
+    </section>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var ctx = document.getElementById('priceChart').getContext('2d');
+        var chartMin = ${chartYMin};
+        var chartMax = ${chartYMax};
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ${JSON.stringify(chartLabels.slice(-6))},
+            datasets: [{
+              label: 'Median Price ($/gal)',
+              data: ${JSON.stringify(chartData.slice(-6))},
+              borderColor: '#FF6B35',
+              backgroundColor: 'rgba(255, 107, 53, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 5,
+              pointBackgroundColor: '#FF6B35'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return '$' + context.parsed.y.toFixed(2) + '/gal';
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                min: chartMin,
+                max: chartMax,
+                beginAtZero: false,
+                ticks: {
+                  stepSize: 0.10,
+                  callback: function(value) {
+                    return '$' + value.toFixed(2);
+                  }
+                }
+              }
+            }
+          }
+        });
+      });
+    </script>
+    ` : ''}
+
+    ${fuelCosts ? `
+    <!-- Heating Cost Insights -->
+    <section class="insight-section">
+      <div class="insight-grid">
+        <a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-bill" data-referrer="insights_block">
+          <div class="insight-value">$${fuelCosts.fuels['heating-oil'] ? fuelCosts.fuels['heating-oil'].monthlyCost : '—'}/mo</div>
+          <div class="insight-label">Monthly Heating Bill</div>
+          <div class="insight-detail">2,000 sq ft home · Oil heat</div>
+        </a>
+        <a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-fuel" data-referrer="insights_block">
+          ${fuelCosts.cheapest === 'heating-oil' ?
+            `<div class="insight-value insight-value-good">Oil is cheapest</div>
+             <div class="insight-label">Fuel Comparison</div>
+             <div class="insight-detail">See full comparison &rarr;</div>` :
+            `<div class="insight-value">${fuelCosts.fuels[fuelCosts.cheapest] ? '$' + fuelCosts.fuels[fuelCosts.cheapest].annualCost.toLocaleString() + '/yr' : '—'}</div>
+             <div class="insight-label">${{'natural-gas':'Natural Gas','heat-pump':'Heat Pump','electric-baseboard':'Electric'}[fuelCosts.cheapest] || fuelCosts.cheapest}</div>
+             <div class="insight-detail">${fuelCosts.fuels['heating-oil'] && fuelCosts.fuels[fuelCosts.cheapest] ? '$' + (fuelCosts.fuels['heating-oil'].annualCost - fuelCosts.fuels[fuelCosts.cheapest].annualCost).toLocaleString() + ' less than oil' : 'See comparison'}</div>`
+          }
+        </a>
+        <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-trend" data-referrer="insights_block">
+          <div class="insight-value">${percentChange6w !== null ? (percentChange6w > 0 ? '↑' : percentChange6w < 0 ? '↓' : '→') + ' ' + Math.abs(percentChange6w).toFixed(0) + '%' : '—'}</div>
+          <div class="insight-label">Price Trend</div>
+          <div class="insight-detail">${percentChange6w !== null ? 'in ' + (weeksAvailable >= 6 ? '6' : weeksAvailable) + ' weeks' : 'View trend analysis'}</div>
+        </a>
+      </div>
+    </section>
+    ` : ''}
+
+    <!-- Market Snapshot -->
+    <section class="market-snapshot">
+      <h2>Market Snapshot</h2>
+      <div class="snapshot-grid">
+        <div class="snapshot-item">
+          <span class="snapshot-value">${supplierCount}</span>
+          <span class="snapshot-label">Suppliers with live pricing</span>
+        </div>
+        <div class="snapshot-item">
+          <span class="snapshot-value">${weeksAvailable}</span>
+          <span class="snapshot-label">Weeks of data</span>
+        </div>
+        <div class="snapshot-item">
+          <span class="snapshot-value">${zipCount}</span>
+          <span class="snapshot-label">ZIP codes covered</span>
+        </div>
+      </div>
+      <p class="coverage-depth">${coverageDepth}</p>
+    </section>
+
+    <!-- ZIP Breakdown Section -->
+    ${zipDetails.length > 0 ? `
+    <section class="zip-breakdown">
+      <h2>Detailed Pricing by ZIP Prefix</h2>
+      <div class="zip-grid">
+        ${zipDetails.map(z => `
+        <a href="/prices/zip/${z.zip_prefix}" class="zip-card">
+          <span class="zip-prefix">${z.zip_prefix}xx</span>
+          <span class="zip-price">$${parseFloat(z.median_price).toFixed(2)}/gal</span>
+          <span class="zip-suppliers">${z.supplier_count} suppliers</span>
+        </a>
+        `).join('')}
+      </div>
+    </section>
+    ` : ''}
+
+    ${medianPrice ? `
+    <section class="county-alert-section" id="alerts">
+      <h3>Get Email Alerts When Heating Oil Prices Drop</h3>
+      <p class="county-alert-hook">Prices change daily. Save $40-$120 per delivery by timing it right.</p>
+      <div class="price-alert-card" data-zip="${countyZips.length > 0 ? countyZips[Math.floor(countyZips.length / 2)] : ''}" data-price="${minPrice ? minPrice.toFixed(2) : ''}"></div>
+      <p class="county-alert-trust">We check prices daily. No newsletters. Only price drops.</p>
+    </section>
+    ` : ''}
+
+    ${medianPrice ? `
+    <section class="county-seo-text">
+      <p>Heating oil prices in ${countyName} County, ${stateName} typically range from
+      $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)} per gallon depending on season,
+      delivery size, and supplier competition.${stateComparison ? ` ${stateComparison.text}.` : ''}</p>
+
+      <p>HomeHeat tracks ${displaySupplierCount} heating oil suppliers across
+      ${zipCount} ZIP codes in ${countyName} County.
+      Prices are updated daily using supplier reports and verified market data.</p>
+
+      <p>Homeowners in ${countyName} County typically use between 600 and 1,000 gallons
+      of heating oil per year depending on home size and insulation. Monitoring price
+      trends can help households save $100-$300 annually by timing deliveries during
+      lower price periods.</p>
+
+      <p>Heating oil prices across ${stateName} can fluctuate significantly throughout
+      the winter heating season. Cold weather spikes, regional supply changes, and
+      delivery demand often influence short-term pricing trends. Many residents
+      searching for heating oil prices today in ${countyName} County use these
+      daily updates to compare local supplier rates before placing their next
+      delivery order.</p>
+    </section>
+    ` : ''}
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>What is the current heating oil price in ${escapeHtml(countyName)} County?</summary>
+          <p>${medianPrice
+            ? `The current median heating oil price in ${countyName} County, ${stateName} is <strong>$${medianPrice.toFixed(2)} per gallon</strong>, based on ${supplierCount} tracked suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
+            : `Price data is being collected for ${countyName} County. Check back soon for updates.`}</p>
+        </details>
+        <details class="faq-item">
+          <summary>Why are ${escapeHtml(countyName)} County prices ${medianPrice > 3.5 ? 'higher than average' : 'competitive'}?</summary>
+          <p>Heating oil prices in ${countyName} County are influenced by proximity to terminals, local supplier competition, and seasonal demand. HomeHeat currently tracks ${displaySupplierCount} suppliers in ${countyName} County, giving homeowners options to compare prices and find competitive rates.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How many heating oil suppliers operate in ${escapeHtml(countyName)} County?</summary>
+          <p>HomeHeat tracks <strong>${displaySupplierCount} heating oil suppliers</strong> with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- Cross-sell: Heating Cost Comparison -->
+    <section style="background: var(--primary-orange-light); padding: 1.25rem; border-radius: 8px; margin: 2rem 0;">
+      <strong>What does heating cost in ${escapeHtml(countyName)} County?</strong>
+      <a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Heating costs</a> |
+      <a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Average bill</a> |
+      <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Price trends</a>
+    </section>
+
+    <!-- Trust Footer -->
+    <p class="trust-footer">
+      Data updated daily by HomeHeat · <a href="/">gethomeheat.com</a>
+    </p>
+  </main>
+
+  <!-- Floating App Download Icon (iOS mobile only) -->
+  <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
+    <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
+    <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_floating" class="floating-app-icon" id="floating-app-cta">
+      <img src="${assetPath}images/app-icon.png" alt="HomeHeat">
+      <div class="float-text">
+        <span class="float-title">Get HomeHeat</span>
+        <span class="float-subtitle">Free on App Store</span>
+      </div>
+    </a>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="/for-suppliers">For Suppliers</a>
+      <a href="/how-prices-work">How Prices Work</a>
+      <a href="/learn/">Learn</a>
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/terms">Terms of Service</a>
+      <a href="/support">Support</a>
+    </div>
+    <p class="copyright">© ${new Date().getFullYear()} HomeHeat. All rights reserved.</p>
+  </footer>
+
+  <script src="${assetPath}js/nav.js"></script>
+  <script src="${assetPath}js/price-alerts.js?v=${getFileHash('js/price-alerts.js')}"></script>
+  <script src="${assetPath}js/platform-detection.js?v=${getFileHash('js/platform-detection.js')}"></script>
+  <script src="${assetPath}js/widgets.js"></script>
+  ${countyZips.length > 0 ? `<script src="${assetPath}js/county-zip-filter.js?v=${getFileHash('js/county-zip-filter.js')}"></script>` : ''}
 </body>
 </html>`;
 }
@@ -1026,6 +1447,61 @@ function getStateComparison(countyMedian, stateMedian, countyName, stateCode) {
       class: 'comparison-below'
     };
   }
+}
+
+/**
+ * Get nearby counties for internal linking (SEO + navigation)
+ * Uses cross-border adjacency for border counties, then same-state fallback
+ */
+function getNearbyCounties(countyName, stateCode, allCountyStats) {
+  const CROSS_BORDER = {
+    'Westchester:NY': ['Fairfield:CT', 'Putnam:NY', 'Rockland:NY'],
+    'Fairfield:CT': ['Westchester:NY', 'New Haven:CT', 'Litchfield:CT'],
+    'Putnam:NY': ['Westchester:NY', 'Dutchess:NY', 'Fairfield:CT'],
+    'Rockland:NY': ['Orange:NY', 'Westchester:NY', 'Bergen:NJ'],
+    'Orange:NY': ['Rockland:NY', 'Sullivan:NY', 'Dutchess:NY'],
+    'Dutchess:NY': ['Putnam:NY', 'Orange:NY', 'Ulster:NY', 'Columbia:NY'],
+    'Nassau:NY': ['Suffolk:NY'],
+    'Suffolk:NY': ['Nassau:NY'],
+    'Bergen:NJ': ['Rockland:NY', 'Passaic:NJ', 'Essex:NJ'],
+    'New Haven:CT': ['Fairfield:CT', 'Litchfield:CT', 'Hartford:CT', 'Middlesex:CT'],
+    'Hartford:CT': ['Litchfield:CT', 'New Haven:CT', 'Tolland:CT'],
+    'Litchfield:CT': ['Fairfield:CT', 'New Haven:CT', 'Hartford:CT'],
+    'New London:CT': ['Middlesex:CT', 'Windham:CT'],
+    'Middlesex:CT': ['New Haven:CT', 'Hartford:CT', 'New London:CT'],
+  };
+
+  const key = `${countyName}:${stateCode}`;
+  const adjacentKeys = CROSS_BORDER[key] || [];
+
+  // Build set of available counties (those with generated pages)
+  const available = new Map();
+  for (const s of allCountyStats) {
+    available.set(`${s.county_name}:${s.state_code}`, s);
+  }
+
+  const seen = new Set([key]);
+  const neighbors = [];
+
+  // First: explicit adjacents
+  for (const adjKey of adjacentKeys) {
+    if (available.has(adjKey) && !seen.has(adjKey)) {
+      neighbors.push(available.get(adjKey));
+      seen.add(adjKey);
+    }
+  }
+
+  // Then: same-state counties
+  for (const s of allCountyStats) {
+    const sKey = `${s.county_name}:${s.state_code}`;
+    if (s.state_code === stateCode && !seen.has(sKey)) {
+      neighbors.push(s);
+      seen.add(sKey);
+    }
+    if (neighbors.length >= 5) break;
+  }
+
+  return neighbors.slice(0, 5);
 }
 
 function getStateName(code) {
@@ -1829,6 +2305,10 @@ function generateCountyEliteCSS() {
   text-align: center;
 }
 
+.county-elite-page .supplier-table td {
+  vertical-align: top;
+}
+
 .supplier-table-intro {
   text-align: center;
   font-size: 0.9rem;
@@ -1976,6 +2456,357 @@ function generateCountyEliteCSS() {
     box-sizing: border-box;
   }
   .county-alert-section .price-alert-btn {
+    width: 100%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* Action-First Layout — New Components                       */
+/* ═══════════════════════════════════════════════════════════ */
+
+/* Price Summary Bar */
+.county-elite-page .price-summary-bar {
+  text-align: center;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.county-elite-page .summary-line-1 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+  color: #333;
+}
+
+.county-elite-page .summary-price {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #FF6B35;
+}
+
+.county-elite-page .summary-line-2 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.county-elite-page .summary-line-2 strong {
+  color: #166534;
+  font-weight: 700;
+}
+
+.county-elite-page .summary-sep {
+  color: #ccc;
+  margin: 0 0.2rem;
+}
+
+.county-elite-page .savings-badge {
+  color: #166534;
+  font-weight: 600;
+}
+
+.county-elite-page .near-best {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.county-elite-page .call-prompt {
+  margin: 0.4rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.county-elite-page .call-prompt a {
+  color: #166534;
+  text-decoration: none;
+}
+
+.county-elite-page .call-prompt a:hover {
+  text-decoration: underline;
+}
+
+/* ZIP Filter */
+.county-elite-page .zip-filter-section {
+  max-width: 480px;
+  margin: 0 auto 1.75rem;
+  text-align: center;
+}
+
+.county-elite-page .zip-filter-label {
+  display: block;
+  font-size: 0.88rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.county-elite-page .zip-filter-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.county-elite-page .zip-filter-input {
+  width: 130px;
+  padding: 0.65rem 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.county-elite-page .zip-filter-input:focus {
+  border-color: #FF6B35;
+  box-shadow: 0 0 0 3px rgba(255,107,53,0.12);
+}
+
+.county-elite-page .zip-filter-btn {
+  padding: 0.65rem 1.25rem;
+  background: #FF6B35;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.county-elite-page .zip-filter-btn:hover {
+  background: #e55a28;
+}
+
+.county-elite-page .zip-filter-btn:active {
+  transform: scale(0.98);
+}
+
+.county-elite-page .zip-filter-clear {
+  padding: 0.65rem 0.75rem;
+  background: #f3f4f6;
+  color: #666;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.county-elite-page .zip-filter-clear:hover {
+  background: #e5e7eb;
+}
+
+.county-elite-page .zip-filter-result {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.county-elite-page .zip-filter-no-match {
+  color: #92400e;
+}
+
+/* Enhanced Supplier Table Sub-lines */
+.county-elite-page .supplier-table-section h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+}
+
+.county-elite-page .supplier-name .supplier-profile-link,
+.county-elite-page .supplier-name .best-price-badge,
+.county-elite-page .supplier-name .supplier-updated {
+  display: block;
+}
+
+.county-elite-page .best-price-badge {
+  display: inline-block;
+  background: #166534;
+  color: #fff;
+  padding: 0.1rem 0.45rem;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.county-elite-page .supplier-updated {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.county-elite-page .freshness-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.county-elite-page .freshness-green { background: #22c55e; }
+.county-elite-page .freshness-yellow { background: #eab308; }
+.county-elite-page .freshness-gray { background: #9ca3af; }
+
+.county-elite-page .price-amount {
+  display: block;
+  font-weight: 600;
+}
+
+.county-elite-page .price-delivery {
+  display: block;
+  font-size: 0.7rem;
+  color: #999;
+  white-space: nowrap;
+}
+
+.county-elite-page .best-price-row {
+  background: #f0fdf4;
+  border-left: 4px solid #22c55e;
+}
+
+.county-elite-page .price-delta {
+  display: block;
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.county-elite-page .price-delta.best {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.county-elite-page .supplier-call-btn {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.county-elite-page .supplier-call-btn:hover {
+  text-decoration: underline;
+}
+
+/* Trust Line + Claim Link */
+.county-elite-page .supplier-trust-line {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 1rem;
+}
+
+.county-elite-page .supplier-claim-link {
+  text-align: center;
+  font-size: 0.88rem;
+  color: #555;
+  margin-top: 0.75rem;
+}
+
+.county-elite-page .supplier-claim-link a {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.county-elite-page .supplier-claim-link a:hover {
+  text-decoration: underline;
+}
+
+/* How to Order */
+.county-elite-page .how-to-order {
+  max-width: 520px;
+  margin: 1rem auto 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.county-elite-page .how-to-order summary {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  background: #f8f9fa;
+  color: #555;
+}
+
+.county-elite-page .how-to-order summary:hover {
+  background: #f0f1f3;
+}
+
+.county-elite-page .how-to-order ol {
+  padding: 0.75rem 1rem 0.75rem 2rem;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #444;
+}
+
+/* Nearby Counties */
+.county-elite-page .nearby-counties {
+  text-align: center;
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  font-size: 0.88rem;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  line-height: 1.8;
+}
+
+.county-elite-page .nearby-counties strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.county-elite-page .nearby-counties a {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.county-elite-page .nearby-counties a:hover {
+  text-decoration: underline;
+}
+
+/* Mobile overrides */
+@media (max-width: 600px) {
+  .county-elite-page .price-delivery {
+    display: none;
+  }
+
+  .county-elite-page .summary-line-1 {
+    font-size: 0.92rem;
+  }
+
+  .county-elite-page .summary-price {
+    font-size: 1.2rem;
+  }
+
+  .county-elite-page .near-best {
+    display: none;
+  }
+
+  .county-elite-page .zip-filter-row {
+    flex-direction: column;
+  }
+
+  .county-elite-page .zip-filter-input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .county-elite-page .zip-filter-btn {
     width: 100%;
   }
 }

@@ -544,9 +544,9 @@ function generateZipPageHTML(stats, history, county = null) {
     <section class="app-cta">
       <h3>Track Your Oil Usage</h3>
       <p>Get personalized run-out predictions and price alerts for your area.</p>
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_zip&utm_medium=website&utm_campaign=zip_elite_${zipPrefix}" class="cta-button ios-only">Get HomeHeat Free &rarr;</a>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_zip&utm_medium=website&utm_campaign=zip_elite_${zipPrefix}" class="cta-button hide-on-android">Get HomeHeat Free &rarr;</a>
       <a href="/prices" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat &rarr;</a>
-      <p class="cta-micro ios-only">Free app. No hardware. No ads.</p>
+      <p class="cta-micro hide-on-android">Free app. No hardware. No ads.</p>
     </section>
 
     <!-- County Overview Link -->

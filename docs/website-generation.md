@@ -84,6 +84,28 @@ All other states: state → county → city (no regional rollup).
 - Returns up to 5 if ≥3 strong results, otherwise caps at 3
 - Excludes suppliers with no price update >14 days
 
+## County Elite Page Structure (Action-First Layout)
+
+County elite pages use an action-first layout (since 2026-03-13) that puts suppliers above the fold:
+
+1. **Header**: H1 + compact price headline (median, supplier count, lowest price, savings vs median)
+2. **Call prompt**: "Call the lowest-price supplier now to order delivery →" links to #suppliers
+3. **ZIP filter**: Client-side filtering via `county-zip-filter.js`. ZIP coverage stored as JSON map in `<script>window.__supplierZips = {...}</script>`. Each `<tr>` has `data-supplier-id` for JS lookup. Zero-match fallback shows all rows with message.
+4. **Supplier table**: Enhanced with delivery cost (`price × minGallons`), freshness dots (`computeFreshness()`), best-price badge + row highlight, price delta vs lowest ("≈$38 more per delivery"), "Call to Order" header
+5. **Below table**: Trust line, "How to order" details, claim link, nearby counties with median prices
+6. **App CTA**: Positioned after supplier table (natural trigger point)
+7. **Remaining sections**: Price trend alert, chart, heating cost insights, market snapshot, ZIP breakdown, email alerts, SEO text, FAQ
+
+Legacy layout available via `--legacy-layout` CLI flag.
+
+### CSS Scoping
+
+All county elite CSS is in `generateCountyEliteCSS()` within the generator, scoped under `.county-elite-page`. Table sub-line classes (`.price-amount`, `.price-delivery`, `.price-delta`) MUST stay scoped — never added to base `style.css`.
+
+### Nearby Counties
+
+Auto-generated from counties sharing the same state, plus hardcoded cross-border adjacency (e.g., Westchester↔Fairfield). Includes median price in link text. Limited to 5 neighbors.
+
 ## Key Rules
 
 - Startup page generation delayed 10s (lets healthcheck pass first)
@@ -93,4 +115,4 @@ All other states: state → county → city (no regional rollup).
 - Trending thresholds: <2% stable, 2–5% slight, 5–15% moved, ≥15% sharp
 - Chart.js: 12-week history for ZIP, 6-week display for county (`.slice(-6)`)
 
-Last audited: 2026-03-02
+Last audited: 2026-03-13

@@ -1463,9 +1463,9 @@ ${supplierRows}
     <section class="zip-cta app-cta-inline">
       <h3>Never Run Out of Oil</h3>
       <p>HomeHeat tracks your usage and predicts when you'll need your next delivery &mdash; no sensors required.</p>
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_price_page" class="cta-button ios-only">Get HomeHeat Free &rarr;</a>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_price_page" class="cta-button hide-on-android">Get HomeHeat Free &rarr;</a>
       <a href="/prices" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Save HomeHeat to Your Phone &rarr;</a>
-      <p style="font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0" class="ios-only">Free app. No hardware. No ads.</p>
+      <p style="font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0" class="hide-on-android">Free app. No hardware. No ads.</p>
       <p class="android-only" style="display:none;font-size:0.8rem;color:var(--text-gray);margin:0.75rem 0 0">Works like an app &mdash; no download needed.</p>
     </section>
 
