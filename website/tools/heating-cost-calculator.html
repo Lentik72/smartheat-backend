@@ -18,7 +18,7 @@
     <meta name="twitter:card" content="summary">
 
     <link rel="canonical" href="https://www.gethomeheat.com/tools/heating-cost-calculator">
-    <link rel="stylesheet" href="../style.min.css?v=1d17ef56">
+    <link rel="stylesheet" href="../style.min.css?v=09fb5845">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
     <link rel="icon" type="image/png" sizes="180x180" href="../favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="../favicon.png">
@@ -74,7 +74,7 @@
     }
     </script>
 </head>
-<body>
+<body data-page-type="calculator">
     <!-- NAV_START -->
 
     <nav class="nav">
@@ -108,31 +108,55 @@
     </nav>
 <!-- NAV_END -->
 
-    <section class="content-section" style="max-width: 960px;">
-        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">
-            <a href="/learn/">Learn</a> → Heating Cost Calculator
-        </p>
+    <!-- Hero Section -->
+    <section class="calc-hero">
+        <div class="calc-hero-inner">
+            <p class="calc-breadcrumb"><a href="/learn/">Learn</a> &rarr; Heating Cost Calculator</p>
+            <h1>Heating Cost Calculator</h1>
+            <p class="calc-hero-desc">Enter your ZIP code to compare heating costs — oil, natural gas, heat pump, and electric — based on local fuel prices and your climate.</p>
 
-        <h1>Heating Cost Calculator</h1>
-        <p>Compare annual and monthly heating costs for your area. Enter your ZIP code to see local fuel prices and estimated costs for oil, natural gas, heat pump, and electric heating.</p>
-
-        <!-- ZIP Input -->
-        <div class="calc-input-section">
-            <label for="calc-zip" class="calc-label">Your ZIP Code</label>
-            <div class="calc-zip-row">
-                <input type="text" id="calc-zip" maxlength="5" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 10549" autocomplete="postal-code" class="calc-zip-input">
-                <button id="calc-submit" class="calc-btn">Compare Costs</button>
+            <div class="calc-input-section">
+                <div class="calc-zip-row">
+                    <input type="text" id="calc-zip" maxlength="5" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 10549" autocomplete="postal-code" class="calc-zip-input">
+                    <button id="calc-submit" class="calc-btn" data-track="calculator-submit" data-referrer="calculator">Compare Costs</button>
+                </div>
+                <p id="calc-error" class="calc-error" hidden></p>
             </div>
-            <p id="calc-error" class="calc-error" hidden></p>
         </div>
 
-        <!-- Loading -->
-        <div id="calc-loading" class="calc-loading" hidden>
-            <div class="calc-spinner"></div>
-            <p>Calculating costs for your area...</p>
+        <div class="calc-features" id="calc-features">
+            <div class="calc-feature">
+                <svg width="32" height="32" viewBox="0 0 36 36" fill="none" aria-hidden="true"><circle cx="18" cy="18" r="16" stroke="currentColor" stroke-width="1.5"/><path d="M18 9v18M13.5 14.5c0-2 2-3.5 4.5-3.5s4.5 1.5 4.5 3.5-2 3.5-4.5 3.5-4.5 1.5-4.5 3.5 2 3.5 4.5 3.5 4.5-1.5 4.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <div>
+                    <h3>Annual &amp; Monthly Costs</h3>
+                    <p>Estimated heating costs by fuel type for your area</p>
+                </div>
+            </div>
+            <div class="calc-feature">
+                <svg width="32" height="32" viewBox="0 0 36 36" fill="none" aria-hidden="true"><rect x="5" y="18" width="6" height="13" rx="1.5" fill="currentColor" opacity="0.4"/><rect x="15" y="11" width="6" height="20" rx="1.5" fill="currentColor" opacity="0.65"/><rect x="25" y="5" width="6" height="26" rx="1.5" fill="currentColor"/></svg>
+                <div>
+                    <h3>Side-by-Side Comparison</h3>
+                    <p>Oil vs gas vs heat pump vs electric at local prices</p>
+                </div>
+            </div>
+            <div class="calc-feature">
+                <svg width="32" height="32" viewBox="0 0 36 36" fill="none" aria-hidden="true"><circle cx="18" cy="19" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M18 13v6l4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 7L7 12l5-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div>
+                    <h3>Heat Pump Payback</h3>
+                    <p>See how long a heat pump takes to pay for itself</p>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <!-- Results -->
+    <!-- Loading -->
+    <div id="calc-loading" class="calc-loading" hidden>
+        <div class="calc-spinner"></div>
+        <p>Calculating costs for your area...</p>
+    </div>
+
+    <!-- Results -->
+    <section class="content-section calc-results-section" style="max-width: 960px;">
         <div id="calc-results" hidden>
             <div class="calc-location" id="calc-location"></div>
 
@@ -165,7 +189,7 @@
                 <div class="calc-cta" id="calc-cta-oil">
                     <h3>Staying with oil?</h3>
                     <p>Compare heating oil prices from local suppliers.</p>
-                    <a id="calc-cta-oil-link" href="/prices" class="calc-cta-btn">Compare Oil Prices</a>
+                    <a id="calc-cta-oil-link" href="/prices" class="calc-cta-btn" data-track="calculator-compare-oil" data-referrer="calculator">Compare Oil Prices</a>
                 </div>
             </div>
 
@@ -175,7 +199,7 @@
                 <p>We'll email you a detailed comparison with seasonal estimates and savings tips for your area.</p>
                 <div class="calc-email-row">
                     <input type="email" id="calc-email" placeholder="you@example.com" autocomplete="email" class="calc-email-input">
-                    <button id="calc-email-submit" class="calc-btn calc-btn-secondary">Send My Report</button>
+                    <button id="calc-email-submit" class="calc-btn calc-btn-secondary" data-track="calculator-email-submit" data-referrer="calculator">Send My Report</button>
                 </div>
                 <p id="calc-email-status" class="calc-email-status" hidden></p>
                 <input type="text" name="website" id="calc-hp" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;">
@@ -190,7 +214,7 @@
                     <li><strong>Heating degree days:</strong> NOAA 30-year Climate Normals by county</li>
                     <li><strong>Home size:</strong> Assumes 2,000 sq ft with typical insulation (7 BTU/sq-ft/HDD)</li>
                     <li><strong>Heat pump COP:</strong> 3.0 (cold-climate mini-split average)</li>
-                    <li><strong>Heating season:</strong> 6 months (October–March)</li>
+                    <li><strong>Heating season:</strong> 6 months (October&ndash;March)</li>
                 </ul>
                 <p>Actual costs depend on home insulation, equipment age, thermostat settings, and weather. Use these estimates as a starting point for comparing fuel options.</p>
             </details>
@@ -209,19 +233,20 @@
 
     <footer class="footer">
         <div class="footer-links">
+            <a href="/for-suppliers">For Suppliers</a>
+            <a href="/how-prices-work">How Prices Work</a>
             <a href="/learn/">Learn</a>
             <a href="/privacy">Privacy Policy</a>
             <a href="/terms">Terms of Service</a>
             <a href="/support">Support</a>
-            <a href="mailto:support@gethomeheat.com">Contact</a>
         </div>
         <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
-        <p>&copy; 2026 HomeHeat. All rights reserved.</p>
+        <p>&copy; 2026 HomeHeat by Tsoir Advisors LLC. All rights reserved.</p>
     </footer>
 
     <script src="../js/nav.js"></script>
     <script src="../js/widgets.js?v=91bd6e10"></script>
     <script src="../js/pwa.js"></script>
-    <script src="../js/calculator.js?v=406019d1"></script>
+    <script src="../js/calculator.js?v=36290716"></script>
 </body>
 </html>

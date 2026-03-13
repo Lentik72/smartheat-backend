@@ -16,6 +16,7 @@
   const tableBody = document.getElementById('calc-table-body');
   const paybackEl = document.getElementById('calc-payback');
   const ctaOilLink = document.getElementById('calc-cta-oil-link');
+  const featuresEl = document.getElementById('calc-features');
   const emailInput = document.getElementById('calc-email');
   const emailBtn = document.getElementById('calc-email-submit');
   const emailStatus = document.getElementById('calc-email-status');
@@ -58,6 +59,7 @@
     clearError();
     resultsEl.hidden = true;
     relatedEl.hidden = true;
+    if (featuresEl) featuresEl.hidden = true;
     loadingEl.hidden = false;
     submitBtn.disabled = true;
 

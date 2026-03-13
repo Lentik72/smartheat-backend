@@ -5030,6 +5030,130 @@ body {
    Heating Cost Calculator (calc- prefix)
    ============================================== */
 
+/* ── Hero Section ── */
+.calc-hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #2a1d1a 100%);
+    padding: 3.5rem 1.5rem 2.5rem;
+    text-align: center;
+}
+
+.calc-hero-inner {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.calc-breadcrumb {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+}
+
+.calc-breadcrumb a {
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+}
+
+.calc-breadcrumb a:hover {
+    color: rgba(255,255,255,0.8);
+}
+
+.calc-hero h1 {
+    color: #fff;
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+}
+
+.calc-hero-desc {
+    color: rgba(255,255,255,0.6);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.calc-hero .calc-input-section {
+    margin: 0;
+}
+
+.calc-hero .calc-zip-row {
+    justify-content: center;
+}
+
+.calc-hero .calc-zip-input {
+    background: rgba(255,255,255,0.95);
+    border-color: rgba(255,255,255,0.2);
+    font-size: 1.2rem;
+    width: 180px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+
+.calc-hero .calc-zip-input:focus {
+    border-color: var(--primary-orange);
+    background: #fff;
+}
+
+.calc-hero .calc-btn {
+    font-size: 1.05rem;
+    padding: 0.8rem 1.75rem;
+    box-shadow: 0 2px 12px rgba(255,107,53,0.3);
+}
+
+.calc-hero .calc-error {
+    color: #fca5a5;
+    margin-top: 0.75rem;
+}
+
+/* ── Feature Preview Cards ── */
+.calc-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    max-width: 760px;
+    margin: 2.5rem auto 0;
+}
+
+.calc-features[hidden] {
+    display: none;
+}
+
+.calc-feature {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    text-align: left;
+}
+
+.calc-feature svg {
+    flex-shrink: 0;
+    color: #FF6B35;
+}
+
+.calc-feature h3 {
+    color: rgba(255,255,255,0.9);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.calc-feature p {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+/* ── Results Section ── */
+.calc-results-section {
+    padding-top: 0.5rem;
+}
+
 .calc-input-section {
     margin: 2rem 0;
 }
@@ -5122,6 +5246,10 @@ body {
 .calc-location {
     margin-bottom: 1.5rem;
     font-size: 1.1rem;
+    padding: 0.75rem 1rem;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-orange);
 }
 
 .calc-hdd {
@@ -5249,6 +5377,14 @@ body {
     border-bottom: 1px solid var(--border-color);
     vertical-align: middle;
     white-space: nowrap;
+}
+
+.calc-table tbody tr:hover {
+    background: var(--background-secondary);
+}
+
+.calc-table .calc-row-cheapest:hover {
+    background: #dcfce7;
 }
 
 .calc-table tr:last-child td {
@@ -5478,12 +5614,34 @@ body {
 
 /* Calculator responsive */
 @media (max-width: 600px) {
+    .calc-hero {
+        padding: 2.5rem 1.25rem 2rem;
+    }
+
+    .calc-hero h1 {
+        font-size: 1.75rem;
+    }
+
+    .calc-hero-desc {
+        font-size: 0.95rem;
+    }
+
+    .calc-features {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        margin-top: 2rem;
+    }
+
     .calc-zip-row {
         flex-direction: column;
         align-items: stretch;
     }
 
     .calc-zip-input {
+        width: 100%;
+    }
+
+    .calc-hero .calc-zip-input {
         width: 100%;
     }
 
