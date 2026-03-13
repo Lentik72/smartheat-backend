@@ -769,7 +769,13 @@ function generateIndexPageHTML(statesData) {
 
 function generateSitemapURLs(generatedPages) {
   const today = new Date().toISOString().split('T')[0];
-  let urls = '';
+  let urls = `
+  <url>
+    <loc>${BASE_URL}/average-heating-bill/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>`;
 
   for (const state of generatedPages.states) {
     urls += `
