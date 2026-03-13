@@ -24,6 +24,8 @@
 
   if (!zipInput || !submitBtn) return;
 
+  var lastOilPrice = null; // stored from most recent calculation
+
   // Fuel display config — order determines table row order
   const FUEL_ORDER = ['heating-oil', 'natural-gas', 'heat-pump', 'electric-baseboard'];
   const FUEL_ICONS = {
@@ -85,6 +87,9 @@
     // Location header
     locationEl.innerHTML = '<strong>' + esc(data.county) + ' County, ' + esc(data.state) + '</strong>' +
       ' <span class="calc-hdd">' + data.hdd.toLocaleString() + ' heating degree days/year</span>';
+
+    // Store oil price for email signup
+    lastOilPrice = data.fuels['heating-oil'] ? data.fuels['heating-oil'].price : null;
 
     // Table rows
     tableBody.innerHTML = '';
@@ -213,18 +218,25 @@
       }
 
       var zip = zipInput.value.trim();
+      var threshold = lastOilPrice || 4.00;
 
       fetch('/api/price-alerts/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email, zip: zip, source: 'calculator' }),
-      }).then(function () {
-        emailStatus.textContent = 'Thanks! We\'ll send your personalized report.';
+        body: JSON.stringify({
+          email: email,
+          zip_code: zip,
+          threshold_price: threshold,
+          source_page: 'calculator'
+        }),
+      }).then(function (res) {
+        if (!res.ok) return res.json().then(function (d) { throw new Error(d.error || 'Failed'); });
+        emailStatus.textContent = 'Thanks! We\'ll notify you when oil prices drop in your area.';
         emailStatus.className = 'calc-email-status calc-email-success';
         emailStatus.hidden = false;
         emailBtn.disabled = true;
-      }).catch(function () {
-        emailStatus.textContent = 'Something went wrong. Try again later.';
+      }).catch(function (err) {
+        emailStatus.textContent = err.message || 'Something went wrong. Try again later.';
         emailStatus.className = 'calc-email-status calc-email-error';
         emailStatus.hidden = false;
       });
