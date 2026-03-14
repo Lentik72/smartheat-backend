@@ -371,49 +371,65 @@ class PriceAlertService {
   buildAlertEmailHtml({ zip_code, threshold_price, minPrice, topSuppliers, unsubscribe_token }) {
     const priceUrl = `${SITE_URL}/prices.html?zip=${zip_code}&utm_source=price_alert&utm_campaign=price_drop`;
     const appUrl = 'https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=price_alert&utm_campaign=price_drop';
+    const savings = ((threshold_price - minPrice) * 150).toFixed(0);
 
-    const supplierRows = topSuppliers.map(s => {
-      const phoneLink = s.phone ? `<a href="tel:${s.phone}" style="color: #2563eb;">${s.phone}</a>` : '';
+    const supplierRows = topSuppliers.map((s, i) => {
+      const phoneLink = s.phone ? `<a href="tel:${s.phone}" style="color: #2563eb; text-decoration: none;">${s.phone}</a>` : '';
       const nameHtml = s.slug
-        ? `<a href="${SITE_URL}/supplier/${s.slug}?utm_source=price_alert&utm_campaign=price_drop" style="color: #1a1a1a; text-decoration: none; font-weight: 500;">${s.name}</a>`
+        ? `<a href="${SITE_URL}/supplier/${s.slug}?utm_source=price_alert&utm_campaign=price_drop" style="color: #1a1a1a; text-decoration: none;">${s.name}</a>`
         : s.name;
+      const isFirst = i === 0;
+      const rowBg = isFirst ? 'background: #f0fdf4;' : '';
+      const priceBadge = isFirst
+        ? `<span style="background: #16a34a; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 15px;">$${s.price.toFixed(2)}</span>`
+        : `<span style="font-weight: 600; color: #333;">$${s.price.toFixed(2)}</span>`;
       return `
-        <tr>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #eee;">${nameHtml}${s.city ? ` <span style="color: #888;">· ${s.city}</span>` : ''}</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #eee; font-weight: 600;">$${s.price.toFixed(2)}</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #eee;">${phoneLink}</td>
+        <tr style="${rowBg}">
+          <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0;">
+            <div style="font-weight: ${isFirst ? '600' : '500'}; font-size: 14px;">${nameHtml}</div>
+            ${s.city ? `<div style="font-size: 12px; color: #888; margin-top: 2px;">${s.city}</div>` : ''}
+          </td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; text-align: center;">${priceBadge}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; text-align: right;">${phoneLink}</td>
         </tr>`;
     }).join('');
 
     return `
-<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; background: #fff;">
   ${this.buildEmailHeader()}
 
-  <p>Good news — heating oil prices in <strong>${zip_code}</strong> dropped below your target of <strong>$${threshold_price.toFixed(2)}/gal</strong>.</p>
+  <div style="padding: 0 20px;">
+    <p style="margin: 0 0 20px; font-size: 15px; color: #444;">Heating oil prices in <strong>${zip_code}</strong> dropped below your <strong>$${threshold_price.toFixed(2)}</strong> target.</p>
 
-  <div style="background: #f0f7ff; border-radius: 8px; padding: 16px; margin: 16px 0; text-align: center;">
-    <div style="font-size: 28px; font-weight: 700; color: #1a56db;">$${minPrice.toFixed(2)}/gal</div>
-    <div style="font-size: 13px; color: #666; margin-top: 4px;">Current lowest price in ${zip_code}</div>
-  </div>
+    <div style="background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%); border-radius: 12px; padding: 24px; margin: 0 0 24px; text-align: center;">
+      <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Lowest price in ${zip_code}</div>
+      <div style="font-size: 36px; font-weight: 800; color: #fff;">$${minPrice.toFixed(2)}<span style="font-size: 18px; font-weight: 500;">/gal</span></div>
+      ${parseFloat(savings) > 0 ? `<div style="font-size: 13px; color: rgba(255,255,255,0.85); margin-top: 6px;">Save ~$${savings} on a 150-gallon fill vs. your target price</div>` : ''}
+    </div>
 
-  <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-    <thead>
-      <tr style="background: #f8f9fa;">
-        <th style="padding: 8px 12px; text-align: left; font-size: 13px; color: #666;">Supplier</th>
-        <th style="padding: 8px 12px; text-align: left; font-size: 13px; color: #666;">Price</th>
-        <th style="padding: 8px 12px; text-align: left; font-size: 13px; color: #666;">Phone</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${supplierRows}
-    </tbody>
-  </table>
+    <table style="width: 100%; border-collapse: collapse; margin: 0 0 8px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
+      <thead>
+        <tr style="background: #f8f9fa;">
+          <th style="padding: 10px 16px; text-align: left; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Supplier</th>
+          <th style="padding: 10px 16px; text-align: center; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Price</th>
+          <th style="padding: 10px 16px; text-align: right; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Call</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${supplierRows}
+      </tbody>
+    </table>
 
-  <p><a href="${priceUrl}" style="color: #2563eb;">See today's cheapest heating oil in ${zip_code} →</a></p>
+    <p style="margin: 16px 0 24px; text-align: center;">
+      <a href="${priceUrl}" style="display: inline-block; background: #2563eb; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Compare all suppliers in ${zip_code}</a>
+    </p>
 
-  <div style="background: #fef3c7; border-radius: 8px; padding: 12px 16px; margin: 20px 0; font-size: 13px;">
-    📱 <strong>Want smarter alerts?</strong> The HomeHeat app predicts when your tank runs out and finds the best time to order.
-    <a href="${appUrl}" style="color: #2563eb;">Download free →</a>
+    <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin: 0 0 24px; text-align: center; border: 1px solid #e5e7eb;">
+      <img src="${SITE_URL}/images/app-icon-192.png" alt="HomeHeat" width="48" height="48" style="border-radius: 12px; margin-bottom: 8px;">
+      <div style="font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px;">Never miss the best time to order</div>
+      <div style="font-size: 13px; color: #666; margin-bottom: 14px;">HomeHeat for iPhone tracks your tank level and predicts when to order at the lowest price.</div>
+      <a href="${appUrl}" style="display: inline-block; background: #000; color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 500;"><span style="font-size: 9px; display: block; font-weight: 400; line-height: 1; margin-bottom: 2px;">Download on the</span><span style="font-size: 16px; font-weight: 600; line-height: 1;">App Store</span></a>
+    </div>
   </div>
 
   ${this.buildEmailFooter({ zip_code, unsubscribe_token })}
