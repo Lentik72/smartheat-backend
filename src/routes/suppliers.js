@@ -316,7 +316,7 @@ router.get('/', async (req, res) => {
         'addressLine1', 'city', 'state',
         'postalCodesServed', 'serviceCities', 'serviceCounties',
         'serviceAreaRadius', 'lat', 'lng', 'verified',
-        'claimed_at', 'claimed_by_email',  // V2.5.0: Track claimed/verified suppliers
+        'claimed_at',  // V2.5.0: Track claimed suppliers
         'slug',  // V2.15.0: For linking to supplier profile pages
         // V2.14.0: Hours & Availability (only exposed when verified)
         'hoursWeekday', 'hoursSaturday', 'hoursSunday',

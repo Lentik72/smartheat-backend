@@ -16,8 +16,8 @@ const router = express.Router();
 // Admin master token (same as price-review)
 const ADMIN_MASTER_TOKEN = process.env.ADMIN_REVIEW_TOKEN || 'smartheat-price-review-2024';
 
-// Magic link expiry (1 year)
-const MAGIC_LINK_EXPIRY_DAYS = 365;
+// Magic link expiry (30 days — short-lived for security; suppliers can request a new link)
+const MAGIC_LINK_EXPIRY_DAYS = 30;
 
 /**
  * Admin authentication middleware
@@ -75,7 +75,7 @@ async function sendMagicLinkEmail(claimant, supplier, magicLinkUrl) {
 
       <p style="color: #666; font-size: 15px; line-height: 1.6;">
         You can now update your prices anytime using the secure link below. This link is unique to you
-        and works for one year.
+        and works for 30 days.
       </p>
 
       <div style="text-align: center; margin: 32px 0;">
@@ -102,8 +102,8 @@ async function sendMagicLinkEmail(claimant, supplier, magicLinkUrl) {
       <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #eee;">
         <p style="color: #999; font-size: 13px; margin: 0;">
           Questions? Just reply to this email.<br><br>
-          <strong>Important:</strong> Keep this email safe - the link above is your key to updating prices.
-          If you need a new link, just reply to this email.
+          <strong>Important:</strong> This link expires in 30 days. Need a new one? Just reply to this email
+          and we'll send a fresh link right away.
         </p>
       </div>
 

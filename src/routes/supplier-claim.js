@@ -92,6 +92,29 @@ async function sendClaimConfirmationEmail(claim, supplierName) {
 }
 
 /**
+ * Check if claimant email domain matches supplier website domain.
+ * Returns { match: boolean, emailDomain: string, websiteDomain: string|null }
+ */
+function checkEmailDomainMatch(claimantEmail, supplierWebsite) {
+  const emailDomain = claimantEmail.split('@')[1]?.toLowerCase();
+  if (!supplierWebsite || !emailDomain) {
+    return { match: false, emailDomain, websiteDomain: null, reason: 'no_website' };
+  }
+  try {
+    const url = new URL(supplierWebsite);
+    const websiteDomain = url.hostname.replace(/^www\./, '').toLowerCase();
+    // Exact match or email domain ends with website domain (e.g. sales.acme.com matches acme.com)
+    const match = emailDomain === websiteDomain || emailDomain.endsWith('.' + websiteDomain);
+    // Flag common free email providers as suspicious for business claims
+    const freeProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com', 'mail.com', 'protonmail.com'];
+    const isFreeEmail = freeProviders.includes(emailDomain);
+    return { match, emailDomain, websiteDomain, isFreeEmail };
+  } catch {
+    return { match: false, emailDomain, websiteDomain: null, reason: 'invalid_url' };
+  }
+}
+
+/**
  * Send notification email to admin about new claim
  */
 async function sendAdminNotificationEmail(claim, supplier, pendingCount, claimId) {
@@ -105,6 +128,23 @@ async function sendAdminNotificationEmail(claim, supplier, pendingCount, claimId
 
   const baseUrl = process.env.BACKEND_URL || 'https://gethomeheat.com';
   const adminUrl = `${baseUrl}/admin/claims.html`;
+
+  // Check email domain match for fraud detection
+  const domainCheck = checkEmailDomainMatch(claim.claimantEmail, supplier.website);
+  let domainWarningHtml = '';
+  if (!domainCheck.match && domainCheck.websiteDomain) {
+    const severity = domainCheck.isFreeEmail ? 'high' : 'medium';
+    const bgColor = severity === 'high' ? '#f8d7da' : '#fff3cd';
+    const borderColor = severity === 'high' ? '#dc3545' : '#F5A623';
+    const textColor = severity === 'high' ? '#721c24' : '#856404';
+    domainWarningHtml = `
+      <div style="background: ${bgColor}; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid ${borderColor};">
+        <p style="margin: 0; color: ${textColor}; font-size: 14px;">
+          <strong>Domain Mismatch:</strong> Email domain <code>${domainCheck.emailDomain}</code> does not match supplier website <code>${domainCheck.websiteDomain}</code>.${domainCheck.isFreeEmail ? ' Free email provider — verify carefully.' : ''}
+        </p>
+      </div>
+    `;
+  }
 
   // Generate one-click verify link (if CLAIM_VERIFY_SECRET is configured)
   let quickVerifyHtml = '';
@@ -136,10 +176,13 @@ async function sendAdminNotificationEmail(claim, supplier, pendingCount, claimId
         </p>
       </div>
 
+      ${domainWarningHtml}
+
       <h3 style="color: #666; margin: 20px 0 12px; font-size: 14px; text-transform: uppercase;">Supplier</h3>
       <div style="background: #f8f9fa; padding: 16px; border-radius: 8px;">
         <p style="margin: 8px 0;"><strong>Name:</strong> ${supplier.name}</p>
         <p style="margin: 8px 0;"><strong>Location:</strong> ${supplier.city}, ${supplier.state}</p>
+        <p style="margin: 8px 0;"><strong>Website:</strong> ${supplier.website || 'None on file'}</p>
         <p style="margin: 8px 0; font-size: 18px;"><strong>📞 Phone to Call:</strong> <a href="tel:${supplier.phone}" style="color: #007bff;">${supplier.phone}</a></p>
       </div>
 
@@ -286,7 +329,7 @@ router.post('/', async (req, res) => {
 
     // Resolve supplier by slug (active only) — no internal ID on client
     const [supplierRows] = await sequelize.query(`
-      SELECT id, name, slug, phone, city, state, claimed_at
+      SELECT id, name, slug, phone, website, city, state, claimed_at
       FROM suppliers
       WHERE slug = :slug AND active = true
     `, { replacements: { slug } });

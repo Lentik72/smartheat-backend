@@ -293,7 +293,8 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
         <h1>${name}</h1>
         <p class="sp-location">${location}</p>
         ${isClaimed
-          ? '<span class="sp-verified"><svg width="12" height="12" viewBox="0 0 24 24" fill="#2d8a2d"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Verified Business</span>'
+          ? `<span class="sp-verified"><svg width="12" height="12" viewBox="0 0 24 24" fill="#2d8a2d"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Verified Business</span>
+             <a href="mailto:support@gethomeheat.com?subject=Listing%20issue%3A%20${encodeURIComponent(supplier.name)}&body=I%20believe%20there%20is%20an%20issue%20with%20the%20listing%20for%20${encodeURIComponent(supplier.name)}%20(${encodeURIComponent(supplier.slug)}).%0A%0APlease%20describe%20the%20issue%3A%0A" class="sp-report-link" rel="nofollow">Report an issue</a>`
           : `<a href="/claim/${supplier.slug}" class="sp-claim-hint" rel="nofollow" onclick="typeof gtag==='function'&&gtag('event','claim_hint_click',{supplier_slug:'${supplier.slug}',location:'hero'})">Is this your business? Claim it</a>`}
       </div>
     </section>`;
@@ -918,6 +919,19 @@ function generateSupplierCSS() {
 
 .sp-claim-hint:hover {
   color: var(--primary-orange-hover, #E55A2B);
+  text-decoration: underline;
+}
+
+.sp-report-link {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #999;
+  text-decoration: none;
+  margin-left: 12px;
+}
+
+.sp-report-link:hover {
+  color: #666;
   text-decoration: underline;
 }
 
