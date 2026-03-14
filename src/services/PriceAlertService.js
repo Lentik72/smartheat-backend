@@ -152,7 +152,7 @@ class PriceAlertService {
    */
   async getZipPriceData(zipCode) {
     const [rows] = await this.sequelize.query(`
-      SELECT s.name, s.city, s.phone, sp.price_per_gallon
+      SELECT DISTINCT ON (s.id) s.name, s.city, s.phone, s.slug, sp.price_per_gallon
       FROM suppliers s
       JOIN supplier_prices sp ON s.id = sp.supplier_id
       WHERE s.active = true
@@ -165,9 +165,12 @@ class PriceAlertService {
           SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS zip
           WHERE zip = :zipCode
         )
-      ORDER BY sp.price_per_gallon ASC
-      LIMIT 3
+      ORDER BY s.id, sp.price_per_gallon ASC
     `, { replacements: { zipCode } });
+
+    // Re-sort by price and take top 3 (DISTINCT ON requires ORDER BY s.id first)
+    rows.sort((a, b) => parseFloat(a.price_per_gallon) - parseFloat(b.price_per_gallon));
+    rows.splice(3);
 
     if (rows.length === 0) return null;
 
@@ -177,6 +180,7 @@ class PriceAlertService {
         name: r.name,
         city: r.city,
         phone: r.phone,
+        slug: r.slug,
         price: parseFloat(r.price_per_gallon)
       }))
     };
@@ -370,9 +374,12 @@ class PriceAlertService {
 
     const supplierRows = topSuppliers.map(s => {
       const phoneLink = s.phone ? `<a href="tel:${s.phone}" style="color: #2563eb;">${s.phone}</a>` : '';
+      const nameHtml = s.slug
+        ? `<a href="${SITE_URL}/supplier/${s.slug}?utm_source=price_alert&utm_campaign=price_drop" style="color: #1a1a1a; text-decoration: none; font-weight: 500;">${s.name}</a>`
+        : s.name;
       return `
         <tr>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #eee;">${s.name}${s.city ? ` <span style="color: #888;">· ${s.city}</span>` : ''}</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #eee;">${nameHtml}${s.city ? ` <span style="color: #888;">· ${s.city}</span>` : ''}</td>
           <td style="padding: 8px 12px; border-bottom: 1px solid #eee; font-weight: 600;">$${s.price.toFixed(2)}</td>
           <td style="padding: 8px 12px; border-bottom: 1px solid #eee;">${phoneLink}</td>
         </tr>`;
