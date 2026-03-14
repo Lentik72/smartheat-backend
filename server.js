@@ -213,6 +213,10 @@ app.use((req, res, next) => {
   if (req.path === '/index') {
     return res.redirect(301, '/' + (req._parsedUrl.search || ''));
   }
+  // Redirect /suppliers/ to /prices (bots guess parent from /supplier/{slug} pages)
+  if (req.path === '/suppliers' || req.path === '/suppliers/') {
+    return res.redirect(301, '/prices' + (req._parsedUrl.search || ''));
+  }
   // Redirect old full-state-name price URLs to abbreviated form
   // e.g. /prices/connecticut/fairfield-county → /prices/ct/fairfield-county
   //      /prices/new-york → /prices/ny
