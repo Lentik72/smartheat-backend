@@ -37,6 +37,28 @@ const CACHE_TTL = 3600000; // 1 hour
 const supplierDemandCache = new Map();
 const supplierMarketCache = new Map();
 
+// Social proof cache: { supplierCount, stateCount, ts }
+let socialProofCache = { supplierCount: 0, stateCount: 0, ts: 0 };
+
+async function getSocialProof(sequelize) {
+  const now = Date.now();
+  if (socialProofCache.ts && now - socialProofCache.ts < CACHE_TTL) {
+    return socialProofCache;
+  }
+
+  const [rows] = await sequelize.query(`
+    SELECT COUNT(*) as total, COUNT(DISTINCT state) as states
+    FROM suppliers WHERE active = true
+  `);
+
+  socialProofCache = {
+    supplierCount: parseInt(rows[0]?.total || 0),
+    stateCount: parseInt(rows[0]?.states || 0),
+    ts: now
+  };
+  return socialProofCache;
+}
+
 // ── Slug Sweep Detection ─────────────────────────────────────────
 // Track distinct slugs per IP in 10-min window
 const slugSweepTracker = new Map(); // ip → { slugs: Set, ts }
@@ -242,7 +264,7 @@ const ACTIVITY_LABELS = {
 };
 
 // ── Page Renderer ────────────────────────────────────────────────
-function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, isClaimed) {
+function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, isClaimed, socialProof) {
   const name = escapeHtml(supplier.name);
   const city = escapeHtml(supplier.city) || '';
   const state = supplier.state || '';
@@ -326,20 +348,29 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
     statsHtml = `
       <div class="claim-card demand-card">
         <div class="claim-card-header">
-          <span>HOMEOWNERS ARE COMPARING SUPPLIERS IN YOUR AREA</span>
+          <span>YOUR LISTING ACTIVITY</span>
           <span class="activity-badge ${badge.cls}">${badge.text}</span>
         </div>
         ${ownClicks > 0 ? `
         <div class="demand-own">
-          <p class="demand-headline">Your listing received:</p>
-          <p class="demand-number">${ownClicks} click${ownClicks !== 1 ? 's' : ''}</p>
-          <p class="demand-breakdown">${demand.calls} call${demand.calls !== 1 ? 's' : ''}, ${demand.websites} website visit${demand.websites !== 1 ? 's' : ''}</p>
-          <p class="demand-period">in the last 30 days</p>
+          <div class="demand-own-row">
+            <p class="demand-number">${ownClicks}</p>
+            <div>
+              <p class="demand-number-label">homeowner visit${ownClicks !== 1 ? 's' : ''}</p>
+              <p class="demand-breakdown">${demand.calls > 0 ? `${demand.calls} call${demand.calls !== 1 ? 's' : ''} &middot; ` : ''}${demand.websites} website click${demand.websites !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+          <p class="demand-period">Last 30 days</p>
           ${priceNudge}
         </div>` : `
         <div class="demand-own">
-          <p class="demand-headline" style="color:#555;font-weight:600">Your listing hasn't received clicks yet</p>
-          <p class="demand-intent">Homeowners are searching in your area${!hasPrice ? ', but suppliers without prices rarely get clicks.' : '. Claim your listing to start appearing in comparisons.'}</p>
+          <div class="demand-own-row">
+            <p class="demand-number">0</p>
+            <div>
+              <p class="demand-number-label">homeowner visits</p>
+              <p class="demand-breakdown">${!hasPrice ? 'Suppliers without prices rarely get clicks' : 'Claim to start appearing in comparisons'}</p>
+            </div>
+          </div>
           ${priceNudge}
         </div>`}
         <div class="locked-grid">
@@ -379,15 +410,18 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
     statsHtml = `
       <div class="claim-card demand-card">
         <div class="claim-card-header">
-          <span>HOMEOWNERS ARE COMPARING SUPPLIERS IN YOUR AREA</span>
+          <span>YOUR LISTING ACTIVITY</span>
           <span class="activity-badge ${badge.cls}">${badge.text}</span>
         </div>
         <div class="demand-own">
-          <p class="demand-headline">Your listing received:</p>
-          <p class="demand-number">${demand.clicks} click${demand.clicks !== 1 ? 's' : ''}</p>
-          <p class="demand-breakdown">${demand.calls} call${demand.calls !== 1 ? 's' : ''}, ${demand.websites} website visit${demand.websites !== 1 ? 's' : ''}</p>
-          <p class="demand-period">in the last 30 days</p>
-          <p class="demand-intent">These homeowners were actively comparing prices.</p>
+          <div class="demand-own-row">
+            <p class="demand-number">${demand.clicks}</p>
+            <div>
+              <p class="demand-number-label">homeowner visit${demand.clicks !== 1 ? 's' : ''}</p>
+              <p class="demand-breakdown">${demand.calls > 0 ? `${demand.calls} call${demand.calls !== 1 ? 's' : ''} &middot; ` : ''}${demand.websites} website click${demand.websites !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+          <p class="demand-period">Last 30 days</p>
           ${priceNudge}
         </div>
         <div class="locked-grid">
@@ -412,17 +446,55 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
       </div>`;
   }
 
+  // Headline + social proof (unclaimed only)
+  let headlineHtml = '';
+  if (!isClaimed) {
+    const proofLine = socialProof.supplierCount > 0
+      ? `<p class="claim-social-proof">Join ${socialProof.supplierCount.toLocaleString()} suppliers listed across ${socialProof.stateCount} states</p>`
+      : '';
+    headlineHtml = `
+      <div class="claim-headline">
+        <h2>Get calls from homeowners comparing heating oil near you.</h2>
+        ${proofLine}
+      </div>`;
+  }
+
   // Form section (only for unclaimed suppliers)
   let formHtml = '';
   if (!isClaimed) {
     const verifyMethod = phone
-      ? `We verify by calling your business: <strong>${phone}</strong>`
-      : `We'll verify your ownership by email`;
+      ? `To confirm you work here, we'll call <strong>${phone}</strong> (the number on file for ${name}).`
+      : `We'll verify your connection to this business by email.`;
 
     formHtml = `
+      <div class="claim-card claim-benefits-card">
+        <div class="benefits-header">
+          <h2>When You Claim, You Get</h2>
+          <span class="benefits-free">Free to claim</span>
+        </div>
+        <div class="benefits-grid">
+          <div class="benefit-item">
+            <span class="benefit-icon">&#9989;</span>
+            <span class="benefit-label">Verified Business badge</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">&#128176;</span>
+            <span class="benefit-label">Display your current price</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">&#128200;</span>
+            <span class="benefit-label">Full demand analytics</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">&#128241;</span>
+            <span class="benefit-label">Update price by text<br><strong>(845) 335-8855</strong></span>
+          </div>
+        </div>
+      </div>
+
       <div class="claim-card claim-form-card">
         <h2>Claim Your Listing</h2>
-        <p class="claim-form-sub">Control your price and see who's searching for you.</p>
+        <p class="claim-form-sub">Takes 60 seconds. We'll verify and send your management link.</p>
 
         <form id="claim-form" novalidate>
           <div class="form-group">
@@ -456,18 +528,8 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
           <div id="form-error" class="form-error" style="display:none"></div>
 
           <button type="submit" class="btn btn-primary btn-claim" id="claim-submit">Claim My Listing</button>
-          <p class="claim-micro">Free. Takes 2 minutes.</p>
+          <p class="claim-micro">Free. No contract.</p>
         </form>
-      </div>
-
-      <div class="claim-card claim-benefits-card">
-        <h2>When You Claim, You Get</h2>
-        <ul class="benefits-list">
-          <li>&#9989; Verified Business badge</li>
-          <li>&#128176; Display your current price</li>
-          <li>&#128200; Full demand analytics</li>
-          <li>&#128241; Update price by text: <strong>(845) 335-8855</strong></li>
-        </ul>
       </div>
 
       <div id="claim-success" class="claim-card claim-success-card" style="display:none">
@@ -509,6 +571,8 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
     <div class="claim-header">
       <h1>${name}</h1>
       <p class="claim-location">${location}</p>
+      ${!isClaimed ? '<p class="claim-unclaimed-tag">This listing is unclaimed</p>' : ''}
+      ${headlineHtml}
     </div>
 
     <div id="demand-stats"
@@ -630,7 +694,7 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
     const postalCodes = supplier.postal_codes_served;
     const hasZips = Array.isArray(postalCodes) && postalCodes.length > 0;
 
-    // Get demand data + activity level + price check + market data in parallel
+    // Get demand data + activity level + price check + market data + social proof in parallel
     const fetchPromises = [
       getSupplierDemand(sequelize, supplierId, slug),
       getActivityRanks(sequelize),
@@ -638,7 +702,8 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
         SELECT 1 FROM supplier_prices
         WHERE supplier_id = :id AND is_valid = true
         LIMIT 1
-      `, { replacements: { id: supplierId } })
+      `, { replacements: { id: supplierId } }),
+      getSocialProof(sequelize)
     ];
     if (hasZips) {
       fetchPromises.push(getSupplierMarketData(sequelize, supplierId, slug));
@@ -648,7 +713,8 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
     const demand = results[0];
     const activityRanks = results[1];
     const priceRows = results[2];
-    const marketData = hasZips ? { ...results[3], hasZips: true } : { hasZips: false };
+    const socialProof = results[3];
+    const marketData = hasZips ? { ...results[4], hasZips: true } : { hasZips: false };
 
     const activityLevel = activityRanks[slug] || 'new';
     const hasPrice = priceRows[0]?.length > 0;
@@ -671,7 +737,7 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
       logger?.warn(`[ClaimPage] Audit log error: ${logErr.message}`);
     }
 
-    const html = renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, isClaimed);
+    const html = renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, isClaimed, socialProof);
     res.set('Cache-Control', 'no-store');
     res.send(html);
 

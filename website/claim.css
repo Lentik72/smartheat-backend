@@ -8,20 +8,58 @@
 
 .claim-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .claim-header h1 {
   font-size: 28px;
   font-weight: 700;
   color: #1a1a1a;
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 }
 
 .claim-location {
-  font-size: 18px;
+  font-size: 16px;
   color: #666;
+  margin: 0 0 8px;
+}
+
+.claim-unclaimed-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #D97706;
+  background: #FEF3C7;
+  padding: 3px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 16px;
+}
+
+/* Headline + social proof (inside header) */
+.claim-headline {
   margin: 0;
+  padding: 16px 20px;
+  background: #FEF3EB;
+  border-radius: 10px;
+  border-left: 3px solid #FF6B35;
+}
+
+.claim-headline h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 4px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.claim-social-proof {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+  text-align: left;
 }
 
 /* Card base */
@@ -52,41 +90,61 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  font-size: 13px;
+  margin-bottom: 20px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #374151;
+  letter-spacing: 0.05em;
+  color: #888;
 }
 
 .demand-own {
   margin-bottom: 20px;
 }
 
-.demand-headline {
-  font-size: 15px;
-  color: #666;
-  margin: 0 0 4px;
+.demand-own-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .demand-number {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: 40px;
+  font-weight: 800;
+  color: #FF6B35;
   margin: 0;
+  line-height: 1;
+  min-width: 48px;
+}
+
+.demand-number-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 2px;
 }
 
 .demand-breakdown {
-  font-size: 14px;
-  color: #666;
-  margin: 4px 0 0;
+  font-size: 13px;
+  color: #999;
+  margin: 0;
 }
 
 .demand-period {
-  font-size: 13px;
-  color: #999;
-  margin: 4px 0 0;
+  font-size: 11px;
+  color: #bbb;
+  margin: 10px 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: right;
+}
+
+.demand-headline {
+  display: none;
 }
 
 .demand-intent {
@@ -188,6 +246,11 @@
   border: 2px solid #FF6B35;
 }
 
+.claim-form-card h2 {
+  text-transform: none;
+  font-size: 20px;
+}
+
 .claim-form-sub {
   font-size: 15px;
   color: #666;
@@ -276,21 +339,110 @@
 }
 
 /* Benefits card */
-.benefits-list {
-  list-style: none;
-  padding: 0;
+.claim-benefits-card {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+}
+
+.benefits-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.benefits-header h2 {
   margin: 0;
 }
 
-.benefits-list li {
-  padding: 8px 0;
-  font-size: 15px;
-  color: #374151;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+.benefits-free {
+  font-size: 12px;
+  font-weight: 600;
+  color: #16A34A;
+  background: #F0FDF4;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.benefits-list li:last-child {
-  border-bottom: none;
+.benefits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.benefit-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px 12px;
+  background: #F9FAFB;
+  border-radius: 10px;
+}
+
+.benefit-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+.benefit-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.4;
+}
+
+.benefit-label strong {
+  display: block;
+  margin-top: 2px;
+  color: #FF6B35;
+  font-size: 14px;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .claim-header h1 {
+    font-size: 24px;
+  }
+
+  .claim-headline {
+    padding: 14px 16px;
+  }
+
+  .claim-headline h2 {
+    font-size: 16px;
+  }
+
+  .demand-own-row {
+    padding: 14px 16px;
+  }
+
+  .demand-number {
+    font-size: 32px;
+  }
+
+  .demand-card .claim-card-header {
+    font-size: 11px;
+  }
+
+  .benefit-item {
+    padding: 12px 8px;
+  }
+
+  .benefit-icon {
+    font-size: 28px;
+  }
+
+  .benefit-label {
+    font-size: 12px;
+  }
+
+  .claim-form-card h2 {
+    font-size: 18px;
+  }
 }
 
 /* Success card */
@@ -364,13 +516,13 @@
 .stat-negative { color: #DC2626; }
 .stat-neutral { color: #666; }
 
-/* Responsive: narrow screens stack locked cards 1-col */
-@media (max-width: 400px) {
+/* Very narrow screens */
+@media (max-width: 360px) {
   .locked-grid {
     grid-template-columns: 1fr;
   }
 
-  .demand-number {
-    font-size: 28px;
+  .benefits-grid {
+    grid-template-columns: 1fr;
   }
 }
