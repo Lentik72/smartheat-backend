@@ -236,6 +236,25 @@
     .supplier-search-fallback a {
         color: var(--primary-orange);
     }
+
+    /* Hero-position search — prominent placement above fold */
+    .supplier-search-hero {
+        background: #fff;
+        padding: 2.5rem 2rem 2rem;
+        border-bottom: 1px solid var(--border-color, #e5e7eb);
+    }
+    .supplier-search-hero h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.25rem;
+    }
+    .supplier-search-hero .search-subtext {
+        margin-bottom: 1.25rem;
+    }
+    .supplier-search-hero .supplier-search-input {
+        border-width: 2px;
+        padding: 16px 18px;
+        font-size: 17px;
+    }
     </style>
 </head>
 <body>
@@ -293,6 +312,17 @@
     <section class="supplier-hero" id="main-content">
         <h1>Reach Homeowners Ready to Order</h1>
         <p>HomeHeat connects you with homeowners who know their tank levels, predict when they'll need fuel, and are actively looking for suppliers.</p>
+    </section>
+
+    <section class="supplier-search-section supplier-search-hero">
+        <h2>Claim Your Free Listing</h2>
+        <p class="search-subtext">Search for your business to control your pricing and see who's looking for you.</p>
+        <div class="supplier-search-wrap" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+            <input type="text" class="supplier-search-input" aria-label="Search for your business" placeholder="Type your business name..." autocomplete="off" aria-autocomplete="list" aria-controls="supplier-search-results">
+            <p class="supplier-search-helper" id="supplier-search-helper">Start typing your company name to see matches.</p>
+            <div class="supplier-search-dropdown" id="supplier-search-results" role="listbox"></div>
+        </div>
+        <p class="supplier-search-fallback">Don't see your business? <a href="mailto:support@gethomeheat.com" id="supplier-not-listed-link">Email support@gethomeheat.com</a> and we'll add it.</p>
     </section>
 
     <div class="trust-headline">
@@ -395,17 +425,6 @@
         <div class="advisory-note">
             Have feedback or want to participate? Email us at <a href="mailto:suppliers@gethomeheat.com">suppliers@gethomeheat.com</a>
         </div>
-    </section>
-
-    <section class="supplier-search-section">
-        <h2>Search for Your Business</h2>
-        <p class="search-subtext">Find your heating oil company and claim your free listing.</p>
-        <div class="supplier-search-wrap" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-            <input type="text" class="supplier-search-input" aria-label="Search for your business" placeholder="Type your business name..." autocomplete="off" aria-autocomplete="list" aria-controls="supplier-search-results">
-            <p class="supplier-search-helper" id="supplier-search-helper">Start typing your company name to see matches.</p>
-            <div class="supplier-search-dropdown" id="supplier-search-results" role="listbox"></div>
-        </div>
-        <p class="supplier-search-fallback">Don't see your business? <a href="mailto:support@gethomeheat.com" id="supplier-not-listed-link">Email support@gethomeheat.com</a> and we'll add it.</p>
     </section>
 
     <section class="supplier-faq-section">

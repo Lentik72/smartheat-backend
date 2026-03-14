@@ -225,7 +225,7 @@ const ACTIVITY_LABELS = {
   high: { text: 'ACTIVE AREA', cls: 'badge-high' },
   active: { text: 'ACTIVE AREA', cls: 'badge-active' },
   growing: { text: 'GROWING AREA', cls: 'badge-growing' },
-  new: { text: 'NEW LISTING', cls: 'badge-new' }
+  new: { text: 'UNCLAIMED', cls: 'badge-new' }
 };
 
 // ── Page Renderer ────────────────────────────────────────────────
@@ -295,6 +295,10 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
     let teaseText;
     if (!hasPrice) {
       teaseText = "Suppliers without prices don\u2019t appear in comparisons. Add yours to start getting clicks.";
+    } else if (ownClicks === 0 && competitorClicks > 0) {
+      teaseText = `Competitors received ${competitorClicks} click${competitorClicks !== 1 ? 's' : ''} in your area. Claim your listing to start competing.`;
+    } else if (ownClicks === 0) {
+      teaseText = "Homeowners are searching in your area. Claim to appear when they compare prices.";
     } else if (clickShare >= 0 && clickShare < 30) {
       const competitorShare = 100 - clickShare;
       teaseText = `Competitors are capturing ${competitorShare}% of clicks in your area. Claim to display your price.`;
@@ -405,7 +409,7 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
     formHtml = `
       <div class="claim-card claim-form-card">
         <h2>Claim Your Listing</h2>
-        <p class="claim-form-sub">Capture customers already comparing you.</p>
+        <p class="claim-form-sub">Control your price and see who's searching for you.</p>
 
         <form id="claim-form" novalidate>
           <div class="form-group">
@@ -486,7 +490,7 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
   <link rel="stylesheet" href="/claim.css?v=3">
 </head>
 <body>
-  ${getNavHTML(0, '/for-suppliers')}
+  ${getNavHTML(1, '/for-suppliers')}
 
   <main class="claim-page">
     <div class="claim-header">
@@ -541,7 +545,7 @@ function render404() {
   <link rel="stylesheet" href="/claim.css?v=3">
 </head>
 <body>
-  ${getNavHTML(0, '/for-suppliers')}
+  ${getNavHTML(1, '/for-suppliers')}
 
   <main class="claim-page">
     <div class="claim-card" style="text-align:center; padding:48px 24px;">

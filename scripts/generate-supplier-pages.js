@@ -132,8 +132,8 @@ function formatPaymentMethods(methods) {
 function formatFuelTypes(types) {
   if (!types || !Array.isArray(types) || types.length === 0) return null;
   const labels = {
-    'oil': 'Heating Oil', 'kerosene': 'Kerosene',
-    'diesel': 'Diesel', 'propane': 'Propane'
+    'oil': 'Heating Oil', 'heating_oil': 'Heating Oil',
+    'kerosene': 'Kerosene', 'diesel': 'Diesel', 'propane': 'Propane'
   };
   return types.map(t => labels[t] || t).join(', ');
 }
@@ -294,7 +294,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
         <p class="sp-location">${location}</p>
         ${isClaimed
           ? '<span class="sp-verified"><svg width="12" height="12" viewBox="0 0 24 24" fill="#2d8a2d"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Verified Business</span>'
-          : '<span class="sp-claim-hint">Is this your business?</span>'}
+          : `<a href="/claim/${supplier.slug}" class="sp-claim-hint" rel="nofollow">Is this your business? Claim it</a>`}
       </div>
     </section>`;
 
@@ -448,7 +448,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
       <div class="sp-claim-content">
         <div class="sp-claim-text">
           <strong>Own this business?</strong>
-          <span>Claim your listing to update pricing and details.</span>
+          <span>Claim your listing to control your price and see who's searching for you.</span>
         </div>
         <a href="/claim/${supplier.slug}" class="sp-claim-btn" rel="nofollow">Claim Listing</a>
       </div>
@@ -615,8 +615,8 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
     ${detailsHtml}
     ${areaHtml}
     ${hoursHtml}
-    ${nearbyHtml}
     ${claimHtml}
+    ${nearbyHtml}
     ${appCtaHtml}
   </main>
 
@@ -907,9 +907,17 @@ function generateSupplierCSS() {
 }
 
 .sp-claim-hint {
+  display: inline-block;
   font-size: 0.8125rem;
-  color: var(--text-muted, #6b7280);
-  font-style: italic;
+  color: var(--primary-orange, #FF6B35);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.sp-claim-hint:hover {
+  color: var(--primary-orange-hover, #E55A2B);
+  text-decoration: underline;
 }
 
 /* Price */
