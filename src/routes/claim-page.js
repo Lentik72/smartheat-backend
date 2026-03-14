@@ -9,11 +9,24 @@
 const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
+const fs = require('fs');
 const router = express.Router();
 
 // Shared nav helper
 const { getNavHTML, init: initCountyData } = require('../../scripts/lib/county-data');
 initCountyData(path.join(__dirname, '../../website'));
+
+// ── CSS cache-busting (computed once at startup) ─────────────
+const WEBSITE_DIR = path.join(__dirname, '../../website');
+function getCssHash(filename) {
+  const fullPath = path.join(WEBSITE_DIR, filename);
+  if (fs.existsSync(fullPath)) {
+    return crypto.createHash('md5').update(fs.readFileSync(fullPath)).digest('hex').slice(0, 8);
+  }
+  return '1';
+}
+const STYLE_HASH = getCssHash('style.min.css');
+const CLAIM_CSS_HASH = getCssHash('claim.css');
 
 // ── Caching ──────────────────────────────────────────────────────
 // Activity ranks: precomputed percentile rankings for all suppliers (1h TTL)
@@ -486,8 +499,8 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="/style.min.css?v=38">
-  <link rel="stylesheet" href="/claim.css?v=3">
+  <link rel="stylesheet" href="/style.min.css?v=${STYLE_HASH}">
+  <link rel="stylesheet" href="/claim.css?v=${CLAIM_CSS_HASH}">
 </head>
 <body>
   ${getNavHTML(1, '/for-suppliers')}
@@ -541,8 +554,8 @@ function render404() {
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="/style.min.css?v=38">
-  <link rel="stylesheet" href="/claim.css?v=3">
+  <link rel="stylesheet" href="/style.min.css?v=${STYLE_HASH}">
+  <link rel="stylesheet" href="/claim.css?v=${CLAIM_CSS_HASH}">
 </head>
 <body>
   ${getNavHTML(1, '/for-suppliers')}
