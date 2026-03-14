@@ -30,6 +30,17 @@
     errorEl.style.display = 'none';
   }
 
+  // Track form engagement — first field focus
+  var formStarted = false;
+  form.addEventListener('focusin', function(e) {
+    if (!formStarted && e.target.tagName === 'INPUT') {
+      formStarted = true;
+      if (typeof gtag === 'function') {
+        gtag('event', 'claim_form_started', { supplier_slug: slug, first_field: e.target.name || e.target.id });
+      }
+    }
+  });
+
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
     hideError();
@@ -74,6 +85,10 @@
       const data = await res.json();
 
       if (res.ok && data.success) {
+        // Track successful claim submission
+        if (typeof gtag === 'function') {
+          gtag('event', 'claim_submitted', { supplier_slug: slug });
+        }
         // Show success, hide form + benefits
         form.closest('.claim-form-card').style.display = 'none';
         const benefitsCard = document.querySelector('.claim-benefits-card');

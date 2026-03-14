@@ -294,7 +294,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
         <p class="sp-location">${location}</p>
         ${isClaimed
           ? '<span class="sp-verified"><svg width="12" height="12" viewBox="0 0 24 24" fill="#2d8a2d"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Verified Business</span>'
-          : `<a href="/claim/${supplier.slug}" class="sp-claim-hint" rel="nofollow">Is this your business? Claim it</a>`}
+          : `<a href="/claim/${supplier.slug}" class="sp-claim-hint" rel="nofollow" onclick="typeof gtag==='function'&&gtag('event','claim_hint_click',{supplier_slug:'${supplier.slug}',location:'hero'})">Is this your business? Claim it</a>`}
       </div>
     </section>`;
 
@@ -450,7 +450,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
           <strong>Own this business?</strong>
           <span>Claim your listing to control your price and see who's searching for you.</span>
         </div>
-        <a href="/claim/${supplier.slug}" class="sp-claim-btn" rel="nofollow">Claim Listing</a>
+        <a href="/claim/${supplier.slug}" class="sp-claim-btn" rel="nofollow" onclick="typeof gtag==='function'&&gtag('event','claim_btn_click',{supplier_slug:'${supplier.slug}',location:'banner'})">Claim Listing</a>
       </div>
     </section>`;
   }
@@ -648,6 +648,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
   <script src="/js/widgets.js"></script>
   <script src="/js/seo-tracking.js"></script>
   <script src="/js/pwa.js"></script>
+  <script>typeof gtag==='function'&&gtag('event','supplier_profile_view',{supplier_slug:'${supplier.slug}',has_price:${hasPrice},is_claimed:${isClaimed}})</script>
 </body>
 </html>`;
 }
