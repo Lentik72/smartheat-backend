@@ -124,7 +124,7 @@ async function sendSupplierConfirmation(data) {
         <ol style="color: #555; font-size: 14px; line-height: 1.8; margin: 8px 0 0; padding-left: 20px;">
           <li>We verify your business information</li>
           <li>Your listing goes live in the directory</li>
-          <li>We send you a link to manage your listing and update prices</li>
+          <li>You claim your listing to manage your price and see engagement</li>
         </ol>
         <p style="color: #888; font-size: 13px; margin: 12px 0 0;">This typically takes 1–2 business days.</p>
       </div>

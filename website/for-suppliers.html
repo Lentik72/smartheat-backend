@@ -237,6 +237,102 @@
         color: var(--primary-orange);
     }
 
+    /* Add Business form */
+    .add-business-section {
+        padding: 0 2rem 2rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .add-business-card {
+        background: #fff;
+        border: 2px solid #FF6B35;
+        border-radius: 12px;
+        padding: 24px;
+    }
+    .add-business-card h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0 0 4px;
+    }
+    .add-business-sub {
+        font-size: 14px;
+        color: #888;
+        margin: 0 0 20px;
+    }
+    .add-biz-row {
+        margin-bottom: 14px;
+    }
+    .add-biz-row-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .add-biz-field label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 4px;
+    }
+    .add-biz-field input,
+    .add-biz-field select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        font-size: 16px;
+        color: #1a1a1a;
+        background: #fff;
+        box-sizing: border-box;
+    }
+    .add-biz-field input:focus,
+    .add-biz-field select:focus {
+        outline: none;
+        border-color: #FF6B35;
+        box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+    }
+    .add-biz-field .field-error {
+        color: #DC2626;
+        font-size: 12px;
+        margin-top: 4px;
+        display: none;
+    }
+    .add-biz-field.has-error input,
+    .add-biz-field.has-error select {
+        border-color: #DC2626;
+    }
+    .add-biz-field.has-error .field-error {
+        display: block;
+    }
+    .add-biz-submit {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: 700;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        background: #FF6B35;
+        color: white;
+        transition: background 0.2s;
+    }
+    .add-biz-submit:hover {
+        background: #E55A2B;
+    }
+    .add-biz-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    @media (max-width: 480px) {
+        .add-biz-row-2col {
+            grid-template-columns: 1fr;
+        }
+        .add-business-section {
+            padding: 0 1rem 1rem;
+        }
+    }
+
     /* Hero-position search — prominent placement above fold */
     .supplier-search-hero {
         background: #fff;
@@ -322,7 +418,90 @@
             <p class="supplier-search-helper" id="supplier-search-helper">Start typing your company name to see matches.</p>
             <div class="supplier-search-dropdown" id="supplier-search-results" role="listbox"></div>
         </div>
-        <p class="supplier-search-fallback">Don't see your business? <a href="mailto:support@gethomeheat.com" id="supplier-not-listed-link">Email support@gethomeheat.com</a> and we'll add it.</p>
+        <p class="supplier-search-fallback">Don't see your business? <a href="#add-business-section" id="supplier-not-listed-link">Add your business to HomeHeat</a></p>
+    </section>
+
+    <section id="add-business-section" class="add-business-section" style="display:none">
+        <div class="add-business-card">
+            <h2>List Your Business on HomeHeat</h2>
+            <p class="add-business-sub">Tell us about your company. We'll verify and add you to the directory.</p>
+
+            <form id="add-business-form" novalidate>
+                <div class="add-biz-row">
+                    <div class="add-biz-field">
+                        <label for="add-biz-name">Business name *</label>
+                        <input type="text" id="add-biz-name" name="businessName" required placeholder="Acme Fuel Co.">
+                    </div>
+                </div>
+                <div class="add-biz-row add-biz-row-2col">
+                    <div class="add-biz-field">
+                        <label for="add-biz-city">City *</label>
+                        <input type="text" id="add-biz-city" name="city" required placeholder="Brewster">
+                    </div>
+                    <div class="add-biz-field">
+                        <label for="add-biz-state">State *</label>
+                        <select id="add-biz-state" name="state" required>
+                            <option value="">Select</option>
+                            <option value="CT">Connecticut</option>
+                            <option value="DE">Delaware</option>
+                            <option value="MA">Massachusetts</option>
+                            <option value="ME">Maine</option>
+                            <option value="NH">New Hampshire</option>
+                            <option value="NJ">New Jersey</option>
+                            <option value="NY">New York</option>
+                            <option value="PA">Pennsylvania</option>
+                            <option value="RI">Rhode Island</option>
+                            <option value="VT">Vermont</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="add-biz-row add-biz-row-2col">
+                    <div class="add-biz-field">
+                        <label for="add-biz-contact">Your name <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                        <input type="text" id="add-biz-contact" name="contactName" autocomplete="name" placeholder="John Smith">
+                    </div>
+                    <div class="add-biz-field">
+                        <label for="add-biz-phone">Phone *</label>
+                        <input type="tel" id="add-biz-phone" name="phone" required inputmode="tel" placeholder="(555) 123-4567">
+                        <p class="field-error" id="phone-error">Enter a valid 10-digit phone number</p>
+                    </div>
+                </div>
+                <div class="add-biz-row">
+                    <div class="add-biz-field">
+                        <label for="add-biz-email">Email *</label>
+                        <input type="email" id="add-biz-email" name="email" required inputmode="email" placeholder="info@company.com">
+                        <p class="field-error" id="email-error">Enter a valid email address</p>
+                    </div>
+                </div>
+                <div class="add-biz-row add-biz-row-2col">
+                    <div class="add-biz-field">
+                        <label for="add-biz-website">Website <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                        <input type="url" id="add-biz-website" name="website" placeholder="https://example.com">
+                    </div>
+                    <div class="add-biz-field">
+                        <label for="add-biz-areas">Areas served <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                        <input type="text" id="add-biz-areas" name="areasServed" placeholder="Counties or towns">
+                    </div>
+                </div>
+
+                <div style="position:absolute;left:-9999px" aria-hidden="true">
+                    <input type="text" name="website_url" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div id="add-biz-error" style="display:none;background:#FEE2E2;color:#DC2626;padding:10px 14px;border-radius:8px;font-size:14px;margin-bottom:12px;"></div>
+                <div id="add-biz-duplicate" style="display:none;background:#FEF3C7;color:#92400E;padding:14px;border-radius:8px;font-size:14px;margin-bottom:12px;"></div>
+
+                <button type="submit" class="btn btn-primary add-biz-submit" id="add-biz-submit">Submit Request</button>
+                <p style="text-align:center;font-size:13px;color:#999;margin:8px 0 0;">Free. We review all requests manually.</p>
+            </form>
+
+            <div id="add-biz-success" style="display:none;text-align:center;padding:24px;">
+                <div style="font-size:48px;margin-bottom:12px;">&#9989;</div>
+                <h3 style="color:#16A34A;margin:0 0 8px;">Got it!</h3>
+                <p style="color:#555;">We'll verify your business and add you to the directory. This typically takes 1–2 business days.</p>
+                <p style="color:#888;font-size:13px;margin-top:12px;">Questions? Email <a href="mailto:support@gethomeheat.com" style="color:#FF6B35;">support@gethomeheat.com</a></p>
+            </div>
+        </div>
     </section>
 
     <div class="trust-headline">
@@ -502,8 +681,16 @@
             if (typeof gtag === 'function') gtag('event', event, params || {});
         }
 
-        notListedLink.addEventListener('click', function() {
+        notListedLink.addEventListener('click', function(e) {
+            e.preventDefault();
             gtagSafe('supplier_not_listed_clicked');
+            var section = document.getElementById('add-business-section');
+            if (section) {
+                section.style.display = 'block';
+                notListedLink.closest('p').style.display = 'none';
+                var nameField = document.getElementById('add-biz-name');
+                if (nameField) nameField.focus();
+            }
         });
 
         input.addEventListener('input', function() {
@@ -543,7 +730,7 @@
                         renderResults(results);
                     } else {
                         gtagSafe('supplier_search_no_results', { search_query: query });
-                        showStatus('No businesses found matching \u201c' + escapeHtml(query) + '.\u201d');
+                        showStatus('No businesses found matching \u201c' + escapeHtml(query) + '.\u201d<br><a href="#add-business-section" class="add-biz-trigger" data-prefill="' + escapeAttr(query) + '" style="color:#FF6B35;font-weight:500;">Add your business to HomeHeat</a>');
                     }
                 })
                 .catch(function(err) {
@@ -577,7 +764,7 @@
         }
 
         function showStatus(msg) {
-            dropdown.innerHTML = '<div class="supplier-search-status">' + escapeHtml(msg) + '</div>';
+            dropdown.innerHTML = '<div class="supplier-search-status">' + msg + '</div>';
             wrap.classList.add('has-results');
             wrap.setAttribute('aria-expanded', 'true');
             results = [];
@@ -636,6 +823,112 @@
         function escapeAttr(str) {
             return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
         }
+
+        // Delegated handler for "Add your business" links in dropdown
+        dropdown.addEventListener('mousedown', function(e) {
+            var trigger = e.target.closest('.add-biz-trigger');
+            if (trigger) {
+                e.preventDefault();
+                var section = document.getElementById('add-business-section');
+                var nameField = document.getElementById('add-biz-name');
+                if (section) section.style.display = 'block';
+                if (nameField && trigger.dataset.prefill) nameField.value = trigger.dataset.prefill;
+                if (nameField) nameField.focus();
+                hideDropdown();
+            }
+        });
+    })();
+    </script>
+    <script>
+    (function() {
+        var form = document.getElementById('add-business-form');
+        if (!form) return;
+        var btn = document.getElementById('add-biz-submit');
+        var errEl = document.getElementById('add-biz-error');
+        var dupEl = document.getElementById('add-biz-duplicate');
+        var successEl = document.getElementById('add-biz-success');
+        var phoneInput = document.getElementById('add-biz-phone');
+        var emailInput = document.getElementById('add-biz-email');
+        var ts = Math.floor(Date.now() / 1000);
+
+        function showErr(msg) { errEl.textContent = msg; errEl.style.display = 'block'; dupEl.style.display = 'none'; btn.disabled = false; btn.textContent = 'Submit Request'; }
+
+        function setFieldError(field, show) {
+            var wrapper = field.closest('.add-biz-field');
+            if (wrapper) { show ? wrapper.classList.add('has-error') : wrapper.classList.remove('has-error'); }
+        }
+
+        function isValidPhone(v) { return v.replace(/\D/g, '').length >= 10; }
+        function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+        phoneInput.addEventListener('blur', function() {
+            if (phoneInput.value.trim() && !isValidPhone(phoneInput.value)) setFieldError(phoneInput, true);
+        });
+        phoneInput.addEventListener('input', function() { setFieldError(phoneInput, false); });
+
+        emailInput.addEventListener('blur', function() {
+            if (emailInput.value.trim() && !isValidEmail(emailInput.value)) setFieldError(emailInput, true);
+        });
+        emailInput.addEventListener('input', function() { setFieldError(emailInput, false); });
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            errEl.style.display = 'none';
+            dupEl.style.display = 'none';
+
+            var data = {
+                businessName: form.businessName.value.trim(),
+                contactName: form.contactName.value.trim() || null,
+                city: form.city.value.trim(),
+                state: form.state.value,
+                phone: form.phone.value.trim(),
+                email: form.email.value.trim(),
+                website: form.website.value.trim() || null,
+                areasServed: form.areasServed.value.trim() || null,
+                website_url: form.website_url.value,
+                ts: ts
+            };
+
+            if (!data.businessName) return showErr('Business name is required.');
+            if (!data.city) return showErr('City is required.');
+            if (!data.state) return showErr('Please select a state.');
+            if (!data.phone) { setFieldError(phoneInput, true); return showErr('Phone number is required.'); }
+            if (!isValidPhone(data.phone)) { setFieldError(phoneInput, true); return showErr('Enter a valid 10-digit phone number.'); }
+            if (!data.email) { setFieldError(emailInput, true); return showErr('Email is required.'); }
+            if (!isValidEmail(data.email)) { setFieldError(emailInput, true); return showErr('Enter a valid email address.'); }
+
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            try {
+                var resp = await fetch('/api/supplier-request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                var result = await resp.json();
+
+                if (result.duplicate && result.existingSupplier) {
+                    dupEl.innerHTML = 'Did you mean <strong>' + result.existingSupplier.name + '</strong> in ' + result.existingSupplier.city + ', ' + result.existingSupplier.state + '? <a href="/claim/' + result.existingSupplier.slug + '" style="color:#FF6B35;font-weight:600;">Claim this listing</a>';
+                    dupEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Submit Request';
+                    return;
+                }
+
+                if (resp.ok && result.success) {
+                    if (typeof gtag === 'function') gtag('event', 'supplier_request_submitted', { business: data.businessName });
+                    form.style.display = 'none';
+                    successEl.style.display = 'block';
+                } else if (resp.status === 429) {
+                    showErr('Too many requests. Please try again tomorrow.');
+                } else {
+                    showErr(result.error || 'Something went wrong. Please try again.');
+                }
+            } catch (err) {
+                showErr('Connection error. Please check your internet and try again.');
+            }
+        });
     })();
     </script>
 </body>
