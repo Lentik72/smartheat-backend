@@ -235,7 +235,7 @@ const SVG_GLOBE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" s
 
 // ─── Page Template ─────────────────────────────────────────────
 
-function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
+function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficData) {
   const name = escapeHtml(supplier.name);
   const city = escapeHtml(supplier.city) || '';
   const state = supplier.state || '';
@@ -441,17 +441,45 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers) {
     </section>`;
   }
 
-  // 9. Claim Banner (unclaimed only)
+  // 9. Claim Banner with traffic proof (unclaimed only)
   let claimHtml = '';
-  if (!isClaimed) {
+  if (!isClaimed && trafficData) {
+    const searches = trafficData.areaSearches || 0;
+    const claimedNearby = trafficData.claimedNearby || 0;
+    const areaLabel = trafficData.countyName || supplier.city || 'your area';
+
+    // Traffic proof line — use county fallback if ZIP-level < 5
+    let proofLine = '';
+    if (searches >= 5) {
+      proofLine = `<p class="sp-claim-proof"><strong>${searches.toLocaleString()}</strong> homeowners searched for heating oil near ${escapeHtml(areaLabel)} this month.</p>`;
+    } else if (trafficData.countySearches >= 5) {
+      proofLine = `<p class="sp-claim-proof"><strong>${trafficData.countySearches.toLocaleString()}</strong> homeowners searched for heating oil in ${escapeHtml(trafficData.countyName || 'your county')} this month.</p>`;
+    }
+
+    // Competitor claim line
+    const competitorLine = claimedNearby > 0
+      ? `<p class="sp-claim-competitors">${claimedNearby} nearby supplier${claimedNearby !== 1 ? 's have' : ' has'} already claimed ${claimedNearby !== 1 ? 'their listings' : 'their listing'}.</p>`
+      : '';
+
     claimHtml = `
     <section class="sp-claim">
       <div class="sp-claim-content">
         <div class="sp-claim-text">
-          <strong>Own this business?</strong>
-          <span>Claim your listing to control your price and see who's searching for you.</span>
+          ${proofLine}
+          ${competitorLine}
+          <p class="sp-claim-cta-text">Claim your listing so homeowners can contact you directly.</p>
         </div>
-        <a href="/claim/${supplier.slug}" class="sp-claim-btn" rel="nofollow" onclick="typeof gtag==='function'&&gtag('event','claim_btn_click',{supplier_slug:'${supplier.slug}',location:'banner'})">Claim Listing</a>
+        <a href="/claim/${supplier.slug}" class="sp-claim-btn" rel="nofollow" onclick="typeof gtag==='function'&&gtag('event','claim_btn_click',{supplier_slug:'${supplier.slug}',location:'banner'})">Claim Listing — Free</a>
+      </div>
+    </section>`;
+  } else if (!isClaimed) {
+    claimHtml = `
+    <section class="sp-claim">
+      <div class="sp-claim-content">
+        <div class="sp-claim-text">
+          <p class="sp-claim-cta-text">Claim your listing so homeowners can contact you directly.</p>
+        </div>
+        <a href="/claim/${supplier.slug}" class="sp-claim-btn" rel="nofollow" onclick="typeof gtag==='function'&&gtag('event','claim_btn_click',{supplier_slug:'${supplier.slug}',location:'banner'})">Claim Listing — Free</a>
       </div>
     </section>`;
   }
@@ -756,6 +784,69 @@ async function generateSupplierPages(options = {}) {
       logger.log('');
     }
 
+    // ── Traffic proof data (batch queries) ──────────────────────
+    // 1. Area searches by ZIP (last 30 days)
+    const [searchRows] = await sequelize.query(`
+      SELECT zip_code, request_count
+      FROM user_locations
+      WHERE last_seen_at > NOW() - INTERVAL '30 days'
+    `);
+    const searchByZip = new Map(searchRows.map(r => [r.zip_code, parseInt(r.request_count)]));
+
+    // 2. Area searches by county
+    const [countySearchRows] = await sequelize.query(`
+      SELECT county, state, SUM(request_count) as total
+      FROM user_locations
+      WHERE last_seen_at > NOW() - INTERVAL '30 days'
+        AND county IS NOT NULL
+      GROUP BY county, state
+    `);
+    const searchByCounty = new Map(countySearchRows.map(r => [
+      `${(r.county || '').toLowerCase()}|${(r.state || '').toLowerCase()}`,
+      { count: parseInt(r.total), name: r.county }
+    ]));
+
+    // 3. Claimed suppliers (for nearby count)
+    const claimedSuppliers = suppliers.filter(s => !!s.claimedAt);
+
+    logger.log(`Traffic proof: ${searchRows.length} ZIP searches, ${countySearchRows.length} county aggregates, ${claimedSuppliers.length} claimed suppliers\n`);
+
+    // Helper: compute traffic data for a supplier
+    function getTrafficData(supplier) {
+      const zips = supplier.postalCodesServed || [];
+      const areaSearches = zips.reduce((sum, z) => sum + (searchByZip.get(z) || 0), 0);
+
+      // County-level fallback
+      const counties = supplier.serviceCounties || [];
+      const state = (supplier.state || '').toLowerCase();
+      let countySearches = 0;
+      let countyName = null;
+      for (const county of counties) {
+        const key = `${(county || '').toLowerCase()}|${state}`;
+        const data = searchByCounty.get(key);
+        if (data) {
+          countySearches += data.count;
+          if (!countyName) countyName = data.name;
+        }
+      }
+      if (!countyName && counties.length > 0) countyName = counties[0];
+
+      // Count claimed suppliers in overlapping coverage
+      const supplierZipSet = supplier._normalizedZips;
+      let claimedNearby = 0;
+      if (supplierZipSet.size > 0) {
+        for (const cs of claimedSuppliers) {
+          if (cs.id === supplier.id) continue;
+          const csZips = cs._normalizedZips;
+          for (const z of csZips) {
+            if (supplierZipSet.has(z)) { claimedNearby++; break; }
+          }
+        }
+      }
+
+      return { areaSearches, countySearches, countyName, claimedNearby };
+    }
+
     // Create output directory
     const baseDir = websiteDir || path.join(__dirname, '../website');
     const outputDir = path.join(baseDir, 'supplier');
@@ -770,7 +861,8 @@ async function generateSupplierPages(options = {}) {
     for (const supplier of suppliers) {
       const latestPrice = supplier.latestPrice;
       const nearby = findNearbySuppliers(supplier, suppliers);
-      const html = generateSupplierPage(supplier, latestPrice, nearby);
+      const trafficData = !supplier.claimedAt ? getTrafficData(supplier) : null;
+      const html = generateSupplierPage(supplier, latestPrice, nearby, trafficData);
       const filePath = path.join(outputDir, `${supplier.slug}.html`);
 
       if (latestPrice) withPrice++;
@@ -1299,9 +1391,29 @@ function generateSupplierCSS() {
   color: #92400e;
 }
 
-.sp-claim-text strong {
-  display: block;
-  margin-bottom: 2px;
+.sp-claim-proof {
+  margin: 0 0 6px;
+  font-size: 0.9375rem;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+.sp-claim-proof strong {
+  color: #78350f;
+  font-size: 1.125rem;
+}
+
+.sp-claim-competitors {
+  margin: 0 0 6px;
+  font-size: 0.8125rem;
+  color: #b45309;
+}
+
+.sp-claim-cta-text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #92400e;
+  font-weight: 500;
 }
 
 .sp-claim-btn {
