@@ -140,6 +140,8 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, costs
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-itunes-app" content="app-id=6747320571">
+    <meta name="theme-color" content="#FF6B35">
+    <link rel="manifest" href="${'../'.repeat(depth)}manifest.json">
     <title>${title}</title>
     <meta name="description" content="${description}">
 
@@ -235,6 +237,7 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, costs
     </section>
 
     ${getFooterHTML(depth)}
+    <script src="${'../'.repeat(depth)}js/pwa.js"></script>
 </body>
 </html>`;
 }
@@ -308,6 +311,8 @@ function generateStatePageHTML(stateCode, stateInfo, stateStats, countyData, cos
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-itunes-app" content="app-id=6747320571">
+    <meta name="theme-color" content="#FF6B35">
+    <link rel="manifest" href="${'../'.repeat(depth)}manifest.json">
     <title>${title}</title>
     <meta name="description" content="${description}">
 
@@ -413,6 +418,7 @@ function generateStatePageHTML(stateCode, stateInfo, stateStats, countyData, cos
     </section>
 
     ${getFooterHTML(depth)}
+    <script src="${'../'.repeat(depth)}js/pwa.js"></script>
 </body>
 </html>`;
 }
@@ -488,6 +494,8 @@ function generateIndexPageHTML(statesData) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-itunes-app" content="app-id=6747320571">
+    <meta name="theme-color" content="#FF6B35">
+    <link rel="manifest" href="${'../'.repeat(depth)}manifest.json">
     <title>${title}</title>
     <meta name="description" content="${description}">
 
@@ -768,6 +776,7 @@ function generateIndexPageHTML(statesData) {
     ${getFooterHTML(depth)}
     <script src="${'../'.repeat(depth)}js/nav.min.js" defer></script>
     <script src="${'../'.repeat(depth)}js/widgets.min.js" defer></script>
+    <script src="${'../'.repeat(depth)}js/pwa.js"></script>
 </body>
 </html>`;
 }

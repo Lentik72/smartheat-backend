@@ -334,6 +334,8 @@ function generateZipPageHTML(stats, history, county = null) {
   <link rel="stylesheet" href="zip-elite.css?v=${getFileHash('prices/zip/zip-elite.css')}">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
+  <meta name="theme-color" content="#FF6B35">
+  <link rel="manifest" href="${assetPath}manifest.json">
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

@@ -580,6 +580,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   <link rel="stylesheet" href="../county-elite.css?v=${countyCssHash}">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
+  <meta name="theme-color" content="#FF6B35">
+  <link rel="manifest" href="${assetPath}manifest.json">
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -934,6 +936,7 @@ ${countySuppliers.map(s => {
   <script src="${assetPath}js/price-alerts.js?v=${getFileHash('js/price-alerts.js')}"></script>
   <script src="${assetPath}js/platform-detection.js?v=${getFileHash('js/platform-detection.js')}"></script>
   <script src="${assetPath}js/widgets.js"></script>
+  <script src="${assetPath}js/pwa.js"></script>
 </body>
 </html>`;
   } // end legacyLayout
@@ -962,6 +965,8 @@ ${countySuppliers.map(s => {
   <link rel="stylesheet" href="../county-elite.css?v=${countyCssHash}">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
+  <meta name="theme-color" content="#FF6B35">
+  <link rel="manifest" href="${assetPath}manifest.json">
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -1322,6 +1327,7 @@ ${countySuppliers.map(s => {
   <script src="${assetPath}js/platform-detection.js?v=${getFileHash('js/platform-detection.js')}"></script>
   <script src="${assetPath}js/widgets.js"></script>
   ${countyZips.length > 0 ? `<script src="${assetPath}js/county-zip-filter.js?v=${getFileHash('js/county-zip-filter.js')}"></script>` : ''}
+  <script src="${assetPath}js/pwa.js"></script>
 </body>
 </html>`;
 }

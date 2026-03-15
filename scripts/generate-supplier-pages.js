@@ -612,6 +612,8 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
 
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
+  <meta name="theme-color" content="#FF6B35">
+  <link rel="manifest" href="/manifest.json">
   <meta name="color-scheme" content="light only">
   <link rel="stylesheet" href="/style.min.css?v=${getFileHash('style.min.css')}">
   <link rel="stylesheet" href="/supplier/supplier.css?v=${getFileHash('supplier/supplier.css')}">

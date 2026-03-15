@@ -1371,6 +1371,8 @@ function generatePageHTML(data) {
   <link rel="stylesheet" href="${assetPath}style.min.css?v=${getFileHash('style.min.css')}">
   <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
+  <meta name="theme-color" content="#FF6B35">
+  <link rel="manifest" href="${assetPath}manifest.json">
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
