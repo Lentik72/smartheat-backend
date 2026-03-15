@@ -55,6 +55,7 @@ async function recordSuccess(sequelize, supplierId) {
       consecutive_scrape_failures = 0,
       scrape_status = 'active',
       scrape_cooldown_until = NULL,
+      last_scrape_error = NULL,
       updated_at = NOW()
     WHERE id = $1
   `, { bind: [supplierId] });
@@ -66,9 +67,10 @@ async function recordSuccess(sequelize, supplierId) {
  * @param {string} supplierId - Supplier ID
  * @param {string} supplierName - For logging
  * @param {object} logger - Logger instance
+ * @param {string} [errorMessage] - Error string for diagnostic classification
  * @returns {object} { action: 'none' | 'cooldown' | 'phone_only' }
  */
-async function recordFailure(sequelize, supplierId, supplierName, logger) {
+async function recordFailure(sequelize, supplierId, supplierName, logger, errorMessage) {
   const now = new Date();
 
   // Get current state
@@ -119,8 +121,9 @@ async function recordFailure(sequelize, supplierId, supplierName, logger) {
       last_scrape_failure_at = $3,
       scrape_status = $4,
       scrape_cooldown_until = $5,
+      last_scrape_error = $6,
       updated_at = NOW()
-    WHERE id = $6
+    WHERE id = $7
   `, {
     bind: [
       consecutiveFailures,
@@ -128,6 +131,7 @@ async function recordFailure(sequelize, supplierId, supplierName, logger) {
       now.toISOString(),
       newStatus,
       cooldownUntil?.toISOString() || null,
+      errorMessage || null,
       supplierId
     ]
   });

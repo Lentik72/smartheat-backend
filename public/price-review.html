@@ -78,6 +78,71 @@
     .reason-needs_initial_price { background: #81ecec; color: #00695c; }
     .reason-stale_price { background: #dfe6e9; color: #636e72; }
 
+    .diagnostic-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      padding: 6px 10px;
+      background: #fef9e7;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #7d6608;
+    }
+    .diagnostic-row .diag-icon {
+      font-size: 14px;
+    }
+    .diagnostic-row .diag-action {
+      color: #9b8816;
+      font-style: italic;
+    }
+
+    .dismiss-btn {
+      padding: 6px 12px;
+      background: #f5f5f7;
+      color: #86868b;
+      border: 1px solid #d2d2d7;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .dismiss-btn:hover {
+      background: #e8e8ed;
+      color: #636e72;
+    }
+    .restore-btn {
+      padding: 6px 12px;
+      background: #e3f2fd;
+      color: #1565C0;
+      border: 1px solid #90caf9;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .restore-btn:hover {
+      background: #bbdefb;
+    }
+
+    .dismissed-section {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+    }
+    .dismissed-toggle {
+      background: none;
+      border: none;
+      color: #86868b;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px 0;
+    }
+    .dismissed-toggle:hover {
+      color: #636e72;
+    }
+    .review-item.dismissed {
+      opacity: 0.6;
+    }
+
     .price-row {
       display: flex;
       justify-content: space-between;
@@ -227,6 +292,10 @@
       <div class="stat-value" id="stat-stale">-</div>
       <div class="stat-label">Stale</div>
     </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-dismissed">-</div>
+      <div class="stat-label">Snoozed</div>
+    </div>
   </div>
 
   <div id="review-list">
@@ -236,6 +305,11 @@
   <button class="submit-all-btn" id="submit-all" style="display: none;">
     Submit All Prices
   </button>
+
+  <div class="dismissed-section" id="dismissed-section" style="display: none;">
+    <button class="dismissed-toggle" id="dismissed-toggle"></button>
+    <div id="dismissed-list" style="display: none;"></div>
+  </div>
 
   <div class="toast" id="toast"></div>
 

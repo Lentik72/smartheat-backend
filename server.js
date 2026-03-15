@@ -567,6 +567,8 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/102-add-herkimer-ny-suppliers', label: 'Herkimer NY suppliers' },
           { path: './src/migrations/103-create-user-events', label: 'User events tracking' },
           { path: './src/migrations/104-add-utica-ny-suppliers', label: 'Utica NY suppliers' },
+          { path: './src/migrations/105-create-supplier-requests', label: 'Supplier requests table' },
+          { path: './src/migrations/106-price-review-enhancements', label: 'Price review enhancements' },
         ];
 
         let migrationErrors = 0;
@@ -759,6 +761,7 @@ app.use('/api/waitlist', waitlistRoutes);  // V2.9.0: Canada waitlist
 app.use('/api/price-review', require('./src/routes/price-review'));  // V2.10.0: Admin price review portal
 app.use('/claim', require('./src/routes/claim-page'));  // Server-rendered claim page
 app.use('/api/supplier-claim', require('./src/routes/supplier-claim'));  // V2.11.0: Supplier claim system
+app.use('/api/supplier-request', require('./src/routes/supplier-request'));  // Add My Business self-service
 app.use('/api/admin/supplier-claims', require('./src/routes/admin-supplier-claims'));  // V2.11.0: Admin claim review
 app.use('/api/supplier-update', require('./src/routes/supplier-update'));  // V2.11.0: Supplier magic link price update
 app.use('/api', require('./src/routes/tracking'));  // V2.12.0: Click tracking for sniper outreach
@@ -1323,8 +1326,31 @@ function scheduleCoverageIntelligence() {
             `, { replacements: { token, expiresAt } });
 
             const baseUrl = process.env.BACKEND_URL || 'https://www.gethomeheat.com';
-            priceReviewLink = `${baseUrl}/price-review.html?mltoken=${token}`;
-            logger.info('[DailyReports] Generated price review magic link');
+            const priceReviewUrl = `${baseUrl}/price-review.html?mltoken=${token}`;
+
+            // Count review items (excluding dismissed) for the email
+            let reviewCount = 0;
+            try {
+              const [countResult] = await sequelize.query(`
+                SELECT COUNT(DISTINCT s.id) as cnt FROM suppliers s
+                WHERE s.active = true AND s.website IS NOT NULL AND s.allow_price_display = true
+                  AND NOT EXISTS (SELECT 1 FROM price_review_dismissals d WHERE d.supplier_id = s.id AND d.dismiss_until > NOW())
+                  AND (
+                    EXISTS (
+                      SELECT 1 FROM supplier_prices sp WHERE sp.supplier_id = s.id AND sp.is_valid = true
+                      AND (sp.price_per_gallon < 2.00 OR sp.price_per_gallon > 5.50)
+                    )
+                    OR s.scrape_status IN ('cooldown', 'phone_only')
+                    OR NOT EXISTS (SELECT 1 FROM supplier_prices sp2 WHERE sp2.supplier_id = s.id AND sp2.is_valid = true)
+                  )
+              `);
+              reviewCount = parseInt(countResult[0]?.cnt || 0);
+            } catch (countErr) {
+              // price_review_dismissals table may not exist yet
+            }
+
+            priceReviewLink = { url: priceReviewUrl, count: reviewCount };
+            logger.info(`[DailyReports] Generated price review magic link (${reviewCount} items)`);
           } catch (err) {
             logger.warn('[DailyReports] Failed to generate price review link:', err.message);
           }

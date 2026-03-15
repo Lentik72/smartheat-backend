@@ -15,6 +15,9 @@ const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
 
+// Diagnostic classification from SupplierDiagnosticsService
+const { classifyError, CATEGORIES } = require('../services/SupplierDiagnosticsService');
+
 // Master admin token for internal/emergency access (set in Railway env vars)
 const ADMIN_MASTER_TOKEN = process.env.ADMIN_REVIEW_TOKEN || 'smartheat-price-review-2024';
 
@@ -209,6 +212,7 @@ router.get('/', requireAuth, async (req, res) => {
         s.website,
         s.city,
         s.state,
+        s.last_scrape_error,
         lp.price_per_gallon as current_price,
         lp.scraped_at,
         lp.source_type,
@@ -240,6 +244,7 @@ router.get('/', requireAuth, async (req, res) => {
           s.website,
           s.city,
           s.state,
+          s.last_scrape_error,
           s.scrape_status as status,
           s.consecutive_scrape_failures,
           s.last_scrape_failure_at,
@@ -278,6 +283,7 @@ router.get('/', requireAuth, async (req, res) => {
         s.website,
         s.city,
         s.state,
+        s.last_scrape_error,
         lp.price_per_gallon as current_price,
         lp.scraped_at,
         'stale_price' as review_reason
@@ -300,6 +306,7 @@ router.get('/', requireAuth, async (req, res) => {
         s.website,
         s.city,
         s.state,
+        s.last_scrape_error,
         NULL as current_price,
         NULL as scraped_at,
         'needs_initial_price' as review_reason
@@ -315,14 +322,37 @@ router.get('/', requireAuth, async (req, res) => {
       LIMIT 15
     `);
 
+    // Get dismissed supplier IDs (active snoozes only)
+    let dismissedMap = new Map();
+    try {
+      const [dismissed] = await sequelize.query(`
+        SELECT supplier_id, dismiss_until, reason
+        FROM price_review_dismissals
+        WHERE dismiss_until > NOW()
+      `);
+      for (const d of dismissed) {
+        dismissedMap.set(d.supplier_id, { until: d.dismiss_until, reason: d.reason });
+      }
+    } catch (err) {
+      // Table may not exist yet
+      logger?.info('[PriceReview] price_review_dismissals table not found, skipping');
+    }
+
     // Combine and deduplicate by supplier ID
     const reviewItems = [];
+    const dismissedItems = [];
     const seenIds = new Set();
 
     for (const item of [...suspiciousPrices, ...blockedSites, ...needsInitialPrice, ...stalePrices]) {
       if (!seenIds.has(item.id)) {
         seenIds.add(item.id);
-        reviewItems.push({
+
+        // Classify diagnostic category from last_scrape_error
+        const errorStr = item.last_scrape_error || null;
+        const diagCategory = errorStr ? classifyError(errorStr) : null;
+        const diagInfo = diagCategory && CATEGORIES[diagCategory] ? CATEGORIES[diagCategory] : null;
+
+        const mapped = {
           supplierId: item.id,
           name: item.name,
           website: item.website,
@@ -332,21 +362,39 @@ router.get('/', requireAuth, async (req, res) => {
           lastScraped: item.scraped_at,
           reviewReason: item.review_reason,
           status: item.status || null,
-          notes: item.notes || null
-        });
+          notes: item.notes || null,
+          diagnostic: diagInfo ? {
+            category: diagCategory,
+            label: diagInfo.label,
+            icon: diagInfo.icon,
+            action: diagInfo.action
+          } : null
+        };
+
+        // Separate dismissed from active
+        if (dismissedMap.has(item.id)) {
+          mapped.dismissedUntil = dismissedMap.get(item.id).until;
+          mapped.dismissReason = dismissedMap.get(item.id).reason;
+          dismissedItems.push(mapped);
+        } else {
+          reviewItems.push(mapped);
+        }
       }
     }
 
     // Sort by review reason priority: suspicious > blocked > needs_initial > stale
     const priorityOrder = { suspicious_price: 0, scrape_blocked: 1, needs_initial_price: 2, stale_price: 3 };
     reviewItems.sort((a, b) => priorityOrder[a.reviewReason] - priorityOrder[b.reviewReason]);
+    dismissedItems.sort((a, b) => priorityOrder[a.reviewReason] - priorityOrder[b.reviewReason]);
 
-    logger?.info(`[PriceReview] Returning ${reviewItems.length} items for review`);
+    logger?.info(`[PriceReview] Returning ${reviewItems.length} items for review (${dismissedItems.length} dismissed)`);
 
     res.json({
       success: true,
       count: reviewItems.length,
+      dismissedCount: dismissedItems.length,
       items: reviewItems,
+      dismissedItems,
       generatedAt: new Date().toISOString()
     });
 
@@ -451,6 +499,70 @@ router.post('/submit', requireAuth, async (req, res) => {
   } catch (error) {
     logger?.error('[PriceReview] Submit error:', error.message);
     res.status(500).json({ error: 'Failed to submit prices', message: error.message });
+  }
+});
+
+/**
+ * POST /api/price-review/dismiss
+ * Dismiss/snooze a supplier from the review queue
+ *
+ * Body: { supplierId, days?, reason? }
+ * Default snooze: 14 days
+ */
+router.post('/dismiss', requireAuth, async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger;
+
+  const { supplierId, days = 14, reason } = req.body;
+
+  if (!supplierId) {
+    return res.status(400).json({ error: 'supplierId required' });
+  }
+
+  try {
+    await sequelize.query(`
+      INSERT INTO price_review_dismissals (supplier_id, dismiss_until, reason)
+      VALUES (:supplierId, NOW() + INTERVAL '1 day' * :days, :reason)
+      ON CONFLICT (supplier_id)
+      DO UPDATE SET dismiss_until = NOW() + INTERVAL '1 day' * :days,
+                    reason = :reason,
+                    updated_at = NOW()
+    `, { replacements: { supplierId, days, reason: reason || null } });
+
+    logger?.info(`[PriceReview] Dismissed supplier ${supplierId} for ${days} days`);
+    res.json({ success: true, supplierId, dismissedForDays: days });
+  } catch (error) {
+    logger?.error('[PriceReview] Dismiss error:', error.message);
+    res.status(500).json({ error: 'Failed to dismiss supplier' });
+  }
+});
+
+/**
+ * POST /api/price-review/undismiss
+ * Restore a dismissed supplier to the review queue
+ *
+ * Body: { supplierId }
+ */
+router.post('/undismiss', requireAuth, async (req, res) => {
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger;
+
+  const { supplierId } = req.body;
+
+  if (!supplierId) {
+    return res.status(400).json({ error: 'supplierId required' });
+  }
+
+  try {
+    await sequelize.query(`
+      DELETE FROM price_review_dismissals WHERE supplier_id = :supplierId
+    `, { replacements: { supplierId } });
+
+    logger?.info(`[PriceReview] Restored supplier ${supplierId} to review queue`);
+    res.json({ success: true, supplierId });
+  } catch (error) {
+    logger?.error('[PriceReview] Undismiss error:', error.message);
+    res.status(500).json({ error: 'Failed to restore supplier' });
   }
 });
 

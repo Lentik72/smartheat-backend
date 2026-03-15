@@ -257,7 +257,7 @@ async function runScraper(options = {}) {
 
         // V2.6.0: Record failure - update counters, potentially set cooldown/phone_only
         if (!opts.dryRun) {
-          const backoffResult = await recordFailure(sequelize, supplier.id, supplier.name, log);
+          const backoffResult = await recordFailure(sequelize, supplier.id, supplier.name, log, result.error);
           if (backoffResult.action !== 'none') {
             // Already logged by recordFailure
           }

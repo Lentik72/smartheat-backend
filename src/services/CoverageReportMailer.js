@@ -465,14 +465,18 @@ class CoverageReportMailer {
   ${activity.trend ? `<p><strong>Week-over-Week:</strong> Users ${trendIcon(activity.trend.usersChange)} | Requests ${trendIcon(activity.trend.requestsChange)}</p>` : ''}
 
   <!-- ===== PRICE REVIEW LINK (V2.10.2) ===== -->
-  ${priceReviewLink ? `
+  ${priceReviewLink ? (() => {
+    const prUrl = typeof priceReviewLink === 'object' ? priceReviewLink.url : priceReviewLink;
+    const prCount = typeof priceReviewLink === 'object' ? priceReviewLink.count : null;
+    return `
     <div style="background: #e3f2fd; border: 2px solid #2196F3; border-radius: 8px; padding: 16px; margin: 20px 0;">
-      <h3 style="margin: 0 0 8px 0; color: #1565C0;">🔍 Manual Price Review</h3>
-      <p style="margin: 0 0 12px 0;">Sites needing price verification are ready for review.</p>
-      <a href="${priceReviewLink}" style="display: inline-block; background: #2196F3; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">Open Price Review Portal</a>
+      <h3 style="margin: 0 0 8px 0; color: #1565C0;">🔍 Manual Price Review${prCount ? ` — ${prCount} items` : ''}</h3>
+      <p style="margin: 0 0 12px 0;">${prCount ? `${prCount} suppliers need price verification.` : 'Sites needing price verification are ready for review.'}</p>
+      <a href="${prUrl}" style="display: inline-block; background: #2196F3; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">Open Price Review Portal</a>
       <p style="margin: 12px 0 0 0; font-size: 12px; color: #666;">Link expires in 48 hours.</p>
     </div>
-  ` : ''}
+  `;
+  })() : ''}
 
   <!-- ===== CLICK TRACKING / SNIPER OUTREACH (V2.12.0) ===== -->
   ${clickStats && (parseInt(clickStats.last_24h) > 0 || parseInt(clickStats.pending_outreach) > 0) ? `

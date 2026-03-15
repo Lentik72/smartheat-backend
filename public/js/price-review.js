@@ -1,6 +1,6 @@
 /**
  * Price Review Portal - JavaScript
- * V2.10.2: Magic link authentication support
+ * V2.14.0: Diagnostic categories + dismiss/snooze support
  */
 
 // Get token from URL (magic link or legacy token)
@@ -27,6 +27,8 @@ const API_BASE = window.location.origin;
 const headers = { 'X-Review-Token': TOKEN, 'Content-Type': 'application/json' };
 
 let reviewItems = [];
+let dismissedItems = [];
+let showDismissed = false;
 
 // Reason labels
 const reasonLabels = {
@@ -69,6 +71,51 @@ function formatTimestamp(dateString) {
   });
 }
 
+// Render a single item card
+function renderItemCard(item, idx, isDismissed) {
+  const diagHtml = item.diagnostic ? `
+    <div class="diagnostic-row">
+      <span class="diag-icon">${item.diagnostic.icon}</span>
+      <strong>${item.diagnostic.label}</strong>
+      <span class="diag-action">— ${item.diagnostic.action}</span>
+    </div>
+  ` : '';
+
+  const actionBtn = isDismissed
+    ? `<button class="restore-btn" data-supplier-id="${item.supplierId}">Restore</button>`
+    : `<button class="dismiss-btn" data-supplier-id="${item.supplierId}">Snooze 14d</button>`;
+
+  return `
+    <div class="review-item${isDismissed ? ' dismissed' : ''}" id="item-${isDismissed ? 'd' : ''}${idx}">
+      <div class="review-header">
+        <div>
+          <div class="supplier-name">${item.name}</div>
+          <div class="supplier-location">${item.city}, ${item.state}</div>
+        </div>
+        <span class="reason-badge reason-${item.reviewReason}">${reasonLabels[item.reviewReason]}</span>
+      </div>
+      ${diagHtml}
+      <div class="price-row">
+        ${item.currentPrice ? `<span class="current-price">Current: <strong>$${item.currentPrice.toFixed(3)}</strong></span>` : '<span class="current-price no-price">No price on file</span>'}
+        <span class="last-updated" title="${formatTimestamp(item.lastScraped)}">Updated: ${formatRelativeTime(item.lastScraped)}</span>
+      </div>
+      <div class="input-row">
+        <a href="${item.website}" target="_blank" class="website-link">
+          <span>Visit Site</span>
+        </a>
+        <input type="text"
+               class="price-input"
+               id="price-${isDismissed ? 'd' : ''}${idx}"
+               placeholder="X.XXX"
+               data-supplier-id="${item.supplierId}"
+               data-idx="${idx}">
+        <button class="submit-btn" data-idx="${idx}" data-dismissed="${isDismissed}">Submit</button>
+        ${actionBtn}
+      </div>
+    </div>
+  `;
+}
+
 // Load review items
 async function loadItems() {
   // Check if we have a token
@@ -109,8 +156,10 @@ async function loadItems() {
     }
 
     reviewItems = data.items;
+    dismissedItems = data.dismissedItems || [];
     updateStats();
     renderItems();
+    renderDismissedSection();
 
   } catch (err) {
     document.getElementById('review-list').innerHTML = `<div class="empty-state"><h2>Error</h2><p>${err.message}</p></div>`;
@@ -123,6 +172,7 @@ function updateStats() {
   document.getElementById('stat-blocked').textContent = reviewItems.filter(i => i.reviewReason === 'scrape_blocked').length;
   document.getElementById('stat-new').textContent = reviewItems.filter(i => i.reviewReason === 'needs_initial_price').length;
   document.getElementById('stat-stale').textContent = reviewItems.filter(i => i.reviewReason === 'stale_price').length;
+  document.getElementById('stat-dismissed').textContent = dismissedItems.length;
 }
 
 function renderItems() {
@@ -138,45 +188,121 @@ function renderItems() {
     return;
   }
 
-  container.innerHTML = reviewItems.map((item, idx) => `
-    <div class="review-item" id="item-${idx}">
-      <div class="review-header">
-        <div>
-          <div class="supplier-name">${item.name}</div>
-          <div class="supplier-location">${item.city}, ${item.state}</div>
-        </div>
-        <span class="reason-badge reason-${item.reviewReason}">${reasonLabels[item.reviewReason]}</span>
-      </div>
-      <div class="price-row">
-        ${item.currentPrice ? `<span class="current-price">Current: <strong>$${item.currentPrice.toFixed(3)}</strong></span>` : '<span class="current-price no-price">No price on file</span>'}
-        <span class="last-updated" title="${formatTimestamp(item.lastScraped)}">Updated: ${formatRelativeTime(item.lastScraped)}</span>
-      </div>
-      <div class="input-row">
-        <a href="${item.website}" target="_blank" class="website-link">
-          <span>Visit Site</span>
-        </a>
-        <input type="text"
-               class="price-input"
-               id="price-${idx}"
-               placeholder="X.XXX"
-               data-supplier-id="${item.supplierId}"
-               data-idx="${idx}">
-        <button class="submit-btn" data-idx="${idx}">Submit</button>
-      </div>
-    </div>
-  `).join('');
+  container.innerHTML = reviewItems.map((item, idx) => renderItemCard(item, idx, false)).join('');
 
-  // V2.10.4: Use event listeners instead of inline onclick (CSP compliance)
-  document.querySelectorAll('.submit-btn[data-idx]').forEach(btn => {
-    btn.addEventListener('click', () => submitSingle(parseInt(btn.dataset.idx)));
+  // Attach submit button listeners
+  container.querySelectorAll('.submit-btn[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => submitSingle(parseInt(btn.dataset.idx), false));
+  });
+
+  // Attach dismiss button listeners
+  container.querySelectorAll('.dismiss-btn[data-supplier-id]').forEach(btn => {
+    btn.addEventListener('click', () => dismissSupplier(btn.dataset.supplierId));
   });
 
   document.getElementById('submit-all').style.display = 'block';
 }
 
+function renderDismissedSection() {
+  const section = document.getElementById('dismissed-section');
+  const toggle = document.getElementById('dismissed-toggle');
+  const list = document.getElementById('dismissed-list');
+
+  if (dismissedItems.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  toggle.textContent = showDismissed
+    ? `Hide snoozed suppliers (${dismissedItems.length})`
+    : `Show snoozed suppliers (${dismissedItems.length})`;
+
+  list.style.display = showDismissed ? 'block' : 'none';
+
+  if (showDismissed) {
+    list.innerHTML = dismissedItems.map((item, idx) => renderItemCard(item, idx, true)).join('');
+
+    // Attach restore button listeners
+    list.querySelectorAll('.restore-btn[data-supplier-id]').forEach(btn => {
+      btn.addEventListener('click', () => undismissSupplier(btn.dataset.supplierId));
+    });
+
+    // Attach submit button listeners for dismissed items
+    list.querySelectorAll('.submit-btn[data-idx]').forEach(btn => {
+      btn.addEventListener('click', () => submitSingle(parseInt(btn.dataset.idx), true));
+    });
+  }
+}
+
+// Dismiss/snooze a supplier
+async function dismissSupplier(supplierId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/price-review/dismiss`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ supplierId, days: 14 })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Move item from active to dismissed
+      const idx = reviewItems.findIndex(i => i.supplierId === supplierId);
+      if (idx !== -1) {
+        const item = reviewItems.splice(idx, 1)[0];
+        item.dismissedUntil = new Date(Date.now() + 14 * 86400000).toISOString();
+        dismissedItems.push(item);
+      }
+      updateStats();
+      renderItems();
+      renderDismissedSection();
+      showToast('Snoozed for 14 days', 'success');
+    } else {
+      showToast(data.error || 'Failed to snooze', 'error');
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// Restore a dismissed supplier
+async function undismissSupplier(supplierId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/price-review/undismiss`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ supplierId })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Move item from dismissed to active
+      const idx = dismissedItems.findIndex(i => i.supplierId === supplierId);
+      if (idx !== -1) {
+        const item = dismissedItems.splice(idx, 1)[0];
+        delete item.dismissedUntil;
+        delete item.dismissReason;
+        reviewItems.push(item);
+        // Re-sort
+        const priorityOrder = { suspicious_price: 0, scrape_blocked: 1, needs_initial_price: 2, stale_price: 3 };
+        reviewItems.sort((a, b) => priorityOrder[a.reviewReason] - priorityOrder[b.reviewReason]);
+      }
+      updateStats();
+      renderItems();
+      renderDismissedSection();
+      showToast('Restored to review queue', 'success');
+    } else {
+      showToast(data.error || 'Failed to restore', 'error');
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
 // Submit single price
-async function submitSingle(idx) {
-  const input = document.getElementById(`price-${idx}`);
+async function submitSingle(idx, isDismissed) {
+  const prefix = isDismissed ? 'd' : '';
+  const input = document.getElementById(`price-${prefix}${idx}`);
   const price = parseFloat(input.value);
   const supplierId = input.dataset.supplierId;
 
@@ -185,9 +311,11 @@ async function submitSingle(idx) {
     return;
   }
 
-  const btn = input.nextElementSibling;
+  const btn = input.parentElement.querySelector('.submit-btn');
   btn.disabled = true;
   btn.textContent = '...';
+
+  const items = isDismissed ? dismissedItems : reviewItems;
 
   try {
     const res = await fetch(`${API_BASE}/api/price-review/submit`, {
@@ -201,7 +329,7 @@ async function submitSingle(idx) {
       btn.textContent = 'Done';
       btn.classList.add('submitted');
       input.disabled = true;
-      showToast(`Updated ${reviewItems[idx].name}: $${price.toFixed(3)}`, 'success');
+      showToast(`Updated ${items[idx].name}: $${price.toFixed(3)}`, 'success');
     } else {
       btn.textContent = 'Submit';
       btn.disabled = false;
@@ -217,7 +345,7 @@ async function submitSingle(idx) {
 // Submit all prices
 async function submitAll() {
   const prices = [];
-  document.querySelectorAll('.price-input').forEach(input => {
+  document.querySelectorAll('#review-list .price-input').forEach(input => {
     const price = parseFloat(input.value);
     if (!isNaN(price) && price >= 1.5 && price <= 6 && !input.disabled) {
       prices.push({ supplierId: input.dataset.supplierId, price });
@@ -246,10 +374,10 @@ async function submitAll() {
       // Mark submitted inputs
       data.results.forEach(r => {
         if (r.success) {
-          const input = document.querySelector(`[data-supplier-id="${r.supplierId}"]`);
+          const input = document.querySelector(`#review-list [data-supplier-id="${r.supplierId}"]`);
           if (input) {
             input.disabled = true;
-            const btn = input.nextElementSibling;
+            const btn = input.parentElement.querySelector('.submit-btn');
             btn.textContent = 'Done';
             btn.classList.add('submitted');
           }
@@ -269,6 +397,11 @@ async function submitAll() {
 }
 
 document.getElementById('submit-all').addEventListener('click', submitAll);
+
+document.getElementById('dismissed-toggle').addEventListener('click', () => {
+  showDismissed = !showDismissed;
+  renderDismissedSection();
+});
 
 function showToast(message, type = 'success') {
   const toast = document.getElementById('toast');
