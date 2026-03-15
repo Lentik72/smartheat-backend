@@ -165,6 +165,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://cdn.jsdelivr.net", "https://unpkg.com", "https://static.cloudflareinsights.com"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "https://www.google-analytics.com", "https://analytics.google.com", "https://www.googletagmanager.com", "https://cdn.jsdelivr.net", "https://unpkg.com", "https://ipapi.co", "https://static.cloudflareinsights.com", "https://*.tile.openstreetmap.org"],
+      workerSrc: ["'self'"],
     },
   },
   crossOriginEmbedderPolicy: false

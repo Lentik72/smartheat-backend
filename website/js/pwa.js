@@ -38,8 +38,21 @@
     return; // In standalone mode — no banner needed
   }
 
-  // Already installed in this browser
-  if (localStorage.getItem('pwa-installed')) return;
+  // Already installed in this browser (expires after 90 days to handle uninstalls)
+  const installedAt = localStorage.getItem('pwa-installed');
+  if (installedAt) {
+    // Migrate legacy 'true' value to timestamp so expiry works
+    if (installedAt === 'true') {
+      localStorage.setItem('pwa-installed', Date.now().toString());
+      return;
+    }
+    const ninetyDays = 90 * 24 * 60 * 60 * 1000;
+    if ((Date.now() - parseInt(installedAt, 10)) < ninetyDays) {
+      return;
+    }
+    // Expired — user may have uninstalled, clear and allow banner again
+    localStorage.removeItem('pwa-installed');
+  }
 
   // Check if dismissed recently (3 days)
   function isDismissedRecently() {
@@ -144,6 +157,7 @@
       setTimeout(() => banner.remove(), 300);
       localStorage.setItem('pwa-banner-dismissed', Date.now().toString());
 
+      trackPwa('banner_dismissed');
       if (typeof gtag === 'function') {
         gtag('event', 'pwa_banner_dismissed', { platform: 'android' });
       }
@@ -161,7 +175,12 @@
     }, 1000);
   }
 
-  // First-time visitors: banner shows only after ZIP search (via window.showPwaInstallBanner)
+  // First-time visitors: time on page fallback (30s = genuine engagement)
+  if (visitCount < 2) {
+    setTimeout(() => {
+      showBanner();
+    }, 30000);
+  }
 
   // Trigger: User scrolls back up (indicates engagement)
   let lastScrollY = 0;
@@ -183,7 +202,7 @@
     if (banner) banner.remove();
 
     // Mark as installed so banner never shows again on this browser
-    localStorage.setItem('pwa-installed', 'true');
+    localStorage.setItem('pwa-installed', Date.now().toString());
 
     if (!installTracked) {
       installTracked = true;
