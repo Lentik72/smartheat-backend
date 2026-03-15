@@ -190,26 +190,35 @@ router.get('/', requireAuth, async (req, res) => {
   const logger = req.app.locals.logger;
 
   try {
-    // 1. Sites with suspicious prices
+    // 1. Sites with suspicious prices (check LATEST price only, not historical)
     const [suspiciousPrices] = await sequelize.query(`
-      SELECT DISTINCT ON (s.id)
+      WITH latest_prices AS (
+        SELECT DISTINCT ON (supplier_id)
+          supplier_id,
+          price_per_gallon,
+          scraped_at,
+          source_type,
+          notes
+        FROM supplier_prices
+        WHERE is_valid = true
+        ORDER BY supplier_id, scraped_at DESC
+      )
+      SELECT
         s.id,
         s.name,
         s.website,
         s.city,
         s.state,
-        sp.price_per_gallon as current_price,
-        sp.scraped_at,
-        sp.source_type,
-        sp.notes,
+        lp.price_per_gallon as current_price,
+        lp.scraped_at,
+        lp.source_type,
+        lp.notes,
         'suspicious_price' as review_reason
       FROM suppliers s
-      JOIN supplier_prices sp ON s.id = sp.supplier_id
+      JOIN latest_prices lp ON s.id = lp.supplier_id
       WHERE s.active = true
         AND s.website IS NOT NULL
-        AND sp.is_valid = true
-        AND (sp.price_per_gallon < 2.00 OR sp.price_per_gallon > 5.00)
-      ORDER BY s.id, sp.scraped_at DESC
+        AND (lp.price_per_gallon < 2.00 OR lp.price_per_gallon > 5.50)
     `);
 
     // 2. Sites in cooldown or phone_only (from scrape_status column on suppliers)
@@ -390,6 +399,13 @@ router.post('/submit', requireAuth, async (req, res) => {
           continue;
         }
 
+        // Expire old prices for this supplier before inserting new one
+        await sequelize.query(`
+          UPDATE supplier_prices
+          SET is_valid = false, updated_at = NOW()
+          WHERE supplier_id = :supplierId AND is_valid = true
+        `, { replacements: { supplierId } });
+
         // Insert new price with manual source_type
         await sequelize.query(`
           INSERT INTO supplier_prices (
@@ -452,7 +468,7 @@ router.get('/stats', requireAuth, async (req, res) => {
         COUNT(DISTINCT s.id) FILTER (WHERE s.active = true AND s.allow_price_display = true) as price_enabled,
         COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.scraped_at > NOW() - INTERVAL '24 hours') as updated_24h,
         COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.scraped_at > NOW() - INTERVAL '7 days') as updated_7d,
-        COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.price_per_gallon < 2.00 OR sp.price_per_gallon > 5.00) as suspicious_prices,
+        COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.price_per_gallon < 2.00 OR sp.price_per_gallon > 5.50) as suspicious_prices,
         COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.source_type = 'manual') as manual_prices
       FROM suppliers s
       LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.is_valid = true
