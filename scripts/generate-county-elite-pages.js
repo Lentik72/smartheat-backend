@@ -421,6 +421,23 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
     ]
   };
 
+  // Schema.org Product + AggregateOffer (triggers Google price rich snippets for aggregator sites)
+  const productSchema = (medianPrice && supplierCount >= 2) ? {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": `Heating Oil in ${countyName} County, ${stateCode}`,
+    "description": `Compare heating oil prices from ${supplierCount} COD suppliers in ${countyName} County, ${stateName}. Updated daily.`,
+    "url": `https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slugify(countyName)}`,
+    "offers": {
+      "@type": "AggregateOffer",
+      "lowPrice": minPrice.toFixed(2),
+      "highPrice": maxPrice.toFixed(2),
+      "priceCurrency": "USD",
+      "offerCount": supplierCount,
+      "availability": "https://schema.org/InStock"
+    }
+  } : null;
+
   // Breadcrumb schema
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -591,6 +608,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   <script type="application/ld+json">${JSON.stringify(datasetSchema)}</script>
   <script type="application/ld+json">${JSON.stringify(faqSchema)}</script>
   ${itemListSchema ? `<script type="application/ld+json">${JSON.stringify(itemListSchema)}</script>` : ''}
+  ${productSchema ? `<script type="application/ld+json">${JSON.stringify(productSchema)}</script>` : ''}
 </head>
 <body data-page-type="county_elite" data-price-signal="${priceSignal}">
   ${getNavHTML(3, '/prices')}
@@ -976,6 +994,7 @@ ${countySuppliers.map(s => {
   <script type="application/ld+json">${JSON.stringify(datasetSchema)}</script>
   <script type="application/ld+json">${JSON.stringify(faqSchema)}</script>
   ${itemListSchema ? `<script type="application/ld+json">${JSON.stringify(itemListSchema)}</script>` : ''}
+  ${productSchema ? `<script type="application/ld+json">${JSON.stringify(productSchema)}</script>` : ''}
 </head>
 <body data-page-type="county_elite" data-price-signal="${priceSignal}">
   ${getNavHTML(3, '/prices')}

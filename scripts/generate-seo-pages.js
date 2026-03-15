@@ -967,6 +967,23 @@ function generatePageHTML(data) {
     }))
   };
 
+  // Schema.org Product + AggregateOffer (triggers Google price rich snippets for aggregator sites)
+  const productSchema = (stats && stats.pricedCount >= 2) ? {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": `Heating Oil in ${city ? `${city}, ${stateCode}` : county ? `${county} County, ${stateCode}` : stateInfo.name}`,
+    "description": `Compare heating oil prices from ${stats.pricedCount} COD suppliers in ${city ? `${city}, ${stateCode}` : county ? `${county} County, ${stateCode}` : stateInfo.name}. Updated daily.`,
+    "url": canonicalUrl,
+    "offers": {
+      "@type": "AggregateOffer",
+      "lowPrice": stats.min,
+      "highPrice": stats.max,
+      "priceCurrency": "USD",
+      "offerCount": stats.pricedCount,
+      "availability": "https://schema.org/InStock"
+    }
+  } : null;
+
   // Generate breadcrumb HTML
   const breadcrumbHtml = breadcrumbs.map((b, i) =>
     b.url
@@ -1379,6 +1396,7 @@ function generatePageHTML(data) {
   ${datasetSchema ? `<script type="application/ld+json">${JSON.stringify(datasetSchema)}</script>` : ''}
   <script type="application/ld+json">${JSON.stringify(itemListSchema)}</script>
   ${faqSchema ? `<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>` : ''}
+  ${productSchema ? `<script type="application/ld+json">${JSON.stringify(productSchema)}</script>` : ''}
 </head>
 <body${zips && zips[0] ? ` data-zip="${zips[0]}"` : ''}>
   ${getNavHTML(2, '/prices')}

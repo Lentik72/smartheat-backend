@@ -298,6 +298,23 @@ function generateZipPageHTML(stats, history, county = null) {
     ]
   };
 
+  // Schema.org Product + AggregateOffer (triggers Google price rich snippets for aggregator sites)
+  const productSchema = (medianPrice && supplierCount >= 2) ? {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": `Heating Oil in ${regionName}`,
+    "description": `Compare heating oil prices from ${supplierCount} COD suppliers in ${regionName} (ZIP codes ${zipPrefix}xx). Updated daily.`,
+    "url": `https://www.gethomeheat.com/prices/zip/${zipPrefix}`,
+    "offers": {
+      "@type": "AggregateOffer",
+      "lowPrice": minPrice.toFixed(2),
+      "highPrice": maxPrice.toFixed(2),
+      "priceCurrency": "USD",
+      "offerCount": supplierCount,
+      "availability": "https://schema.org/InStock"
+    }
+  } : null;
+
   // Breadcrumb schema
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -344,6 +361,7 @@ function generateZipPageHTML(stats, history, county = null) {
   <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
   <script type="application/ld+json">${JSON.stringify(datasetSchema)}</script>
   <script type="application/ld+json">${JSON.stringify(faqSchema)}</script>
+  ${productSchema ? `<script type="application/ld+json">${JSON.stringify(productSchema)}</script>` : ''}
 </head>
 <body>
   <nav class="nav">
