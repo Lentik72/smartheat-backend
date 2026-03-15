@@ -83,7 +83,7 @@ function renderItemCard(item, idx, isDismissed) {
 
   const actionBtn = isDismissed
     ? `<button class="restore-btn" data-supplier-id="${item.supplierId}">Restore</button>`
-    : `<button class="dismiss-btn" data-supplier-id="${item.supplierId}">Snooze 14d</button>`;
+    : `<button class="dismiss-btn" data-supplier-id="${item.supplierId}" data-days="7">7d</button><button class="dismiss-btn" data-supplier-id="${item.supplierId}" data-days="14">14d</button>`;
 
   return `
     <div class="review-item${isDismissed ? ' dismissed' : ''}" id="item-${isDismissed ? 'd' : ''}${idx}">
@@ -197,7 +197,7 @@ function renderItems() {
 
   // Attach dismiss button listeners
   container.querySelectorAll('.dismiss-btn[data-supplier-id]').forEach(btn => {
-    btn.addEventListener('click', () => dismissSupplier(btn.dataset.supplierId));
+    btn.addEventListener('click', () => dismissSupplier(btn.dataset.supplierId, parseInt(btn.dataset.days)));
   });
 
   document.getElementById('submit-all').style.display = 'block';
@@ -236,12 +236,12 @@ function renderDismissedSection() {
 }
 
 // Dismiss/snooze a supplier
-async function dismissSupplier(supplierId) {
+async function dismissSupplier(supplierId, days) {
   try {
     const res = await fetch(`${API_BASE}/api/price-review/dismiss`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ supplierId, days: 14 })
+      body: JSON.stringify({ supplierId, days })
     });
     const data = await res.json();
 
@@ -250,13 +250,13 @@ async function dismissSupplier(supplierId) {
       const idx = reviewItems.findIndex(i => i.supplierId === supplierId);
       if (idx !== -1) {
         const item = reviewItems.splice(idx, 1)[0];
-        item.dismissedUntil = new Date(Date.now() + 14 * 86400000).toISOString();
+        item.dismissedUntil = new Date(Date.now() + days * 86400000).toISOString();
         dismissedItems.push(item);
       }
       updateStats();
       renderItems();
       renderDismissedSection();
-      showToast('Snoozed for 14 days', 'success');
+      showToast(`Snoozed for ${days} days`, 'success');
     } else {
       showToast(data.error || 'Failed to snooze', 'error');
     }
