@@ -166,6 +166,20 @@ async function generateCountyElitePages(options = {}) {
     for (const p of allPrices) {
       priceMap.set(p.supplier_id, p);
     }
+
+    // County search counts for traffic proof (last 30 days)
+    const [countySearchRows] = await sequelize.query(`
+      SELECT county, state, SUM(request_count) as total
+      FROM user_locations
+      WHERE last_seen_at > NOW() - INTERVAL '30 days'
+        AND county IS NOT NULL
+      GROUP BY county, state
+    `);
+    const countySearchMap = new Map(countySearchRows.map(r => [
+      `${(r.county || '').toLowerCase()}|${(r.state || '').toUpperCase()}`,
+      parseInt(r.total)
+    ]));
+    log(`Traffic proof: ${countySearchRows.length} county search aggregates`);
     log(`📊 Loaded ${allSuppliers.length} suppliers, ${allPrices.length} prices for table generation`);
 
     // Generate pages
@@ -235,7 +249,8 @@ async function generateCountyElitePages(options = {}) {
       }
 
       const stateMedian = stateMedianMap[stats.state_code] || null;
-      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips, allQualifyingCounties, legacyLayout);
+      const countySearchCount = countySearchMap.get(`${stats.county_name.toLowerCase()}|${stats.state_code}`) || 0;
+      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips, allQualifyingCounties, legacyLayout, countySearchCount);
 
       // Create state subdirectory
       const stateDir = path.join(COUNTY_DIR, stats.state_code.toLowerCase());
@@ -288,7 +303,7 @@ async function generateCountyElitePages(options = {}) {
 /**
  * Generate HTML for a County Elite page
  */
-function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = [], allCountyStats = [], legacyLayout = false) {
+function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = [], allCountyStats = [], legacyLayout = false, countySearchCount = 0) {
   const countyName = stats.county_name;
   const stateCode = stats.state_code;
   const stateName = getStateName(stateCode);
@@ -1001,6 +1016,7 @@ ${countySuppliers.map(s => {
     ${countySuppliers.length > 0 ? `
     <section class="supplier-table-section" id="suppliers">
       <h2>Heating Oil Suppliers Serving ${escapeHtml(countyName)} County</h2>
+      ${countySearchCount >= 5 ? `<p class="county-traffic-proof"><strong>${countySearchCount.toLocaleString()}</strong> homeowners compared heating oil prices in ${escapeHtml(countyName)} County this month.</p>` : ''}
         <table class="supplier-table">
           <thead>
             <tr>
@@ -1019,11 +1035,13 @@ ${countySuppliers.map(s => {
   const sMinGal = s.minGallons || 150;
   const isBestPrice = s.hasPrice && bestPrice && s.price === bestPrice;
   const deltaPerDelivery = (s.hasPrice && bestPrice) ? Math.round((s.price - bestPrice) * (sMinGal)) : null;
+  const sIsClaimed = !!s.claimed_at;
   return `            <tr${isBestPrice ? ' class="best-price-row"' : ''} data-supplier-id="${s.id}">
               <td class="supplier-name">
                 ${s.slug ? `<a href="/supplier/${s.slug}" class="supplier-profile-link">${escapeHtml(s.name)}</a>` : escapeHtml(s.name)}
                 ${isBestPrice ? '<span class="best-price-badge">Lowest price</span>' : ''}
                 ${freshness.text ? `<span class="supplier-updated"><span class="freshness-dot ${freshness.dotClass}"></span> ${freshness.text}</span>` : ''}
+                ${!sIsClaimed && s.slug ? `<a href="/claim/${s.slug}" class="supplier-claim-link-inline" rel="nofollow">Claim</a>` : ''}
               </td>
               <td class="supplier-city">${escapeHtml(s.city || '')}</td>
               <td class="supplier-price">${s.hasPrice ? `<span class="price-amount">$${s.price.toFixed(2)}</span><span class="price-delivery">~$${sDeliveryCost} for ${sMinGal} gal</span>${isBestPrice ? '<span class="price-delta best">\u2713 Lowest price</span>' : deltaPerDelivery > 0 ? `<span class="price-delta">\u2248$${deltaPerDelivery} more per delivery</span>` : ''}` : '<span class="call-for-price">Call</span>'}</td>
@@ -2734,6 +2752,34 @@ function generateCountyEliteCSS() {
 }
 
 .county-elite-page .supplier-claim-link a:hover {
+  text-decoration: underline;
+}
+
+/* Traffic proof */
+.county-elite-page .county-traffic-proof {
+  font-size: 0.9rem;
+  color: #555;
+  margin: -0.25rem 0 1rem;
+}
+
+.county-elite-page .county-traffic-proof strong {
+  color: #1a1a1a;
+}
+
+/* Inline claim link in table rows */
+.county-elite-page .supplier-claim-link-inline {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 6px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.county-elite-page .supplier-claim-link-inline:hover {
+  opacity: 1;
   text-decoration: underline;
 }
 

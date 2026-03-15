@@ -22,7 +22,9 @@ async function getAllSuppliers(sequelize) {
       slug,
       postal_codes_served,
       service_counties,
-      allow_price_display
+      allow_price_display,
+      claimed_at,
+      verified
     FROM suppliers
     WHERE active = true
     ORDER BY name
