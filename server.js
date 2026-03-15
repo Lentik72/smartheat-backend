@@ -569,6 +569,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/104-add-utica-ny-suppliers', label: 'Utica NY suppliers' },
           { path: './src/migrations/105-create-supplier-requests', label: 'Supplier requests table' },
           { path: './src/migrations/106-price-review-enhancements', label: 'Price review enhancements' },
+          { path: './src/migrations/107-add-fawcett-energy-ma', label: 'Fawcett Energy MA' },
         ];
 
         let migrationErrors = 0;
