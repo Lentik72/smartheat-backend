@@ -264,7 +264,7 @@ const ACTIVITY_LABELS = {
 };
 
 // ── Page Renderer ────────────────────────────────────────────────
-function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, isClaimed, socialProof) {
+function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, isClaimed, isVerified, socialProof) {
   const name = escapeHtml(supplier.name);
   const city = escapeHtml(supplier.city) || '';
   const state = supplier.state || '';
@@ -276,12 +276,20 @@ function renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, 
 
   // Build stats section based on state
   let statsHtml;
-  if (isClaimed) {
+  if (isVerified) {
     statsHtml = `
       <div class="claim-card claim-verified-card">
         <div class="claim-card-icon">&#9989;</div>
         <h2>This Listing Has Been Verified</h2>
-        <p>This supplier has already claimed and verified their listing on HomeHeat.</p>
+        <p>This supplier has claimed and verified their listing on HomeHeat.</p>
+        <a href="/for-suppliers" class="btn btn-secondary">Learn More About HomeHeat for Suppliers</a>
+      </div>`;
+  } else if (isClaimed) {
+    statsHtml = `
+      <div class="claim-card claim-pending-card">
+        <div class="claim-card-icon">&#9203;</div>
+        <h2>Claim Pending Verification</h2>
+        <p>This listing has been claimed and is awaiting verification. We'll verify by calling the business.</p>
         <a href="/for-suppliers" class="btn btn-secondary">Learn More About HomeHeat for Suppliers</a>
       </div>`;
   } else if (!hasZips) {
@@ -678,7 +686,7 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
   try {
     // Resolve supplier by slug (active only)
     const [supplierRows] = await sequelize.query(`
-      SELECT id, name, slug, phone, city, state, postal_codes_served, claimed_at
+      SELECT id, name, slug, phone, city, state, postal_codes_served, claimed_at, verified
       FROM suppliers
       WHERE slug = :slug AND active = true
       LIMIT 1
@@ -691,6 +699,7 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
     const supplier = supplierRows[0];
     const supplierId = supplier.id;
     const isClaimed = !!supplier.claimed_at;
+    const isVerified = isClaimed && !!supplier.verified;
     const postalCodes = supplier.postal_codes_served;
     const hasZips = Array.isArray(postalCodes) && postalCodes.length > 0;
 
@@ -737,7 +746,7 @@ router.get('/:slug', claimPageLimiter, async (req, res) => {
       logger?.warn(`[ClaimPage] Audit log error: ${logErr.message}`);
     }
 
-    const html = renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, isClaimed, socialProof);
+    const html = renderClaimPage(supplier, demand, marketData, activityLevel, hasPrice, isClaimed, isVerified, socialProof);
     res.set('Cache-Control', 'no-store');
     res.send(html);
 

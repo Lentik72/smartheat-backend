@@ -245,6 +245,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
   const website = supplier.website;
   const hasWebsite = website && website.startsWith('http');
   const isClaimed = !!supplier.claimedAt;
+  const isVerified = isClaimed && !!supplier.verified;
 
   // Avatar
   const initials = getInitials(supplier.name);
@@ -292,8 +293,11 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
       <div class="sp-hero-text">
         <h1>${name}</h1>
         <p class="sp-location">${location}</p>
-        ${isClaimed
+        ${isVerified
           ? `<span class="sp-verified"><svg width="12" height="12" viewBox="0 0 24 24" fill="#2d8a2d"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Verified Business</span>
+             <a href="mailto:support@gethomeheat.com?subject=Listing%20issue%3A%20${encodeURIComponent(supplier.name)}&body=I%20believe%20there%20is%20an%20issue%20with%20the%20listing%20for%20${encodeURIComponent(supplier.name)}%20(${encodeURIComponent(supplier.slug)}).%0A%0APlease%20describe%20the%20issue%3A%0A" class="sp-report-link" rel="nofollow">Report an issue</a>`
+          : isClaimed
+          ? `<span class="sp-pending"><svg width="12" height="12" viewBox="0 0 24 24" fill="#D97706"><circle cx="12" cy="12" r="10"/></svg> Claimed &mdash; Pending Verification</span>
              <a href="mailto:support@gethomeheat.com?subject=Listing%20issue%3A%20${encodeURIComponent(supplier.name)}&body=I%20believe%20there%20is%20an%20issue%20with%20the%20listing%20for%20${encodeURIComponent(supplier.name)}%20(${encodeURIComponent(supplier.slug)}).%0A%0APlease%20describe%20the%20issue%3A%0A" class="sp-report-link" rel="nofollow">Report an issue</a>`
           : `<a href="/claim/${supplier.slug}" class="sp-claim-hint" rel="nofollow" onclick="typeof gtag==='function'&&gtag('event','claim_hint_click',{supplier_slug:'${supplier.slug}',location:'hero'})">Is this your business? Claim it</a>`}
       </div>
@@ -996,6 +1000,18 @@ function generateSupplierCSS() {
   font-weight: 600;
   color: #2d8a2d;
   background: #e8f5e9;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.sp-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400e;
+  background: #FEF3C7;
   padding: 2px 8px;
   border-radius: 4px;
 }

@@ -481,6 +481,19 @@
   font-size: 20px;
 }
 
+/* Pending verification state */
+.claim-pending-card {
+  text-align: center;
+  background: #FFFBEB;
+  border: 1px solid #FCD34D;
+}
+
+.claim-pending-card h2 {
+  text-transform: none;
+  font-size: 20px;
+  color: #92400E;
+}
+
 /* Unlocked stats grid */
 .unlocked-stat {
   background: #fff;

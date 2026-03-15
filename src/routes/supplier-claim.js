@@ -344,15 +344,7 @@ router.post('/', async (req, res) => {
     const supplier = supplierRows[0];
     const supplierId = supplier.id;
 
-    // Block claims on already-verified suppliers
-    if (supplier.claimed_at) {
-      return res.status(400).json({
-        success: false,
-        error: 'This listing has already been verified'
-      });
-    }
-
-    // Check for existing pending claim (user-friendly check before DB constraint)
+    // Check for existing pending or verified claim (unique index is the real guard)
     const [existingClaim] = await sequelize.query(`
       SELECT id, status
       FROM supplier_claims
@@ -412,6 +404,21 @@ router.post('/', async (req, res) => {
     }
 
     const claimId = insertResult[0]?.id;
+
+    // Set claimed_at immediately (badge shows "Pending Verification")
+    // Magic link access stays admin-gated — only badge changes now
+    await sequelize.query(`
+      UPDATE suppliers
+      SET claimed_at = NOW(),
+          claimed_by_email = :email
+      WHERE id = :supplierId
+        AND claimed_at IS NULL
+    `, {
+      replacements: {
+        email: claimantEmail.toLowerCase().trim(),
+        supplierId
+      }
+    });
 
     // Log claim_submitted event for funnel tracking
     try {
