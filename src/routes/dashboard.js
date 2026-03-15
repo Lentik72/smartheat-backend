@@ -973,6 +973,7 @@ router.get('/pwa', async (req, res) => {
     const [funnel, daily] = await Promise.all([
       sequelize.query(`
         SELECT
+          COUNT(*) FILTER (WHERE event_type = 'prompt_ready') as eligible,
           COUNT(*) FILTER (WHERE event_type = 'prompt_shown') as prompts,
           COUNT(*) FILTER (WHERE event_type = 'installed') as installed,
           COUNT(*) FILTER (WHERE event_type = 'standalone_launch') as standalone_launches
@@ -990,11 +991,13 @@ router.get('/pwa', async (req, res) => {
     ]);
 
     const f = funnel[0] || {};
+    const eligible = parseInt(f.eligible) || 0;
     const prompts = parseInt(f.prompts) || 0;
     const installed = parseInt(f.installed) || 0;
 
     res.json({
       funnel: {
+        eligible: eligible,
         promptsShown: prompts,
         installed: installed,
         standaloneLaunches: parseInt(f.standalone_launches) || 0,
@@ -4131,6 +4134,7 @@ router.get('/platforms', async (req, res) => {
     // PWA data
     const [pwaData] = await sequelize.query(`
       SELECT
+        COUNT(*) FILTER (WHERE event_type = 'prompt_ready') as eligible,
         COUNT(*) FILTER (WHERE event_type = 'installed') as installs,
         COUNT(*) FILTER (WHERE event_type = 'standalone_launch') as launches,
         COUNT(*) FILTER (WHERE event_type = 'prompt_shown') as prompts

@@ -18,7 +18,7 @@ router.post('/track-pwa', async (req, res) => {
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
 
   // Validate event type
-  const validEvents = ['prompt_shown', 'installed', 'standalone_launch'];
+  const validEvents = ['prompt_ready', 'prompt_shown', 'installed', 'standalone_launch'];
   if (!event || !validEvents.includes(event)) {
     return res.status(400).json({ error: 'Invalid event type' });
   }

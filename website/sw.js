@@ -3,7 +3,7 @@
  * Minimal service worker to enable PWA install prompt on Android
  */
 
-const CACHE_NAME = 'homeheat-v4';
+const CACHE_NAME = 'homeheat-v5';
 const OFFLINE_URL = '/';
 
 // Install - cache essential files

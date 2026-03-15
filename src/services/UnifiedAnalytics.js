@@ -906,6 +906,7 @@ class UnifiedAnalytics {
         // PWA stats
         this.sequelize.query(`
           SELECT
+            COUNT(*) FILTER (WHERE event_type = 'prompt_ready') as eligible,
             COUNT(*) FILTER (WHERE event_type = 'prompt_shown') as prompts,
             COUNT(*) FILTER (WHERE event_type = 'installed') as installs
           FROM pwa_events
@@ -936,6 +937,7 @@ class UnifiedAnalytics {
             lastWeek: parseInt(w.last_week) || 0
           },
           pwa: {
+            eligible: parseInt(p.eligible) || 0,
             prompts: parseInt(p.prompts) || 0,
             installs: parseInt(p.installs) || 0,
             conversionRate: p.prompts > 0
@@ -1212,6 +1214,7 @@ class UnifiedAnalytics {
       const [pwa] = await Promise.all([
         this.sequelize.query(`
           SELECT
+            COUNT(*) FILTER (WHERE event_type = 'prompt_ready') as eligible,
             COUNT(*) FILTER (WHERE event_type = 'prompt_shown') as prompts,
             COUNT(*) FILTER (WHERE event_type = 'installed') as installs,
             COUNT(*) FILTER (WHERE event_type = 'standalone_launch') as launches
@@ -1225,6 +1228,7 @@ class UnifiedAnalytics {
         available: true,
         data: {
           pwa: {
+            eligible: parseInt(p.eligible) || 0,
             promptsShown: parseInt(p.prompts) || 0,
             installs: parseInt(p.installs) || 0,
             launches: parseInt(p.launches) || 0

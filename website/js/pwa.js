@@ -62,13 +62,25 @@
     return count;
   }
 
-  // Capture the install prompt and suppress Chrome's native mini-infobar
+  // Dedup flag — prevents double-tracking install from both userChoice and appinstalled
+  let installTracked = false;
+
+  // Capture the install prompt
   window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
     deferredPrompt = e;
 
+    // Track eligibility server-side (top of funnel)
+    trackPwa('prompt_ready');
     if (typeof gtag === 'function') {
       gtag('event', 'pwa_prompt_ready', { platform: 'android' });
+    }
+
+    // Only suppress Chrome's native mini-infobar when we'll show our custom banner.
+    // Return visitors (2+ visits) get our custom banner shortly — suppress native.
+    // First-time visitors: let Chrome show its native prompt since our custom
+    // banner only triggers on ZIP search or scroll engagement, which may not happen.
+    if (getVisitCount() >= 2) {
+      e.preventDefault();
     }
   });
 
@@ -113,6 +125,11 @@
 
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
+
+      if (outcome === 'accepted' && !installTracked) {
+        installTracked = true;
+        trackPwa('installed');
+      }
 
       if (typeof gtag === 'function') {
         gtag('event', outcome === 'accepted' ? 'pwa_installed' : 'pwa_install_declined', { platform: 'android' });
@@ -159,7 +176,7 @@
     lastScrollY = window.scrollY;
   }, { passive: true });
 
-  // Track successful installation
+  // Track successful installation (fallback — also tracked from userChoice above)
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     const banner = document.getElementById('pwa-install-banner');
@@ -168,7 +185,10 @@
     // Mark as installed so banner never shows again on this browser
     localStorage.setItem('pwa-installed', 'true');
 
-    trackPwa('installed');
+    if (!installTracked) {
+      installTracked = true;
+      trackPwa('installed');
+    }
     if (typeof gtag === 'function') {
       gtag('event', 'pwa_app_installed', { platform: 'android' });
     }
