@@ -573,6 +573,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/106-price-review-enhancements', label: 'Price review enhancements' },
           { path: './src/migrations/107-add-fawcett-energy-ma', label: 'Fawcett Energy MA' },
           { path: './src/migrations/108-add-fulton-ny-suppliers', label: 'Fulton NY / Oswego County suppliers' },
+          { path: './src/migrations/109-add-dansville-ny-suppliers', label: 'Dansville NY / Livingston County suppliers' },
         ];
 
         let migrationErrors = 0;
