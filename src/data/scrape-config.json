@@ -21931,7 +21931,7 @@
     "pattern": "direct",
     "name": "Desrochers Oil",
     "phone": "(207) 282-6789",
-    "notes": "ME Biddeford/York County. Cash price in price-box span. Will-call confirmed. Est. 1960.",
+    "notes": "ME Biddeford/York County. Cash price in price-box span. Will-call confirmed. Est. 1960. Oil + K-1 kerosene cash prices on homepage. Oil + K-1 kerosene cash prices on homepage.",
     "priceRegex": "Cash Price[\\s\\S]*?\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "04002",
@@ -21959,7 +21959,13 @@
       "04102",
       "04103",
       "04106"
-    ]
+    ],
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "K-1 Cash Price \\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "dalesoil.com": {
     "enabled": true,
