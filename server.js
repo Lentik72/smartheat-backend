@@ -231,6 +231,11 @@ app.use((req, res, next) => {
     const qs = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
     return res.redirect(301, `/prices/${abbr}${rest}${qs}`);
   }
+  // Redirect ZIP-in-town-path: /prices/nh/03064 → /prices?zip=03064
+  const zipInPath = req.path.match(/^\/prices\/[a-z]{2}\/(\d{5})$/);
+  if (zipInPath) {
+    return res.redirect(301, `/prices?zip=${zipInPath[1]}`);
+  }
   // Redirect .html to clean URL (except functional pages like update-price.html)
   if (req.path.endsWith('.html') && !req.path.includes('update-price') && !req.path.includes('price-review') && !req.path.startsWith('/admin')) {
     const cleanPath = req.path.slice(0, -5);
@@ -253,10 +258,20 @@ app.use((req, res, next) => {
     return next();
   }
 
-  // Supplier slug normalization: try common variations before giving up
-  // Handles apostrophe slugification differences and trailing-hyphen artifacts
+  // Supplier slug redirects: known old/changed slugs → current canonical slugs
+  // Handles removed suppliers, renames, and merges discovered via GSC 404s
   if (req.path.startsWith('/supplier/')) {
+    const SLUG_REDIRECTS = {
+      'town-country-fuel': 'town-and-country-fuel-pa',
+      'getcodoil': null,             // removed broker — 410 Gone
+      's-s-fuel': 's-s-fuel',        // merged duplicate, keep canonical
+    };
     const slug = req.path.slice('/supplier/'.length);
+    if (slug in SLUG_REDIRECTS) {
+      const target = SLUG_REDIRECTS[slug];
+      if (target === null) return res.status(410).send('This supplier listing has been removed.');
+      return res.redirect(301, `/supplier/${target}`);
+    }
     const candidates = new Set();
 
     // Strip trailing hyphens: "dan-s-oil-co-" → "dan-s-oil-co"
