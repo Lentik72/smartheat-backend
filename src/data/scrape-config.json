@@ -13020,6 +13020,7 @@
     "pattern": "direct",
     "notes": "MA + NH - County Energy Products, Chelmsford MA. Serves MA Middlesex/Essex + NH Hillsborough/Rockingham. NH price appears as 'NH $X.XX' on homepage.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "keroseneReview": true,
     "postalCodesServed": [
       "01432",
       "01450",
