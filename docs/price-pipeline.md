@@ -50,11 +50,12 @@ On HTTP 403, auto-retries with `got-scraping` (browser TLS fingerprint). Only Cl
 active → (2 consecutive fails) → cooldown (7 days)
 active → (3 fails in 30-day window) → phone_only
 cooldown → (expiry) → active
-phone_only → (1st of month reset) → active
+phone_only → (1st of month reset) → active (all counters AND failure dates cleared)
 any state → (successful scrape) → active (all counters reset)
 ```
 
 Phone_only takes precedence over cooldown when both conditions are met.
+Monthly reset clears `scrape_failure_dates` — without this, old dates in the 30-day window cause immediate re-blocking on the first new failure.
 
 ## SMS Two-Step Confirmation
 

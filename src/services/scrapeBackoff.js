@@ -150,7 +150,9 @@ async function monthlyReset(sequelize, logger) {
     UPDATE suppliers SET
       scrape_status = 'active',
       consecutive_scrape_failures = 0,
+      scrape_failure_dates = '[]'::jsonb,
       scrape_cooldown_until = NULL,
+      last_scrape_error = NULL,
       updated_at = NOW()
     WHERE scrape_status = 'phone_only'
     RETURNING name

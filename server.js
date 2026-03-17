@@ -592,6 +592,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/110-add-kerosene-fuel-type', label: 'Add kerosene fuel type' },
           { path: './src/migrations/111-fix-price-alert-last-seen', label: 'Fix price alert first-send bug' },
           { path: './src/migrations/112-add-central-pa-suppliers', label: 'Central PA suppliers (Dolan Oil, Talley Petroleum)' },
+          { path: './src/migrations/113-reset-jsonld-blocked-suppliers', label: 'Reset 40 blocked suppliers (fix monthlyReset failure dates bug)' },
         ];
 
         let migrationErrors = 0;
