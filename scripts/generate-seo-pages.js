@@ -189,7 +189,7 @@ async function generateSEOPages(options = {}) {
     const websiteDir = outputDir || WEBSITE_DIR;
 
     // 1. Get all suppliers with their service areas
-    const suppliers = await getAllSuppliers(sequelize);
+    let suppliers = await getAllSuppliers(sequelize);
     log(`📊 Found ${suppliers.length} active suppliers`);
 
     // 2. Get all current prices
@@ -210,6 +210,17 @@ async function generateSEOPages(options = {}) {
       GROUP BY state_code
     `, { replacements: { crossFuelType: FUEL.crossLinkFuel } });
     const crossLinkStateMap = new Map(crossLinkStates.map(s => [s.state_code, parseInt(s.total_suppliers)]));
+
+    // V2.12.0: For non-oil fuels, filter supplier list to only those that deliver this fuel
+    // Suppliers qualify if they list the fuel in fuel_types OR have a scraped price for it
+    if (FUEL.fuelType !== 'heating_oil') {
+      const fuelKey = FUEL.fuelType; // 'kerosene'
+      suppliers = suppliers.filter(s => {
+        const ft = s.fuel_types || [];
+        return ft.includes(fuelKey) || priceMap.has(s.id);
+      });
+      log(`🔥 Filtered to ${suppliers.length} suppliers that deliver ${FUEL.label}`);
+    }
 
     // 3. Track generated pages for sitemap
     const generatedPages = {
@@ -243,15 +254,12 @@ async function generateSEOPages(options = {}) {
         (s.service_counties && s.service_counties.some(c => c.includes(stateCode)))
       );
 
-      // V2.12.0: For non-oil fuels, only count suppliers that have prices for this fuel
-      // Plan threshold: ≥5 kerosene suppliers for a state page
+      // V2.12.0: For non-oil fuels, suppliers list is pre-filtered above.
+      // stateSuppliers now only contains suppliers that deliver this fuel.
       const fuelThreshold = FUEL.fuelType === 'heating_oil' ? MIN_SUPPLIERS_FOR_PAGE : 5;
-      const suppliersWithFuelPrices = FUEL.fuelType === 'heating_oil'
-        ? stateSuppliers
-        : stateSuppliers.filter(s => priceMap.has(s.id));
 
-      if (suppliersWithFuelPrices.length < fuelThreshold) {
-        log(`   ⏭️  Skipping ${stateCode} (only ${suppliersWithFuelPrices.length} ${FUEL.label.toLowerCase()} suppliers, need ${fuelThreshold})`);
+      if (stateSuppliers.length < fuelThreshold) {
+        log(`   ⏭️  Skipping ${stateCode} (only ${stateSuppliers.length} ${FUEL.label.toLowerCase()} suppliers, need ${fuelThreshold})`);
         continue;
       }
 

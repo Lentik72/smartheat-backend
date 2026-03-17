@@ -22,6 +22,7 @@ async function getAllSuppliers(sequelize) {
       slug,
       postal_codes_served,
       service_counties,
+      fuel_types,
       allow_price_display,
       claimed_at,
       verified
