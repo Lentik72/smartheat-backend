@@ -20660,7 +20660,18 @@
         "enabled": true,
         "priceRegex": "K1 KEROSENE[\\s\\S]{0,200}\\$([0-9]+\\.[0-9]{2,3})"
       }
-    }
+    },
+    "postalCodesServed": [
+      "03561",
+      "03574",
+      "03580",
+      "03585",
+      "03586",
+      "03595",
+      "03598",
+      "03740",
+      "03785"
+    ]
   },
   "presbyenergy.com": {
     "enabled": true,
@@ -27227,18 +27238,7 @@
   "_no_website_harris-energy": {
     "enabled": false,
     "pattern": "none",
-    "notes": "DISABLED: No website — directory-only. Slug: harris-energy",
-    "postalCodesServed": [
-      "03561",
-      "03574",
-      "03580",
-      "03585",
-      "03586",
-      "03595",
-      "03598",
-      "03740",
-      "03785"
-    ]
+    "notes": "MERGED into harrisenergyinc.com — this entry is now unused."
   },
   "_no_website_heim-fuel-service": {
     "enabled": false,
