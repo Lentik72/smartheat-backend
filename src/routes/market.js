@@ -275,6 +275,7 @@ router.get('/leaderboard', async (req, res) => {
         AND sp.expires_at > NOW()
         AND sp.scraped_at > NOW() - INTERVAL '36 hours'
         AND sp.price_per_gallon BETWEEN 2.00 AND 6.00
+        AND sp.fuel_type = 'heating_oil'
       ORDER BY s.id, sp.scraped_at DESC
     `);
 

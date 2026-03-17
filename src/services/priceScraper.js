@@ -47,6 +47,15 @@ async function getGotScraping() {
 function extractPrice(html, config) {
   if (!html || !config) return null;
 
+  // V2.13.0: Strip JSON-LD schema.org blocks before price extraction.
+  // Website owners frequently forget to update JSON-LD when changing prices,
+  // causing the generic regex to match stale metadata before the displayed price.
+  // Suppliers that intentionally read from JSON-LD (e.g., Wix product pages)
+  // can opt out with useJsonLd: true in their scrape config.
+  if (!config.useJsonLd) {
+    html = html.replace(/<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '');
+  }
+
   // V2.11.0: Normalize <sup> digit tags — some sites render the last price digit
   // in a <sup> tag (e.g., "$4.85<sup style="...">9</sup>" = $4.859).
   // Strip the tag, keep the digit, so standard regexes match the full price.

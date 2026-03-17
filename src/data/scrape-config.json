@@ -20851,6 +20851,7 @@
     "enabled": true,
     "pattern": "direct",
     "pricePath": "/product-page/heating-oil",
+    "useJsonLd": true,
     "notes": "NH Canterbury/Central - COD cash/check. Wix site. Price in JSON-LD schema on product page. MUST use www prefix.",
     "priceRegex": "\"price\":\"([0-9]+\\.[0-9]{2,3})\"",
     "postalCodesServed": [
