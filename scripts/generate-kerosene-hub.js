@@ -62,31 +62,35 @@ async function main() {
     await sequelize.authenticate();
     console.log('✅ Database connected');
 
-    // Get kerosene stats per state
+    // Get kerosene suppliers per state (by fuel_types field, not just scraped prices)
     const [stateStats] = await sequelize.query(`
+      SELECT
+        s.state as state_code,
+        COUNT(*) as total_suppliers
+      FROM suppliers s
+      WHERE s.active = true
+        AND s.fuel_types::text ILIKE '%kerosene%'
+      GROUP BY s.state
+      ORDER BY COUNT(*) DESC
+    `);
+
+    // Get scraped kerosene price stats per state (for median/min/max display)
+    const [priceStats] = await sequelize.query(`
       SELECT
         state_code,
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY median_price) as state_median,
         MIN(min_price) as state_min,
-        MAX(max_price) as state_max,
-        SUM(supplier_count) as total_suppliers,
-        COUNT(*) as county_count
+        MAX(max_price) as state_max
       FROM county_current_stats
-      WHERE fuel_type = 'kerosene'
-        AND median_price IS NOT NULL
+      WHERE fuel_type = 'kerosene' AND median_price IS NOT NULL
       GROUP BY state_code
-      ORDER BY SUM(supplier_count) DESC
     `);
+    const priceStatMap = new Map(priceStats.map(p => [p.state_code, p]));
 
-    console.log(`📊 Found ${stateStats.length} states with kerosene data`);
+    console.log(`📊 Found ${stateStats.length} states with kerosene suppliers`);
 
-    // Get total kerosene prices in DB
-    const [totalPrices] = await sequelize.query(`
-      SELECT COUNT(DISTINCT supplier_id) as suppliers, COUNT(*) as prices
-      FROM supplier_prices
-      WHERE fuel_type = 'kerosene' AND is_valid = true AND expires_at > NOW()
-    `);
-    const totalKeroSuppliers = parseInt(totalPrices[0]?.suppliers || 0);
+    // Total kerosene suppliers
+    const totalKeroSuppliers = stateStats.reduce((sum, s) => sum + parseInt(s.total_suppliers), 0);
 
     // Separate states meeting threshold from those below
     const qualifiedStates = [];
@@ -96,15 +100,16 @@ async function main() {
       const stateInfo = STATES[stat.state_code];
       if (!stateInfo) continue;
 
+      const ps = priceStatMap.get(stat.state_code);
       const data = {
         code: stat.state_code,
         name: stateInfo.name,
         abbrev: stateInfo.abbrev,
-        median: parseFloat(stat.state_median),
-        min: parseFloat(stat.state_min),
-        max: parseFloat(stat.state_max),
+        median: ps ? parseFloat(ps.state_median) : null,
+        min: ps ? parseFloat(ps.state_min) : null,
+        max: ps ? parseFloat(ps.state_max) : null,
         suppliers: parseInt(stat.total_suppliers),
-        counties: parseInt(stat.county_count),
+        hasPriceData: !!ps,
       };
 
       if (data.suppliers >= MIN_SUPPLIERS_FOR_STATE) {
@@ -127,9 +132,9 @@ async function main() {
               <tr>
                 <td><a href="/prices/kerosene/${s.abbrev}/">${escapeHtml(s.name)}</a></td>
                 <td>${s.suppliers}</td>
-                <td>$${s.median.toFixed(2)}</td>
-                <td>$${s.min.toFixed(2)} – $${s.max.toFixed(2)}</td>
-                <td><a href="/prices/kerosene/${s.abbrev}/">View prices →</a></td>
+                <td>${s.median ? '$' + s.median.toFixed(2) : 'Call'}</td>
+                <td>${s.min && s.max ? '$' + s.min.toFixed(2) + ' – $' + s.max.toFixed(2) : '—'}</td>
+                <td><a href="/prices/kerosene/${s.abbrev}/">View suppliers →</a></td>
               </tr>`).join('');
 
     // Mention states (below threshold)
@@ -224,7 +229,7 @@ async function main() {
         <p class="kh-stat-value">${qualifiedStates.length + mentionStates.length}</p>
         <p class="kh-stat-label">States Covered</p>
       </div>
-      ${qualifiedStates.length > 0 ? `<div class="kh-stat">
+      ${qualifiedStates.length > 0 && qualifiedStates[0].median ? `<div class="kh-stat">
         <p class="kh-stat-value">$${qualifiedStates[0].median.toFixed(2)}</p>
         <p class="kh-stat-label">Avg Price (${qualifiedStates[0].name})</p>
       </div>` : ''}
@@ -289,7 +294,7 @@ async function main() {
     }
 
     qualifiedStates.forEach(s => {
-      console.log(`  ${s.name}: ${s.suppliers} suppliers, $${s.median.toFixed(2)} median`);
+      console.log(`  ${s.name}: ${s.suppliers} suppliers${s.median ? ', $' + s.median.toFixed(2) + ' median' : ''}`);
     });
 
     await sequelize.close();
