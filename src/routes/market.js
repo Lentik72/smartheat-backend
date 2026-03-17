@@ -5,7 +5,7 @@ const router = express.Router();
 
 // V2.18.1: Priority re-scrape for leaderboard accuracy
 const { scrapeSupplierPrice, loadScrapeConfig, getConfigForSupplier } = require('../services/priceScraper');
-const LEADERBOARD_STALE_THRESHOLD_MS = 4 * 60 * 60 * 1000; // 4 hours
+const LEADERBOARD_STALE_THRESHOLD_MS = 0; // TEMP: force re-scrape to flush stale JSON-LD prices — revert to 4 * 60 * 60 * 1000
 
 // Validation middleware
 const validateZipCode = param('zipCode').matches(/^\d{5}$/).withMessage('Invalid ZIP code format');
