@@ -233,7 +233,13 @@ async function scrapeSupplierPriceOnce(supplier, config) {
           if (val == null) break;
           val = val[p];
         }
-        const price = parseFloat(val);
+        let price = parseFloat(val);
+        // If the JSON field is a text string (e.g., banner content), extract price via regex
+        if (isNaN(price) && typeof val === 'string' && config.priceRegex) {
+          const re = new RegExp(config.priceRegex);
+          const m = re.exec(val);
+          if (m && m[1]) price = parseFloat(m[1]);
+        }
         const apiRange = FUEL_PRICE_RANGES.heating_oil || [2.00, 5.50];
         if (isNaN(price) || price < apiRange[0] || price > apiRange[1]) {
           return { supplierId: supplier.id, supplierName: supplier.name, success: false,

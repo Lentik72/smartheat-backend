@@ -1,12 +1,14 @@
-// Migration 115: Reset 2 suppliers whose regexes were updated after site redesigns.
+// Migration 115: Reset 3 suppliers whose configs were updated after site changes.
 //
 // Paul's Services: old regex targeted class="price">$, price moved to <h1>Oil Price: $X.XXX</h1>
 // R&R Oil: old regex targeted "Home Heating Oil $", text removed, price now in bare <h1>
+// Hometown Fuel: price is in PHD marquee banner API, not in static HTML. Switched to json_api.
 
 async function up(sequelize) {
   const slugs = [
     'pauls-services',
     'r-and-r-oil',
+    'hometown-fuel',
   ];
 
   const [, meta] = await sequelize.query(`
