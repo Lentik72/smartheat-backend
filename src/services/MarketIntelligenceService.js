@@ -135,6 +135,7 @@ async function computeScrapedSignal(zipCode, radiusMiles = 20) {
       WHERE sp.is_valid = true
       AND sp.scraped_at >= $1
       AND sp.source_type = 'scraped'
+      AND sp.fuel_type = 'heating_oil'
       AND s.postal_codes_served ? $2
     `, { bind: [twoWeeksAgo.toISOString(), zipCode] });
 
@@ -152,6 +153,7 @@ async function computeScrapedSignal(zipCode, radiusMiles = 20) {
         WHERE sp.is_valid = true
         AND sp.scraped_at >= $1
         AND sp.source_type = 'scraped'
+        AND sp.fuel_type = 'heating_oil'
         AND EXISTS (
           SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS z
           WHERE z LIKE $2
@@ -171,6 +173,7 @@ async function computeScrapedSignal(zipCode, radiusMiles = 20) {
         WHERE sp.is_valid = true
         AND sp.scraped_at >= $1
         AND sp.source_type = 'scraped'
+        AND sp.fuel_type = 'heating_oil'
         AND EXISTS (
           SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS z
           WHERE z LIKE $2
@@ -210,6 +213,7 @@ async function computeAggregatorSignal(zipCode) {
       WHERE sp.is_valid = true
       AND sp.scraped_at >= $1
       AND sp.source_type = 'aggregator_signal'
+      AND sp.fuel_type = 'heating_oil'
     `, { bind: [twoWeeksAgo.toISOString()] });
 
     // Build signal with aggregator flag (caps strength)
@@ -243,6 +247,7 @@ async function computeCommunitySignal(zipCode) {
       WHERE sp.is_valid = true
       AND sp.scraped_at >= $1
       AND sp.source_type = 'user_reported'
+      AND sp.fuel_type = 'heating_oil'
     `, { bind: [twoWeeksAgo.toISOString()] });
 
     // Also check community_prices if that table exists

@@ -224,7 +224,7 @@ class SupplierDiagnosticsService {
           price_per_gallon,
           scraped_at
         FROM supplier_prices
-        WHERE is_valid = true
+        WHERE is_valid = true AND fuel_type = 'heating_oil'
         ORDER BY supplier_id, scraped_at DESC
       )
       SELECT

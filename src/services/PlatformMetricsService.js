@@ -282,7 +282,7 @@ class PlatformMetricsService {
           jsonb_array_elements_text(s.postal_codes_served) AS zip_code,
           MAX(sp.scraped_at) AS latest_price_at
         FROM suppliers s
-        JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.is_valid = true
+        JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.is_valid = true AND sp.fuel_type = 'heating_oil'
         WHERE s.active = true
           AND s.allow_price_display = true
           AND jsonb_typeof(s.postal_codes_served) = 'array'

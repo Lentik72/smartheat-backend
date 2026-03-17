@@ -254,7 +254,7 @@ router.get('/overview', async (req, res) => {
         LEFT JOIN (
           SELECT DISTINCT ON (supplier_id) supplier_id, id, scraped_at
           FROM supplier_prices
-          WHERE is_valid = true
+          WHERE is_valid = true AND fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         ) sp ON s.id = sp.supplier_id
         WHERE s.active = true AND s.allow_price_display = true
@@ -474,7 +474,7 @@ router.get('/clicks', async (req, res) => {
         WITH latest_prices AS (
           SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
           FROM supplier_prices
-          WHERE is_valid = true
+          WHERE is_valid = true AND fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         ),
         market_avg AS (
@@ -745,6 +745,7 @@ router.get('/prices', async (req, res) => {
           ROUND(MAX(price_per_gallon)::numeric, 3) as "maxPrice"
         FROM supplier_prices
         WHERE scraped_at > NOW() - INTERVAL '${days} days'
+          AND fuel_type = 'heating_oil'
         GROUP BY DATE(scraped_at)
         ORDER BY date
       `, { type: sequelize.QueryTypes.SELECT }),
@@ -760,7 +761,7 @@ router.get('/prices', async (req, res) => {
         INNER JOIN (
           SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
           FROM supplier_prices
-          WHERE is_valid = true
+          WHERE is_valid = true AND fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         ) lp ON s.id = lp.supplier_id
         WHERE s.active = true
@@ -773,7 +774,7 @@ router.get('/prices', async (req, res) => {
         WITH latest_prices AS (
           SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon
           FROM supplier_prices
-          WHERE is_valid = true
+          WHERE is_valid = true AND fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         )
         SELECT
@@ -842,7 +843,7 @@ router.get('/scraper-health', async (req, res) => {
         WITH latest_prices AS (
           SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
           FROM supplier_prices
-          WHERE is_valid = true
+          WHERE is_valid = true AND fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         )
         SELECT
@@ -858,7 +859,7 @@ router.get('/scraper-health', async (req, res) => {
         WITH latest_prices AS (
           SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
           FROM supplier_prices
-          WHERE is_valid = true
+          WHERE is_valid = true AND fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         )
         SELECT
@@ -1069,7 +1070,7 @@ router.get('/suppliers', async (req, res) => {
         WITH latest_prices AS (
           SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
           FROM supplier_prices
-          WHERE is_valid = true
+          WHERE is_valid = true AND fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         )
         SELECT
@@ -1096,7 +1097,7 @@ router.get('/suppliers', async (req, res) => {
         WITH latest_prices AS (
           SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
           FROM supplier_prices
-          WHERE is_valid = true
+          WHERE is_valid = true AND fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         )
         SELECT COUNT(*) as count
@@ -1141,7 +1142,7 @@ router.get('/suppliers/map', async (req, res) => {
       WITH latest_prices AS (
         SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
         FROM supplier_prices
-        WHERE is_valid = true
+        WHERE is_valid = true AND fuel_type = 'heating_oil'
         ORDER BY supplier_id, scraped_at DESC
       )
       SELECT
@@ -1274,7 +1275,7 @@ router.get('/suppliers/:id', async (req, res) => {
       LEFT JOIN (
         SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
         FROM supplier_prices
-        WHERE is_valid = true
+        WHERE is_valid = true AND fuel_type = 'heating_oil'
         ORDER BY supplier_id, scraped_at DESC
       ) lp ON s.id = lp.supplier_id
       WHERE s.id = :id
@@ -1288,7 +1289,7 @@ router.get('/suppliers/:id', async (req, res) => {
     const priceHistory = await sequelize.query(`
       SELECT price_per_gallon, scraped_at
       FROM supplier_prices
-      WHERE supplier_id = :id
+      WHERE supplier_id = :id AND fuel_type = 'heating_oil'
       ORDER BY scraped_at DESC
       LIMIT 30
     `, { replacements: { id }, type: sequelize.QueryTypes.SELECT });
@@ -1536,10 +1537,10 @@ router.put('/suppliers/:id', async (req, res) => {
     const [updated] = await sequelize.query(`
       SELECT s.*,
         (SELECT price_per_gallon FROM supplier_prices
-         WHERE supplier_id = s.id AND is_valid = true
+         WHERE supplier_id = s.id AND is_valid = true AND fuel_type = 'heating_oil'
          ORDER BY scraped_at DESC LIMIT 1) as current_price,
         (SELECT scraped_at FROM supplier_prices
-         WHERE supplier_id = s.id AND is_valid = true
+         WHERE supplier_id = s.id AND is_valid = true AND fuel_type = 'heating_oil'
          ORDER BY scraped_at DESC LIMIT 1) as price_updated_at
       FROM suppliers s WHERE s.id = :id
     `, { replacements: { id }, type: sequelize.QueryTypes.SELECT });
@@ -2208,6 +2209,7 @@ router.get('/price-alerts', async (req, res) => {
         FROM supplier_prices
         WHERE scraped_at > NOW() - INTERVAL '7 days'
           AND is_valid = true
+          AND fuel_type = 'heating_oil'
       )
       SELECT
         s.name,
@@ -3368,7 +3370,7 @@ router.get('/leaderboard', async (req, res) => {
           price_per_gallon as current_price,
           scraped_at as price_updated
         FROM supplier_prices
-        WHERE is_valid = true
+        WHERE is_valid = true AND fuel_type = 'heating_oil'
         ORDER BY supplier_id, scraped_at DESC
       ),
       market_avg AS (
@@ -3376,6 +3378,7 @@ router.get('/leaderboard', async (req, res) => {
         FROM supplier_prices sp
         JOIN suppliers s ON sp.supplier_id = s.id
         WHERE sp.is_valid = true
+          AND sp.fuel_type = 'heating_oil'
           AND sp.scraped_at > NOW() - INTERVAL '7 days'
           AND s.active = true
       ),

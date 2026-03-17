@@ -379,6 +379,7 @@ class CommandCenterService {
         JOIN suppliers s ON sp.supplier_id = s.id
         WHERE sp.is_valid = true AND s.active = true
           AND sp.scraped_at > NOW() - INTERVAL '48 hours'
+          AND sp.fuel_type = 'heating_oil'
       ),
       recent_conv AS (
         SELECT
@@ -448,6 +449,7 @@ class CommandCenterService {
           scraped_at
         FROM supplier_prices
         WHERE is_valid = true
+          AND fuel_type = 'heating_oil'
         ORDER BY supplier_id, scraped_at DESC
       )
       SELECT
@@ -520,6 +522,7 @@ class CommandCenterService {
           ROW_NUMBER() OVER (PARTITION BY supplier_id ORDER BY scraped_at DESC) as rn
         FROM supplier_prices
         WHERE is_valid = true
+          AND fuel_type = 'heating_oil'
           AND scraped_at > NOW() - INTERVAL '7 days'
       ),
       current_prices AS (
@@ -632,6 +635,7 @@ class CommandCenterService {
         SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
         FROM supplier_prices
         WHERE is_valid = true
+          AND fuel_type = 'heating_oil'
         ORDER BY supplier_id, scraped_at DESC
       )
       SELECT s.name, s.city, s.state, s.website,
@@ -703,6 +707,7 @@ class CommandCenterService {
         JOIN suppliers s ON sp.supplier_id = s.id
         WHERE sp.is_valid = true AND s.active = true
           AND sp.scraped_at > NOW() - INTERVAL '48 hours'
+          AND sp.fuel_type = 'heating_oil'
       ),
       daily AS (
         SELECT
@@ -759,6 +764,7 @@ class CommandCenterService {
       FROM supplier_prices sp
       JOIN suppliers s ON sp.supplier_id = s.id
       WHERE sp.is_valid = true
+        AND sp.fuel_type = 'heating_oil'
         AND ${pipelineFilter}
         AND s.scrape_status = 'active'
         AND sp.scraped_at > NOW() - INTERVAL '7 days'
@@ -766,6 +772,7 @@ class CommandCenterService {
           SELECT 1 FROM supplier_prices sp2
           WHERE sp2.supplier_id = sp.supplier_id
             AND sp2.is_valid = true
+            AND sp2.fuel_type = 'heating_oil'
             AND sp2.scraped_at <= NOW() - INTERVAL '7 days'
             AND sp2.scraped_at > NOW() - INTERVAL '14 days'
         )
@@ -779,7 +786,7 @@ class CommandCenterService {
     const [wentStale] = await sequelize.query(`
       WITH latest AS (
         SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
-        FROM supplier_prices WHERE is_valid = true
+        FROM supplier_prices WHERE is_valid = true AND fuel_type = 'heating_oil'
         ORDER BY supplier_id, scraped_at DESC
       )
       SELECT COUNT(*) as cnt FROM latest l
@@ -971,7 +978,8 @@ class CommandCenterService {
         SELECT (scraped_at AT TIME ZONE '${TZ}')::date as day,
           PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY price_per_gallon) as median_price
         FROM supplier_prices
-        WHERE is_valid = true AND scraped_at > (NOW() AT TIME ZONE '${TZ}')::date - INTERVAL '30 days'
+        WHERE is_valid = true AND fuel_type = 'heating_oil'
+          AND scraped_at > (NOW() AT TIME ZONE '${TZ}')::date - INTERVAL '30 days'
         GROUP BY (scraped_at AT TIME ZONE '${TZ}')::date
         ORDER BY day ASC
       `).then(([r]) => r),

@@ -49,7 +49,7 @@ class SniperMailer {
       LEFT JOIN LATERAL (
         SELECT price_per_gallon
         FROM supplier_prices
-        WHERE supplier_id = sc.supplier_id
+        WHERE supplier_id = sc.supplier_id AND fuel_type = 'heating_oil'
         ORDER BY scraped_at DESC
         LIMIT 1
       ) sp ON true
