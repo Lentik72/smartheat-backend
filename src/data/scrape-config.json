@@ -22585,7 +22585,12 @@
     "phone": "(207) 565-2746",
     "notes": "ME Eastbrook/Downeast - Senior + military discounts. Hancock/Washington Counties. Price in PHD marquee banner API.",
     "priceRegex": "#2 Fuel \\$([0-9]+\\.[0-9]{2,3})",
-    "keroseneReview": true,
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kero \\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
     "postalCodesServed": [
       "04605",
       "04607",

@@ -246,12 +246,15 @@ async function scrapeSupplierPriceOnce(supplier, config) {
             error: `API price ${val} invalid`, duration: Date.now() - startTime, retryable: false };
         }
         const sourceType = config.displayable === false ? 'aggregator_signal' : 'scraped';
+        // Extract additional fuel prices from text-based API responses
+        const fuelPrices = typeof val === 'string' ? extractFuelPrices(val, config) : [];
         return {
           supplierId: supplier.id, supplierName: supplier.name, success: true,
           pricePerGallon: price, minGallons: 100, fuelType: 'heating_oil', sourceType,
           sourceUrl: apiUrl, scrapedAt: new Date(),
           expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
-          duration: Date.now() - startTime, isAggregator: config.displayable === false
+          duration: Date.now() - startTime, isAggregator: config.displayable === false,
+          fuelPrices,
         };
       } catch (e) {
         clearTimeout(apiTimeout);
