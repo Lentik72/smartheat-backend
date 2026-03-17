@@ -2,14 +2,15 @@
  * Price Scraper Service
  * V1.5.0: Scrapes published prices from supplier websites
  * V2.1.0: Added displayable flag support for aggregator signals
+ * V2.12.0: Multi-fuel extraction — scrape kerosene (and future fuels) from same HTML
  *
  * Architecture:
  * - Honest User-Agent (HomeHeatBot)
  * - Target 150+ gallon tier prices
- * - Filter to #2 heating oil only
  * - Rate limiting: 2-second delay between requests
  * - Failure alerting: >20% fail rate triggers warning
  * - Aggregator signals: displayable=false -> sourceType='aggregator_signal'
+ * - Multi-fuel: config.fuels object per entry, each fuel extracted independently
  */
 
 const fs = require('fs');
@@ -46,6 +47,11 @@ async function getGotScraping() {
 function extractPrice(html, config) {
   if (!html || !config) return null;
 
+  // V2.11.0: Normalize <sup> digit tags — some sites render the last price digit
+  // in a <sup> tag (e.g., "$4.85<sup style="...">9</sup>" = $4.859).
+  // Strip the tag, keep the digit, so standard regexes match the full price.
+  html = html.replace(/<sup[^>]*>(\d)<\/sup>/gi, '$1');
+
   // V2.8.0: Handle "split" pattern where price is split across elements (e.g., "$ 3" + "199" = $3.199)
   if (config.pattern === 'split' && config.priceRegex) {
     const splitRegex = new RegExp(config.priceRegex, 'gi');
@@ -53,7 +59,8 @@ function extractPrice(html, config) {
     if (match && match[1] && match[2]) {
       // Combine: match[1] = whole dollars, match[2] = cents/thousandths
       const price = parseFloat(match[1] + '.' + match[2]);
-      if (price >= 2.00 && price <= 5.00) {
+      const splitRange = FUEL_PRICE_RANGES.heating_oil || [2.00, 5.50];
+      if (price >= splitRange[0] && price <= splitRange[1]) {
         return price;
       }
     }
@@ -65,11 +72,13 @@ function extractPrice(html, config) {
     ? new RegExp(config.priceRegex, 'gi')
     : /\$\s*([0-9]+\.[0-9]{2,3})/gi;
 
+  // V2.12.0: Use FUEL_PRICE_RANGES for oil validation (was hardcoded $2-$5)
+  const oilRange = FUEL_PRICE_RANGES.heating_oil || [2.00, 5.50];
   const matches = [];
   let match;
   while ((match = priceRegex.exec(html)) !== null) {
     const price = parseFloat(match[1]);
-    if (price >= 2.00 && price <= 5.00) {
+    if (price >= oilRange[0] && price <= oilRange[1]) {
       matches.push(price);
     }
   }
@@ -96,11 +105,52 @@ function extractPrice(html, config) {
   return matches[0];
 }
 
+// V2.12.0: Fuel-specific validation ranges
+const FUEL_PRICE_RANGES = {
+  heating_oil: [2.00, 5.50],
+  kerosene: [2.50, 6.50],
+};
+
+/**
+ * V2.12.0: Extract additional fuel prices from HTML using config.fuels
+ * Each fuel is extracted independently — one failure doesn't block others.
+ * @param {string} html - Raw HTML (already sup-normalized)
+ * @param {object} config - Full scrape config for this supplier
+ * @returns {Array<{fuelType: string, price: number}>} - Extracted fuel prices
+ */
+function extractFuelPrices(html, config) {
+  if (!html || !config || !config.fuels) return [];
+
+  const results = [];
+
+  for (const [fuelType, fuelConfig] of Object.entries(config.fuels)) {
+    if (!fuelConfig.enabled || !fuelConfig.priceRegex) continue;
+
+    const range = FUEL_PRICE_RANGES[fuelType] || [2.00, 8.00];
+
+    try {
+      const regex = new RegExp(fuelConfig.priceRegex, 'gi');
+      const match = regex.exec(html);
+      if (match && match[1]) {
+        const price = parseFloat(match[1]);
+        if (price >= range[0] && price <= range[1]) {
+          results.push({ fuelType, price });
+        }
+      }
+    } catch (err) {
+      // Bad regex in config — log but don't crash
+      console.warn(`⚠️ Bad regex for fuel ${fuelType}: ${err.message}`);
+    }
+  }
+
+  return results;
+}
+
 /**
  * Fetch and scrape price from a supplier website (single attempt)
  * @param {object} supplier - Supplier record with id, name, website
  * @param {object} config - Scrape config for this supplier
- * @returns {object} - Result with price data or error
+ * @returns {object} - Result with price data or error. V2.12.0: includes fuelPrices array.
  */
 async function scrapeSupplierPriceOnce(supplier, config) {
   const startTime = Date.now();
@@ -175,7 +225,8 @@ async function scrapeSupplierPriceOnce(supplier, config) {
           val = val[p];
         }
         const price = parseFloat(val);
-        if (isNaN(price) || price < 2.00 || price > 5.00) {
+        const apiRange = FUEL_PRICE_RANGES.heating_oil || [2.00, 5.50];
+        if (isNaN(price) || price < apiRange[0] || price > apiRange[1]) {
           return { supplierId: supplier.id, supplierName: supplier.name, success: false,
             error: `API price ${val} invalid`, duration: Date.now() - startTime, retryable: false };
         }
@@ -250,8 +301,9 @@ async function scrapeSupplierPriceOnce(supplier, config) {
             if (gotResponse.statusCode === 200) {
               const gotHtml = gotResponse.body;
               const gotPrice = extractPrice(gotHtml, config);
+              const gotFuelPrices = extractFuelPrices(gotHtml, config); // V2.12.0
 
-              if (gotPrice !== null && gotPrice >= 2.00 && gotPrice <= 5.00) {
+              if (gotPrice !== null && gotPrice >= 2.00 && gotPrice <= 5.50) {
                 const sourceType = config.displayable === false ? 'aggregator_signal' : 'scraped';
                 return {
                   supplierId: supplier.id,
@@ -266,7 +318,8 @@ async function scrapeSupplierPriceOnce(supplier, config) {
                   expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
                   duration: Date.now() - startTime,
                   isAggregator: config.displayable === false,
-                  fallbackUsed: 'got-scraping'
+                  fallbackUsed: 'got-scraping',
+                  fuelPrices: gotFuelPrices, // V2.12.0
                 };
               }
             }
@@ -290,29 +343,36 @@ async function scrapeSupplierPriceOnce(supplier, config) {
 
     const html = await response.text();
 
-    // Extract price
+    // V2.12.0: Extract additional fuel prices from same HTML (independent of oil)
+    const fuelPrices = extractFuelPrices(html, config);
+
+    // Extract oil price
     const price = extractPrice(html, config);
 
     if (price === null) {
+      // Oil failed — but fuel prices may have succeeded
       return {
         supplierId: supplier.id,
         supplierName: supplier.name,
         success: false,
         error: 'Price not found in HTML',
         duration: Date.now() - startTime,
-        retryable: false // HTML structure issue, retry won't help
+        retryable: false,
+        fuelPrices, // V2.12.0: may contain kerosene even if oil failed
       };
     }
 
-    // Validate range
-    if (price < 2.00 || price > 5.00) {
+    // Validate range (uses centralized FUEL_PRICE_RANGES)
+    const validRange = FUEL_PRICE_RANGES.heating_oil || [2.00, 5.50];
+    if (price < validRange[0] || price > validRange[1]) {
       return {
         supplierId: supplier.id,
         supplierName: supplier.name,
         success: false,
         error: `Price $${price} outside valid range`,
         duration: Date.now() - startTime,
-        retryable: false
+        retryable: false,
+        fuelPrices, // V2.12.0
       };
     }
 
@@ -333,7 +393,8 @@ async function scrapeSupplierPriceOnce(supplier, config) {
       expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 hours - survives one missed scrape cycle
       duration: Date.now() - startTime,
       // V2.1.0: Include displayable flag for logging/debugging
-      isAggregator: config.displayable === false
+      isAggregator: config.displayable === false,
+      fuelPrices, // V2.12.0: additional fuel prices from same HTML
     };
 
   } catch (error) {
@@ -460,6 +521,8 @@ function getSourceType(config) {
 module.exports = {
   USER_AGENT,
   extractPrice,
+  extractFuelPrices, // V2.12.0: Multi-fuel extraction
+  FUEL_PRICE_RANGES, // V2.12.0: Per-fuel validation ranges
   scrapeSupplierPrice,
   loadScrapeConfig,
   getConfigForSupplier,

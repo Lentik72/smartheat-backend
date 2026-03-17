@@ -65,6 +65,7 @@ async function main() {
         AND sp.expires_at > NOW()
         AND sp.scraped_at > NOW() - INTERVAL '72 hours'
         AND sp.source_type != 'aggregator_signal'
+        AND sp.fuel_type = 'heating_oil'
       GROUP BY sz.zip_code
     )
     SELECT

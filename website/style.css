@@ -1975,6 +1975,36 @@ body {
     color: var(--text-secondary);
 }
 
+/* V2.12.0: Kerosene cross-sell banner */
+.kerosene-cross-sell {
+    background: #f0f7ff;
+    border: 1px solid #d0e3f7;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    text-align: center;
+}
+.kerosene-cross-sell h4 {
+    font-size: 1rem;
+    margin: 0 0 4px;
+    color: #1a365d;
+}
+.kerosene-cross-sell p {
+    font-size: 0.875rem;
+    color: #4a5568;
+    margin: 0 0 8px;
+}
+.kerosene-cross-sell-link {
+    display: inline-block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary-orange, #FF6B35);
+    text-decoration: none;
+}
+.kerosene-cross-sell-link:hover {
+    text-decoration: underline;
+}
+
 .supplier-card-unpriced {
     border-style: dashed;
     background: var(--background-light);

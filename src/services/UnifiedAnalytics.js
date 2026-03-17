@@ -1379,6 +1379,7 @@ class UnifiedAnalytics {
           SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon
           FROM supplier_prices
           WHERE is_valid = true
+            AND fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         ),
         market_avg AS (
@@ -1478,6 +1479,7 @@ class UnifiedAnalytics {
           FROM supplier_prices
           WHERE scraped_at > NOW() - INTERVAL '${days} days'
             AND is_valid = true
+            AND fuel_type = 'heating_oil'
           GROUP BY DATE(scraped_at)
         ),
         all_engagements AS (

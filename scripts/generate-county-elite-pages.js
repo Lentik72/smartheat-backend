@@ -37,7 +37,8 @@ const locationResolver = require('../src/services/locationResolver');
 const MIN_VALID_PRICE = 2.00;
 const MAX_VALID_PRICE = 6.00;
 const WEBSITE_DIR = path.join(__dirname, '../website');
-const COUNTY_DIR = path.join(WEBSITE_DIR, 'prices/county');
+// V2.12.0: COUNTY_DIR set after FUEL_CONFIGS initialization (depends on --fuel flag)
+let COUNTY_DIR;
 const MIN_QUALITY_SCORE = 0.45;  // Tier 1 + Tier 2 only (quality counties)
 
 // Initialize county data module for fuel cost lookups
@@ -51,6 +52,43 @@ const stateArg = args.find(a => a.startsWith('--state='));
 const singleCounty = countyArg ? countyArg.split('=')[1] : null;
 const singleState = stateArg ? stateArg.split('=')[1] : null;
 const legacyLayout = args.includes('--legacy-layout');
+
+// V2.12.0: Multi-fuel support — kerosene pages use same templates, different paths/titles/data
+const fuelArg = args.find(a => a.startsWith('--fuel='));
+const cliFuelType = fuelArg ? fuelArg.split('=')[1] : 'heating_oil';
+
+const FUEL_CONFIGS = {
+  heating_oil: {
+    fuelType: 'heating_oil',
+    label: 'Heating Oil',
+    slug: '',                    // no prefix — /prices/county/{state}/
+    priceLabel: 'Heating Oil',
+    h1Prefix: '',                // "Heating Oil Prices in {County}"
+    minPrice: 2.00,
+    maxPrice: 6.00,
+    urlPrefix: '/prices/county',
+    dirPrefix: 'prices/county',
+    crossLinkFuel: 'kerosene',
+    crossLinkLabel: 'K-1 Kerosene',
+    crossLinkUrlPrefix: '/prices/kerosene/county',
+  },
+  kerosene: {
+    fuelType: 'kerosene',
+    label: 'K-1 Kerosene',
+    slug: 'kerosene',
+    priceLabel: 'K-1 Kerosene',
+    h1Prefix: 'K-1 Kerosene ',   // "K-1 Kerosene Prices in {County}"
+    minPrice: 2.50,
+    maxPrice: 7.00,
+    urlPrefix: '/prices/kerosene/county',
+    dirPrefix: 'prices/kerosene/county',
+    crossLinkFuel: 'heating_oil',
+    crossLinkLabel: 'Heating Oil',
+    crossLinkUrlPrefix: '/prices/county',
+  }
+};
+const FUEL = FUEL_CONFIGS[cliFuelType] || FUEL_CONFIGS.heating_oil;
+COUNTY_DIR = path.join(WEBSITE_DIR, FUEL.dirPrefix);
 
 /**
  * Main entry point
@@ -66,7 +104,7 @@ async function generateCountyElitePages(options = {}) {
   const log = (msg) => logger.info ? logger.info(msg) : console.log(msg);
 
   log('═══════════════════════════════════════════════════════════');
-  log('  County Elite Page Generator - V1.0.0');
+  log(`  County Elite Page Generator - V1.0.0 [${FUEL.label}]`);
   log('  ' + new Date().toLocaleString());
   log('═══════════════════════════════════════════════════════════');
 
@@ -104,8 +142,8 @@ async function generateCountyElitePages(options = {}) {
     }
 
     // Get county stats that meet quality threshold
-    let whereClause = 'WHERE data_quality_score >= :minQuality';
-    const replacements = { minQuality: MIN_QUALITY_SCORE };
+    let whereClause = 'WHERE data_quality_score >= :minQuality AND fuel_type = :fuelType';
+    const replacements = { minQuality: MIN_QUALITY_SCORE, fuelType: FUEL.fuelType };
 
     if (singleCounty && singleState) {
       whereClause += ' AND county_name = :county AND state_code = :state';
@@ -127,9 +165,9 @@ async function generateCountyElitePages(options = {}) {
     if (singleCounty && singleState) {
       const [allQC] = await sequelize.query(`
         SELECT * FROM county_current_stats
-        WHERE data_quality_score >= :minQuality
+        WHERE data_quality_score >= :minQuality AND fuel_type = :fuelType
         ORDER BY data_quality_score DESC
-      `, { replacements: { minQuality: MIN_QUALITY_SCORE } });
+      `, { replacements: { minQuality: MIN_QUALITY_SCORE, fuelType: FUEL.fuelType } });
       allQualifyingCounties = allQC;
     }
 
@@ -139,9 +177,9 @@ async function generateCountyElitePages(options = {}) {
         state_code,
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY median_price) as state_median
       FROM county_current_stats
-      WHERE fuel_type = 'heating_oil' AND median_price IS NOT NULL
+      WHERE fuel_type = :fuelType AND median_price IS NOT NULL
       GROUP BY state_code
-    `);
+    `, { replacements: { fuelType: FUEL.fuelType } });
     const stateMedianMap = {};
     stateMedians.forEach(s => {
       stateMedianMap[s.state_code] = parseFloat(s.state_median);
@@ -161,11 +199,21 @@ async function generateCountyElitePages(options = {}) {
 
     // Fetch all suppliers + prices once (shared with SEO generator)
     const allSuppliers = await getAllSuppliers(sequelize);
-    const allPrices = await getCurrentPrices(sequelize, MIN_VALID_PRICE, MAX_VALID_PRICE);
+    const allPrices = await getCurrentPrices(sequelize, FUEL.minPrice, FUEL.maxPrice, FUEL.fuelType);
     const priceMap = new Map();
     for (const p of allPrices) {
       priceMap.set(p.supplier_id, p);
     }
+
+    // V2.12.0: Pre-fetch cross-link fuel counties for banner display
+    // e.g., when generating oil pages, check which counties have kerosene data (and vice versa)
+    const [crossLinkCounties] = await sequelize.query(`
+      SELECT county_name, state_code, supplier_count
+      FROM county_current_stats
+      WHERE fuel_type = :crossFuelType AND median_price IS NOT NULL
+    `, { replacements: { crossFuelType: FUEL.crossLinkFuel } });
+    const crossLinkSet = new Set(crossLinkCounties.map(c => `${c.county_name}|${c.state_code}`));
+    const crossLinkSupplierCount = new Map(crossLinkCounties.map(c => [`${c.county_name}|${c.state_code}`, c.supplier_count]));
 
     // County search counts for traffic proof (last 30 days)
     const [countySearchRows] = await sequelize.query(`
@@ -209,9 +257,9 @@ async function generateCountyElitePages(options = {}) {
         [zipDetails] = await sequelize.query(`
           SELECT zip_prefix, median_price, supplier_count, data_quality_score
           FROM zip_current_stats
-          WHERE zip_prefix IN (:prefixes) AND fuel_type = 'heating_oil'
+          WHERE zip_prefix IN (:prefixes) AND fuel_type = :fuelType
           ORDER BY zip_prefix
-        `, { replacements: { prefixes: zipPrefixes } });
+        `, { replacements: { prefixes: zipPrefixes, fuelType: FUEL.fuelType } });
       }
 
       // Get suppliers for this county via 5-digit ZIP matching
@@ -250,7 +298,7 @@ async function generateCountyElitePages(options = {}) {
 
       const stateMedian = stateMedianMap[stats.state_code] || null;
       const countySearchCount = countySearchMap.get(`${stats.county_name.toLowerCase()}|${stats.state_code}`) || 0;
-      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips, allQualifyingCounties, legacyLayout, countySearchCount);
+      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips, allQualifyingCounties, legacyLayout, countySearchCount, crossLinkSet, crossLinkSupplierCount);
 
       // Create state subdirectory
       const stateDir = path.join(COUNTY_DIR, stats.state_code.toLowerCase());
@@ -303,7 +351,7 @@ async function generateCountyElitePages(options = {}) {
 /**
  * Generate HTML for a County Elite page
  */
-function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = [], allCountyStats = [], legacyLayout = false, countySearchCount = 0) {
+function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = [], allCountyStats = [], legacyLayout = false, countySearchCount = 0, crossLinkSet = new Set(), crossLinkSupplierCount = new Map()) {
   const countyName = stats.county_name;
   const stateCode = stats.state_code;
   const stateName = getStateName(stateCode);
@@ -358,8 +406,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   const datasetSchema = {
     "@context": "https://schema.org",
     "@type": "Dataset",
-    "name": `Heating Oil Prices in ${countyName} County, ${stateName}`,
-    "description": `Weekly heating oil price data for ${countyName} County, ${stateCode}. Includes median, minimum, and maximum prices from ${supplierCount} suppliers across ${zipCount} ZIP codes.`,
+    "name": `${FUEL.label} Prices in ${countyName} County, ${stateName}`,
+    "description": `Weekly ${FUEL.label.toLowerCase()} price data for ${countyName} County, ${stateCode}. Includes median, minimum, and maximum prices from ${supplierCount} suppliers across ${zipCount} ZIP codes.`,
     "url": `https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slugify(countyName)}`,
     "license": "https://creativecommons.org/licenses/by-nc/4.0/",
     "creator": {
@@ -394,17 +442,17 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
     "mainEntity": [
       {
         "@type": "Question",
-        "name": `What is the current heating oil price in ${countyName} County, ${stateCode}?`,
+        "name": `What is the current ${FUEL.label.toLowerCase()} price in ${countyName} County, ${stateCode}?`,
         "acceptedAnswer": {
           "@type": "Answer",
           "text": medianPrice
-            ? `The current median heating oil price in ${countyName} County, ${stateName} is $${medianPrice.toFixed(2)} per gallon, based on ${supplierCount} tracked suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
+            ? `The current median ${FUEL.label.toLowerCase()} price in ${countyName} County, ${stateName} is $${medianPrice.toFixed(2)} per gallon, based on ${supplierCount} tracked suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
             : `Price data is being collected for ${countyName} County. Check back soon for updates.`
         }
       },
       {
         "@type": "Question",
-        "name": `Why are heating oil prices in ${countyName} County ${percentChange6w > 0 ? 'rising' : 'lower'}?`,
+        "name": `Why are ${FUEL.label.toLowerCase()} prices in ${countyName} County ${percentChange6w > 0 ? 'rising' : 'lower'}?`,
         "acceptedAnswer": {
           "@type": "Answer",
           "text": trendMessage || `Heating oil prices fluctuate based on crude oil markets, seasonal demand, and local supplier competition. HomeHeat currently tracks ${supplierCount} suppliers in ${countyName} County.`
@@ -412,10 +460,10 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
       },
       {
         "@type": "Question",
-        "name": `How many heating oil suppliers operate in ${countyName} County?`,
+        "name": `How many ${FUEL.label.toLowerCase()} suppliers operate in ${countyName} County?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `HomeHeat tracks ${Math.max(supplierCount, countySuppliers.length)} heating oil suppliers with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.`
+          "text": `HomeHeat tracks ${Math.max(supplierCount, countySuppliers.length)} ${FUEL.label.toLowerCase()} suppliers with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.`
         }
       }
     ]
@@ -425,8 +473,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   const productSchema = (medianPrice && supplierCount >= 2) ? {
     "@context": "https://schema.org",
     "@type": "Product",
-    "name": `Heating Oil in ${countyName} County, ${stateCode}`,
-    "description": `Compare heating oil prices from ${supplierCount} COD suppliers in ${countyName} County, ${stateName}. Updated daily.`,
+    "name": `${FUEL.label} in ${countyName} County, ${stateCode}`,
+    "description": `Compare ${FUEL.label.toLowerCase()} prices from ${supplierCount} COD suppliers in ${countyName} County, ${stateName}. Updated daily.`,
     "url": `https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slugify(countyName)}`,
     "offers": {
       "@type": "AggregateOffer",
@@ -455,7 +503,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   const itemListSchema = pricedSuppliers.length >= 2 ? {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": `Heating Oil Suppliers in ${countyName} County, ${stateName}`,
+    "name": `${FUEL.label} Suppliers in ${countyName} County, ${stateName}`,
     "numberOfItems": pricedSuppliers.length,
     "itemListElement": pricedSuppliers.map((s, i) => ({
       "@type": "ListItem",
@@ -537,14 +585,14 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   let metaDescription;
   if (showPriceBanner && medianPrice) {
     if (priceSignal === 'down') {
-      metaDescription = `Heating oil in ${countyName} County is down ${absChange.toFixed(0)}% — prices from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal from ${supplierCount} suppliers.`;
+      metaDescription = `${FUEL.label} in ${countyName} County is down ${absChange.toFixed(0)}% — prices from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal from ${supplierCount} suppliers.`;
     } else {
-      metaDescription = `Heating oil prices in ${countyName} County trending up ${absChange.toFixed(0)}%. Compare ${supplierCount} suppliers from $${minPrice.toFixed(2)}/gal.`;
+      metaDescription = `${FUEL.label} prices in ${countyName} County trending up ${absChange.toFixed(0)}%. Compare ${supplierCount} suppliers from $${minPrice.toFixed(2)}/gal.`;
     }
   } else if (medianPrice) {
-    metaDescription = `Current heating oil price in ${countyName} County, ${stateName}: $${medianPrice.toFixed(2)}/gal median from ${supplierCount} suppliers across ${zipCount} ZIP codes. Updated ${lastUpdate}.`;
+    metaDescription = `Current ${FUEL.label.toLowerCase()} price in ${countyName} County, ${stateName}: $${medianPrice.toFixed(2)}/gal median from ${supplierCount} suppliers across ${zipCount} ZIP codes. Updated ${lastUpdate}.`;
   } else {
-    metaDescription = `Heating oil prices for ${countyName} County, ${stateName}.`;
+    metaDescription = `${FUEL.label} prices for ${countyName} County, ${stateName}.`;
   }
 
   const assetPath = '../../../';
@@ -582,14 +630,14 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   <script src="${assetPath}js/analytics.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr} | HomeHeat</title>
+  <title>${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr} | HomeHeat</title>
   <meta name="description" content="${metaDescription}">
-  <link rel="canonical" href="https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slug}">
+  <link rel="canonical" href="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
 
   <!-- OpenGraph -->
-  <meta property="og:title" content="Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
-  <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : 'Compare local heating oil prices.'}">
-  <meta property="og:url" content="https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slug}">
+  <meta property="og:title" content="${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
+  <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : `Compare local ${FUEL.label.toLowerCase()} prices.`}">
+  <meta property="og:url" content="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
   <meta property="og:type" content="website">
 
   <meta name="color-scheme" content="light only">
@@ -616,11 +664,11 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   <main class="county-elite-page">
     <!-- Breadcrumb -->
     <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="/">Home</a> › <a href="/prices">Prices</a> › <a href="/prices/${stateCode.toLowerCase()}">${stateName}</a> › <span>${escapeHtml(countyName)} County</span>
+      <a href="/">Home</a> › <a href="/prices">Prices</a>${FUEL.fuelType !== 'heating_oil' ? ` › <a href="/prices/${FUEL.slug}/">${FUEL.label}</a>` : ''} › <a href="${FUEL.fuelType !== 'heating_oil' ? `/prices/${FUEL.slug}/${stateCode.toLowerCase()}` : `/prices/${stateCode.toLowerCase()}`}">${stateName}</a> › <span>${escapeHtml(countyName)} County</span>
     </nav>
 
     <header class="page-header">
-      <h1>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode}</h1>
+      <h1>${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode}</h1>
       <p class="county-meta">${displaySupplierCount} suppliers · ${zipPrefixes.length} ZIP areas · Updated ${lastUpdate}</p>
       ${zipPrefixes.length > 0 ? `<p class="geographic-context">Covering ${formatZipPrefixRangeLinked(zipPrefixes)} across ${zipCount} ZIP codes</p>` : ''}
       <span class="confidence-badge ${confidenceClass}">${confidenceLabel} Confidence</span>
@@ -740,7 +788,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
 
     ${medianPrice ? `
     <section class="county-alert-section" id="alerts">
-      <h3>Get Email Alerts When Heating Oil Prices Drop</h3>
+      <h3>Get Email Alerts When ${FUEL.label} Prices Drop</h3>
       <p class="county-alert-hook">Prices change daily. Save $40-$120 per delivery by timing it right.</p>
       <div class="price-alert-card" data-zip="${countyZips.length > 0 ? countyZips[Math.floor(countyZips.length / 2)] : ''}" data-price="${minPrice ? minPrice.toFixed(2) : ''}"></div>
       <p class="county-alert-trust">We check prices daily. No newsletters. Only price drops.</p>
@@ -814,8 +862,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
     <!-- Supplier Table -->
     ${countySuppliers.length > 0 ? `
     <section class="supplier-table-section" id="suppliers">
-      <h2>Heating Oil Suppliers Serving ${escapeHtml(countyName)} County</h2>
-      <p class="supplier-table-intro">Below are heating oil suppliers currently serving ${escapeHtml(countyName)} County, ${stateName} based on ZIP code coverage.</p>
+      <h2>${FUEL.label} Suppliers Serving ${escapeHtml(countyName)} County</h2>
+      <p class="supplier-table-intro">Below are ${FUEL.label.toLowerCase()} suppliers currently serving ${escapeHtml(countyName)} County, ${stateName} based on ZIP code coverage.</p>
         <table class="supplier-table">
           <thead>
             <tr>
@@ -845,8 +893,8 @@ ${countySuppliers.map(s => {
     </section>
     ` : `
     <section class="supplier-table-section supplier-empty-state">
-      <h2>Heating Oil Suppliers Serving ${escapeHtml(countyName)} County</h2>
-      <p>No suppliers currently reporting prices in ${escapeHtml(countyName)} County. <a href="/prices">Search heating oil prices by ZIP code</a> to find suppliers delivering to your area.</p>
+      <h2>${FUEL.label} Suppliers Serving ${escapeHtml(countyName)} County</h2>
+      <p>No suppliers currently reporting prices in ${escapeHtml(countyName)} County. <a href="/prices">Search ${FUEL.label.toLowerCase()} prices by ZIP code</a> to find suppliers delivering to your area.</p>
     </section>
     `}
 
@@ -863,19 +911,19 @@ ${countySuppliers.map(s => {
       $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)} per gallon depending on season,
       delivery size, and supplier competition.${stateComparison ? ` ${stateComparison.text}.` : ''}</p>
 
-      <p>HomeHeat tracks ${displaySupplierCount} heating oil suppliers across
+      <p>HomeHeat tracks ${displaySupplierCount} ${FUEL.label.toLowerCase()} suppliers across
       ${zipCount} ZIP codes in ${countyName} County.
       Prices are updated daily using supplier reports and verified market data.</p>
 
       <p>Homeowners in ${countyName} County typically use between 600 and 1,000 gallons
-      of heating oil per year depending on home size and insulation. Monitoring price
+      of ${FUEL.label.toLowerCase()} per year depending on home size and insulation. Monitoring price
       trends can help households save $100-$300 annually by timing deliveries during
       lower price periods.</p>
 
       <p>Heating oil prices across ${stateName} can fluctuate significantly throughout
       the winter heating season. Cold weather spikes, regional supply changes, and
       delivery demand often influence short-term pricing trends. Many residents
-      searching for heating oil prices today in ${countyName} County use these
+      searching for ${FUEL.label.toLowerCase()} prices today in ${countyName} County use these
       daily updates to compare local supplier rates before placing their next
       delivery order.</p>
     </section>
@@ -886,9 +934,9 @@ ${countySuppliers.map(s => {
       <h2>Frequently Asked Questions</h2>
       <div class="faq-list">
         <details class="faq-item">
-          <summary>What is the current heating oil price in ${escapeHtml(countyName)} County?</summary>
+          <summary>What is the current ${FUEL.label.toLowerCase()} price in ${escapeHtml(countyName)} County?</summary>
           <p>${medianPrice
-            ? `The current median heating oil price in ${countyName} County, ${stateName} is <strong>$${medianPrice.toFixed(2)} per gallon</strong>, based on ${supplierCount} tracked suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
+            ? `The current median ${FUEL.label.toLowerCase()} price in ${countyName} County, ${stateName} is <strong>$${medianPrice.toFixed(2)} per gallon</strong>, based on ${supplierCount} tracked suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
             : `Price data is being collected for ${countyName} County. Check back soon for updates.`}</p>
         </details>
         <details class="faq-item">
@@ -896,8 +944,8 @@ ${countySuppliers.map(s => {
           <p>Heating oil prices in ${countyName} County are influenced by proximity to terminals, local supplier competition, and seasonal demand. HomeHeat currently tracks ${displaySupplierCount} suppliers in ${countyName} County, giving homeowners options to compare prices and find competitive rates.</p>
         </details>
         <details class="faq-item">
-          <summary>How many heating oil suppliers operate in ${escapeHtml(countyName)} County?</summary>
-          <p>HomeHeat tracks <strong>${displaySupplierCount} heating oil suppliers</strong> with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.</p>
+          <summary>How many ${FUEL.label.toLowerCase()} suppliers operate in ${escapeHtml(countyName)} County?</summary>
+          <p>HomeHeat tracks <strong>${displaySupplierCount} ${FUEL.label.toLowerCase()} suppliers</strong> with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.</p>
         </details>
       </div>
     </section>
@@ -919,6 +967,14 @@ ${countySuppliers.map(s => {
       <a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Average bill</a> |
       <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Price trends</a>
     </section>
+
+    ${crossLinkSet.has(`${stats.county_name}|${stats.state_code}`) ? `
+    <!-- V2.12.0: Cross-link to other fuel -->
+    <section class="sp-cross-fuel">
+      <h3>Also Available in ${escapeHtml(countyName)} County</h3>
+      <p>${FUEL.crossLinkLabel} Prices — ${crossLinkSupplierCount.get(`${stats.county_name}|${stats.state_code}`) || ''} suppliers reporting</p>
+      <a href="${FUEL.crossLinkUrlPrefix}/${stateCode.toLowerCase()}/${slug}" class="sp-cross-fuel-link">View ${FUEL.crossLinkLabel} Prices →</a>
+    </section>` : ''}
 
     <!-- Trust Footer -->
     <p class="trust-footer">
@@ -968,14 +1024,14 @@ ${countySuppliers.map(s => {
   <script src="${assetPath}js/analytics.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr} | HomeHeat</title>
+  <title>${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr} | HomeHeat</title>
   <meta name="description" content="${metaDescription}">
-  <link rel="canonical" href="https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slug}">
+  <link rel="canonical" href="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
 
   <!-- OpenGraph -->
-  <meta property="og:title" content="Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
-  <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : 'Compare local heating oil prices.'}">
-  <meta property="og:url" content="https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slug}">
+  <meta property="og:title" content="${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
+  <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : `Compare local ${FUEL.label.toLowerCase()} prices.`}">
+  <meta property="og:url" content="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
   <meta property="og:type" content="website">
 
   <meta name="color-scheme" content="light only">
@@ -1002,11 +1058,11 @@ ${countySuppliers.map(s => {
   <main class="county-elite-page" data-county="${escapeHtml(countyName)}">
     <!-- Breadcrumb -->
     <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="/">Home</a> › <a href="/prices">Prices</a> › <a href="/prices/${stateCode.toLowerCase()}">${stateName}</a> › <span>${escapeHtml(countyName)} County</span>
+      <a href="/">Home</a> › <a href="/prices">Prices</a>${FUEL.fuelType !== 'heating_oil' ? ` › <a href="/prices/${FUEL.slug}/">${FUEL.label}</a>` : ''} › <a href="${FUEL.fuelType !== 'heating_oil' ? `/prices/${FUEL.slug}/${stateCode.toLowerCase()}` : `/prices/${stateCode.toLowerCase()}`}">${stateName}</a> › <span>${escapeHtml(countyName)} County</span>
     </nav>
 
     <header class="page-header">
-      <h1>Heating Oil Prices in ${escapeHtml(countyName)} County, ${stateCode}</h1>
+      <h1>${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode}</h1>
       ${medianPrice ? `
       <div class="price-summary-bar">
         <p class="summary-line-1">
@@ -1039,8 +1095,8 @@ ${countySuppliers.map(s => {
     <!-- Supplier Table -->
     ${countySuppliers.length > 0 ? `
     <section class="supplier-table-section" id="suppliers">
-      <h2>Heating Oil Suppliers Serving ${escapeHtml(countyName)} County</h2>
-      ${countySearchCount >= 5 ? `<p class="county-traffic-proof"><strong>${countySearchCount.toLocaleString()}</strong> homeowners compared heating oil prices in ${escapeHtml(countyName)} County this month.</p>` : ''}
+      <h2>${FUEL.label} Suppliers Serving ${escapeHtml(countyName)} County</h2>
+      ${countySearchCount >= 5 ? `<p class="county-traffic-proof"><strong>${countySearchCount.toLocaleString()}</strong> homeowners compared ${FUEL.label.toLowerCase()} prices in ${escapeHtml(countyName)} County this month.</p>` : ''}
         <table class="supplier-table">
           <thead>
             <tr>
@@ -1077,7 +1133,7 @@ ${countySuppliers.map(s => {
         </table>
       <p class="supplier-trust-line">Prices collected from supplier websites and verified daily. Always confirm price and delivery minimum when ordering.</p>
       <details class="how-to-order">
-        <summary>New to ordering heating oil?</summary>
+        <summary>New to ordering ${FUEL.label.toLowerCase()}?</summary>
         <ol>
           <li>Call the supplier and confirm the price and delivery minimum</li>
           <li>Provide your address and tank location</li>
@@ -1093,8 +1149,8 @@ ${countySuppliers.map(s => {
     </section>
     ` : `
     <section class="supplier-table-section supplier-empty-state">
-      <h2>Heating Oil Suppliers Serving ${escapeHtml(countyName)} County</h2>
-      <p>No suppliers currently reporting prices in ${escapeHtml(countyName)} County. <a href="/prices">Search heating oil prices by ZIP code</a> to find suppliers delivering to your area.</p>
+      <h2>${FUEL.label} Suppliers Serving ${escapeHtml(countyName)} County</h2>
+      <p>No suppliers currently reporting prices in ${escapeHtml(countyName)} County. <a href="/prices">Search ${FUEL.label.toLowerCase()} prices by ZIP code</a> to find suppliers delivering to your area.</p>
     </section>
     `}
 
@@ -1251,7 +1307,7 @@ ${countySuppliers.map(s => {
 
     ${medianPrice ? `
     <section class="county-alert-section" id="alerts">
-      <h3>Get Email Alerts When Heating Oil Prices Drop</h3>
+      <h3>Get Email Alerts When ${FUEL.label} Prices Drop</h3>
       <p class="county-alert-hook">Prices change daily. Save $40-$120 per delivery by timing it right.</p>
       <div class="price-alert-card" data-zip="${countyZips.length > 0 ? countyZips[Math.floor(countyZips.length / 2)] : ''}" data-price="${minPrice ? minPrice.toFixed(2) : ''}"></div>
       <p class="county-alert-trust">We check prices daily. No newsletters. Only price drops.</p>
@@ -1264,19 +1320,19 @@ ${countySuppliers.map(s => {
       $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)} per gallon depending on season,
       delivery size, and supplier competition.${stateComparison ? ` ${stateComparison.text}.` : ''}</p>
 
-      <p>HomeHeat tracks ${displaySupplierCount} heating oil suppliers across
+      <p>HomeHeat tracks ${displaySupplierCount} ${FUEL.label.toLowerCase()} suppliers across
       ${zipCount} ZIP codes in ${countyName} County.
       Prices are updated daily using supplier reports and verified market data.</p>
 
       <p>Homeowners in ${countyName} County typically use between 600 and 1,000 gallons
-      of heating oil per year depending on home size and insulation. Monitoring price
+      of ${FUEL.label.toLowerCase()} per year depending on home size and insulation. Monitoring price
       trends can help households save $100-$300 annually by timing deliveries during
       lower price periods.</p>
 
       <p>Heating oil prices across ${stateName} can fluctuate significantly throughout
       the winter heating season. Cold weather spikes, regional supply changes, and
       delivery demand often influence short-term pricing trends. Many residents
-      searching for heating oil prices today in ${countyName} County use these
+      searching for ${FUEL.label.toLowerCase()} prices today in ${countyName} County use these
       daily updates to compare local supplier rates before placing their next
       delivery order.</p>
     </section>
@@ -1287,9 +1343,9 @@ ${countySuppliers.map(s => {
       <h2>Frequently Asked Questions</h2>
       <div class="faq-list">
         <details class="faq-item">
-          <summary>What is the current heating oil price in ${escapeHtml(countyName)} County?</summary>
+          <summary>What is the current ${FUEL.label.toLowerCase()} price in ${escapeHtml(countyName)} County?</summary>
           <p>${medianPrice
-            ? `The current median heating oil price in ${countyName} County, ${stateName} is <strong>$${medianPrice.toFixed(2)} per gallon</strong>, based on ${supplierCount} tracked suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
+            ? `The current median ${FUEL.label.toLowerCase()} price in ${countyName} County, ${stateName} is <strong>$${medianPrice.toFixed(2)} per gallon</strong>, based on ${supplierCount} tracked suppliers. Prices range from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal.`
             : `Price data is being collected for ${countyName} County. Check back soon for updates.`}</p>
         </details>
         <details class="faq-item">
@@ -1297,8 +1353,8 @@ ${countySuppliers.map(s => {
           <p>Heating oil prices in ${countyName} County are influenced by proximity to terminals, local supplier competition, and seasonal demand. HomeHeat currently tracks ${displaySupplierCount} suppliers in ${countyName} County, giving homeowners options to compare prices and find competitive rates.</p>
         </details>
         <details class="faq-item">
-          <summary>How many heating oil suppliers operate in ${escapeHtml(countyName)} County?</summary>
-          <p>HomeHeat tracks <strong>${displaySupplierCount} heating oil suppliers</strong> with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.</p>
+          <summary>How many ${FUEL.label.toLowerCase()} suppliers operate in ${escapeHtml(countyName)} County?</summary>
+          <p>HomeHeat tracks <strong>${displaySupplierCount} ${FUEL.label.toLowerCase()} suppliers</strong> with published pricing in ${countyName} County, covering ${zipCount} ZIP codes.</p>
         </details>
       </div>
     </section>
@@ -1310,6 +1366,14 @@ ${countySuppliers.map(s => {
       <a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Average bill</a> |
       <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Price trends</a>
     </section>
+
+    ${crossLinkSet.has(`${stats.county_name}|${stats.state_code}`) ? `
+    <!-- V2.12.0: Cross-link to other fuel -->
+    <section class="sp-cross-fuel">
+      <h3>Also Available in ${escapeHtml(countyName)} County</h3>
+      <p>${FUEL.crossLinkLabel} Prices — ${crossLinkSupplierCount.get(`${stats.county_name}|${stats.state_code}`) || ''} suppliers reporting</p>
+      <a href="${FUEL.crossLinkUrlPrefix}/${stateCode.toLowerCase()}/${slug}" class="sp-cross-fuel-link">View ${FUEL.crossLinkLabel} Prices →</a>
+    </section>` : ''}
 
     <!-- Trust Footer -->
     <p class="trust-footer">
@@ -2147,6 +2211,36 @@ function generateCountyEliteCSS() {
 }
 
 .social-proof a:hover {
+  text-decoration: underline;
+}
+
+/* V2.12.0: Cross-fuel link banner */
+.sp-cross-fuel {
+  background: #f0f7ff;
+  border: 1px solid #d0e3f7;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 24px 0;
+  text-align: center;
+}
+.sp-cross-fuel h3 {
+  font-size: 1rem;
+  margin: 0 0 4px;
+  color: #1a365d;
+}
+.sp-cross-fuel p {
+  font-size: 0.875rem;
+  color: #4a5568;
+  margin: 0 0 8px;
+}
+.sp-cross-fuel-link {
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #FF6B35;
+  text-decoration: none;
+}
+.sp-cross-fuel-link:hover {
   text-decoration: underline;
 }
 

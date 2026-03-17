@@ -39,9 +39,9 @@ const initSupplierPriceModel = (sequelize) => {
         comment: 'Minimum order gallons for this price tier'
       },
       fuelType: {
-        type: DataTypes.ENUM('heating_oil'),
+        type: DataTypes.ENUM('heating_oil', 'kerosene'),
         defaultValue: 'heating_oil',
-        comment: 'Only heating oil supported initially'
+        comment: 'Fuel type — defaults to heating_oil if not specified'
       },
       sourceType: {
         type: DataTypes.ENUM('scraped', 'manual', 'user_reported', 'aggregator_signal', 'supplier_sms', 'supplier_direct'),
@@ -113,7 +113,8 @@ const getSupplierPriceModel = () => SupplierPrice;
 
 // Helper function to get latest valid price for a supplier
 // V2.1.0: Excludes aggregator_signal prices (those are for market intelligence only)
-const getLatestPrice = async (supplierId) => {
+// V2.12.0: Added fuelType filter (defaults to 'heating_oil' for backward compat)
+const getLatestPrice = async (supplierId, fuelType = 'heating_oil') => {
   if (!SupplierPrice) return null;
 
   const { Op } = require('sequelize');
@@ -123,6 +124,7 @@ const getLatestPrice = async (supplierId) => {
     const price = await SupplierPrice.findOne({
       where: {
         supplierId,
+        fuelType,
         isValid: true,
         expiresAt: { [Op.gt]: new Date() },
         scrapedAt: { [Op.gt]: freshnessCutoff },
@@ -140,11 +142,10 @@ const getLatestPrice = async (supplierId) => {
 
 // Helper function to get latest prices for multiple suppliers
 // V2.1.0: Excludes aggregator_signal prices (those are for market intelligence only)
-// V2.35.15: Auto-heal expired prices if recent scrapes exist
 // V2.36.0: 36-hour scraped_at freshness filter — prices must be confirmed
 // within 36 hours to display. Applies uniformly to all source types.
-// Auto-heal removed: extending stale prices hides data quality problems.
-const getLatestPrices = async (supplierIds) => {
+// V2.12.0: Added fuelType filter (defaults to 'heating_oil' for backward compat)
+const getLatestPrices = async (supplierIds, fuelType = 'heating_oil') => {
   if (!supplierIds || supplierIds.length === 0) return {};
   if (!SupplierPrice) return {};
 
@@ -152,16 +153,19 @@ const getLatestPrices = async (supplierIds) => {
   const freshnessCutoff = new Date(Date.now() - 36 * 60 * 60 * 1000);
 
   try {
-    // Get all valid, non-expired, fresh prices (excluding aggregator signals)
+    const whereClause = {
+      supplierId: { [Op.in]: supplierIds },
+      isValid: true,
+      expiresAt: { [Op.gt]: new Date() },
+      scrapedAt: { [Op.gt]: freshnessCutoff },
+      // V2.1.0: Never show aggregator prices to users
+      sourceType: { [Op.ne]: 'aggregator_signal' },
+      // V2.12.0: Filter by fuel type
+      fuelType: fuelType,
+    };
+
     const prices = await SupplierPrice.findAll({
-      where: {
-        supplierId: { [Op.in]: supplierIds },
-        isValid: true,
-        expiresAt: { [Op.gt]: new Date() },
-        scrapedAt: { [Op.gt]: freshnessCutoff },
-        // V2.1.0: Never show aggregator prices to users
-        sourceType: { [Op.ne]: 'aggregator_signal' }
-      },
+      where: whereClause,
       order: [['scrapedAt', 'DESC']]
     });
 

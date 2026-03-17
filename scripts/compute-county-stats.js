@@ -56,8 +56,8 @@ async function main() {
       console.log(`  ⏱️  Duration: ${result.durationMs}ms`);
       console.log('═══════════════════════════════════════════════════════════');
 
-      // Show top counties by quality
-      console.log('\n📊 Top 10 Counties by Quality:');
+      // Show top counties by quality (oil)
+      console.log('\n📊 Top 10 Counties by Quality (Heating Oil):');
       const [topCounties] = await sequelize.query(`
         SELECT county_name, state_code, median_price, supplier_count,
                data_quality_score, percent_change_6w
@@ -71,6 +71,21 @@ async function main() {
         const trend = c.percent_change_6w ? `${c.percent_change_6w > 0 ? '+' : ''}${c.percent_change_6w}%` : 'N/A';
         console.log(`  ${i + 1}. ${c.county_name}, ${c.state_code}: $${c.median_price}/gal (${c.supplier_count} suppliers, quality: ${c.data_quality_score}, trend: ${trend})`);
       });
+
+      // V2.12.0: Show kerosene county stats if any exist
+      const [keroCounties] = await sequelize.query(`
+        SELECT county_name, state_code, median_price, supplier_count
+        FROM county_current_stats
+        WHERE fuel_type = 'kerosene'
+        ORDER BY supplier_count DESC
+        LIMIT 10
+      `);
+      if (keroCounties.length > 0) {
+        console.log(`\n🔥 Kerosene Counties (${keroCounties.length} with stats):`);
+        keroCounties.forEach((c, i) => {
+          console.log(`  ${i + 1}. ${c.county_name}, ${c.state_code}: $${c.median_price}/gal (${c.supplier_count} suppliers)`);
+        });
+      }
 
       // Validation mode
       if (validate) {

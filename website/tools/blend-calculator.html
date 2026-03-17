@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
+<script src="../js/analytics.js"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-itunes-app" content="app-id=6747320571">
+    <title>Oil &amp; Kerosene Blend Calculator — Cold Weather Fuel Mix Guide | HomeHeat</title>
+    <meta name="description" content="Calculate the right oil/kerosene blend ratio for cold weather. Enter your temperature to get a recommended mix, gel point protection, and blended cost per gallon.">
+
+    <meta property="og:title" content="Oil & Kerosene Blend Calculator — Cold Weather Fuel Mix">
+    <meta property="og:description" content="Calculate the right heating oil / K-1 kerosene blend for your temperature. See recommended ratio, total cost, and gel point protection.">
+    <meta property="og:url" content="https://www.gethomeheat.com/tools/blend-calculator">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+
+    <link rel="canonical" href="https://www.gethomeheat.com/tools/blend-calculator">
+    <link rel="stylesheet" href="../style.min.css?v=2ad730ee">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="icon" type="image/png" sizes="180x180" href="../favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../favicon.png">
+    <link rel="manifest" href="../manifest.json">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Oil & Kerosene Blend Calculator",
+        "description": "Calculate heating oil / K-1 kerosene blend ratios for cold weather protection",
+        "url": "https://www.gethomeheat.com/tools/blend-calculator",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "provider": {
+            "@type": "Organization",
+            "name": "HomeHeat",
+            "url": "https://www.gethomeheat.com"
+        }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What is the gel point of #2 heating oil?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "#2 heating oil begins to gel (cloud point) around 20°F (-7°C). Below this temperature, wax crystals form and can clog fuel filters and lines, preventing your furnace from operating. Blending with K-1 kerosene lowers the effective gel point."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How much kerosene should I mix with heating oil?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "The blend ratio depends on expected temperatures. Above 20°F, pure #2 oil is fine. From 10-20°F, an 80/20 oil/kerosene blend is recommended. From 0-10°F, use a 70/30 blend. Below 0°F, a 50/50 blend or pure K-1 kerosene is recommended for outdoor tanks."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Why is kerosene more expensive than heating oil?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "K-1 kerosene is more refined than #2 heating oil, requiring additional processing to remove impurities and lower the gel point to approximately -40°F. This extra refining adds $0.50-$1.00 per gallon to the cost. The premium is worth it for outdoor tanks or extremely cold climates where gelling is a risk."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <style>
+    .blend-calc {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+    .blend-calc h1 {
+        font-size: 1.75rem;
+        margin: 1.5rem 0 0.5rem;
+        color: var(--text-primary, #1a1a1a);
+    }
+    .blend-calc .subtitle {
+        color: var(--text-secondary, #555);
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Input form */
+    .blend-form {
+        background: var(--background-secondary, #FEF3EB);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    .blend-form label {
+        display: block;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-secondary, #555);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+    }
+    .blend-form .field {
+        margin-bottom: 20px;
+    }
+    .blend-form select,
+    .blend-form input[type="number"] {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 8px;
+        font-size: 1rem;
+        background: #fff;
+        box-sizing: border-box;
+    }
+    .blend-form .field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .blend-form .field-hint {
+        font-size: 0.75rem;
+        color: var(--text-muted, #888);
+        margin-top: 4px;
+    }
+    .blend-form .temp-presets {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+    .blend-form .temp-preset {
+        padding: 6px 12px;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 0.8125rem;
+        transition: all 0.15s;
+    }
+    .blend-form .temp-preset:hover {
+        border-color: var(--primary-orange, #FF6B35);
+        color: var(--primary-orange, #FF6B35);
+    }
+    .blend-form .temp-preset.active {
+        background: var(--primary-orange, #FF6B35);
+        color: #fff;
+        border-color: var(--primary-orange, #FF6B35);
+    }
+    .blend-form .calc-btn {
+        width: 100%;
+        padding: 12px;
+        background: var(--primary-orange, #FF6B35);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .blend-form .calc-btn:hover {
+        background: var(--primary-orange-hover, #E55A2B);
+    }
+
+    /* Results */
+    .blend-results {
+        display: none;
+    }
+    .blend-results.visible {
+        display: block;
+    }
+    .blend-recommendation {
+        background: #f0f7ff;
+        border: 1px solid #d0e3f7;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .blend-recommendation .rec-title {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #1a365d;
+        margin: 0 0 6px;
+    }
+    .blend-recommendation .rec-ratio {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1a365d;
+        margin: 0 0 4px;
+    }
+    .blend-recommendation .rec-reason {
+        font-size: 0.875rem;
+        color: #4a5568;
+        margin: 0;
+    }
+
+    .blend-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .blend-detail-card {
+        background: #fff;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 8px;
+        padding: 14px;
+    }
+    .blend-detail-card .detail-label {
+        font-size: 0.75rem;
+        color: var(--text-muted, #888);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0 0 4px;
+    }
+    .blend-detail-card .detail-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary, #1a1a1a);
+        margin: 0;
+    }
+    .blend-detail-card .detail-sub {
+        font-size: 0.75rem;
+        color: var(--text-muted, #888);
+        margin: 2px 0 0;
+    }
+
+    .gel-point-bar {
+        background: #fff;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+    }
+    .gel-point-bar .bar-title {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-secondary, #555);
+        margin: 0 0 10px;
+    }
+    .gel-bar-track {
+        height: 8px;
+        background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 25%, #fbbf24 50%, #ef4444 75%, #dc2626 100%);
+        border-radius: 4px;
+        position: relative;
+        margin: 0 0 6px;
+    }
+    .gel-bar-marker {
+        position: absolute;
+        top: -4px;
+        width: 16px;
+        height: 16px;
+        background: #1a365d;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        transform: translateX(-50%);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .gel-bar-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.6875rem;
+        color: var(--text-muted, #888);
+    }
+
+    /* Educational */
+    .blend-education {
+        margin: 2rem 0;
+    }
+    .blend-education h2 {
+        font-size: 1.25rem;
+        margin: 0 0 1rem;
+    }
+    .blend-education p {
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        color: var(--text-secondary, #555);
+        margin: 0 0 1rem;
+    }
+    .blend-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+        margin: 1rem 0;
+    }
+    .blend-table th,
+    .blend-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color, #ddd);
+    }
+    .blend-table th {
+        font-weight: 600;
+        color: var(--text-secondary, #555);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .blend-faq details {
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        padding: 0;
+    }
+    .blend-faq summary {
+        padding: 12px 16px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9375rem;
+    }
+    .blend-faq details[open] summary {
+        border-bottom: 1px solid var(--border-color, #ddd);
+    }
+    .blend-faq details p {
+        padding: 12px 16px;
+        margin: 0;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--text-secondary, #555);
+    }
+
+    @media (max-width: 600px) {
+        .blend-form .field-row { grid-template-columns: 1fr; }
+        .blend-details { grid-template-columns: 1fr; }
+        .blend-recommendation .rec-ratio { font-size: 1.5rem; }
+    }
+    </style>
+</head>
+<body data-page-type="blend-calculator">
+    <!-- NAV_START -->
+
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <img src="../images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
+                HomeHeat
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li class="nav-dropdown-parent">
+                    <button class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">Prices</button>
+                    <ul class="nav-dropdown" role="menu">
+                        <li role="menuitem"><a href="/prices" data-track="nav-oil-prices" data-referrer="nav">Heating Oil Prices</a></li>
+                        <li role="menuitem"><a href="/prices/kerosene/" data-track="nav-kero-prices" data-referrer="nav">K-1 Kerosene Prices</a></li>
+                    </ul>
+                </li>
+                <li class="nav-dropdown-parent">
+                    <button class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">Heating Costs</button>
+                    <ul class="nav-dropdown" role="menu">
+                        <li role="menuitem"><a href="/tools/heating-cost-calculator" data-track="nav-calculator" data-referrer="nav">Cost Calculator</a></li>
+                        <li role="menuitem"><a href="/tools/blend-calculator" data-track="nav-blend-calc" data-referrer="nav">Blend Calculator</a></li>
+                        <li role="menuitem"><a href="/heating-cost/" data-track="nav-fuel-compare" data-referrer="nav">Fuel Comparison</a></li>
+                        <li role="menuitem"><a href="/average-heating-bill/" data-track="nav-avg-bill" data-referrer="nav">Average Bills</a></li>
+                        <li role="menuitem"><a href="/price-trend/" data-track="nav-price-trend" data-referrer="nav">Price Trends</a></li>
+                        <li role="menuitem"><a href="/learn/" data-track="nav-guides" data-referrer="nav">All Guides</a></li>
+                    </ul>
+                </li>
+                <li><a href="/for-suppliers">For Suppliers</a></li>
+                <li><a href="/support">Support</a></li>
+            </ul>
+        </div>
+    </nav>
+<!-- NAV_END -->
+
+    <main class="blend-calc">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="/">Home</a> &rsaquo; <a href="/prices">Prices</a> &rsaquo; <a href="/prices/kerosene/">K-1 Kerosene</a> &rsaquo; <span>Blend Calculator</span>
+        </nav>
+
+        <h1>Oil &amp; Kerosene Blend Calculator</h1>
+        <p class="subtitle">Calculate the right heating oil / K-1 kerosene blend for cold weather. Protect your system from fuel gelling.</p>
+
+        <div class="blend-form">
+            <div class="field">
+                <label for="blend-temp">Outside Temperature (&deg;F)</label>
+                <input type="number" id="blend-temp" min="-40" max="70" step="1" placeholder="Enter temperature">
+                <div class="temp-presets">
+                    <button class="temp-preset" data-temp="25">25&deg;F</button>
+                    <button class="temp-preset" data-temp="15">15&deg;F</button>
+                    <button class="temp-preset" data-temp="5">5&deg;F</button>
+                    <button class="temp-preset" data-temp="-5">-5&deg;F</button>
+                    <button class="temp-preset" data-temp="-20">-20&deg;F</button>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="blend-tank">Tank Size (gallons)</label>
+                <select id="blend-tank">
+                    <option value="275" selected>275 gallons (standard)</option>
+                    <option value="330">330 gallons</option>
+                    <option value="550">550 gallons</option>
+                    <option value="custom">Custom</option>
+                </select>
+                <input type="number" id="blend-tank-custom" min="50" max="2000" placeholder="Enter gallons" style="display:none; margin-top:8px;">
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label for="blend-oil-price">Oil Price ($/gal)</label>
+                    <input type="number" id="blend-oil-price" min="1" max="8" step="0.01" placeholder="e.g. 4.29">
+                </div>
+                <div class="field">
+                    <label for="blend-kero-price">Kerosene Price ($/gal)</label>
+                    <input type="number" id="blend-kero-price" min="1" max="9" step="0.01" placeholder="e.g. 5.09">
+                </div>
+            </div>
+            <p class="field-hint">Prices are optional. Enter to see cost calculations.</p>
+
+            <button class="calc-btn" id="blend-calc-btn">Calculate Blend</button>
+        </div>
+
+        <!-- Results -->
+        <div class="blend-results" id="blend-results">
+            <div class="blend-recommendation" id="blend-rec"></div>
+            <div class="blend-details" id="blend-details"></div>
+            <div class="gel-point-bar" id="blend-gel"></div>
+        </div>
+
+        <!-- Educational content -->
+        <section class="blend-education">
+            <h2>Why Blend Heating Oil with Kerosene?</h2>
+            <p>#2 heating oil begins to gel around 20&deg;F as wax crystals form in the fuel. This can clog filters and fuel lines, shutting down your heating system. K-1 kerosene has a much lower gel point (approximately -40&deg;F), so blending the two lowers the effective gel point of the fuel in your tank.</p>
+            <p>Outdoor tanks are especially vulnerable because they lack the insulation of basement installations. If your tank is outside and temperatures regularly drop below 20&deg;F, a kerosene blend is standard practice.</p>
+
+            <h2>Recommended Blend Ratios by Temperature</h2>
+            <table class="blend-table">
+                <thead>
+                    <tr>
+                        <th>Temperature</th>
+                        <th>Recommended Blend</th>
+                        <th>Gel Point Protection</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Above 20&deg;F</td><td>100% #2 Heating Oil</td><td>~20&deg;F</td></tr>
+                    <tr><td>10&deg;F to 20&deg;F</td><td>80% Oil / 20% Kerosene</td><td>~8&deg;F</td></tr>
+                    <tr><td>0&deg;F to 10&deg;F</td><td>70% Oil / 30% Kerosene</td><td>~2&deg;F</td></tr>
+                    <tr><td>-10&deg;F to 0&deg;F</td><td>50% Oil / 50% Kerosene</td><td>~-10&deg;F</td></tr>
+                    <tr><td>Below -10&deg;F</td><td>100% K-1 Kerosene</td><td>~-40&deg;F</td></tr>
+                </tbody>
+            </table>
+
+            <h2>How the Gel Point Calculation Works</h2>
+            <p>The effective gel point of a blend is approximately proportional to the mix ratio. #2 oil gels at ~20&deg;F and K-1 kerosene gels at ~-40&deg;F. A 50/50 blend gives a gel point around -10&deg;F. The actual gel point depends on fuel quality and additives, so these are conservative estimates.</p>
+        </section>
+
+        <section class="blend-faq">
+            <h2>Frequently Asked Questions</h2>
+            <details>
+                <summary>What is K-1 kerosene?</summary>
+                <p>K-1 (or 1-K) is a refined grade of kerosene with very low sulfur content. It burns cleaner than #2 heating oil and has a gel point around -40&deg;F, making it ideal for blending or for use in outdoor tanks during extreme cold. Most heating oil suppliers in the Northeast also sell K-1 kerosene.</p>
+            </details>
+            <details>
+                <summary>Can I mix kerosene with heating oil myself?</summary>
+                <p>Yes. Many homeowners in cold climates order a kerosene blend delivery or add kerosene to their existing oil tank. The fuels are fully compatible. If adding kerosene to an existing tank of oil, the blend ratio will be approximate based on how much oil is already in the tank.</p>
+            </details>
+            <details>
+                <summary>Why is kerosene more expensive than heating oil?</summary>
+                <p>K-1 kerosene requires additional refining to remove heavier hydrocarbons and reduce the sulfur content. This extra processing typically adds $0.50&ndash;$1.00 per gallon. The premium is justified for outdoor tanks or extreme cold where fuel gelling would leave you without heat.</p>
+            </details>
+            <details>
+                <summary>What is the minimum order for kerosene?</summary>
+                <p>Most suppliers require a 100&ndash;150 gallon minimum order for delivery, whether oil or kerosene. Some suppliers offer pre-blended fuel (e.g., 80/20 or 70/30) as a standard product during winter months. Call your supplier to ask about blend options.</p>
+            </details>
+        </section>
+
+        <p style="text-align:center; margin: 2rem 0;">
+            <a href="/prices/kerosene/" style="color: var(--primary-orange, #FF6B35); font-weight: 600; text-decoration: none;">View K-1 Kerosene Prices &rarr;</a>
+        </p>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="/for-suppliers">For Suppliers</a>
+            <a href="/how-prices-work">How Prices Work</a>
+            <a href="/learn/">Learn</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+            <a href="/support">Support</a>
+        </div>
+        <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
+        <p class="copyright">&copy; 2026 HomeHeat. All rights reserved.</p>
+    </footer>
+
+    <script src="../js/nav.js"></script>
+    <script src="../js/widgets.js?v=91bd6e10"></script>
+    <script src="../js/pwa.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        // Gel point constants (Fahrenheit)
+        var OIL_GEL_POINT = 20;     // #2 heating oil
+        var KERO_GEL_POINT = -40;   // K-1 kerosene
+
+        // Temperature → recommended blend (kerosene percentage)
+        function getRecommendedBlend(tempF) {
+            if (tempF > 20) return { keroPercent: 0, label: '100% Heating Oil', reason: 'No gelling risk above 20\u00b0F' };
+            if (tempF > 10) return { keroPercent: 20, label: '80/20 Oil/Kerosene', reason: 'Light blend for moderate cold' };
+            if (tempF > 0)  return { keroPercent: 30, label: '70/30 Oil/Kerosene', reason: 'Standard cold weather blend' };
+            if (tempF > -10) return { keroPercent: 50, label: '50/50 Oil/Kerosene', reason: 'Heavy blend for extreme cold' };
+            return { keroPercent: 100, label: '100% K-1 Kerosene', reason: 'Pure kerosene for extreme sub-zero temperatures' };
+        }
+
+        // Calculate effective gel point of a blend
+        function gelPoint(keroPercent) {
+            var oilFraction = (100 - keroPercent) / 100;
+            var keroFraction = keroPercent / 100;
+            return Math.round(OIL_GEL_POINT * oilFraction + KERO_GEL_POINT * keroFraction);
+        }
+
+        // Get tank size
+        function getTankSize() {
+            var sel = document.getElementById('blend-tank');
+            if (sel.value === 'custom') {
+                return parseInt(document.getElementById('blend-tank-custom').value) || 275;
+            }
+            return parseInt(sel.value);
+        }
+
+        // Calculate and display results
+        function calculate() {
+            var tempInput = document.getElementById('blend-temp');
+            var tempF = parseInt(tempInput.value);
+            if (isNaN(tempF)) {
+                tempInput.focus();
+                return;
+            }
+
+            var tank = getTankSize();
+            var oilPrice = parseFloat(document.getElementById('blend-oil-price').value) || null;
+            var keroPrice = parseFloat(document.getElementById('blend-kero-price').value) || null;
+            var hasPrices = oilPrice && keroPrice;
+
+            var rec = getRecommendedBlend(tempF);
+            var effectiveGel = gelPoint(rec.keroPercent);
+            var gallonsOil = Math.round(tank * (100 - rec.keroPercent) / 100);
+            var gallonsKero = Math.round(tank * rec.keroPercent / 100);
+
+            // Recommendation banner
+            var recEl = document.getElementById('blend-rec');
+            recEl.innerHTML =
+                '<p class="rec-title">Recommended Blend for ' + tempF + '\u00b0F</p>' +
+                '<p class="rec-ratio">' + rec.label + '</p>' +
+                '<p class="rec-reason">' + rec.reason + ' \u2014 Gel point protection to ' + effectiveGel + '\u00b0F</p>';
+
+            // Detail cards
+            var detailsHtml =
+                '<div class="blend-detail-card">' +
+                    '<p class="detail-label">Heating Oil</p>' +
+                    '<p class="detail-value">' + gallonsOil + ' gal</p>' +
+                    '<p class="detail-sub">' + (100 - rec.keroPercent) + '% of ' + tank + ' gal tank</p>' +
+                '</div>' +
+                '<div class="blend-detail-card">' +
+                    '<p class="detail-label">K-1 Kerosene</p>' +
+                    '<p class="detail-value">' + gallonsKero + ' gal</p>' +
+                    '<p class="detail-sub">' + rec.keroPercent + '% of ' + tank + ' gal tank</p>' +
+                '</div>';
+
+            if (hasPrices) {
+                var blendedCost = (oilPrice * (100 - rec.keroPercent) + keroPrice * rec.keroPercent) / 100;
+                var totalCost = blendedCost * tank;
+                var pureKeroCost = keroPrice * tank;
+                var savings = pureKeroCost - totalCost;
+
+                detailsHtml +=
+                    '<div class="blend-detail-card">' +
+                        '<p class="detail-label">Blended Cost</p>' +
+                        '<p class="detail-value">$' + blendedCost.toFixed(2) + '/gal</p>' +
+                        '<p class="detail-sub">vs $' + keroPrice.toFixed(2) + ' pure kerosene</p>' +
+                    '</div>' +
+                    '<div class="blend-detail-card">' +
+                        '<p class="detail-label">Total Fill Cost</p>' +
+                        '<p class="detail-value">$' + totalCost.toFixed(0) + '</p>' +
+                        (savings > 0 ? '<p class="detail-sub">Save $' + savings.toFixed(0) + ' vs 100% kerosene</p>' : '') +
+                    '</div>';
+            }
+
+            document.getElementById('blend-details').innerHTML = detailsHtml;
+
+            // Gel point bar
+            // Map -40 to 30 range onto 0-100% bar position
+            var barMin = -40, barMax = 30;
+            var gelPos = Math.max(0, Math.min(100, ((effectiveGel - barMin) / (barMax - barMin)) * 100));
+            var tempPos = Math.max(0, Math.min(100, ((tempF - barMin) / (barMax - barMin)) * 100));
+
+            document.getElementById('blend-gel').innerHTML =
+                '<p class="bar-title">Gel Point Protection</p>' +
+                '<div class="gel-bar-track">' +
+                    '<div class="gel-bar-marker" style="left:' + gelPos + '%" title="Blend gel point: ' + effectiveGel + '\u00b0F"></div>' +
+                '</div>' +
+                '<div class="gel-bar-labels">' +
+                    '<span>-40\u00b0F</span><span>-20\u00b0F</span><span>0\u00b0F</span><span>20\u00b0F</span>' +
+                '</div>' +
+                '<p style="font-size:0.8125rem;color:#4a5568;margin:8px 0 0;text-align:center;">' +
+                    'Blend gel point: <strong>' + effectiveGel + '\u00b0F</strong>' +
+                    (tempF < effectiveGel ? ' \u2014 <span style="color:#dc2626;">Warning: blend may gel at ' + tempF + '\u00b0F</span>' : ' \u2014 Protected at ' + tempF + '\u00b0F') +
+                '</p>';
+
+            // Show results
+            document.getElementById('blend-results').classList.add('visible');
+
+            // Scroll to results
+            document.getElementById('blend-rec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Analytics
+            if (typeof gtag === 'function') {
+                gtag('event', 'blend_calculate', {
+                    temperature: tempF,
+                    tank_size: tank,
+                    kerosene_percent: rec.keroPercent,
+                    has_prices: hasPrices
+                });
+            }
+        }
+
+        // Event listeners
+        document.getElementById('blend-calc-btn').addEventListener('click', calculate);
+
+        // Temperature presets
+        var presets = document.querySelectorAll('.temp-preset');
+        presets.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('blend-temp').value = this.getAttribute('data-temp');
+                presets.forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
+            });
+        });
+
+        // Custom tank size toggle
+        document.getElementById('blend-tank').addEventListener('change', function() {
+            var custom = document.getElementById('blend-tank-custom');
+            custom.style.display = this.value === 'custom' ? 'block' : 'none';
+            if (this.value === 'custom') custom.focus();
+        });
+
+        // Enter key submits
+        document.querySelectorAll('.blend-form input').forEach(function(input) {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') calculate();
+            });
+        });
+    })();
+    </script>
+</body>
+</html>

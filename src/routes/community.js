@@ -75,6 +75,7 @@ async function calculateMarketPriceFromScrapedData(sequelize, zipPrefix, fullZip
         AND sp.is_valid = true
         AND sp.scraped_at > NOW() - INTERVAL '7 days'
         AND sp.price_per_gallon BETWEEN 1.50 AND 7.00
+        AND sp.fuel_type = 'heating_oil'
     `, {
       replacements: { state },
       type: sequelize.QueryTypes.SELECT

@@ -56,7 +56,7 @@ class SupplierPriceStalenessService {
       LEFT JOIN LATERAL (
         SELECT price_per_gallon, scraped_at
         FROM supplier_prices
-        WHERE supplier_id = s.id AND is_valid = true
+        WHERE supplier_id = s.id AND is_valid = true AND fuel_type = 'heating_oil'
         ORDER BY scraped_at DESC
         LIMIT 1
       ) sp ON true
@@ -95,7 +95,7 @@ class SupplierPriceStalenessService {
       LEFT JOIN LATERAL (
         SELECT scraped_at
         FROM supplier_prices
-        WHERE supplier_id = s.id AND is_valid = true
+        WHERE supplier_id = s.id AND is_valid = true AND fuel_type = 'heating_oil'
         ORDER BY scraped_at DESC
         LIMIT 1
       ) sp ON true

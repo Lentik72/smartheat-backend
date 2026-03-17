@@ -161,6 +161,7 @@ class PriceAlertService {
         AND sp.expires_at > NOW()
         AND sp.scraped_at > NOW() - INTERVAL '72 hours'
         AND sp.source_type != 'aggregator_signal'
+        AND sp.fuel_type = 'heating_oil'
         AND EXISTS (
           SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS zip
           WHERE zip = :zipCode

@@ -89,7 +89,7 @@ router.get('/', async (req, res) => {
     const [priceRows] = await sequelize.query(`
       SELECT price_per_gallon, min_gallons, scraped_at, source_type
       FROM supplier_prices
-      WHERE supplier_id = :supplierId AND is_valid = true
+      WHERE supplier_id = :supplierId AND is_valid = true AND fuel_type = 'heating_oil'
       ORDER BY scraped_at DESC
       LIMIT 1
     `, { replacements: { supplierId: validation.supplierId } });
@@ -114,7 +114,7 @@ router.get('/', async (req, res) => {
     const [historyRows] = await sequelize.query(`
       SELECT price_per_gallon, min_gallons, scraped_at, source_type
       FROM supplier_prices
-      WHERE supplier_id = :supplierId
+      WHERE supplier_id = :supplierId AND fuel_type = 'heating_oil'
       ORDER BY scraped_at DESC
       LIMIT 5
     `, { replacements: { supplierId: validation.supplierId } });

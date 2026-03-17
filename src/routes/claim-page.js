@@ -174,7 +174,7 @@ async function getSupplierMarketData(sequelize, supplierId, slug) {
     WITH supplier_info AS (
       SELECT id, postal_codes_served,
         (SELECT price_per_gallon FROM supplier_prices
-         WHERE supplier_id = s.id AND is_valid = true
+         WHERE supplier_id = s.id AND is_valid = true AND fuel_type = 'heating_oil'
          ORDER BY scraped_at DESC LIMIT 1) as current_price
       FROM suppliers s WHERE id = :supplierId
     ),

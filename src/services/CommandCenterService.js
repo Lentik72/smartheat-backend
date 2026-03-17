@@ -114,6 +114,7 @@ class CommandCenterService {
           AND s.active = true
           AND s.scrape_status = 'active'
           AND sp.scraped_at > NOW() - INTERVAL '48 hours'
+          AND sp.fuel_type = 'heating_oil'
       ),
       daily_connections AS (
         SELECT

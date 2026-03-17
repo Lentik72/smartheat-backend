@@ -146,7 +146,9 @@ async function runScraper(options = {}) {
       skipped: [],
       cooldown: [],    // V2.6.0: Suppliers in cooldown
       phoneOnly: [],   // V2.6.0: Suppliers marked phone_only
-      rejected: []     // V2.7.0: Suspicious price drops rejected
+      rejected: [],    // V2.7.0: Suspicious price drops rejected
+      fuelSuccess: 0,  // V2.12.0: Additional fuel prices stored (kerosene, etc.)
+      fuelFailed: 0,   // V2.12.0: Additional fuel extractions that failed
     };
 
     // V2.7.0: Price change protection threshold
@@ -249,6 +251,63 @@ async function runScraper(options = {}) {
             ]
           });
         }
+
+        // V2.12.0: Store additional fuel prices (kerosene, etc.)
+        if (!opts.dryRun && result.fuelPrices && result.fuelPrices.length > 0) {
+          for (const fp of result.fuelPrices) {
+            try {
+              // Price drop protection per fuel type
+              const [prevFuelPrices] = await sequelize.query(`
+                SELECT price_per_gallon FROM supplier_prices
+                WHERE supplier_id = $1 AND fuel_type = $2 AND is_valid = true
+                ORDER BY scraped_at DESC LIMIT 1
+              `, { bind: [result.supplierId, fp.fuelType] });
+
+              let fuelRejected = false;
+              if (prevFuelPrices.length > 0) {
+                const prevPrice = parseFloat(prevFuelPrices[0].price_per_gallon);
+                const dropPercent = (prevPrice - fp.price) / prevPrice;
+                if (dropPercent > MAX_PRICE_DROP_PERCENT) {
+                  log.warn(`   ⚠️  ${fp.fuelType} REJECTED: $${fp.price.toFixed(3)} is ${(dropPercent * 100).toFixed(0)}% below previous $${prevPrice.toFixed(3)}`);
+                  fuelRejected = true;
+                }
+              }
+              // No previous price = first ever for this fuel — always store (no drop to detect)
+
+              if (!fuelRejected) {
+                await sequelize.query(`
+                  INSERT INTO supplier_prices (
+                    id, supplier_id, price_per_gallon, min_gallons, fuel_type,
+                    source_type, source_url, scraped_at, expires_at, is_valid, notes,
+                    created_at, updated_at
+                  ) VALUES (
+                    gen_random_uuid(), $1, $2, $3, $4,
+                    $5, $6, $7, $8, true, NULL,
+                    NOW(), NOW()
+                  )
+                `, {
+                  bind: [
+                    result.supplierId,
+                    fp.price,
+                    result.minGallons,
+                    fp.fuelType, // 'kerosene', etc.
+                    result.sourceType,
+                    result.sourceUrl,
+                    result.scrapedAt.toISOString(),
+                    result.expiresAt.toISOString()
+                  ]
+                });
+                log.info(`   🔥 ${fp.fuelType}: $${fp.price.toFixed(3)}`);
+                results.fuelSuccess++;
+              } else {
+                results.fuelFailed++;
+              }
+            } catch (fuelErr) {
+              log.warn(`   ⚠️  Failed to store ${fp.fuelType} price: ${fuelErr.message}`);
+              results.fuelFailed++;
+            }
+          }
+        }
       } else {
         // V2.2.0: Log retry attempts for failures
         const retryLabel = result.retriedAttempts ? ` [after ${result.retriedAttempts} retries]` : '';
@@ -260,6 +319,33 @@ async function runScraper(options = {}) {
           const backoffResult = await recordFailure(sequelize, supplier.id, supplier.name, log, result.error);
           if (backoffResult.action !== 'none') {
             // Already logged by recordFailure
+          }
+        }
+
+        // V2.12.0: Oil failed but fuel prices may have succeeded — store them independently
+        if (!opts.dryRun && result.fuelPrices && result.fuelPrices.length > 0) {
+          const sourceType = config.displayable === false ? 'aggregator_signal' : 'scraped';
+          for (const fp of result.fuelPrices) {
+            try {
+              await sequelize.query(`
+                INSERT INTO supplier_prices (
+                  id, supplier_id, price_per_gallon, min_gallons, fuel_type,
+                  source_type, source_url, scraped_at, expires_at, is_valid, notes,
+                  created_at, updated_at
+                ) VALUES (
+                  gen_random_uuid(), $1, $2, 150, $3,
+                  $4, $5, NOW(), NOW() + INTERVAL '48 hours', true, NULL,
+                  NOW(), NOW()
+                )
+              `, {
+                bind: [supplier.id, fp.price, fp.fuelType, sourceType, supplier.website]
+              });
+              log.info(`   🔥 ${fp.fuelType}: $${fp.price.toFixed(3)} (oil failed, fuel saved)`);
+              results.fuelSuccess++;
+            } catch (fuelErr) {
+              log.warn(`   ⚠️  Failed to store ${fp.fuelType} price: ${fuelErr.message}`);
+              results.fuelFailed++;
+            }
           }
         }
       }
@@ -275,9 +361,12 @@ async function runScraper(options = {}) {
     log.info('═══════════════════════════════════════════════════════════');
     log.info('  SCRAPE SUMMARY');
     log.info('═══════════════════════════════════════════════════════════');
-    log.info(`  ✅ Success:    ${results.success.length}`);
-    log.info(`  ❌ Failed:     ${results.failed.length}`);
+    log.info(`  ✅ Oil success: ${results.success.length}`);
+    log.info(`  ❌ Oil failed:  ${results.failed.length}`);
     log.info(`  🚫 Rejected:   ${results.rejected.length}`);  // V2.7.0
+    if (results.fuelSuccess > 0 || results.fuelFailed > 0) {
+      log.info(`  🔥 Fuel prices: ${results.fuelSuccess} stored, ${results.fuelFailed} failed`);  // V2.12.0
+    }
     log.info(`  🕐 Cooldown:   ${results.cooldown.length}`);
     log.info(`  ⛔ Phone-only: ${results.phoneOnly.length}`);
     log.info(`  ⏭️  No config:  ${suppliers.length - scrapableSuppliers.length}`);

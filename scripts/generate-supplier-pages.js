@@ -235,7 +235,7 @@ const SVG_GLOBE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" s
 
 // ─── Page Template ─────────────────────────────────────────────
 
-function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficData) {
+function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficData, kerosenePrice = null) {
   const name = escapeHtml(supplier.name);
   const city = escapeHtml(supplier.city) || '';
   const state = supplier.state || '';
@@ -303,6 +303,14 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
       </div>
     </section>`;
 
+  // V2.12.0: Kerosene price display
+  const hasKeroPrice = kerosenePrice && kerosenePrice.price_per_gallon;
+  const keroDisplay = hasKeroPrice ? `$${kerosenePrice.price_per_gallon.toFixed(2)}` : null;
+  const keroFreshness = hasKeroPrice ? getFreshness(kerosenePrice.scraped_at) : null;
+  const fuelSpread = (hasPrice && hasKeroPrice)
+    ? (kerosenePrice.price_per_gallon - latestPrice.price_per_gallon).toFixed(2)
+    : null;
+
   // 2. Price
   let priceHtml;
   if (hasPrice) {
@@ -310,10 +318,39 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
     if (minGallons) priceMeta.push(`${minGallons} gallon minimum`);
     if (freshness) priceMeta.push(`<span class="freshness-dot ${freshness.dotClass}"></span> ${escapeHtml(freshness.text)}`);
 
+    // V2.12.0: Dual-fuel price display
+    let keroRow = '';
+    if (hasKeroPrice) {
+      const keroMetaParts = [];
+      if (keroFreshness) keroMetaParts.push(`<span class="freshness-dot ${keroFreshness.dotClass}"></span> ${escapeHtml(keroFreshness.text)}`);
+      keroRow = `
+      <div class="sp-price-row sp-price-kerosene">
+        <span class="sp-price-fuel-label">K-1 Kerosene</span>
+        <span class="sp-price-fuel-amount">${keroDisplay}<span class="sp-price-unit">/gal</span></span>
+        ${keroMetaParts.length > 0 ? `<span class="sp-price-fuel-meta">${keroMetaParts.join(' &middot; ')}</span>` : ''}
+      </div>
+      ${fuelSpread ? `<p class="sp-fuel-spread">Kerosene premium: +$${fuelSpread}/gal over heating oil</p>` : ''}
+      <p class="sp-kerosene-note">K-1 kerosene is typically used for outdoor tanks and extreme cold weather protection.</p>`;
+    }
+
     priceHtml = `
     <section class="sp-price">
+      ${hasKeroPrice ? '<div class="sp-price-row sp-price-oil"><span class="sp-price-fuel-label">Heating Oil</span>' : ''}
       <div class="sp-price-amount">${priceDisplay}<span class="sp-price-unit">/gal</span></div>
       ${priceMeta.length > 0 ? `<div class="sp-price-meta">${priceMeta.join(' &middot; ')}</div>` : ''}
+      ${hasKeroPrice ? '</div>' : ''}
+      ${keroRow}
+    </section>`;
+  } else if (hasKeroPrice) {
+    // No oil price but has kerosene — show kerosene only
+    priceHtml = `
+    <section class="sp-price">
+      <div class="sp-price-row sp-price-kerosene">
+        <span class="sp-price-fuel-label">K-1 Kerosene</span>
+        <div class="sp-price-amount">${keroDisplay}<span class="sp-price-unit">/gal</span></div>
+        ${keroFreshness ? `<div class="sp-price-meta"><span class="freshness-dot ${keroFreshness.dotClass}"></span> ${escapeHtml(keroFreshness.text)}</div>` : ''}
+      </div>
+      <p class="sp-kerosene-note">K-1 kerosene is typically used for outdoor tanks and extreme cold weather protection.</p>
     </section>`;
   } else {
     let helpText = '';
@@ -748,11 +785,12 @@ async function generateSupplierPages(options = {}) {
     logger.log(`Found ${suppliers.length} active suppliers with slugs\n`);
 
     // Get latest valid prices for ALL suppliers (not just claimed)
+    // V2.12.0: Query per fuel type to avoid kerosene prices showing as oil
     const [prices] = await sequelize.query(`
       SELECT DISTINCT ON (supplier_id)
         supplier_id, price_per_gallon, scraped_at
       FROM supplier_prices
-      WHERE is_valid = true
+      WHERE is_valid = true AND fuel_type = 'heating_oil'
       ORDER BY supplier_id, scraped_at DESC
     `);
 
@@ -762,11 +800,25 @@ async function generateSupplierPages(options = {}) {
       return [p.supplier_id, p];
     }));
 
+    // V2.12.0: Get kerosene prices separately for dual-fuel display
+    const [keroPrices] = await sequelize.query(`
+      SELECT DISTINCT ON (supplier_id)
+        supplier_id, price_per_gallon, scraped_at
+      FROM supplier_prices
+      WHERE is_valid = true AND fuel_type = 'kerosene'
+      ORDER BY supplier_id, scraped_at DESC
+    `);
+    const keroPriceMap = new Map(keroPrices.map(p => {
+      p.price_per_gallon = parseFloat(p.price_per_gallon);
+      return [p.supplier_id, p];
+    }));
+
     // Pre-attach prices and pre-normalize counties/ZIPs for nearby algorithm.
     // Done ONCE here, NOT inside the nested loop.
     const anomalies = [];
     for (const supplier of suppliers) {
       supplier.latestPrice = priceMap.get(supplier.id) || null;
+      supplier.kerosenePrice = keroPriceMap.get(supplier.id) || null; // V2.12.0
 
       // Normalize counties to lowercase for overlap comparison
       const rawCounties = supplier.serviceCounties || [];
@@ -868,7 +920,7 @@ async function generateSupplierPages(options = {}) {
       const latestPrice = supplier.latestPrice;
       const nearby = findNearbySuppliers(supplier, suppliers);
       const trafficData = !supplier.claimedAt ? getTrafficData(supplier) : null;
-      const html = generateSupplierPage(supplier, latestPrice, nearby, trafficData);
+      const html = generateSupplierPage(supplier, latestPrice, nearby, trafficData, supplier.kerosenePrice);
       const filePath = path.join(outputDir, `${supplier.slug}.html`);
 
       if (latestPrice) withPrice++;
@@ -1094,6 +1146,47 @@ function generateSupplierCSS() {
   font-size: 0.875rem;
   color: var(--text-muted, #6b7280);
   margin: 0;
+}
+
+/* V2.12.0: Dual-fuel price display */
+.sp-price-row {
+  margin-bottom: 12px;
+}
+.sp-price-row:last-of-type {
+  margin-bottom: 0;
+}
+.sp-price-fuel-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.sp-price-kerosene .sp-price-fuel-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d8a2d;
+}
+.sp-price-kerosene .sp-price-unit {
+  font-size: 0.875rem;
+}
+.sp-price-fuel-meta {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #6b7280);
+  margin-top: 2px;
+}
+.sp-fuel-spread {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #374151);
+  margin: 8px 0 4px;
+  font-style: italic;
+}
+.sp-kerosene-note {
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+  margin: 4px 0 0;
 }
 
 /* Breadcrumb */

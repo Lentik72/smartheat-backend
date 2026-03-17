@@ -41,6 +41,11 @@ class CountyStatsComputer {
     };
   }
 
+  // V2.12.0: Fuel types to compute stats for
+  static FUEL_TYPES = ['heating_oil', 'kerosene'];
+  // V2.12.0: Minimum suppliers required to compute stats (avoid meaningless single-supplier medians)
+  static MIN_SUPPLIERS_FOR_STATS = 2;
+
   /**
    * Main entry point - compute all county stats
    */
@@ -53,24 +58,35 @@ class CountyStatsComputer {
       const counties = await this.getActiveCounties();
       this.logger.info(`[CountyStatsComputer] Found ${counties.length} counties with supplier coverage`);
 
-      // Step 2: Compute weekly stats for recent weeks
-      await this.computeWeeklyStats();
-
-      // Step 3: Update current stats for each county
       let updated = 0;
-      for (const county of counties) {
-        try {
-          await this.updateCurrentStats(county.county_name, county.state_code, 'heating_oil');
-          updated++;
-        } catch (err) {
-          this.logger.warn(`[CountyStatsComputer] Failed to update ${county.county_name}, ${county.state_code}: ${err.message}`);
+      const fuelCounts = {};
+
+      for (const fuelType of CountyStatsComputer.FUEL_TYPES) {
+        // Step 2: Compute weekly stats for recent weeks (per fuel type)
+        await this.computeWeeklyStats(fuelType);
+
+        // Step 3: Update current stats for each county
+        let fuelUpdated = 0;
+        for (const county of counties) {
+          try {
+            await this.updateCurrentStats(county.county_name, county.state_code, fuelType);
+            fuelUpdated++;
+          } catch (err) {
+            // Expected for kerosene in counties with no kerosene data — don't warn
+            if (fuelType === 'heating_oil') {
+              this.logger.warn(`[CountyStatsComputer] Failed to update ${county.county_name}, ${county.state_code} (${fuelType}): ${err.message}`);
+            }
+          }
         }
+        fuelCounts[fuelType] = fuelUpdated;
+        updated += fuelUpdated;
       }
 
       const duration = Date.now() - startTime;
-      this.logger.info(`[CountyStatsComputer] ✅ Completed: ${updated}/${counties.length} counties updated in ${duration}ms`);
+      const fuelSummary = Object.entries(fuelCounts).map(([k, v]) => `${k}: ${v}`).join(', ');
+      this.logger.info(`[CountyStatsComputer] ✅ Completed: ${fuelSummary} county-fuel combos updated in ${duration}ms`);
 
-      return { success: true, updated, total: counties.length, durationMs: duration };
+      return { success: true, updated, total: counties.length, fuelCounts, durationMs: duration };
     } catch (error) {
       this.logger.error('[CountyStatsComputer] ❌ Failed:', error.message);
       return { success: false, error: error.message };
@@ -100,9 +116,11 @@ class CountyStatsComputer {
    * Without CTE, joining ZIP expansion before aggregation causes each price
    * to be counted N times (once per ZIP the supplier serves in the county).
    * The CTE first maps suppliers to counties, then joins prices ONCE per supplier.
+   *
+   * V2.12.0: Parameterized by fuelType. Skips counties with < MIN_SUPPLIERS_FOR_STATS.
    */
-  async computeWeeklyStats() {
-    this.logger.info('[CountyStatsComputer] Computing weekly stats for last 12 weeks...');
+  async computeWeeklyStats(fuelType = 'heating_oil') {
+    this.logger.info(`[CountyStatsComputer] Computing weekly stats for ${fuelType} (last 12 weeks)...`);
 
     await this.sequelize.query(`
       WITH supplier_counties AS (
@@ -138,7 +156,7 @@ class CountyStatsComputer {
         gen_random_uuid(),
         sc.county_name,
         sc.state_code,
-        'heating_oil' as fuel_type,
+        :fuelType as fuel_type,
         DATE_TRUNC('week', sp.scraped_at)::date as week_start,
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sp.price_per_gallon::numeric)::numeric(5,3) as median_price,
         MIN(sp.price_per_gallon::numeric)::numeric(5,3) as min_price,
@@ -152,8 +170,10 @@ class CountyStatsComputer {
       JOIN supplier_counties sc ON sc.supplier_id = sp.supplier_id
       LEFT JOIN county_zip_counts czc ON czc.county_name = sc.county_name AND czc.state_code = sc.state_code
       WHERE sp.is_valid = true
+        AND sp.fuel_type = :fuelType
         AND sp.scraped_at >= DATE_TRUNC('week', NOW()) - INTERVAL '12 weeks'
       GROUP BY sc.county_name, sc.state_code, czc.zip_count, DATE_TRUNC('week', sp.scraped_at)::date
+      HAVING COUNT(DISTINCT sc.supplier_id) >= :minSuppliers
       ON CONFLICT (county_name, state_code, week_start, fuel_type)
       DO UPDATE SET
         median_price = EXCLUDED.median_price,
@@ -164,7 +184,7 @@ class CountyStatsComputer {
         data_points = EXCLUDED.data_points,
         zip_count = EXCLUDED.zip_count,
         computed_at = NOW()
-    `);
+    `, { replacements: { fuelType, minSuppliers: CountyStatsComputer.MIN_SUPPLIERS_FOR_STATS } });
   }
 
   /**

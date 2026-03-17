@@ -574,6 +574,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/107-add-fawcett-energy-ma', label: 'Fawcett Energy MA' },
           { path: './src/migrations/108-add-fulton-ny-suppliers', label: 'Fulton NY / Oswego County suppliers' },
           { path: './src/migrations/109-add-dansville-ny-suppliers', label: 'Dansville NY / Livingston County suppliers' },
+          { path: './src/migrations/110-add-kerosene-fuel-type', label: 'Add kerosene fuel type' },
         ];
 
         let migrationErrors = 0;

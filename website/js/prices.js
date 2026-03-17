@@ -432,6 +432,9 @@
     if (typeof window.showPwaInstallBanner === 'function') {
       setTimeout(() => window.showPwaInstallBanner(), 1500);
     }
+
+    // V2.12.0: Check for kerosene suppliers and show cross-sell banner
+    checkKeroseneCrossSell(zip);
   }
 
   // Render results when only unpriced suppliers exist
@@ -459,6 +462,38 @@
       ${unpricedSuppliers.map(s => createUnpricedSupplierCard(s)).join('')}
     `;
 
+    // V2.12.0: Check for kerosene suppliers
+    checkKeroseneCrossSell(zip);
+  }
+
+  // V2.12.0: Check if kerosene suppliers exist for this ZIP and show cross-sell banner
+  function checkKeroseneCrossSell(zip) {
+    // Remove any existing banner
+    var existing = document.getElementById('kerosene-cross-sell');
+    if (existing) existing.remove();
+
+    fetch(API_BASE + API_ENDPOINT + '?zip=' + zip + '&fuel=kerosene')
+      .then(function(resp) { return resp.ok ? resp.json() : null; })
+      .then(function(data) {
+        if (!data || !data.data) return;
+        var keroSuppliers = data.data.filter(function(s) {
+          return s.currentPrice && s.currentPrice.pricePerGallon;
+        });
+        if (keroSuppliers.length === 0) return;
+
+        var banner = document.createElement('div');
+        banner.id = 'kerosene-cross-sell';
+        banner.className = 'kerosene-cross-sell';
+        banner.innerHTML =
+          '<h4>K-1 Kerosene Also Available</h4>' +
+          '<p>' + keroSuppliers.length + ' supplier' + (keroSuppliers.length > 1 ? 's' : '') +
+          ' deliver K-1 kerosene to ' + zip + '</p>' +
+          '<a href="/prices/kerosene/?zip=' + zip + '" class="kerosene-cross-sell-link">See Kerosene Prices &rarr;</a>';
+
+        var cards = document.getElementById('supplier-cards');
+        if (cards) cards.appendChild(banner);
+      })
+      .catch(function() { /* silent — kerosene check is non-critical */ });
   }
 
   // V3.0.0: Generate supplier initials for avatar

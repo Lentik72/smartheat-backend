@@ -37,26 +37,29 @@ async function getAllSuppliers(sequelize) {
  * @param {object} sequelize - Sequelize instance
  * @param {number} minPrice - Minimum valid price (filter data errors)
  * @param {number} maxPrice - Maximum valid price (filter data errors)
+ * @param {string} [fuelType='heating_oil'] - V2.12.0: Filter by fuel type
  */
-async function getCurrentPrices(sequelize, minPrice, maxPrice) {
+async function getCurrentPrices(sequelize, minPrice, maxPrice, fuelType = 'heating_oil') {
   const [results] = await sequelize.query(`
     SELECT DISTINCT ON (sp.supplier_id)
       sp.supplier_id,
       sp.price_per_gallon as price,
       sp.min_gallons,
       sp.scraped_at,
-      sp.source_type
+      sp.source_type,
+      sp.fuel_type
     FROM supplier_prices sp
     JOIN suppliers s ON sp.supplier_id = s.id
     WHERE sp.is_valid = true
       AND sp.expires_at > NOW()
       AND sp.scraped_at > NOW() - INTERVAL '36 hours'
       AND sp.price_per_gallon BETWEEN $1 AND $2
+      AND sp.fuel_type = $3
       AND s.active = true
       AND s.allow_price_display = true
     ORDER BY sp.supplier_id, sp.scraped_at DESC
   `, {
-    bind: [minPrice, maxPrice]
+    bind: [minPrice, maxPrice, fuelType]
   });
 
   return results.map(r => ({

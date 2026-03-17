@@ -37,6 +37,7 @@ const FILE_NAV_CONFIG = {
   'learn/heating-oil-vs-natural-gas.html': { depth: 1, activeLink: '/learn/' },
   'learn/heating-oil-vs-propane.html':   { depth: 1, activeLink: '/learn/' },
   'tools/heating-cost-calculator.html':  { depth: 1, activeLink: null },
+  'tools/blend-calculator.html':        { depth: 1, activeLink: null },
 };
 
 const NAV_START = '<!-- NAV_START -->';

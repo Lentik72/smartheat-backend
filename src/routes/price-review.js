@@ -204,6 +204,7 @@ router.get('/', requireAuth, async (req, res) => {
           notes
         FROM supplier_prices
         WHERE is_valid = true
+          AND fuel_type = 'heating_oil'
         ORDER BY supplier_id, scraped_at DESC
       )
       SELECT
@@ -236,6 +237,7 @@ router.get('/', requireAuth, async (req, res) => {
             scraped_at
           FROM supplier_prices
           WHERE is_valid = true
+            AND fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         )
         SELECT
@@ -275,6 +277,7 @@ router.get('/', requireAuth, async (req, res) => {
           scraped_at
         FROM supplier_prices
         WHERE is_valid = true
+          AND fuel_type = 'heating_oil'
         ORDER BY supplier_id, scraped_at DESC
       )
       SELECT
@@ -583,7 +586,7 @@ router.get('/stats', requireAuth, async (req, res) => {
         COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.price_per_gallon < 2.00 OR sp.price_per_gallon > 5.50) as suspicious_prices,
         COUNT(DISTINCT sp.supplier_id) FILTER (WHERE sp.source_type = 'manual') as manual_prices
       FROM suppliers s
-      LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.is_valid = true
+      LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.is_valid = true AND sp.fuel_type = 'heating_oil'
     `);
 
     // Get backoff stats from suppliers table

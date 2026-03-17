@@ -31,6 +31,11 @@ class ZipStatsComputer {
     };
   }
 
+  // V2.12.0: Fuel types to compute stats for
+  static FUEL_TYPES = ['heating_oil', 'kerosene'];
+  // V2.12.0: Minimum suppliers required to compute stats
+  static MIN_SUPPLIERS_FOR_STATS = 2;
+
   /**
    * Main entry point - compute all ZIP stats
    */
@@ -43,25 +48,35 @@ class ZipStatsComputer {
       const zipPrefixes = await this.getActiveZipPrefixes();
       this.logger.info(`[ZipStatsComputer] Found ${zipPrefixes.length} active ZIP prefixes`);
 
-      // Step 2: Compute weekly stats for current week
-      const currentWeekStart = this.getWeekStart(new Date());
-      await this.computeWeeklyStats(currentWeekStart);
-
-      // Step 3: Update current stats for each ZIP prefix
       let updated = 0;
-      for (const zipPrefix of zipPrefixes) {
-        try {
-          await this.updateCurrentStats(zipPrefix, 'heating_oil');
-          updated++;
-        } catch (err) {
-          this.logger.warn(`[ZipStatsComputer] Failed to update ${zipPrefix}: ${err.message}`);
+      const fuelCounts = {};
+
+      for (const fuelType of ZipStatsComputer.FUEL_TYPES) {
+        // Step 2: Compute weekly stats (per fuel type)
+        const currentWeekStart = this.getWeekStart(new Date());
+        await this.computeWeeklyStats(currentWeekStart, fuelType);
+
+        // Step 3: Update current stats for each ZIP prefix
+        let fuelUpdated = 0;
+        for (const zipPrefix of zipPrefixes) {
+          try {
+            await this.updateCurrentStats(zipPrefix, fuelType);
+            fuelUpdated++;
+          } catch (err) {
+            if (fuelType === 'heating_oil') {
+              this.logger.warn(`[ZipStatsComputer] Failed to update ${zipPrefix} (${fuelType}): ${err.message}`);
+            }
+          }
         }
+        fuelCounts[fuelType] = fuelUpdated;
+        updated += fuelUpdated;
       }
 
       const duration = Date.now() - startTime;
-      this.logger.info(`[ZipStatsComputer] ✅ Completed: ${updated}/${zipPrefixes.length} ZIPs updated in ${duration}ms`);
+      const fuelSummary = Object.entries(fuelCounts).map(([k, v]) => `${k}: ${v}`).join(', ');
+      this.logger.info(`[ZipStatsComputer] ✅ Completed: ${fuelSummary} zip-fuel combos updated in ${duration}ms`);
 
-      return { success: true, updated, total: zipPrefixes.length, durationMs: duration };
+      return { success: true, updated, total: zipPrefixes.length, fuelCounts, durationMs: duration };
     } catch (error) {
       this.logger.error('[ZipStatsComputer] ❌ Failed:', error.message);
       return { success: false, error: error.message };
@@ -85,9 +100,10 @@ class ZipStatsComputer {
 
   /**
    * Compute weekly aggregates for a specific week
+   * V2.12.0: Parameterized by fuelType. Skips ZIPs with < MIN_SUPPLIERS_FOR_STATS.
    */
-  async computeWeeklyStats(weekStart) {
-    this.logger.info(`[ZipStatsComputer] Computing weekly stats for week of ${weekStart}`);
+  async computeWeeklyStats(weekStart, fuelType = 'heating_oil') {
+    this.logger.info(`[ZipStatsComputer] Computing weekly stats for ${fuelType} (week of ${weekStart})`);
 
     await this.sequelize.query(`
       INSERT INTO zip_price_stats (
@@ -98,7 +114,7 @@ class ZipStatsComputer {
       SELECT
         gen_random_uuid(),
         SUBSTRING(zip::text, 1, 3) as zip_prefix,
-        'heating_oil' as fuel_type,
+        :fuelType as fuel_type,
         DATE_TRUNC('week', sp.created_at)::date as week_start,
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sp.price_per_gallon::numeric)::numeric(5,3) as median_price,
         MIN(sp.price_per_gallon::numeric)::numeric(5,3) as min_price,
@@ -110,9 +126,11 @@ class ZipStatsComputer {
       JOIN suppliers s ON sp.supplier_id = s.id,
            jsonb_array_elements_text(s.postal_codes_served) as zip
       WHERE sp.is_valid = true
+        AND sp.fuel_type = :fuelType
         AND sp.created_at >= DATE_TRUNC('week', NOW()) - INTERVAL '12 weeks'
         AND s.active = true
       GROUP BY SUBSTRING(zip::text, 1, 3), DATE_TRUNC('week', sp.created_at)::date
+      HAVING COUNT(DISTINCT s.id) >= :minSuppliers
       ON CONFLICT (zip_prefix, week_start, fuel_type)
       DO UPDATE SET
         median_price = EXCLUDED.median_price,
@@ -121,7 +139,7 @@ class ZipStatsComputer {
         supplier_count = EXCLUDED.supplier_count,
         data_points = EXCLUDED.data_points,
         computed_at = NOW()
-    `);
+    `, { replacements: { fuelType, minSuppliers: ZipStatsComputer.MIN_SUPPLIERS_FOR_STATS } });
   }
 
   /**

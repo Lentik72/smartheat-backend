@@ -285,6 +285,7 @@ class RecommendationsEngine {
             SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
             FROM supplier_prices
             WHERE is_valid = true
+              AND fuel_type = 'heating_oil'
             ORDER BY supplier_id, scraped_at DESC
           )
           SELECT
@@ -302,6 +303,7 @@ class RecommendationsEngine {
             SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
             FROM supplier_prices
             WHERE is_valid = true
+              AND fuel_type = 'heating_oil'
             ORDER BY supplier_id, scraped_at DESC
           ),
           recent_clicks AS (
@@ -332,6 +334,7 @@ class RecommendationsEngine {
             SELECT DISTINCT ON (supplier_id) supplier_id
             FROM supplier_prices
             WHERE is_valid = true
+              AND fuel_type = 'heating_oil'
             ORDER BY supplier_id, scraped_at DESC
           )
           SELECT rc.supplier_name, rc.clicks

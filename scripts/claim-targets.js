@@ -110,7 +110,7 @@ async function main() {
         current_price AS (
           SELECT price_per_gallon
           FROM supplier_prices
-          WHERE supplier_id = :supplierId AND is_valid = true
+          WHERE supplier_id = :supplierId AND is_valid = true AND fuel_type = 'heating_oil'
           ORDER BY scraped_at DESC LIMIT 1
         ),
         zip_demand AS (

@@ -22,7 +22,7 @@
     <meta name="keywords" content="heating oil prices, heating oil cost, oil prices by zip code, cheap heating oil, heating oil comparison, heating oil NY, heating oil CT, heating oil MA, heating oil NJ, heating oil PA">
     <link rel="canonical" href="https://www.gethomeheat.com/prices">
 
-    <link rel="stylesheet" href="style.min.css?v=09fb5845">
+    <link rel="stylesheet" href="style.min.css?v=2ad730ee">
 
     <!-- Schema markup for SEO -->
     <script id="schema-markup" type="application/ld+json">
@@ -84,7 +84,7 @@
                     "description": "Heating oil delivery in Hummelstown, PA",
                     "offers": {
                         "@type": "Offer",
-                        "price": "3.69",
+                        "price": "3.70",
                         "priceCurrency": "USD",
                         "unitCode": "GLL",
                         "availability": "https://schema.org/InStock"
@@ -96,11 +96,11 @@
                 "position": 3,
                 "item": {
                     "@type": "Product",
-                    "name": "Heating Oil from Fuel Cell Petrol",
-                    "description": "Heating oil delivery in Stockertown, PA",
+                    "name": "Heating Oil from Liberty Bell Discount Oil",
+                    "description": "Heating oil delivery in Media, PA",
                     "offers": {
                         "@type": "Offer",
-                        "price": "3.84",
+                        "price": "3.80",
                         "priceCurrency": "USD",
                         "unitCode": "GLL",
                         "availability": "https://schema.org/InStock"
@@ -112,11 +112,11 @@
                 "position": 4,
                 "item": {
                     "@type": "Product",
-                    "name": "Heating Oil from E-Z Oil Company",
-                    "description": "Heating oil delivery in Hartford, CT",
+                    "name": "Heating Oil from Fuel Cell Petrol",
+                    "description": "Heating oil delivery in Stockertown, PA",
                     "offers": {
                         "@type": "Offer",
-                        "price": "4.00",
+                        "price": "3.84",
                         "priceCurrency": "USD",
                         "unitCode": "GLL",
                         "availability": "https://schema.org/InStock"
@@ -662,11 +662,18 @@
             </button>
             <ul class="nav-links">
                 <li><a href="/">Home</a></li>
-                <li><a href="/prices" class="active">Prices</a></li>
+                <li class="nav-dropdown-parent">
+                    <button class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">Prices</button>
+                    <ul class="nav-dropdown" role="menu">
+                        <li role="menuitem"><a href="/prices" data-track="nav-oil-prices" data-referrer="nav">Heating Oil Prices</a></li>
+                        <li role="menuitem"><a href="/prices/kerosene/" data-track="nav-kero-prices" data-referrer="nav">K-1 Kerosene Prices</a></li>
+                    </ul>
+                </li>
                 <li class="nav-dropdown-parent">
                     <button class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">Heating Costs</button>
                     <ul class="nav-dropdown" role="menu">
                         <li role="menuitem"><a href="/tools/heating-cost-calculator" data-track="nav-calculator" data-referrer="nav">Cost Calculator</a></li>
+                        <li role="menuitem"><a href="/tools/blend-calculator" data-track="nav-blend-calc" data-referrer="nav">Blend Calculator</a></li>
                         <li role="menuitem"><a href="/heating-cost/" data-track="nav-fuel-compare" data-referrer="nav">Fuel Comparison</a></li>
                         <li role="menuitem"><a href="/average-heating-bill/" data-track="nav-avg-bill" data-referrer="nav">Average Bills</a></li>
                         <li role="menuitem"><a href="/price-trend/" data-track="nav-price-trend" data-referrer="nav">Price Trends</a></li>
@@ -730,7 +737,7 @@
         <div class="lowest-price-card" id="lowest-price-card" style="min-height: 120px;">
                 <p class="lowest-label">Lowest Heating Oil Price Today</p>
                 <span class="lowest-value">$3.05/gal</span>
-                <span class="lowest-vs-avg">$1.66 below Northeast average</span>
+                <span class="lowest-vs-avg">$1.68 below Northeast average</span>
                 <p class="lowest-supplier">Leighow Energy — Danville, PA</p>
             </div>
     </section>
@@ -738,7 +745,7 @@
     <!-- Default Leaderboard - National Dashboard -->
     <section id="default-leaderboard" class="leaderboard-v2">
         <h2>Today's Heating Oil Prices Across the Northeast</h2>
-        <p class="leaderboard-date" id="leaderboard-date">Updated March 15, 2026</p>
+        <p class="leaderboard-date" id="leaderboard-date">Updated March 16, 2026</p>
         <p class="leaderboard-trust"><span id="leaderboard-suppliers">571</span> suppliers · <span id="leaderboard-states">14</span> states · updated daily</p>
 
         <div class="leaderboard-grid-v2">
@@ -749,49 +756,49 @@
                     <tbody>
                         <tr>
                             <td><a href="prices/pa/">Pennsylvania</a></td>
-                            <td>$4.47 avg</td>
+                            <td>$4.45 avg</td>
                             <td>18 suppliers</td>
                             <td><a href="prices/pa/">See all →</a></td>
                         </tr>
                         <tr>
                             <td><a href="prices/me/">Maine</a></td>
-                            <td>$4.48 avg</td>
+                            <td>$4.52 avg</td>
                             <td>18 suppliers</td>
                             <td><a href="prices/me/">See all →</a></td>
                         </tr>
                         <tr>
                             <td><a href="prices/ct/">Connecticut</a></td>
-                            <td>$4.65 avg</td>
+                            <td>$4.68 avg</td>
                             <td>32 suppliers</td>
                             <td><a href="prices/ct/">See all →</a></td>
                         </tr>
                         <tr>
                             <td><a href="prices/ri/">Rhode Island</a></td>
-                            <td>$4.70 avg</td>
+                            <td>$4.72 avg</td>
                             <td>6 suppliers</td>
                             <td><a href="prices/ri/">See all →</a></td>
                         </tr>
                         <tr>
                             <td><a href="prices/nj/">New Jersey</a></td>
-                            <td>$4.73 avg</td>
-                            <td>15 suppliers</td>
+                            <td>$4.77 avg</td>
+                            <td>16 suppliers</td>
                             <td><a href="prices/nj/">See all →</a></td>
                         </tr>
                         <tr>
                             <td><a href="prices/nh/">New Hampshire</a></td>
-                            <td>$4.77 avg</td>
+                            <td>$4.79 avg</td>
                             <td>24 suppliers</td>
                             <td><a href="prices/nh/">See all →</a></td>
                         </tr>
                         <tr>
                             <td><a href="prices/ny/">New York</a></td>
-                            <td>$4.79 avg</td>
+                            <td>$4.81 avg</td>
                             <td>28 suppliers</td>
                             <td><a href="prices/ny/">See all →</a></td>
                         </tr>
                         <tr>
                             <td><a href="prices/ma/">Massachusetts</a></td>
-                            <td>$4.84 avg</td>
+                            <td>$4.85 avg</td>
                             <td>58 suppliers</td>
                             <td><a href="prices/ma/">See all →</a></td>
                         </tr>
@@ -811,10 +818,17 @@
                         </div>
                     </li>
                     <li>
-                        <span class="deal-price">$3.69/gal</span>
+                        <span class="deal-price">$3.70/gal</span>
                         <div class="deal-info">
                             <div class="deal-supplier">Hummelstown Fuel Oil Service</div>
                             <div class="deal-location">Hummelstown, PA</div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="deal-price">$3.80/gal</span>
+                        <div class="deal-info">
+                            <div class="deal-supplier">Liberty Bell Discount Oil</div>
+                            <div class="deal-location">Media, PA</div>
                         </div>
                     </li>
                     <li>
@@ -822,13 +836,6 @@
                         <div class="deal-info">
                             <div class="deal-supplier">Fuel Cell Petrol</div>
                             <div class="deal-location">Stockertown, PA</div>
-                        </div>
-                    </li>
-                    <li>
-                        <span class="deal-price">$4.00/gal</span>
-                        <div class="deal-info">
-                            <div class="deal-supplier">E-Z Oil Company</div>
-                            <div class="deal-location">Hartford, CT</div>
                         </div>
                     </li>
                     <li>
@@ -1145,7 +1152,7 @@
 
     <script src="js/nav.js"></script>
     <script src="js/price-alerts.js?v=e3d242fc"></script>
-    <script src="js/prices.js?v=b43c36a0"></script>
+    <script src="js/prices.js?v=71cf5374"></script>
     <script src="js/widgets.js?v=91bd6e10"></script>
     <script src="js/pwa.js"></script>
     <script src="js/personalization.js?v=5aa6b261"></script>

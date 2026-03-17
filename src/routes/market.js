@@ -158,6 +158,7 @@ router.get('/pulse', async (req, res) => {
           AND sp.expires_at > NOW()
           AND sp.scraped_at > NOW() - INTERVAL '36 hours'
           AND sp.price_per_gallon BETWEEN 2.00 AND 6.00
+          AND sp.fuel_type = 'heating_oil'
         ORDER BY sp.supplier_id, sp.scraped_at DESC
       ) latest
     `);
@@ -221,6 +222,7 @@ router.get('/leaderboard', async (req, res) => {
         AND sp.expires_at > NOW()
         AND sp.scraped_at > NOW() - INTERVAL '36 hours'
         AND sp.price_per_gallon BETWEEN 2.00 AND 6.00
+        AND sp.fuel_type = 'heating_oil'
         AND sp.scraped_at = (
           SELECT MAX(sp2.scraped_at)
           FROM supplier_prices sp2
@@ -228,6 +230,7 @@ router.get('/leaderboard', async (req, res) => {
             AND sp2.is_valid = true
             AND sp2.expires_at > NOW()
             AND sp2.scraped_at > NOW() - INTERVAL '36 hours'
+            AND sp2.fuel_type = 'heating_oil'
         )
       GROUP BY s.state
       HAVING COUNT(DISTINCT s.id) >= 3

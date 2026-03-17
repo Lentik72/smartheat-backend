@@ -347,7 +347,7 @@ class CoverageIntelligenceService {
         SELECT s.id, s.name, s.state, s.city, s.website,
                MAX(sp.scraped_at) as last_price_update
         FROM suppliers s
-        LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id
+        LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.fuel_type = 'heating_oil'
         WHERE s.active = true AND s.website IS NOT NULL
         GROUP BY s.id, s.name, s.state, s.city, s.website
         ORDER BY s.name
@@ -561,6 +561,7 @@ class CoverageIntelligenceService {
         LEFT JOIN (
           SELECT DISTINCT ON (supplier_id) *
           FROM supplier_prices
+          WHERE fuel_type = 'heating_oil'
           ORDER BY supplier_id, scraped_at DESC
         ) sp ON s.id = sp.supplier_id
         WHERE s.active = true

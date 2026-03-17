@@ -45,9 +45,10 @@ const MAX_VALID_PRICE = 6.00;
 // ── Data queries ────────────────────────────────────────────────
 
 /**
- * Get county-level oil price stats from county_current_stats
+ * Get county-level price stats from county_current_stats
+ * V2.12.0: Parameterized by fuelType (was getCountyOilStats)
  */
-async function getCountyOilStats(sequelize, stateCode) {
+async function getCountyOilStats(sequelize, stateCode, fuelType = 'heating_oil') {
   const [results] = await sequelize.query(`
     SELECT
       county_name,
@@ -63,18 +64,19 @@ async function getCountyOilStats(sequelize, stateCode) {
       weeks_available
     FROM county_current_stats
     WHERE state_code = :stateCode
-      AND fuel_type = 'heating_oil'
+      AND fuel_type = :fuelType
       AND median_price IS NOT NULL
     ORDER BY county_name
-  `, { replacements: { stateCode } });
+  `, { replacements: { stateCode, fuelType } });
 
   return results;
 }
 
 /**
  * Get state-level aggregate stats
+ * V2.12.0: Parameterized by fuelType (was getStateOilStats)
  */
-async function getStateOilStats(sequelize, stateCode) {
+async function getStateOilStats(sequelize, stateCode, fuelType = 'heating_oil') {
   const [results] = await sequelize.query(`
     SELECT
       PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY median_price) as state_median,
@@ -85,9 +87,9 @@ async function getStateOilStats(sequelize, stateCode) {
       AVG(percent_change_6w) as avg_trend
     FROM county_current_stats
     WHERE state_code = :stateCode
-      AND fuel_type = 'heating_oil'
+      AND fuel_type = :fuelType
       AND median_price IS NOT NULL
-  `, { replacements: { stateCode } });
+  `, { replacements: { stateCode, fuelType } });
 
   return results[0];
 }
@@ -195,14 +197,15 @@ function computeFuelCosts(oilPrice, stateCode, county) {
 
 /**
  * Get county weekly price history from county_price_stats
+ * V2.12.0: Parameterized by fuelType
  */
-async function getCountyWeeklyHistory(sequelize, countyName, stateCode, limit = 12) {
+async function getCountyWeeklyHistory(sequelize, countyName, stateCode, limit = 12, fuelType = 'heating_oil') {
   const [results] = await sequelize.query(`
     SELECT week_start, median_price, min_price, max_price, supplier_count, data_points
     FROM county_price_stats
-    WHERE county_name = :county AND state_code = :state AND fuel_type = 'heating_oil'
+    WHERE county_name = :county AND state_code = :state AND fuel_type = :fuelType
     ORDER BY week_start DESC LIMIT :limit
-  `, { replacements: { county: countyName, state: stateCode, limit } });
+  `, { replacements: { county: countyName, state: stateCode, limit, fuelType } });
 
   return results;
 }
@@ -261,11 +264,18 @@ function getNavHTML(depth, activeLink = null) {
             </button>
             <ul class="nav-links">
                 <li><a href="/"${active('/')}>Home</a></li>
-                <li><a href="/prices"${active('/prices')}>Prices</a></li>
+                <li class="nav-dropdown-parent">
+                    <button class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">Prices</button>
+                    <ul class="nav-dropdown" role="menu">
+                        <li role="menuitem"><a href="/prices" data-track="nav-oil-prices" data-referrer="nav">Heating Oil Prices</a></li>
+                        <li role="menuitem"><a href="/prices/kerosene/" data-track="nav-kero-prices" data-referrer="nav">K-1 Kerosene Prices</a></li>
+                    </ul>
+                </li>
                 <li class="nav-dropdown-parent">
                     <button class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">Heating Costs</button>
                     <ul class="nav-dropdown" role="menu">
                         <li role="menuitem"><a href="/tools/heating-cost-calculator" data-track="nav-calculator" data-referrer="nav">Cost Calculator</a></li>
+                        <li role="menuitem"><a href="/tools/blend-calculator" data-track="nav-blend-calc" data-referrer="nav">Blend Calculator</a></li>
                         <li role="menuitem"><a href="/heating-cost/" data-track="nav-fuel-compare" data-referrer="nav">Fuel Comparison</a></li>
                         <li role="menuitem"><a href="/average-heating-bill/" data-track="nav-avg-bill" data-referrer="nav">Average Bills</a></li>
                         <li role="menuitem"><a href="/price-trend/" data-track="nav-price-trend" data-referrer="nav">Price Trends</a></li>

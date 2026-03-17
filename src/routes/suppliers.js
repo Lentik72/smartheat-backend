@@ -156,13 +156,20 @@ const stripForSignature = (supplier) => {
  *   - county + state: County name and state code (e.g., county=Westchester&state=NY)
  *   - name: Supplier name search (e.g., name=Domino)
  *   - limit (optional): Max results (default 15, max 30)
+ *   - fuel (optional): V2.12.0 - Filter by fuel type. Values: 'heating_oil' (default), 'kerosene'.
+ *     iOS app sends no fuel param → defaults to heating_oil (backward compatible).
  *
  * Returns signed JSON response with suppliers serving that area
  * V1.5.1: Added city and county search support
  * V2.0.1: Added name search parameter
+ * V2.12.0: Added fuel query parameter for multi-fuel support
  */
 router.get('/', async (req, res) => {
-  const { zip, city, county, state, name, limit } = req.query;
+  const { zip, city, county, state, name, limit, fuel } = req.query;
+
+  // V2.12.0: Validate and normalize fuel param — default to heating_oil (safe for iOS app)
+  const VALID_FUELS = ['heating_oil', 'kerosene'];
+  const fuelType = VALID_FUELS.includes(fuel) ? fuel : 'heating_oil';
   const logger = req.app.locals.logger;
   const sequelize = req.app.locals.sequelize;
 
@@ -365,7 +372,7 @@ router.get('/', async (req, res) => {
 
       // Fetch prices for matching suppliers
       const supplierIds = limitedSuppliers.map(s => s.id);
-      const priceMap = await getLatestPrices(supplierIds);
+      const priceMap = await getLatestPrices(supplierIds, fuelType);
 
       // Build response with prices
       const responseData = limitedSuppliers.map(s => {
@@ -421,6 +428,7 @@ router.get('/', async (req, res) => {
 
       const meta = {
         searchType: 'name',
+        fuelType, // V2.12.0
         query: searchName,
         count: responseData.length,
         aliasMatches: aliasMatchCount,  // V2.35: suppliers found via alias
@@ -500,7 +508,7 @@ router.get('/', async (req, res) => {
 
     // Fetch prices for ALL matched suppliers (needed for price-first sort)
     const allSupplierIds = unsortedSuppliers.map(s => s.id);
-    const priceMap = await getLatestPrices(allSupplierIds);
+    const priceMap = await getLatestPrices(allSupplierIds, fuelType);
 
     // V2.4.0: Price-first sorting with freshness tiers
     // Priced suppliers (fresh/recent) first, sorted by price ASC
@@ -638,6 +646,7 @@ router.get('/', async (req, res) => {
     const meta = {
       // V1.5.1: New metadata fields
       searchType,
+      fuelType, // V2.12.0
       coverageLevel: searchType,
       dataSource: 'api',
       resolvedZipCount: resolvedZips.length,
@@ -758,6 +767,7 @@ router.get('/debug/prices', async (req, res) => {
         MAX(expires_at) FILTER (WHERE expires_at > NOW()) as latest_valid_expiry
       FROM supplier_prices
       WHERE scraped_at > NOW() - INTERVAL '7 days'
+        AND fuel_type = 'heating_oil'
     `);
 
     res.json({
@@ -789,6 +799,7 @@ router.get('/debug/fix-prices', async (req, res) => {
         AND scraped_at > NOW() - INTERVAL '7 days'
         AND expires_at <= NOW()
         AND source_type != 'aggregator_signal'
+        AND fuel_type = 'heating_oil'
     `);
 
     // Check result
@@ -798,6 +809,7 @@ router.get('/debug/fix-prices', async (req, res) => {
         COUNT(*) FILTER (WHERE expires_at <= NOW() AND is_valid = true AND source_type != 'aggregator_signal') as still_expired
       FROM supplier_prices
       WHERE scraped_at > NOW() - INTERVAL '7 days'
+        AND fuel_type = 'heating_oil'
     `);
 
     res.json({
@@ -824,7 +836,7 @@ router.get('/debug/supplier-prices', async (req, res) => {
         COUNT(DISTINCT supplier_id) as suppliers_with_prices,
         (SELECT COUNT(*) FROM suppliers) as total_suppliers
       FROM supplier_prices
-      WHERE is_valid = true AND expires_at > NOW() AND source_type != 'aggregator_signal'
+      WHERE is_valid = true AND expires_at > NOW() AND source_type != 'aggregator_signal' AND fuel_type = 'heating_oil'
     `);
 
     const modelStatus = getSupplierPriceModel();

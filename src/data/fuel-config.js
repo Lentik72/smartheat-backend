@@ -28,6 +28,16 @@ const FUELS = {
     installCost: 0,
     category: 'liquid',
   },
+  'kerosene': {
+    label: 'K-1 Kerosene',
+    slug: 'kerosene',
+    unit: 'gallon',
+    btuPerUnit: 135000,
+    efficiency: 0.87,
+    priceRange: [2.50, 6.50],
+    installCost: 0,
+    category: 'liquid',
+  },
   'propane': {
     label: 'Propane',
     slug: 'propane',
