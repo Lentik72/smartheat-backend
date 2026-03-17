@@ -594,6 +594,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/112-add-central-pa-suppliers', label: 'Central PA suppliers (Dolan Oil, Talley Petroleum)' },
           { path: './src/migrations/113-reset-jsonld-blocked-suppliers', label: 'Reset 40 blocked suppliers (fix monthlyReset failure dates bug)' },
           { path: './src/migrations/114-reset-config-fix-suppliers', label: 'Reset 5 suppliers (config fixes + slug corrections)' },
+          { path: './src/migrations/115-reset-stale-regex-suppliers', label: 'Reset 2 suppliers (stale regex fixes)' },
         ];
 
         let migrationErrors = 0;

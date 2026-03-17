@@ -19242,9 +19242,9 @@
     ]
   },
   "dudekoilri.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "RI Warren - East Bay RI + Southern Bristol County MA - 150 gal min - Price without $ sign",
+    "notes": "DISABLED 2026-03-17: 'Call for pricing' — removed published price. RI Warren - East Bay RI + Southern Bristol County MA.",
     "priceRegex": "Total Fuel Oil Price ([0-9]+\\.[0-9]{2})",
     "postalCodesServed": [
       "02771",
@@ -22468,8 +22468,8 @@
     "pricePath": "/order-now/",
     "name": "Paul's Services",
     "phone": "(207) 780-6710",
-    "notes": "ME Portland - Cash/money order on 1st delivery. WordPress/Gravity. Price on /order-now/ in div.price.",
-    "priceRegex": "class=\"price\">\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "ME Portland - Cash/money order on 1st delivery. WordPress/Gravity. Price on /order-now/ in h1.",
+    "priceRegex": "Oil Price:\\s*\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "04005",
       "04015",
@@ -22509,8 +22509,8 @@
     "pattern": "direct",
     "name": "R&R Oil",
     "phone": "(207) 499-7100",
-    "notes": "ME Lyman/York County - Cash pricing. Jimdo site. Oil + K-1 prices on homepage.",
-    "priceRegex": "Home Heating Oil \\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "ME Lyman/York County - Cash pricing. Divi/WordPress. Oil + K-1 prices on homepage in bare h1 elements.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "04002",
       "04005",
@@ -22576,11 +22576,11 @@
     }
   },
   "hometownfuelme.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
     "name": "Hometown Fuel",
     "phone": "(207) 565-2746",
-    "notes": "ME Eastbrook/Downeast - Senior + military discounts. Hancock/Washington Counties.",
+    "notes": "DISABLED 2026-03-17: no price on page. ME Eastbrook/Downeast - Senior + military discounts. Hancock/Washington Counties.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "keroseneReview": true,
     "postalCodesServed": [
