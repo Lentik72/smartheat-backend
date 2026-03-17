@@ -1,6 +1,6 @@
 /**
  * Price Review Portal - JavaScript
- * V2.14.0: Diagnostic categories + dismiss/snooze support
+ * V2.15.0: Kerosene input fields + fix dismiss resetting manual entries
  */
 
 // Get token from URL (magic link or legacy token)
@@ -71,6 +71,28 @@ function formatTimestamp(dateString) {
   });
 }
 
+// Save all current input values keyed by supplierId + fuelType
+function saveInputValues() {
+  const saved = {};
+  document.querySelectorAll('.price-input').forEach(input => {
+    if (input.value && !input.disabled) {
+      const key = input.dataset.supplierId + '-' + (input.dataset.fuelType || 'heating_oil');
+      saved[key] = input.value;
+    }
+  });
+  return saved;
+}
+
+// Restore input values after re-render
+function restoreInputValues(saved) {
+  document.querySelectorAll('.price-input').forEach(input => {
+    const key = input.dataset.supplierId + '-' + (input.dataset.fuelType || 'heating_oil');
+    if (saved[key]) {
+      input.value = saved[key];
+    }
+  });
+}
+
 // Render a single item card
 function renderItemCard(item, idx, isDismissed) {
   const diagHtml = item.diagnostic ? `
@@ -84,6 +106,19 @@ function renderItemCard(item, idx, isDismissed) {
   const actionBtn = isDismissed
     ? `<button class="restore-btn" data-supplier-id="${item.supplierId}">Restore</button>`
     : `<button class="dismiss-btn" data-supplier-id="${item.supplierId}" data-days="7">7d</button><button class="dismiss-btn" data-supplier-id="${item.supplierId}" data-days="14">14d</button>`;
+
+  const keroseneHtml = item.hasKerosene ? `
+      <div class="input-row" style="margin-top: 6px;">
+        <span style="font-size: 12px; color: #86868b; min-width: 65px;">K-1</span>
+        <input type="text"
+               class="price-input kerosene-input"
+               id="kero-${isDismissed ? 'd' : ''}${idx}"
+               placeholder="X.XXX"
+               data-supplier-id="${item.supplierId}"
+               data-fuel-type="kerosene"
+               data-idx="${idx}">
+        <button class="submit-btn kero-submit-btn" data-idx="${idx}" data-dismissed="${isDismissed}" data-fuel-type="kerosene">Submit</button>
+      </div>` : '';
 
   return `
     <div class="review-item${isDismissed ? ' dismissed' : ''}" id="item-${isDismissed ? 'd' : ''}${idx}">
@@ -103,15 +138,18 @@ function renderItemCard(item, idx, isDismissed) {
         <a href="${item.website}" target="_blank" class="website-link">
           <span>Visit Site</span>
         </a>
+        ${item.hasKerosene ? '<span style="font-size: 12px; color: #86868b; min-width: 30px;">Oil</span>' : ''}
         <input type="text"
                class="price-input"
                id="price-${isDismissed ? 'd' : ''}${idx}"
                placeholder="X.XXX"
                data-supplier-id="${item.supplierId}"
+               data-fuel-type="heating_oil"
                data-idx="${idx}">
-        <button class="submit-btn" data-idx="${idx}" data-dismissed="${isDismissed}">Submit</button>
+        <button class="submit-btn" data-idx="${idx}" data-dismissed="${isDismissed}" data-fuel-type="heating_oil">Submit</button>
         ${actionBtn}
       </div>
+      ${keroseneHtml}
     </div>
   `;
 }
@@ -188,11 +226,17 @@ function renderItems() {
     return;
   }
 
+  // Save existing input values before re-rendering
+  const saved = saveInputValues();
+
   container.innerHTML = reviewItems.map((item, idx) => renderItemCard(item, idx, false)).join('');
 
-  // Attach submit button listeners
+  // Restore input values
+  restoreInputValues(saved);
+
+  // Attach submit button listeners (oil + kerosene)
   container.querySelectorAll('.submit-btn[data-idx]').forEach(btn => {
-    btn.addEventListener('click', () => submitSingle(parseInt(btn.dataset.idx), false));
+    btn.addEventListener('click', () => submitSingle(parseInt(btn.dataset.idx), false, btn.dataset.fuelType));
   });
 
   // Attach dismiss button listeners
@@ -221,16 +265,20 @@ function renderDismissedSection() {
   list.style.display = showDismissed ? 'block' : 'none';
 
   if (showDismissed) {
+    const saved = saveInputValues();
+
     list.innerHTML = dismissedItems.map((item, idx) => renderItemCard(item, idx, true)).join('');
+
+    restoreInputValues(saved);
 
     // Attach restore button listeners
     list.querySelectorAll('.restore-btn[data-supplier-id]').forEach(btn => {
       btn.addEventListener('click', () => undismissSupplier(btn.dataset.supplierId));
     });
 
-    // Attach submit button listeners for dismissed items
+    // Attach submit button listeners for dismissed items (oil + kerosene)
     list.querySelectorAll('.submit-btn[data-idx]').forEach(btn => {
-      btn.addEventListener('click', () => submitSingle(parseInt(btn.dataset.idx), true));
+      btn.addEventListener('click', () => submitSingle(parseInt(btn.dataset.idx), true, btn.dataset.fuelType));
     });
   }
 }
@@ -300,9 +348,11 @@ async function undismissSupplier(supplierId) {
 }
 
 // Submit single price
-async function submitSingle(idx, isDismissed) {
+async function submitSingle(idx, isDismissed, fuelType) {
   const prefix = isDismissed ? 'd' : '';
-  const input = document.getElementById(`price-${prefix}${idx}`);
+  const fuel = fuelType || 'heating_oil';
+  const inputId = fuel === 'kerosene' ? `kero-${prefix}${idx}` : `price-${prefix}${idx}`;
+  const input = document.getElementById(inputId);
   const price = parseFloat(input.value);
   const supplierId = input.dataset.supplierId;
 
@@ -311,17 +361,18 @@ async function submitSingle(idx, isDismissed) {
     return;
   }
 
-  const btn = input.parentElement.querySelector('.submit-btn');
+  const btn = input.parentElement.querySelector(`.submit-btn[data-fuel-type="${fuel}"]`) || input.parentElement.querySelector('.submit-btn');
   btn.disabled = true;
   btn.textContent = '...';
 
   const items = isDismissed ? dismissedItems : reviewItems;
+  const fuelLabel = fuel === 'kerosene' ? ' K-1' : '';
 
   try {
     const res = await fetch(`${API_BASE}/api/price-review/submit`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ prices: [{ supplierId, price }] })
+      body: JSON.stringify({ prices: [{ supplierId, price, fuelType: fuel }] })
     });
     const data = await res.json();
 
@@ -329,7 +380,7 @@ async function submitSingle(idx, isDismissed) {
       btn.textContent = 'Done';
       btn.classList.add('submitted');
       input.disabled = true;
-      showToast(`Updated ${items[idx].name}: $${price.toFixed(3)}`, 'success');
+      showToast(`Updated ${items[idx].name}${fuelLabel}: $${price.toFixed(3)}`, 'success');
     } else {
       btn.textContent = 'Submit';
       btn.disabled = false;
@@ -348,7 +399,7 @@ async function submitAll() {
   document.querySelectorAll('#review-list .price-input').forEach(input => {
     const price = parseFloat(input.value);
     if (!isNaN(price) && price >= 1.5 && price <= 6 && !input.disabled) {
-      prices.push({ supplierId: input.dataset.supplierId, price });
+      prices.push({ supplierId: input.dataset.supplierId, price, fuelType: input.dataset.fuelType || 'heating_oil' });
     }
   });
 

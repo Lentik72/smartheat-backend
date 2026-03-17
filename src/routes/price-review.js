@@ -18,6 +18,17 @@ const router = express.Router();
 // Diagnostic classification from SupplierDiagnosticsService
 const { classifyError, CATEGORIES } = require('../services/SupplierDiagnosticsService');
 
+// Load scrape config to detect keroseneReview flags
+const scrapeConfig = require('../data/scrape-config.json');
+
+// Build a set of supplier websites that need kerosene review
+const keroseneReviewSites = new Set();
+for (const [domain, cfg] of Object.entries(scrapeConfig)) {
+  if (cfg.keroseneReview) {
+    keroseneReviewSites.add(domain);
+  }
+}
+
 // Master admin token for internal/emergency access (set in Railway env vars)
 const ADMIN_MASTER_TOKEN = process.env.ADMIN_REVIEW_TOKEN || 'smartheat-price-review-2024';
 
@@ -355,6 +366,15 @@ router.get('/', requireAuth, async (req, res) => {
         const diagCategory = errorStr ? classifyError(errorStr) : null;
         const diagInfo = diagCategory && CATEGORIES[diagCategory] ? CATEGORIES[diagCategory] : null;
 
+        // Check if this supplier needs kerosene review
+        let hasKerosene = false;
+        if (item.website) {
+          try {
+            const domain = new URL(item.website).hostname.replace(/^www\./, '');
+            hasKerosene = keroseneReviewSites.has(domain);
+          } catch (e) { /* invalid URL, skip */ }
+        }
+
         const mapped = {
           supplierId: item.id,
           name: item.name,
@@ -366,6 +386,7 @@ router.get('/', requireAuth, async (req, res) => {
           reviewReason: item.review_reason,
           status: item.status || null,
           notes: item.notes || null,
+          hasKerosene,
           diagnostic: diagInfo ? {
             category: diagCategory,
             label: diagInfo.label,
@@ -426,9 +447,17 @@ router.post('/submit', requireAuth, async (req, res) => {
 
     const results = [];
 
-    for (const { supplierId, price, minGallons } of prices) {
+    const VALID_FUEL_TYPES = ['heating_oil', 'kerosene'];
+
+    for (const { supplierId, price, minGallons, fuelType } of prices) {
       if (!supplierId || !price) {
         results.push({ supplierId, success: false, error: 'Missing supplierId or price' });
+        continue;
+      }
+
+      const fuel = fuelType || 'heating_oil';
+      if (!VALID_FUEL_TYPES.includes(fuel)) {
+        results.push({ supplierId, success: false, error: `Invalid fuel type: ${fuel}` });
         continue;
       }
 
@@ -450,12 +479,12 @@ router.post('/submit', requireAuth, async (req, res) => {
           continue;
         }
 
-        // Expire old prices for this supplier before inserting new one
+        // Expire old prices for this supplier + fuel type before inserting new one
         await sequelize.query(`
           UPDATE supplier_prices
           SET is_valid = false, updated_at = NOW()
-          WHERE supplier_id = :supplierId AND is_valid = true
-        `, { replacements: { supplierId } });
+          WHERE supplier_id = :supplierId AND fuel_type = :fuel AND is_valid = true
+        `, { replacements: { supplierId, fuel } });
 
         // Insert new price with manual source_type
         await sequelize.query(`
@@ -464,7 +493,7 @@ router.post('/submit', requireAuth, async (req, res) => {
             source_type, scraped_at, expires_at, is_valid, notes,
             verified_at, verification_method, verified_by, created_at, updated_at
           ) VALUES (
-            gen_random_uuid(), :supplierId, :price, :minGallons, 'heating_oil',
+            gen_random_uuid(), :supplierId, :price, :minGallons, :fuel,
             'manual', NOW(), NOW() + INTERVAL '7 days', true, 'Admin manual verification',
             NOW(), 'admin_review_portal', 'admin', NOW(), NOW()
           )
@@ -472,7 +501,8 @@ router.post('/submit', requireAuth, async (req, res) => {
           replacements: {
             supplierId,
             price: priceNum,
-            minGallons: minGallons || 100
+            minGallons: minGallons || 100,
+            fuel
           }
         });
 
