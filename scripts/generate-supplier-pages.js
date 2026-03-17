@@ -582,8 +582,15 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
       "priceCurrency": "USD",
       "price": latestPrice.price_per_gallon.toFixed(2),
       "itemOffered": {
-        "@type": "Service",
-        "name": "Heating Oil Delivery"
+        "@type": "Product",
+        "name": "Heating Oil",
+        "offers": {
+          "@type": "Offer",
+          "price": latestPrice.price_per_gallon.toFixed(2),
+          "priceCurrency": "USD",
+          "unitCode": "GLL",
+          "availability": "https://schema.org/InStock"
+        }
       }
     };
   }
