@@ -1,12 +1,14 @@
-// Migration 116: Reset 2 suppliers after config fixes.
+// Migration 116: Reset 3 suppliers after config fixes.
 //
 // Premier Energy: Wix site shows "Todays Price 4.799" without $ sign. Updated regex.
 // Fettinger Fuels: PHD marquee banner API (data-id=1233). Switched to json_api + kerosene.
+// Hollenbach Home Comfort: prices without $ sign in table cells. Updated regex + targetTier.
 
 async function up(sequelize) {
   const slugs = [
     'premier-energy',
     'fettinger-fuels',
+    'hollenbach-home-comfort-services',
   ];
 
   const [, meta] = await sequelize.query(`
