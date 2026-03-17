@@ -595,7 +595,8 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/113-reset-jsonld-blocked-suppliers', label: 'Reset 40 blocked suppliers (fix monthlyReset failure dates bug)' },
           { path: './src/migrations/114-reset-config-fix-suppliers', label: 'Reset 5 suppliers (config fixes + slug corrections)' },
           { path: './src/migrations/115-reset-stale-regex-suppliers', label: 'Reset 3 suppliers (stale regex + Hometown Fuel json_api)' },
-          { path: './src/migrations/116-reset-unclear-suppliers', label: 'Reset 2 suppliers (Premier Energy + Fettinger Fuels)' },
+          { path: './src/migrations/116-reset-unclear-suppliers', label: 'Reset 3 suppliers (Premier Energy + Fettinger + Hollenbach)' },
+          { path: './src/migrations/117-reset-wix-fixable-suppliers', label: 'Reset 3 suppliers (Higgins + Red Star + Kelleys — HTML entity regex fixes)' },
         ];
 
         let migrationErrors = 0;

@@ -13964,8 +13964,8 @@
   "redstaroil.net": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "MA Southbridge - Daily price with date. Apostrophe is HTML-encoded.",
-    "priceRegex": "Today.{1,6}s Oil Price \\$([0-9]+\\.[0-9]{2}) per gallon",
+    "notes": "MA Southbridge - Daily price with date. No $ sign, HTML entity apostrophe &#39;.",
+    "priceRegex": "Today&#39;s Oil Price ([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "01010",
       "01507",
@@ -14486,8 +14486,8 @@
     "pattern": "direct",
     "name": "Kelley's Oil",
     "phone": "(781) 331-1055",
-    "notes": "MA South Weymouth/South Shore - 150gal+ price, no $ sign, bare number before Per Gallon",
-    "priceRegex": "([0-9]+\\.[0-9]{2})\\s*Per\\s",
+    "notes": "MA South Weymouth/South Shore - 150gal+ price in span.w-oil-price-150. Three tiers: 150+/100+/50+.",
+    "priceRegex": "w-oil-price-150[^>]*>([0-9]+\\.[0-9]{2})",
     "postalCodesServed": [
       "02025",
       "02043",
@@ -22437,8 +22437,8 @@
     "pattern": "direct",
     "name": "Higgins Energy",
     "phone": "(207) 829-1842",
-    "notes": "ME Cumberland Center - Cash price. Price in h2: Today's Oil Price X.XXX (no $ sign).",
-    "priceRegex": "Today's Oil Price ([0-9]+\\.[0-9]{2,3})",
+    "notes": "ME Cumberland Center - Cash price. Price in meta description: Today&#039;s Oil Price X.XXX (no $ sign, HTML entity apostrophe).",
+    "priceRegex": "Today&#039;s Oil Price ([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "04011",
       "04015",
