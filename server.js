@@ -576,6 +576,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/109-add-dansville-ny-suppliers', label: 'Dansville NY / Livingston County suppliers' },
           { path: './src/migrations/110-add-kerosene-fuel-type', label: 'Add kerosene fuel type' },
           { path: './src/migrations/111-fix-price-alert-last-seen', label: 'Fix price alert first-send bug' },
+          { path: './src/migrations/112-add-central-pa-suppliers', label: 'Central PA suppliers (Dolan Oil, Talley Petroleum)' },
         ];
 
         let migrationErrors = 0;
