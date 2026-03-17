@@ -582,7 +582,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
       "priceCurrency": "USD",
       "price": latestPrice.price_per_gallon.toFixed(2),
       "itemOffered": {
-        "@type": "Product",
+        "@type": "Service",
         "name": "Heating Oil Delivery"
       }
     };
