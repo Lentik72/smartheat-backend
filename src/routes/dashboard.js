@@ -4386,17 +4386,38 @@ router.get('/alert-subscribers', async (req, res) => {
       LIMIT 10
     `);
 
-    // Recent 20 signups
+    // Recent 20 signups (with coverage check)
     const [recent] = await sequelize.query(`
       SELECT
-        LEFT(email, 3) || '***@' || SPLIT_PART(email, '@', 2) AS email_masked,
-        zip_code,
-        threshold_price,
-        source_page,
-        created_at
-      FROM price_alert_subscribers
-      ORDER BY created_at DESC
+        LEFT(pas.email, 3) || '***@' || SPLIT_PART(pas.email, '@', 2) AS email_masked,
+        pas.zip_code,
+        pas.threshold_price,
+        pas.source_page,
+        pas.created_at,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM suppliers s
+          WHERE s.active = true AND s.allow_price_display = true
+          AND EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) z WHERE z = pas.zip_code
+          )
+        ) THEN true ELSE false END AS has_coverage
+      FROM price_alert_subscribers pas
+      ORDER BY pas.created_at DESC
       LIMIT 20
+    `);
+
+    // Count of active subscribers in uncovered ZIPs
+    const [[{ uncovered_count }]] = await sequelize.query(`
+      SELECT COUNT(*) AS uncovered_count
+      FROM price_alert_subscribers pas
+      WHERE pas.active = true
+        AND NOT EXISTS (
+          SELECT 1 FROM suppliers s
+          WHERE s.active = true AND s.allow_price_display = true
+          AND EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) z WHERE z = pas.zip_code
+          )
+        )
     `);
 
     // ZIP density for map view (active subscribers grouped by ZIP with coordinates)
@@ -4411,6 +4432,7 @@ router.get('/alert-subscribers', async (req, res) => {
 
     res.json({
       total: parseInt(total),
+      uncoveredCount: parseInt(uncovered_count),
       topZips: topZips.map(z => ({
         zip: z.zip_code,
         subscribers: parseInt(z.subscribers),
@@ -4422,7 +4444,8 @@ router.get('/alert-subscribers', async (req, res) => {
         zip: r.zip_code,
         threshold: parseFloat(r.threshold_price),
         source: r.source_page,
-        createdAt: r.created_at
+        createdAt: r.created_at,
+        hasCoverage: r.has_coverage
       })),
       zipDensity: (() => {
         let zipCoords = {};

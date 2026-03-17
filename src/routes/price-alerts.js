@@ -88,20 +88,22 @@ router.post('/subscribe', async (req, res) => {
 
     // Insert or update subscriber
     // xmax = 0 means INSERT (new row), xmax != 0 means UPDATE (existing row)
+    // last_price_seen is intentionally NULL — only set when an alert is actually sent.
+    // signup_price_at_time records the price at signup for informational purposes.
     const [rows] = await sequelize.query(`
       INSERT INTO price_alert_subscribers (
         email, zip_code, threshold_price, unsubscribe_token,
-        signup_price_at_time, last_price_seen,
+        signup_price_at_time,
         source_page, utm_source, utm_campaign
       ) VALUES (
         :email, :zip_code, :threshold_price, :unsubscribe_token,
-        :signup_price, :last_price_seen,
+        :signup_price,
         :source_page, :utm_source, :utm_campaign
       )
       ON CONFLICT (email, zip_code) DO UPDATE SET
         threshold_price = EXCLUDED.threshold_price,
         active = true,
-        last_price_seen = EXCLUDED.last_price_seen,
+        last_price_seen = NULL,
         signup_price_at_time = COALESCE(price_alert_subscribers.signup_price_at_time, EXCLUDED.signup_price_at_time),
         source_page = COALESCE(EXCLUDED.source_page, price_alert_subscribers.source_page)
       RETURNING (xmax = 0) AS is_new
@@ -112,7 +114,6 @@ router.post('/subscribe', async (req, res) => {
         threshold_price: price,
         unsubscribe_token,
         signup_price: currentMinPrice,
-        last_price_seen: currentMinPrice,
         source_page: source_page || null,
         utm_source: utm_source || null,
         utm_campaign: utm_campaign || null
@@ -128,12 +129,16 @@ router.post('/subscribe', async (req, res) => {
       const PriceAlertService = require('../services/PriceAlertService');
       const alertService = new PriceAlertService(sequelize, logger);
       // Fire and forget — don't block the response
-      alertService.sendWelcomeEmail(email.toLowerCase().trim(), zip_code, price, currentMinPrice).catch(err => {
+      alertService.sendWelcomeEmail(email.toLowerCase().trim(), zip_code, price, currentMinPrice, unsubscribe_token).catch(err => {
         logger.error('[PriceAlert] Welcome email error:', err.message);
       });
     }
 
-    logger.info(`[PriceAlert] ${isNew ? 'New' : 'Updated'} subscriber: ${zip_code} at $${price.toFixed(2)} (coverage: ${hasCoverage})`);
+    if (hasCoverage) {
+      logger.info(`[PriceAlert] ${isNew ? 'New' : 'Updated'} subscriber: ${zip_code} at $${price.toFixed(2)}`);
+    } else {
+      logger.warn(`[PriceAlert] ${isNew ? 'New' : 'Updated'} subscriber in UNCOVERED ZIP: ${zip_code} at $${price.toFixed(2)}`);
+    }
     res.json({
       success: true,
       has_coverage: hasCoverage,

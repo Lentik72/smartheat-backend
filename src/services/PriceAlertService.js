@@ -67,6 +67,9 @@ class PriceAlertService {
       let errors = 0;
       let capped = false;
       let zipsStale = 0;
+      let skipAboveThreshold = 0;
+      let skipDedup = 0;
+      let skipCooldown = 0;
 
       for (const zip of zipCodes) {
         if (sent >= DAILY_CAP) {
@@ -81,6 +84,7 @@ class PriceAlertService {
         if (!priceData) {
           zipsStale++;
           skipped += byZip[zip].length;
+          this.logger.info(`[PriceAlert] ZIP ${zip}: no fresh prices, skipping ${byZip[zip].length} subscriber(s)`);
           continue;
         }
 
@@ -92,6 +96,7 @@ class PriceAlertService {
 
           // Check if price is below threshold
           if (priceData.minPrice > sub.threshold_price) {
+            skipAboveThreshold++;
             skipped++;
             continue;
           }
@@ -99,6 +104,7 @@ class PriceAlertService {
           // Skip if already alerted at this exact price
           if (sub.last_price_seen !== null &&
               parseFloat(sub.last_price_seen) === priceData.minPrice) {
+            skipDedup++;
             skipped++;
             continue;
           }
@@ -108,6 +114,7 @@ class PriceAlertService {
             const cooldownEnd = new Date(sub.last_alert_sent_at);
             cooldownEnd.setDate(cooldownEnd.getDate() + COOLDOWN_DAYS);
             if (new Date() < cooldownEnd) {
+              skipCooldown++;
               skipped++;
               continue;
             }
@@ -129,6 +136,7 @@ class PriceAlertService {
         subscribers_total: subscribers.length,
         alerts_sent: sent,
         alerts_skipped: skipped,
+        skip_reasons: { above_threshold: skipAboveThreshold, dedup: skipDedup, cooldown: skipCooldown, stale: zipsStale },
         zips_checked: zipCodes.length,
         zips_stale: zipsStale,
         capped,
@@ -171,12 +179,14 @@ class PriceAlertService {
 
     // Re-sort by price and take top 3 (DISTINCT ON requires ORDER BY s.id first)
     rows.sort((a, b) => parseFloat(a.price_per_gallon) - parseFloat(b.price_per_gallon));
+    const totalSuppliers = rows.length;
     rows.splice(3);
 
     if (rows.length === 0) return null;
 
     return {
       minPrice: parseFloat(rows[0].price_per_gallon),
+      totalSuppliers,
       topSuppliers: rows.map(r => ({
         name: r.name,
         city: r.city,
@@ -192,13 +202,14 @@ class PriceAlertService {
    */
   async sendAlertEmail(subscriber, priceData) {
     const { email, zip_code, threshold_price, unsubscribe_token } = subscriber;
-    const { minPrice, topSuppliers } = priceData;
+    const { minPrice, totalSuppliers, topSuppliers } = priceData;
 
-    const subject = `Prices dropped below $${parseFloat(threshold_price).toFixed(2)} in ${zip_code}`;
+    const subject = `Heating oil at $${minPrice.toFixed(2)}/gal in ${zip_code} — below your alert`;
     const html = this.buildAlertEmailHtml({
       zip_code,
       threshold_price: parseFloat(threshold_price),
       minPrice,
+      totalSuppliers,
       topSuppliers,
       unsubscribe_token
     });
@@ -258,9 +269,9 @@ class PriceAlertService {
   /**
    * Send welcome email confirming alert setup.
    */
-  async sendWelcomeEmail(email, zipCode, thresholdPrice, currentMinPrice = null) {
+  async sendWelcomeEmail(email, zipCode, thresholdPrice, currentMinPrice = null, unsubscribeToken = null) {
     const subject = `Price alert set for ZIP ${zipCode}`;
-    const html = this.buildWelcomeEmailHtml({ zip_code: zipCode, threshold_price: thresholdPrice, current_price: currentMinPrice });
+    const html = this.buildWelcomeEmailHtml({ zip_code: zipCode, threshold_price: thresholdPrice, current_price: currentMinPrice, unsubscribe_token: unsubscribeToken });
 
     if (DRY_RUN) {
       this.logger.info(`[PriceAlert] DRY RUN - Would send welcome to ${email}`);
@@ -353,15 +364,14 @@ class PriceAlertService {
     const updateUrl = zip_code ? `${SITE_URL}/prices.html?zip=${zip_code}&update_alert=1&utm_source=price_alert` : null;
     const unsubUrl = unsubscribe_token ? `${SITE_URL}/api/price-alerts/unsubscribe?token=${unsubscribe_token}` : null;
 
-    let links = '';
-    if (updateUrl) links += `<a href="${updateUrl}" style="color: #888;">Update your alert</a>`;
-    if (updateUrl && unsubUrl) links += ' · ';
-    if (unsubUrl) links += `<a href="${unsubUrl}" style="color: #888;">Unsubscribe</a>`;
-    if (links) links += '<br>';
+    const parts = [];
+    if (updateUrl) parts.push(`<a href="${updateUrl}" style="color: #888;">Update your alert</a>`);
+    if (unsubUrl) parts.push(`<a href="${unsubUrl}" style="color: #888;">Unsubscribe</a>`);
+    parts.push(`<a href="${SITE_URL}/privacy.html" style="color: #888;">Privacy Policy</a>`);
 
     return `
-  <p style="font-size: 12px; color: #888; margin-top: 32px; border-top: 1px solid #eee; padding-top: 16px;">
-    ${links}<a href="${SITE_URL}/privacy.html" style="color: #888;">Privacy Policy</a>
+  <p style="font-size: 12px; color: #888; margin-top: 32px; border-top: 1px solid #eee; padding-top: 16px; text-align: center;">
+    ${parts.join(' · ')}
     <br><br>HomeHeat · Katonah, NY 10536
   </p>`;
   }
@@ -369,7 +379,7 @@ class PriceAlertService {
   /**
    * Build the price drop alert email HTML.
    */
-  buildAlertEmailHtml({ zip_code, threshold_price, minPrice, topSuppliers, unsubscribe_token }) {
+  buildAlertEmailHtml({ zip_code, threshold_price, minPrice, totalSuppliers, topSuppliers, unsubscribe_token }) {
     const priceUrl = `${SITE_URL}/prices.html?zip=${zip_code}&utm_source=price_alert&utm_campaign=price_drop`;
     const appUrl = 'https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=price_alert&utm_campaign=price_drop';
     const savings = ((threshold_price - minPrice) * 150).toFixed(0);
@@ -400,7 +410,7 @@ class PriceAlertService {
   ${this.buildEmailHeader()}
 
   <div style="padding: 0 20px;">
-    <p style="margin: 0 0 20px; font-size: 15px; color: #444;">Heating oil prices in <strong>${zip_code}</strong> dropped below your <strong>$${threshold_price.toFixed(2)}</strong> target.</p>
+    <p style="margin: 0 0 20px; font-size: 15px; color: #444;">Heating oil in <strong>${zip_code}</strong> is below your <strong>$${threshold_price.toFixed(2)}</strong> target.</p>
 
     <div style="background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%); border-radius: 12px; padding: 24px; margin: 0 0 24px; text-align: center;">
       <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Lowest price in ${zip_code}</div>
@@ -421,6 +431,8 @@ class PriceAlertService {
       </tbody>
     </table>
 
+    <p style="margin: 8px 0 0; font-size: 12px; color: #999; text-align: center;">Based on ${totalSuppliers} supplier${totalSuppliers !== 1 ? 's' : ''} checked today in ${zip_code}</p>
+
     <p style="margin: 16px 0 24px; text-align: center;">
       <a href="${priceUrl}" style="display: inline-block; background: #2563eb; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Compare all suppliers in ${zip_code}</a>
     </p>
@@ -440,7 +452,7 @@ class PriceAlertService {
   /**
    * Build the welcome confirmation email HTML.
    */
-  buildWelcomeEmailHtml({ zip_code, threshold_price, current_price }) {
+  buildWelcomeEmailHtml({ zip_code, threshold_price, current_price, unsubscribe_token }) {
     const priceUrl = `${SITE_URL}/prices.html?zip=${zip_code}&utm_source=price_alert&utm_campaign=welcome`;
     const appUrl = 'https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=price_alert&utm_campaign=welcome';
     const formattedThreshold = parseFloat(threshold_price).toFixed(2);
@@ -477,7 +489,7 @@ class PriceAlertService {
     <a href="${appUrl}" style="color: #2563eb;">Download free →</a>
   </div>
 
-  ${this.buildEmailFooter({ zip_code })}
+  ${this.buildEmailFooter({ zip_code, unsubscribe_token })}
 </div>`;
   }
 }

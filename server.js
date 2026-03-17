@@ -575,6 +575,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/108-add-fulton-ny-suppliers', label: 'Fulton NY / Oswego County suppliers' },
           { path: './src/migrations/109-add-dansville-ny-suppliers', label: 'Dansville NY / Livingston County suppliers' },
           { path: './src/migrations/110-add-kerosene-fuel-type', label: 'Add kerosene fuel type' },
+          { path: './src/migrations/111-fix-price-alert-last-seen', label: 'Fix price alert first-send bug' },
         ];
 
         let migrationErrors = 0;

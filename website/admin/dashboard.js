@@ -3134,6 +3134,16 @@ async function loadCoverage() {
     // Alert subscribers card + tables
     document.getElementById('cov-alert-subs').textContent = alertSubs.total || '0';
 
+    // Show uncovered alert count if any
+    const uncoveredEl = document.getElementById('cov-alert-uncovered');
+    if (uncoveredEl) {
+      if (alertSubs.uncoveredCount > 0) {
+        uncoveredEl.innerHTML = `<span style="color:#ef4444;font-weight:600">⚠ ${alertSubs.uncoveredCount} in uncovered ZIPs</span>`;
+      } else {
+        uncoveredEl.textContent = '';
+      }
+    }
+
     const alertZipsBody = document.getElementById('alert-top-zips-body');
     if (alertZipsBody) {
       alertZipsBody.innerHTML = '';
@@ -3161,9 +3171,10 @@ async function loadCoverage() {
       } else {
         alertSubs.recent.forEach(r => {
           const row = document.createElement('tr');
+          const coverageBadge = r.hasCoverage === false ? ' <span style="color:#ef4444;font-size:11px" title="No coverage">⚠</span>' : '';
           row.innerHTML = `
             <td>${r.email}</td>
-            <td>${r.zip}</td>
+            <td>${r.zip}${coverageBadge}</td>
             <td>$${r.threshold.toFixed(2)}</td>
             <td>${r.source || '—'}</td>
             <td>${new Date(r.createdAt).toLocaleDateString()}</td>
