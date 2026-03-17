@@ -243,8 +243,15 @@ async function generateSEOPages(options = {}) {
         (s.service_counties && s.service_counties.some(c => c.includes(stateCode)))
       );
 
-      if (stateSuppliers.length < MIN_SUPPLIERS_FOR_PAGE) {
-        log(`   ⏭️  Skipping ${stateCode} (only ${stateSuppliers.length} suppliers)`);
+      // V2.12.0: For non-oil fuels, only count suppliers that have prices for this fuel
+      // Plan threshold: ≥5 kerosene suppliers for a state page
+      const fuelThreshold = FUEL.fuelType === 'heating_oil' ? MIN_SUPPLIERS_FOR_PAGE : 5;
+      const suppliersWithFuelPrices = FUEL.fuelType === 'heating_oil'
+        ? stateSuppliers
+        : stateSuppliers.filter(s => priceMap.has(s.id));
+
+      if (suppliersWithFuelPrices.length < fuelThreshold) {
+        log(`   ⏭️  Skipping ${stateCode} (only ${suppliersWithFuelPrices.length} ${FUEL.label.toLowerCase()} suppliers, need ${fuelThreshold})`);
         continue;
       }
 
@@ -1413,7 +1420,9 @@ function generatePageHTML(data) {
   }
 
   // Determine relative path depth for assets
-  const assetPath = '../../';
+  // Oil pages are at /prices/{state}/ = depth 2. Kerosene at /prices/kerosene/{state}/ = depth 3.
+  const assetDepth = FUEL.fuelType === 'heating_oil' ? 2 : 3;
+  const assetPath = '../'.repeat(assetDepth);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1448,7 +1457,7 @@ function generatePageHTML(data) {
   ${productSchema ? `<script type="application/ld+json">${JSON.stringify(productSchema)}</script>` : ''}
 </head>
 <body${zips && zips[0] ? ` data-zip="${zips[0]}"` : ''}>
-  ${getNavHTML(2, '/prices')}
+  ${getNavHTML(assetDepth, '/prices')}
 
   <main class="seo-page">
     <!-- Breadcrumb -->
