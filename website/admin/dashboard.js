@@ -3144,43 +3144,24 @@ async function loadCoverage() {
       }
     }
 
-    const alertZipsBody = document.getElementById('alert-top-zips-body');
-    if (alertZipsBody) {
-      alertZipsBody.innerHTML = '';
-      if (alertSubs.topZips.length === 0) {
-        alertZipsBody.innerHTML = '<tr><td colspan="4" class="no-data">No alert subscribers yet</td></tr>';
-      } else {
-        alertSubs.topZips.forEach(z => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${z.zip}</td>
-            <td>${z.subscribers}</td>
-            <td>${z.hasCoverage ? '<span style="color:#22c55e">Yes</span>' : '<span style="color:#ef4444">No</span>'}</td>
-            <td>${z.lastAlertSent ? new Date(z.lastAlertSent).toLocaleDateString() : '—'}</td>
-          `;
-          alertZipsBody.appendChild(row);
-        });
-      }
-    }
-
-    const alertRecentBody = document.getElementById('alert-recent-body');
-    if (alertRecentBody) {
-      alertRecentBody.innerHTML = '';
+    const alertBody = document.getElementById('alert-subscribers-body');
+    if (alertBody) {
+      alertBody.innerHTML = '';
       if (alertSubs.recent.length === 0) {
-        alertRecentBody.innerHTML = '<tr><td colspan="6" class="no-data">No signups yet</td></tr>';
+        alertBody.innerHTML = '<tr><td colspan="7" class="no-data">No alert subscribers yet</td></tr>';
       } else {
         alertSubs.recent.forEach(r => {
           const row = document.createElement('tr');
-          const coverageBadge = r.hasCoverage === false ? ' <span style="color:#ef4444;font-size:11px" title="No coverage">⚠</span>' : '';
           row.innerHTML = `
             <td>${r.email}</td>
-            <td>${r.zip}${coverageBadge}</td>
+            <td>${r.zip}</td>
             <td>$${r.threshold.toFixed(2)}</td>
+            <td>${r.hasCoverage ? '<span style="color:#22c55e">Yes</span>' : '<span style="color:#ef4444">No</span>'}</td>
             <td>${r.source || '—'}</td>
             <td>${new Date(r.createdAt).toLocaleDateString()}</td>
             <td>${r.lastAlertSent ? new Date(r.lastAlertSent).toLocaleDateString() : '—'}</td>
           `;
-          alertRecentBody.appendChild(row);
+          alertBody.appendChild(row);
         });
       }
     }

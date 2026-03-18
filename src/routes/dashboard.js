@@ -4404,8 +4404,9 @@ router.get('/alert-subscribers', async (req, res) => {
           )
         ) THEN true ELSE false END AS has_coverage
       FROM price_alert_subscribers pas
+      WHERE pas.active = true
       ORDER BY pas.created_at DESC
-      LIMIT 20
+      LIMIT 50
     `);
 
     // Count of active subscribers in uncovered ZIPs
