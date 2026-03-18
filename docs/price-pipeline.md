@@ -42,6 +42,10 @@ Four pattern types in scrape-config.json:
 - **split**: Price split across HTML elements (e.g., "$3" + "199" = $3.199)
 - **json_api**: Fetch JSON endpoint, extract via dot-notation `pricePath`
 
+### lookupUrl (V2.14.0)
+
+Overrides the fetch URL entirely. Used when the real price lives on a third-party checkout portal (e.g., fuelcheckout.com) rather than the supplier's own site. Config fields: `lookupUrl` (URL template with `{zip}` placeholder), `lookupZip` (hardcoded ZIP in the supplier's core delivery area). Pattern/regex extraction works the same as any other scrape.
+
 On HTTP 403, auto-retries with `got-scraping` (browser TLS fingerprint). Only Cloudflare WAF remains truly blocked.
 
 ## Backoff State Machine

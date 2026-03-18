@@ -202,6 +202,12 @@ async function scrapeSupplierPriceOnce(supplier, config) {
       url = urlObj.toString();
     }
 
+    // V2.14.0: lookupUrl — fetch price from a different URL (e.g., third-party checkout portal).
+    // Supports {zip} placeholder interpolated from config.lookupZip.
+    if (config.lookupUrl && config.lookupZip) {
+      url = config.lookupUrl.replace('{zip}', config.lookupZip);
+    }
+
     // V2.10.0: json_api pattern — call a JSON API with custom method/headers,
     // extract price from a dot-notation path in the response.
     // Config fields: apiUrl, apiMethod (default POST), apiHeaders, jsonPath
