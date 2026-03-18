@@ -234,22 +234,11 @@ async function generateSEOPages(options = {}) {
     };
 
     // 4. Process each state
+    // Safe generate-then-swap: write all pages to a temp directory per state,
+    // then replace the live directory only after the entire state succeeds.
+    // If generation fails for any state, old pages survive untouched.
     for (const [stateCode, stateInfo] of Object.entries(STATES)) {
       log(`\n📍 Processing ${stateInfo.name}...`);
-
-      // Create state directory (clear stale pages from previous runs)
-      const stateDir = path.join(pricesDir, stateInfo.abbrev);
-      if (!dryRun) {
-        await fs.mkdir(stateDir, { recursive: true });
-        // Remove all existing .html files so stale pages don't linger
-        // when template changes or suppliers drop below threshold
-        const existingFiles = await fs.readdir(stateDir);
-        for (const file of existingFiles) {
-          if (file.endsWith('.html')) {
-            await fs.unlink(path.join(stateDir, file));
-          }
-        }
-      }
 
       // Get suppliers for this state (by physical location OR service area)
       const stateSuppliers = suppliers.filter(s =>
@@ -266,99 +255,139 @@ async function generateSEOPages(options = {}) {
         continue;
       }
 
-      // A. Generate State Hub Page
-      const statePageData = await generateStateHubPage(
-        stateCode, stateInfo, suppliers, priceMap, sequelize, crossLinkStateMap
-      );
+      const stateDir = path.join(pricesDir, stateInfo.abbrev);
+      const tmpDir = stateDir + '._tmp';
 
-      if (statePageData) {
-        const statePath = path.join(stateDir, 'index.html');
+      // Track pages generated for this state (committed to generatedPages only on success)
+      const stateGenerated = { states: [], regions: [], counties: [], cities: [] };
+
+      try {
         if (!dryRun) {
-          await fs.writeFile(statePath, statePageData.html, 'utf-8');
+          // Clean and create temp directory
+          await fs.rm(tmpDir, { recursive: true, force: true });
+          await fs.mkdir(tmpDir, { recursive: true });
         }
-        log(`   ✅ State: ${stateInfo.abbrev}/index.html (${statePageData.supplierCount} suppliers)`);
-        generatedPages.states.push({
-          abbrev: stateInfo.abbrev,
-          name: stateInfo.name,
-          supplierCount: statePageData.supplierCount
-        });
-      }
 
-      // B. Generate Regional Pages (e.g., Long Island, Hudson Valley)
-      const stateRegions = REGIONS[stateCode] || [];
-      for (const region of stateRegions) {
-        const regionData = await generateRegionalPage(
-          stateCode, stateInfo, region, suppliers, priceMap, sequelize
+        // A. Generate State Hub Page
+        const statePageData = await generateStateHubPage(
+          stateCode, stateInfo, suppliers, priceMap, sequelize, crossLinkStateMap, FUEL
         );
 
-        if (regionData && regionData.supplierCount >= MIN_SUPPLIERS_FOR_PAGE) {
-          const regionPath = path.join(stateDir, `${region.slug}.html`);
+        if (statePageData) {
           if (!dryRun) {
-            await fs.writeFile(regionPath, regionData.html, 'utf-8');
+            await fs.writeFile(path.join(tmpDir, 'index.html'), statePageData.html, 'utf-8');
           }
-          log(`   ✅ Region: ${stateInfo.abbrev}/${region.slug}.html (${regionData.supplierCount} suppliers)`);
-          generatedPages.regions.push({
-            state: stateInfo.abbrev,
-            stateName: stateInfo.name,
-            region: region.name,
-            slug: region.slug,
-            supplierCount: regionData.supplierCount
+          log(`   ✅ State: ${stateInfo.abbrev}/index.html (${statePageData.supplierCount} suppliers)`);
+          stateGenerated.states.push({
+            abbrev: stateInfo.abbrev,
+            name: stateInfo.name,
+            supplierCount: statePageData.supplierCount
           });
         }
-      }
 
-      // C. Generate County Pages
-      const counties = locationResolver.getCountiesForState(stateCode);
-      for (const county of counties) {
-        const countyData = await generateCountyPage(
-          stateCode, stateInfo, county, suppliers, priceMap, sequelize
-        );
+        // B. Generate Regional Pages (e.g., Long Island, Hudson Valley)
+        const stateRegions = REGIONS[stateCode] || [];
+        for (const region of stateRegions) {
+          const regionData = await generateRegionalPage(
+            stateCode, stateInfo, region, suppliers, priceMap, sequelize, FUEL
+          );
 
-        if (countyData && countyData.supplierCount >= MIN_SUPPLIERS_FOR_PAGE) {
-          const countySlug = slugify(county) + '-county';
-          const countyPath = path.join(stateDir, `${countySlug}.html`);
-          if (!dryRun) {
-            await fs.writeFile(countyPath, countyData.html, 'utf-8');
+          if (regionData && regionData.supplierCount >= MIN_SUPPLIERS_FOR_PAGE) {
+            if (!dryRun) {
+              await fs.writeFile(path.join(tmpDir, `${region.slug}.html`), regionData.html, 'utf-8');
+            }
+            log(`   ✅ Region: ${stateInfo.abbrev}/${region.slug}.html (${regionData.supplierCount} suppliers)`);
+            stateGenerated.regions.push({
+              state: stateInfo.abbrev,
+              stateName: stateInfo.name,
+              region: region.name,
+              slug: region.slug,
+              supplierCount: regionData.supplierCount
+            });
           }
-          log(`   ✅ County: ${stateInfo.abbrev}/${countySlug}.html (${countyData.supplierCount} suppliers)`);
-          generatedPages.counties.push({
-            state: stateInfo.abbrev,
-            stateName: stateInfo.name,
-            county: county,
-            slug: countySlug,
-            supplierCount: countyData.supplierCount
-          });
         }
-      }
 
-      // D. Generate City Pages
-      const cities = locationResolver.getCitiesForState(stateCode);
-      for (const city of cities) {
-        const cityData = await generateCityPage(
-          stateCode, stateInfo, city, suppliers, priceMap, sequelize
-        );
+        // C. Generate County Pages
+        const counties = locationResolver.getCountiesForState(stateCode);
+        for (const county of counties) {
+          const countyData = await generateCountyPage(
+            stateCode, stateInfo, county, suppliers, priceMap, sequelize, FUEL
+          );
 
-        if (cityData && cityData.supplierCount >= MIN_SUPPLIERS_FOR_PAGE) {
-          const citySlug = slugify(city);
-          const cityPath = path.join(stateDir, `${citySlug}.html`);
-          if (!dryRun) {
-            await fs.writeFile(cityPath, cityData.html, 'utf-8');
+          if (countyData && countyData.supplierCount >= MIN_SUPPLIERS_FOR_PAGE) {
+            const countySlug = slugify(county) + '-county';
+            if (!dryRun) {
+              await fs.writeFile(path.join(tmpDir, `${countySlug}.html`), countyData.html, 'utf-8');
+            }
+            log(`   ✅ County: ${stateInfo.abbrev}/${countySlug}.html (${countyData.supplierCount} suppliers)`);
+            stateGenerated.counties.push({
+              state: stateInfo.abbrev,
+              stateName: stateInfo.name,
+              county: county,
+              slug: countySlug,
+              supplierCount: countyData.supplierCount
+            });
           }
-          log(`   ✅ City: ${stateInfo.abbrev}/${citySlug}.html (${cityData.supplierCount} suppliers)`);
-          generatedPages.cities.push({
-            state: stateInfo.abbrev,
-            stateName: stateInfo.name,
-            city: city,
-            county: cityData.county,
-            slug: citySlug,
-            supplierCount: cityData.supplierCount
-          });
+        }
+
+        // D. Generate City Pages
+        const cities = locationResolver.getCitiesForState(stateCode);
+        for (const city of cities) {
+          const cityData = await generateCityPage(
+            stateCode, stateInfo, city, suppliers, priceMap, sequelize, FUEL
+          );
+
+          if (cityData && cityData.supplierCount >= MIN_SUPPLIERS_FOR_PAGE) {
+            const citySlug = slugify(city);
+            if (!dryRun) {
+              await fs.writeFile(path.join(tmpDir, `${citySlug}.html`), cityData.html, 'utf-8');
+            }
+            log(`   ✅ City: ${stateInfo.abbrev}/${citySlug}.html (${cityData.supplierCount} suppliers)`);
+            stateGenerated.cities.push({
+              state: stateInfo.abbrev,
+              stateName: stateInfo.name,
+              city: city,
+              county: cityData.county,
+              slug: citySlug,
+              supplierCount: cityData.supplierCount
+            });
+          }
+        }
+
+        // All pages for this state generated successfully — swap into live directory.
+        // Remove old .html files, move new ones in, clean up temp dir.
+        if (!dryRun) {
+          await fs.mkdir(stateDir, { recursive: true });
+          const oldFiles = await fs.readdir(stateDir);
+          for (const file of oldFiles) {
+            if (file.endsWith('.html')) {
+              await fs.unlink(path.join(stateDir, file));
+            }
+          }
+          const newFiles = await fs.readdir(tmpDir);
+          for (const file of newFiles) {
+            await fs.rename(path.join(tmpDir, file), path.join(stateDir, file));
+          }
+          await fs.rm(tmpDir, { recursive: true, force: true });
+        }
+
+        // Commit tracking data only after successful swap
+        generatedPages.states.push(...stateGenerated.states);
+        generatedPages.regions.push(...stateGenerated.regions);
+        generatedPages.counties.push(...stateGenerated.counties);
+        generatedPages.cities.push(...stateGenerated.cities);
+
+      } catch (stateError) {
+        // Generation failed for this state — old pages survive, continue to next state
+        log(`   ❌ ${stateInfo.name} generation failed: ${stateError.message} — keeping old pages`);
+        if (!dryRun) {
+          await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
         }
       }
     }
 
     // 5. Generate national leaderboard snippet
-    const leaderboardHtml = generateLeaderboardSnippet(generatedPages.states, prices, suppliers);
+    const leaderboardHtml = generateLeaderboardSnippet(generatedPages.states, prices, suppliers, FUEL);
     const leaderboardPath = path.join(pricesDir, '_leaderboard-snippet.html');
     if (!dryRun) {
       await fs.writeFile(leaderboardPath, leaderboardHtml, 'utf-8');
@@ -369,7 +398,7 @@ async function generateSEOPages(options = {}) {
     const pricesHtmlPath = path.join(websiteDir, 'prices.html');
     if (!dryRun) {
       try {
-        await updatePricesHtml(pricesHtmlPath, generatedPages.states, prices, suppliers);
+        await updatePricesHtml(pricesHtmlPath, generatedPages.states, prices, suppliers, FUEL);
         log(`✅ Updated prices.html with fresh leaderboard data`);
       } catch (updateError) {
         log(`⚠️  Failed to update prices.html: ${updateError.message}`);
@@ -460,7 +489,7 @@ function calculateMarketStats(suppliers) {
  * Generate State Hub Page
  * V2.34.0: Intelligence-first architecture - leads with price data, not supplier directory
  */
-async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap, sequelize, crossLinkStateMap = new Map()) {
+async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap, sequelize, crossLinkStateMap = new Map(), FUEL) {
   // Get all ZIPs for this state's counties
   const counties = locationResolver.getCountiesForState(stateCode);
   const allZips = new Set();
@@ -628,7 +657,7 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
     otherStates: Object.entries(STATES)
       .filter(([code]) => code !== stateCode)
       .map(([code, info]) => ({ name: info.name, abbrev: info.abbrev }))
-  });
+  }, FUEL);
 
   return { html, supplierCount: suppliers.length };
 }
@@ -636,7 +665,7 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
 /**
  * Generate County Page
  */
-async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, priceMap, sequelize) {
+async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, priceMap, sequelize, FUEL) {
   const zips = locationResolver.getZipsForCounty(county, stateCode);
 
   if (zips.length === 0) {
@@ -696,7 +725,7 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
     stateCode,
     county: countyName,
     cityLinks
-  });
+  }, FUEL);
 
   return { html, supplierCount: suppliers.length, county };
 }
@@ -705,7 +734,7 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
  * Generate Regional Page (e.g., Long Island, Hudson Valley)
  * Aggregates multiple counties into a single regional landing page
  */
-async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, priceMap, sequelize) {
+async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, priceMap, sequelize, FUEL) {
   // Collect all ZIPs from the region's counties
   const allZips = new Set();
   for (const county of region.counties) {
@@ -763,7 +792,7 @@ async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, 
     region: region.name,
     regionDescription: region.description,
     countyLinks
-  });
+  }, FUEL);
 
   return { html, supplierCount: suppliers.length };
 }
@@ -771,7 +800,7 @@ async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, 
 /**
  * Generate City Page
  */
-async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceMap, sequelize) {
+async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceMap, sequelize, FUEL) {
   const zips = locationResolver.getZipsForCity(city, stateCode);
 
   if (zips.length === 0) {
@@ -851,7 +880,7 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
     county: countyNameFormatted,
     siblingCities: siblingCities.slice(0, 10).map(s => ({ ...s, name: toTitleCase(s.name) })),  // Limit to 10
     zips
-  });
+  }, FUEL);
 
   return { html, supplierCount: suppliers.length, county: countyName };
 }
@@ -876,7 +905,7 @@ function computeFreshness(scrapedAt) {
 /**
  * Generate page HTML (shared template)
  */
-function generatePageHTML(data) {
+function generatePageHTML(data, FUEL) {
   const {
     type,
     title,
@@ -1626,7 +1655,7 @@ ${supplierRows}
  * V2.17.0: Update prices.html with fresh leaderboard data
  * Replaces the hardcoded state averages and top deals sections
  */
-async function updatePricesHtml(pricesHtmlPath, states, prices, suppliers) {
+async function updatePricesHtml(pricesHtmlPath, states, prices, suppliers, FUEL) {
   let html = await fs.readFile(pricesHtmlPath, 'utf-8');
 
   // Calculate state averages (same logic as generateLeaderboardSnippet)
@@ -1801,7 +1830,7 @@ async function updatePricesHtml(pricesHtmlPath, states, prices, suppliers) {
 /**
  * Generate national leaderboard snippet for prices.html
  */
-function generateLeaderboardSnippet(states, prices, suppliers) {
+function generateLeaderboardSnippet(states, prices, suppliers, FUEL) {
   const dateStr = formatDate();
 
   // Calculate state averages

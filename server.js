@@ -98,7 +98,9 @@ const { initSupplierPriceModel } = require('./src/models/SupplierPrice');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Page generation tracking (does NOT gate health endpoint — Railway needs 200 within 30s)
+// Page generation tracking — does NOT gate health endpoint (Railway healthcheck timeout is 120s,
+// but generation can take longer and shouldn't block API/webhook availability).
+// Generator uses safe generate-then-swap: old pages survive if generation fails.
 let pagesReady = false;
 
 // Trust Railway's proxy for accurate IP detection in rate limiting
@@ -1125,10 +1127,10 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info('📄 SEO + Supplier + ZIP/County Elite page generator scheduled: daily at 11:00 PM EST');
   logger.info('📄 Heating cost + Avg Bill + Price Trend page generators scheduled: daily at 11:15/11:20/11:25 PM EST');
 
-  // Regenerate all pages on startup — health endpoint gates on this completing.
-  // Generated pages are gitignored; each Railway deploy starts with no pages.
-  // All 4 generators run in parallel with a 90s per-generator timeout.
-  // If ANY generator fails, pagesReady stays false → Railway keeps old deploy.
+  // Regenerate all pages on startup. Pages are in git (tracked before .gitignore),
+  // so deploys start with the last-committed versions. Generators overwrite with fresh data.
+  // Each generator uses generate-then-swap — if generation fails for a state, old pages survive.
+  // Health endpoint does NOT gate on pagesReady (API must be available immediately).
   (async () => {
     const websiteDir = path.join(__dirname, 'website');
     const GENERATOR_TIMEOUT = 90000; // 90s per generator

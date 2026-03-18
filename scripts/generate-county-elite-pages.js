@@ -300,7 +300,7 @@ async function generateCountyElitePages(options = {}) {
 
       const stateMedian = stateMedianMap[stats.state_code] || null;
       const countySearchCount = countySearchMap.get(`${stats.county_name.toLowerCase()}|${stats.state_code}`) || 0;
-      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips, allQualifyingCounties, legacyLayout, countySearchCount, crossLinkSet, crossLinkSupplierCount);
+      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips, allQualifyingCounties, legacyLayout, countySearchCount, crossLinkSet, crossLinkSupplierCount, FUEL);
 
       // Create state subdirectory
       const stateDir = path.join(COUNTY_DIR, stats.state_code.toLowerCase());
@@ -353,7 +353,7 @@ async function generateCountyElitePages(options = {}) {
 /**
  * Generate HTML for a County Elite page
  */
-function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = [], allCountyStats = [], legacyLayout = false, countySearchCount = 0, crossLinkSet = new Set(), crossLinkSupplierCount = new Map()) {
+function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = [], allCountyStats = [], legacyLayout = false, countySearchCount = 0, crossLinkSet = new Set(), crossLinkSupplierCount = new Map(), FUEL) {
   const countyName = stats.county_name;
   const stateCode = stats.state_code;
   const stateName = getStateName(stateCode);

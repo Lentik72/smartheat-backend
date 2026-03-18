@@ -857,6 +857,8 @@ async function generateHeatingCostPages(options = {}) {
     let totalStatePages = 0;
     let totalCountyPages = 0;
 
+    // Safe generate-then-swap: write to temp dir per state, swap on success.
+    // If generation fails for a state, old pages survive untouched.
     for (const [stateCode, stateInfo] of Object.entries(STATES)) {
       console.log(`\nProcessing ${stateInfo.name}...`);
 
@@ -867,89 +869,98 @@ async function generateHeatingCostPages(options = {}) {
         continue;
       }
 
-      // Get state-level aggregate
-      const stateStats = await getStateOilStats(sequelize, stateCode);
-
-      // Create state directory
       const stateDir = path.join(OUTPUT_DIR, stateInfo.abbrev);
-      if (!dryRun) {
-        await fs.mkdir(stateDir, { recursive: true });
-        // Clean stale HTML files
-        try {
-          const existingFiles = await fs.readdir(stateDir);
-          for (const file of existingFiles) {
-            if (file.endsWith('.html')) {
-              await fs.unlink(path.join(stateDir, file));
-            }
-          }
-        } catch (e) {
-          // Directory may not exist yet — that's fine
+      const tmpDir = stateDir + '._tmp';
+
+      try {
+        // Get state-level aggregate
+        const stateStats = await getStateOilStats(sequelize, stateCode);
+
+        if (!dryRun) {
+          await fs.rm(tmpDir, { recursive: true, force: true });
+          await fs.mkdir(tmpDir, { recursive: true });
         }
-      }
 
-      // Process each county
-      const validCounties = [];
-      for (const cs of countyStats) {
-        const county = cs.county_name;
-        const zipPrefixes = cs.zip_prefixes || [];
+        // Process each county
+        const validCounties = [];
+        const stateCountyPages = [];
+        for (const cs of countyStats) {
+          const county = cs.county_name;
+          const zipPrefixes = cs.zip_prefixes || [];
 
-        // Threshold check via shared eligibility
-        const recentPrices = await getRecentPriceCount(sequelize, zipPrefixes);
-        const eligibility = getCountyEligibility(cs, recentPrices);
+          // Threshold check via shared eligibility
+          const recentPrices = await getRecentPriceCount(sequelize, zipPrefixes);
+          const eligibility = getCountyEligibility(cs, recentPrices);
 
-        if (!eligibility.heatingCost) {
+          if (!eligibility.heatingCost) {
+            continue;
+          }
+
+          // Compute multi-fuel costs
+          const oilPrice = parseFloat(cs.median_price);
+          const costs = computeFuelCosts(oilPrice, stateCode, county);
+
+          // Generate county page
+          const html = generateCountyPageHTML(stateCode, stateInfo, county, cs, costs, eligibility);
+          const countySlug = slugify(county);
+
+          if (!dryRun) {
+            await fs.writeFile(path.join(tmpDir, `${countySlug}.html`), html, 'utf-8');
+          }
+
+          console.log(`  County: ${county} — oil $${oilPrice.toFixed(2)}, HDD ${costs.hdd}, cheapest: ${costs.cheapest}`);
+
+          validCounties.push({ county, stats: cs, costs });
+          stateCountyPages.push({ stateAbbrev: stateInfo.abbrev, county, slug: countySlug });
+        }
+
+        if (validCounties.length === 0) {
+          console.log(`  No counties passed thresholds for ${stateCode}`);
+          if (!dryRun) await fs.rm(tmpDir, { recursive: true, force: true });
           continue;
         }
 
-        // Compute multi-fuel costs
-        const oilPrice = parseFloat(cs.median_price);
-        const costs = computeFuelCosts(oilPrice, stateCode, county);
+        // Generate state page
+        const stateOilPrice = stateStats.state_median ? parseFloat(stateStats.state_median) : null;
+        const stateCosts = stateOilPrice ? computeFuelCosts(stateOilPrice, stateCode, null) : { fuels: {}, cheapest: null, payback: null, hdd: 0, electricRate: 0, gasRate: 0 };
 
-        // Generate county page
-        const html = generateCountyPageHTML(stateCode, stateInfo, county, cs, costs, eligibility);
-        const countySlug = slugify(county);
-        const filePath = path.join(stateDir, `${countySlug}.html`);
-
+        const stateHtml = generateStatePageHTML(stateCode, stateInfo, stateStats, validCounties, stateCosts);
         if (!dryRun) {
-          await fs.writeFile(filePath, html, 'utf-8');
+          await fs.writeFile(path.join(tmpDir, 'index.html'), stateHtml, 'utf-8');
         }
 
-        console.log(`  County: ${county} — oil $${oilPrice.toFixed(2)}, HDD ${costs.hdd}, cheapest: ${costs.cheapest}`);
-        totalCountyPages++;
+        // Swap: remove old pages, move new ones in
+        if (!dryRun) {
+          await fs.mkdir(stateDir, { recursive: true });
+          const oldFiles = await fs.readdir(stateDir);
+          for (const file of oldFiles) {
+            if (file.endsWith('.html')) await fs.unlink(path.join(stateDir, file));
+          }
+          const newFiles = await fs.readdir(tmpDir);
+          for (const file of newFiles) {
+            await fs.rename(path.join(tmpDir, file), path.join(stateDir, file));
+          }
+          await fs.rm(tmpDir, { recursive: true, force: true });
+        }
 
-        validCounties.push({ county, stats: cs, costs });
-        generatedPages.counties.push({
-          stateAbbrev: stateInfo.abbrev,
-          county,
-          slug: countySlug,
+        // Commit tracking data only after successful swap
+        console.log(`  State page: ${stateInfo.abbrev}/index.html (${validCounties.length} counties)`);
+        totalStatePages++;
+        totalCountyPages += stateCountyPages.length;
+        generatedPages.counties.push(...stateCountyPages);
+        generatedPages.states.push({
+          abbrev: stateInfo.abbrev,
+          name: stateInfo.name,
+          cheapest: stateCosts.cheapest,
+          oilAnnual: stateCosts.fuels['heating-oil'] ? stateCosts.fuels['heating-oil'].annualCost : null,
+          cheapestAnnual: stateCosts.cheapest && stateCosts.fuels[stateCosts.cheapest] ? stateCosts.fuels[stateCosts.cheapest].annualCost : null,
+          countyCount: validCounties.length,
         });
+
+      } catch (stateError) {
+        console.log(`  ❌ ${stateInfo.name} generation failed: ${stateError.message} — keeping old pages`);
+        if (!dryRun) await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
       }
-
-      if (validCounties.length === 0) {
-        console.log(`  No counties passed thresholds for ${stateCode}`);
-        continue;
-      }
-
-      // Generate state page
-      const stateOilPrice = stateStats.state_median ? parseFloat(stateStats.state_median) : null;
-      const stateCosts = stateOilPrice ? computeFuelCosts(stateOilPrice, stateCode, null) : { fuels: {}, cheapest: null, payback: null, hdd: 0, electricRate: 0, gasRate: 0 };
-
-      const stateHtml = generateStatePageHTML(stateCode, stateInfo, stateStats, validCounties, stateCosts);
-      const statePath = path.join(stateDir, 'index.html');
-      if (!dryRun) {
-        await fs.writeFile(statePath, stateHtml, 'utf-8');
-      }
-
-      console.log(`  State page: ${stateInfo.abbrev}/index.html (${validCounties.length} counties)`);
-      totalStatePages++;
-      generatedPages.states.push({
-        abbrev: stateInfo.abbrev,
-        name: stateInfo.name,
-        cheapest: stateCosts.cheapest,
-        oilAnnual: stateCosts.fuels['heating-oil'] ? stateCosts.fuels['heating-oil'].annualCost : null,
-        cheapestAnnual: stateCosts.cheapest && stateCosts.fuels[stateCosts.cheapest] ? stateCosts.fuels[stateCosts.cheapest].annualCost : null,
-        countyCount: validCounties.length,
-      });
     }
 
     // Generate top-level index page

@@ -1073,6 +1073,8 @@ async function generatePriceTrendPages(options = {}) {
     let totalCountyPages = 0;
     let skippedCount = 0;
 
+    // Safe generate-then-swap: write to temp dir per state, swap on success.
+    // If generation fails for a state, old pages survive untouched.
     for (const [stateCode, stateInfo] of Object.entries(STATES)) {
       console.log(`\nProcessing ${stateInfo.name}...`);
 
@@ -1082,80 +1084,89 @@ async function generatePriceTrendPages(options = {}) {
         continue;
       }
 
-      const stateStats = await getStateOilStats(sequelize, stateCode);
-
-      // Create state directory
       const stateDir = path.join(OUTPUT_DIR, stateInfo.abbrev);
-      if (!dryRun) {
-        await fs.mkdir(stateDir, { recursive: true });
-        // Clean stale HTML files
-        try {
-          const existingFiles = await fs.readdir(stateDir);
-          for (const file of existingFiles) {
-            if (file.endsWith('.html')) {
-              await fs.unlink(path.join(stateDir, file));
-            }
-          }
-        } catch (e) {
-          // Directory may not exist yet
+      const tmpDir = stateDir + '._tmp';
+
+      try {
+        const stateStats = await getStateOilStats(sequelize, stateCode);
+
+        if (!dryRun) {
+          await fs.rm(tmpDir, { recursive: true, force: true });
+          await fs.mkdir(tmpDir, { recursive: true });
         }
-      }
 
-      // Process each county
-      const validCounties = [];
-      for (const cs of countyStats) {
-        const county = cs.county_name;
-        const zipPrefixes = cs.zip_prefixes || [];
+        // Process each county
+        const validCounties = [];
+        const stateCountyPages = [];
+        for (const cs of countyStats) {
+          const county = cs.county_name;
+          const zipPrefixes = cs.zip_prefixes || [];
 
-        const recentPrices = await getRecentPriceCount(sequelize, zipPrefixes);
-        const eligibility = getCountyEligibility(cs, recentPrices);
+          const recentPrices = await getRecentPriceCount(sequelize, zipPrefixes);
+          const eligibility = getCountyEligibility(cs, recentPrices);
 
-        if (!eligibility.priceTrend) {
-          skippedCount++;
+          if (!eligibility.priceTrend) {
+            skippedCount++;
+            continue;
+          }
+
+          // Fetch weekly history
+          const history = await getCountyWeeklyHistory(sequelize, county, stateCode);
+
+          const html = generateCountyPageHTML(stateCode, stateInfo, county, cs, history, eligibility);
+          const countySlug = slugify(county);
+
+          if (!dryRun) {
+            await fs.writeFile(path.join(tmpDir, `${countySlug}.html`), html, 'utf-8');
+          }
+
+          validCounties.push({ county, stats: cs });
+          stateCountyPages.push({ stateAbbrev: stateInfo.abbrev, county, slug: countySlug });
+        }
+
+        if (validCounties.length === 0) {
+          console.log(`  No counties passed thresholds for ${stateCode}`);
+          if (!dryRun) await fs.rm(tmpDir, { recursive: true, force: true });
           continue;
         }
 
-        // Fetch weekly history
-        const history = await getCountyWeeklyHistory(sequelize, county, stateCode);
-
-        const html = generateCountyPageHTML(stateCode, stateInfo, county, cs, history, eligibility);
-        const countySlug = slugify(county);
-        const filePath = path.join(stateDir, `${countySlug}.html`);
-
+        // Generate state page
+        const stateHtml = generateStatePageHTML(stateCode, stateInfo, stateStats, validCounties);
         if (!dryRun) {
-          await fs.writeFile(filePath, html, 'utf-8');
+          await fs.writeFile(path.join(tmpDir, 'index.html'), stateHtml, 'utf-8');
         }
 
-        totalCountyPages++;
-        validCounties.push({ county, stats: cs });
-        generatedPages.counties.push({
-          stateAbbrev: stateInfo.abbrev,
-          county,
-          slug: countySlug,
+        // Swap: remove old pages, move new ones in
+        if (!dryRun) {
+          await fs.mkdir(stateDir, { recursive: true });
+          const oldFiles = await fs.readdir(stateDir);
+          for (const file of oldFiles) {
+            if (file.endsWith('.html')) await fs.unlink(path.join(stateDir, file));
+          }
+          const newFiles = await fs.readdir(tmpDir);
+          for (const file of newFiles) {
+            await fs.rename(path.join(tmpDir, file), path.join(stateDir, file));
+          }
+          await fs.rm(tmpDir, { recursive: true, force: true });
+        }
+
+        // Commit tracking data only after successful swap
+        console.log(`  ${stateInfo.abbrev}: ${validCounties.length} counties`);
+        totalStatePages++;
+        totalCountyPages += stateCountyPages.length;
+        generatedPages.counties.push(...stateCountyPages);
+        generatedPages.states.push({
+          abbrev: stateInfo.abbrev,
+          name: stateInfo.name,
+          avgTrend: stateStats.avg_trend ? parseFloat(stateStats.avg_trend) : null,
+          medianPrice: stateStats.state_median ? parseFloat(stateStats.state_median) : null,
+          countyCount: validCounties.length,
         });
-      }
 
-      if (validCounties.length === 0) {
-        console.log(`  No counties passed thresholds for ${stateCode}`);
-        continue;
+      } catch (stateError) {
+        console.log(`  ❌ ${stateInfo.name} generation failed: ${stateError.message} — keeping old pages`);
+        if (!dryRun) await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
       }
-
-      // Generate state page
-      const stateHtml = generateStatePageHTML(stateCode, stateInfo, stateStats, validCounties);
-      const statePath = path.join(stateDir, 'index.html');
-      if (!dryRun) {
-        await fs.writeFile(statePath, stateHtml, 'utf-8');
-      }
-
-      console.log(`  ${stateInfo.abbrev}: ${validCounties.length} counties`);
-      totalStatePages++;
-      generatedPages.states.push({
-        abbrev: stateInfo.abbrev,
-        name: stateInfo.name,
-        avgTrend: stateStats.avg_trend ? parseFloat(stateStats.avg_trend) : null,
-        medianPrice: stateStats.state_median ? parseFloat(stateStats.state_median) : null,
-        countyCount: validCounties.length,
-      });
     }
 
     // Generate top-level index page
