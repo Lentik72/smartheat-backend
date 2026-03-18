@@ -1058,6 +1058,37 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     } catch (error) {
       logger.error('❌ County Elite page generation failed:', error.message);
     }
+
+    // V2.34.0: Generate kerosene pages (state, county, hub)
+    try {
+      const { generateSEOPages: generateSEOKerosene } = require('./scripts/generate-seo-pages');
+      const result = await generateSEOKerosene({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
+      if (result.success) {
+        logger.info(`✅ Kerosene SEO state pages generated: ${result.statePages} states`);
+      }
+    } catch (error) {
+      logger.error('❌ Kerosene SEO page generation failed:', error.message);
+    }
+
+    try {
+      const { generateCountyElitePages: generateCountyKerosene } = require('./scripts/generate-county-elite-pages');
+      const result = await generateCountyKerosene({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
+      if (result.success) {
+        logger.info(`✅ Kerosene county pages generated: ${result.generated} pages`);
+      }
+    } catch (error) {
+      logger.error('❌ Kerosene county page generation failed:', error.message);
+    }
+
+    try {
+      const { generateKeroseneHub } = require('./scripts/generate-kerosene-hub');
+      const result = await generateKeroseneHub({ sequelize, logger, dryRun: false });
+      if (result.success) {
+        logger.info(`✅ Kerosene hub page generated: ${result.states} states`);
+      }
+    } catch (error) {
+      logger.error('❌ Kerosene hub page generation failed:', error.message);
+    }
   }, {
     timezone: 'America/New_York'
   });
@@ -1167,6 +1198,35 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       if (allSucceeded) {
         pagesReady = true;
         logger.info(`✅ [Startup] All pages generated in ${elapsed}s — health endpoint now returning 200`);
+
+        // V2.34.0: Generate kerosene pages after health gate passes (non-blocking)
+        try {
+          const keroResults = await Promise.allSettled([
+            (async () => {
+              const { generateSEOPages: genSEOKero } = require('./scripts/generate-seo-pages');
+              return genSEOKero({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
+            })(),
+            (async () => {
+              const { generateCountyElitePages: genCountyKero } = require('./scripts/generate-county-elite-pages');
+              return genCountyKero({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
+            })(),
+            (async () => {
+              const { generateKeroseneHub } = require('./scripts/generate-kerosene-hub');
+              return generateKeroseneHub({ sequelize, logger, dryRun: false });
+            })()
+          ]);
+          const keroNames = ['Kerosene SEO', 'Kerosene County', 'Kerosene Hub'];
+          keroResults.forEach((r, i) => {
+            if (r.status === 'fulfilled' && r.value.success) {
+              logger.info(`✅ [Startup] ${keroNames[i]} pages generated`);
+            } else {
+              const reason = r.status === 'rejected' ? r.reason.message : (r.value?.error || 'unknown');
+              logger.warn(`⚠️ [Startup] ${keroNames[i]} generation failed (non-blocking): ${reason}`);
+            }
+          });
+        } catch (error) {
+          logger.warn('⚠️ [Startup] Kerosene page generation failed (non-blocking):', error.message);
+        }
       } else {
         logger.error(`❌ [Startup] Page generation incomplete after ${elapsed}s — health returning 503, Railway will keep old deploy`);
       }

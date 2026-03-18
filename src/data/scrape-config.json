@@ -13020,7 +13020,12 @@
     "pattern": "direct",
     "notes": "MA + NH - County Energy Products, Chelmsford MA. Serves MA Middlesex/Essex + NH Hillsborough/Rockingham. NH price appears as 'NH $X.XX' on homepage.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
-    "keroseneReview": true,
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kerosene\\s*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
     "postalCodesServed": [
       "01432",
       "01450",
@@ -20790,9 +20795,14 @@
     "enabled": true,
     "pattern": "direct",
     "pricePath": "/todays-cash-prices/2-home-heating-fuel/",
-    "notes": "NH Northern/Franconia - COD + Will-call. 125 gal min. 10-day cash price.",
+    "notes": "NH Northern/Franconia - COD + Will-call. 125 gal min. 10-day cash price. Oil + K-1 kerosene on same page sidebar. Sup tag for last digit.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
-    "keroseneReview": true,
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "K-1 Kerosene[\\s\\S]{0,200}\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
     "postalCodesServed": [
       "03561",
       "03574",
@@ -20808,7 +20818,6 @@
     "pattern": "direct",
     "notes": "NH Lakes Region/Laconia - 10-day cash prices. Since 1930. Also delivers coal.",
     "priceRegex": "#2 FUEL=\\$([0-9]+\\.[0-9]{2,3})",
-    "keroseneReview": true,
     "postalCodesServed": [
       "03220",
       "03226",
@@ -20887,9 +20896,8 @@
   "foleyoilco.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NH Belmont/Lakes Region - COD. 75+ years family-owned. Price in price-box div on homepage.",
+    "notes": "NH Belmont/Lakes Region - COD. 75+ years family-owned. Price in price-box div on homepage. No kerosene price published.",
     "priceRegex": "class=\"price\">\\$([0-9]+\\.[0-9]{2,3})",
-    "keroseneReview": true,
     "postalCodesServed": [
       "03217",
       "03220",

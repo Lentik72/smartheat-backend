@@ -33,21 +33,37 @@ const MIN_SUPPLIERS_FOR_STATE = 5;
 
 initCountyData(WEBSITE_DIR);
 
-const dryRun = process.argv.includes('--dry-run');
+const cliDryRun = process.argv.includes('--dry-run');
 
 function escapeHtml(text) {
   if (!text) return '';
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-async function main() {
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('  Kerosene Hub Page Generator');
-  console.log('  ' + new Date().toLocaleString());
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('');
+/**
+ * Main entry point
+ * @param {object} options
+ * @param {object} options.sequelize - External Sequelize instance (avoids creating new DB connection)
+ * @param {object} options.logger - Logger instance (default: console)
+ * @param {boolean} options.dryRun - If true, don't write files
+ */
+async function generateKeroseneHub(options = {}) {
+  const {
+    sequelize: externalSequelize = null,
+    logger = console,
+    dryRun = cliDryRun
+  } = options;
 
-  const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  const log = (msg) => logger.info ? logger.info(msg) : console.log(msg);
+  const logError = (msg) => logger.error ? logger.error(msg) : console.error(msg);
+
+  log('═══════════════════════════════════════════════════════════');
+  log('  Kerosene Hub Page Generator');
+  log('  ' + new Date().toLocaleString());
+  log('═══════════════════════════════════════════════════════════');
+
+  const ownConnection = !externalSequelize;
+  const sequelize = externalSequelize || new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     logging: false,
     dialectOptions: {
@@ -59,8 +75,10 @@ async function main() {
   });
 
   try {
-    await sequelize.authenticate();
-    console.log('✅ Database connected');
+    if (ownConnection) {
+      await sequelize.authenticate();
+      log('✅ Database connected');
+    }
 
     // Get kerosene suppliers per state (by fuel_types field, not just scraped prices)
     const [stateStats] = await sequelize.query(`
@@ -87,7 +105,7 @@ async function main() {
     `);
     const priceStatMap = new Map(priceStats.map(p => [p.state_code, p]));
 
-    console.log(`📊 Found ${stateStats.length} states with kerosene suppliers`);
+    log(`📊 Found ${stateStats.length} states with kerosene suppliers`);
 
     // Total kerosene suppliers
     const totalKeroSuppliers = stateStats.reduce((sum, s) => sum + parseInt(s.total_suppliers), 0);
@@ -119,8 +137,8 @@ async function main() {
       }
     }
 
-    console.log(`  Qualified (≥${MIN_SUPPLIERS_FOR_STATE} suppliers): ${qualifiedStates.length} states`);
-    console.log(`  Below threshold: ${mentionStates.length} states`);
+    log(`  Qualified (≥${MIN_SUPPLIERS_FOR_STATE} suppliers): ${qualifiedStates.length} states`);
+    log(`  Below threshold: ${mentionStates.length} states`);
 
     // Build page
     const today = new Date().toISOString().split('T')[0];
@@ -288,21 +306,39 @@ async function main() {
     if (!dryRun) {
       fs.mkdirSync(OUTPUT_DIR, { recursive: true });
       fs.writeFileSync(path.join(OUTPUT_DIR, 'index.html'), html, 'utf-8');
-      console.log(`\n✅ Generated /prices/kerosene/index.html`);
+      log(`✅ Generated /prices/kerosene/index.html`);
     } else {
-      console.log(`\n[DRY RUN] Would write /prices/kerosene/index.html (${html.length} bytes)`);
+      log(`[DRY RUN] Would write /prices/kerosene/index.html (${html.length} bytes)`);
     }
 
     qualifiedStates.forEach(s => {
-      console.log(`  ${s.name}: ${s.suppliers} suppliers${s.median ? ', $' + s.median.toFixed(2) + ' median' : ''}`);
+      log(`  ${s.name}: ${s.suppliers} suppliers${s.median ? ', $' + s.median.toFixed(2) + ' median' : ''}`);
     });
 
-    await sequelize.close();
+    if (ownConnection) {
+      await sequelize.close();
+    }
+
+    return { success: true, states: qualifiedStates.length, totalSuppliers: totalKeroSuppliers };
   } catch (error) {
-    console.error('❌ Error:', error.message);
-    await sequelize.close();
-    process.exit(1);
+    logError(`❌ Error: ${error.message}`);
+    if (ownConnection) {
+      await sequelize.close();
+    }
+    return { success: false, error: error.message };
   }
 }
 
-main();
+module.exports = { generateKeroseneHub };
+
+// Run directly if executed from command line
+if (require.main === module) {
+  generateKeroseneHub()
+    .then(result => {
+      if (!result.success) process.exit(1);
+    })
+    .catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
+}

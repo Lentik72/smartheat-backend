@@ -37,8 +37,7 @@ const locationResolver = require('../src/services/locationResolver');
 const MIN_VALID_PRICE = 2.00;
 const MAX_VALID_PRICE = 6.00;
 const WEBSITE_DIR = path.join(__dirname, '../website');
-// V2.12.0: COUNTY_DIR set after FUEL_CONFIGS initialization (depends on --fuel flag)
-let COUNTY_DIR;
+// V2.12.0: COUNTY_DIR set inside generateCountyElitePages() based on fuelType option
 const MIN_QUALITY_SCORE = 0.45;  // Tier 1 + Tier 2 only (quality counties)
 
 // Initialize county data module for fuel cost lookups
@@ -87,19 +86,22 @@ const FUEL_CONFIGS = {
     crossLinkUrlPrefix: '/prices/county',
   }
 };
-const FUEL = FUEL_CONFIGS[cliFuelType] || FUEL_CONFIGS.heating_oil;
-COUNTY_DIR = path.join(WEBSITE_DIR, FUEL.dirPrefix);
-
 /**
  * Main entry point
+ * @param {object} options
+ * @param {string} options.fuelType - 'heating_oil' or 'kerosene' (default: CLI --fuel arg or 'heating_oil')
  */
 async function generateCountyElitePages(options = {}) {
   const {
     sequelize: externalSequelize = null,
     logger = console,
     outputDir = WEBSITE_DIR,
-    dryRun = cliDryRun
+    dryRun = cliDryRun,
+    fuelType = cliFuelType
   } = options;
+
+  const FUEL = FUEL_CONFIGS[fuelType] || FUEL_CONFIGS.heating_oil;
+  const COUNTY_DIR = path.join(outputDir, FUEL.dirPrefix);
 
   const log = (msg) => logger.info ? logger.info(msg) : console.log(msg);
 

@@ -138,18 +138,21 @@ const FUEL_CONFIGS = {
     crossLinkUrl: '/prices',
   }
 };
-const FUEL = FUEL_CONFIGS[cliFuelType] || FUEL_CONFIGS.heating_oil;
-
 /**
  * Main entry point
+ * @param {object} options
+ * @param {string} options.fuelType - 'heating_oil' or 'kerosene' (default: CLI --fuel arg or 'heating_oil')
  */
 async function generateSEOPages(options = {}) {
   const {
     sequelize: externalSequelize = null,
     logger = console,
     outputDir = WEBSITE_DIR,
-    dryRun = cliDryRun
+    dryRun = cliDryRun,
+    fuelType = cliFuelType
   } = options;
+
+  const FUEL = FUEL_CONFIGS[fuelType] || FUEL_CONFIGS.heating_oil;
 
   const log = (msg) => logger.info ? logger.info(msg) : console.log(msg);
 
