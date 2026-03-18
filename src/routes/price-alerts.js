@@ -235,4 +235,26 @@ function unsubPageHtml(message, showButton, token) {
 </html>`;
 }
 
+// POST /api/price-alerts/trigger — manually run the daily alert check
+// Protected by DASHBOARD_PASSWORD
+router.post('/trigger', async (req, res) => {
+  const password = req.headers.authorization?.replace('Bearer ', '') || req.body?.password;
+  if (password !== process.env.DASHBOARD_PASSWORD) {
+    return res.status(401).json({ error: 'Invalid password' });
+  }
+
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+
+  try {
+    const PriceAlertService = require('../services/PriceAlertService');
+    const alertService = new PriceAlertService(sequelize, logger);
+    const result = await alertService.runDailyCheck();
+    res.json(result);
+  } catch (error) {
+    logger.error('[PriceAlert] Manual trigger failed:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
