@@ -163,10 +163,11 @@ class ScrapeConfigSync {
               console.log(`[ScrapeConfigSync] Skipping empty coverage for ${supplierLabel}`);
             } else {
               // Get existing DB ZIPs (JSONB returns array directly)
-              const existingZips = (Array.isArray(existing.postal_codes_served)
+              const rawDbZips = Array.isArray(existing.postal_codes_served)
                 ? existing.postal_codes_served
-                : (() => { try { return JSON.parse(existing.postal_codes_served || '[]'); } catch(e) { return []; } })()
-              ).map(z => normalizeZip(z, supplierLabel)).filter(Boolean);
+                : (() => { try { return JSON.parse(existing.postal_codes_served || '[]'); } catch(e) { return []; } })();
+              const existingZips = rawDbZips
+                .map(z => normalizeZip(z, supplierLabel)).filter(Boolean);
 
               let finalZips;
 
@@ -193,9 +194,11 @@ class ScrapeConfigSync {
               // Sort deterministically
               finalZips.sort((a, b) => Number(a) - Number(b));
 
-              // Idempotency: only write if coverage actually changed
-              const existingSorted = [...existingZips].sort((a, b) => Number(a) - Number(b));
-              if (JSON.stringify(existingSorted) !== JSON.stringify(finalZips)) {
+              // Idempotency: only write if coverage actually changed.
+              // Compare against raw DB ZIPs (not normalized) so invalid entries get cleaned up.
+              const rawSorted = [...rawDbZips].map(String).sort();
+              const finalForCompare = [...finalZips].sort();
+              if (JSON.stringify(rawSorted) !== JSON.stringify(finalForCompare)) {
                 updates.push(`postal_codes_served = $${paramIndex++}`);
                 values.push(JSON.stringify(finalZips));
               }
