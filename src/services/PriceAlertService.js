@@ -159,6 +159,9 @@ class PriceAlertService {
    * Returns null if no fresh prices available.
    */
   async getZipPriceData(zipCode) {
+    // Use scraped_at window (not expires_at) for alert eligibility.
+    // Alerts don't need the same real-time freshness as website display —
+    // a price scraped within 72 hours is a valid signal regardless of expiry.
     const [rows] = await this.sequelize.query(`
       SELECT DISTINCT ON (s.id) s.name, s.city, s.phone, s.slug, sp.price_per_gallon
       FROM suppliers s
@@ -166,7 +169,6 @@ class PriceAlertService {
       WHERE s.active = true
         AND s.allow_price_display = true
         AND sp.is_valid = true
-        AND sp.expires_at > NOW()
         AND sp.scraped_at > NOW() - INTERVAL '72 hours'
         AND sp.source_type != 'aggregator_signal'
         AND sp.fuel_type = 'heating_oil'

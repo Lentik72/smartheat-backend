@@ -3167,7 +3167,7 @@ async function loadCoverage() {
     if (alertRecentBody) {
       alertRecentBody.innerHTML = '';
       if (alertSubs.recent.length === 0) {
-        alertRecentBody.innerHTML = '<tr><td colspan="5" class="no-data">No signups yet</td></tr>';
+        alertRecentBody.innerHTML = '<tr><td colspan="6" class="no-data">No signups yet</td></tr>';
       } else {
         alertSubs.recent.forEach(r => {
           const row = document.createElement('tr');
@@ -3178,6 +3178,7 @@ async function loadCoverage() {
             <td>$${r.threshold.toFixed(2)}</td>
             <td>${r.source || '—'}</td>
             <td>${new Date(r.createdAt).toLocaleDateString()}</td>
+            <td>${r.lastAlertSent ? new Date(r.lastAlertSent).toLocaleDateString() : '—'}</td>
           `;
           alertRecentBody.appendChild(row);
         });
