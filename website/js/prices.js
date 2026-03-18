@@ -205,19 +205,8 @@
         }
       }
 
-      // Initialize default alert form with cheapest deal price
-      var defaultAlert = document.getElementById('default-alert-container');
-      if (defaultAlert && data.topDeals && data.topDeals.length > 0) {
-        var cheapest = data.topDeals[0];
-        defaultAlert.setAttribute('data-price', cheapest.price);
-        if (typeof initPriceAlertForm === 'function') {
-          initPriceAlertForm('#default-alert-container', {
-            zip: '',
-            lowestPrice: parseFloat(cheapest.price),
-            defaultThreshold: Math.max(parseFloat(cheapest.price) - 0.15, 1.50)
-          });
-        }
-      }
+      // Default alert form renders on DOMContentLoaded via price-alerts.js auto-init.
+      // ZIP-blur lookup populates threshold with local data when user enters their ZIP.
 
     } catch (err) {
       // Silently fail - keep static values from HTML

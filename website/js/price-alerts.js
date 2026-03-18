@@ -52,22 +52,19 @@
    * Initialize the price alert form.
    * @param {string} containerSelector - CSS selector for the container element
    * @param {object} options
-   * @param {string} options.zip - 5-digit ZIP code (or 3-digit prefix for elite pages)
-   * @param {number} options.lowestPrice - Current lowest price in the area
-   * @param {number} [options.defaultThreshold] - Default threshold price
+   * @param {string} options.zip - 5-digit ZIP code (or 3-digit prefix, or '' for unknown)
+   * @param {number|null} options.lowestPrice - Local lowest price (null = unknown, ZIP-blur lookup will fetch it)
+   * @param {number|null} [options.defaultThreshold] - Default threshold (null = empty field with placeholder)
    */
   window.initPriceAlertForm = function (containerSelector, options) {
     var container = document.querySelector(containerSelector);
     if (!container) return;
 
     var zip = options.zip || '';
-    var lowestPrice = options.lowestPrice;
-    var defaultThreshold = options.defaultThreshold || Math.max((lowestPrice - 0.15), 1.50);
+    var lowestPrice = options.lowestPrice || null;
+    var defaultThreshold = options.defaultThreshold || (lowestPrice ? Math.max(lowestPrice - 0.15, 1.50) : null);
     var isPartialZip = zip.length < 5;
     var isUpdateMode = getUrlParam('update_alert') === '1';
-
-    // Don't show form if no price data
-    if (!lowestPrice || lowestPrice <= 0) return;
 
     // Check if returning visitor with existing alert
     var saved = !isPartialZip ? getSavedAlert(zip) : null;
@@ -97,8 +94,12 @@
   };
 
   function renderForm(container, zip, lowestPrice, threshold, isPartialZip) {
-    var roundedThreshold = Math.round(threshold * 100) / 100;
-    var savings = calcSavings(lowestPrice, roundedThreshold);
+    var hasThreshold = threshold !== null && threshold !== undefined && !isNaN(threshold);
+    var roundedThreshold = hasThreshold ? Math.round(threshold * 100) / 100 : null;
+    var savings = lowestPrice && roundedThreshold ? calcSavings(lowestPrice, roundedThreshold) : null;
+
+    var thresholdValue = roundedThreshold !== null ? ' value="' + roundedThreshold.toFixed(2) + '"' : '';
+    var thresholdPlaceholder = roundedThreshold !== null ? '' : ' placeholder="e.g. 3.00"';
 
     container.innerHTML =
       '<div class="price-alert-inner">' +
@@ -115,7 +116,7 @@
               '<label class="price-alert-label">Target price</label>' +
               '<div class="price-alert-input-wrap">' +
                 '<span class="price-alert-dollar">$</span>' +
-                '<input type="number" class="price-alert-threshold" step="0.01" min="2.00" max="6.00" value="' + roundedThreshold.toFixed(2) + '" required>' +
+                '<input type="number" class="price-alert-threshold" step="0.01" min="2.00" max="6.00"' + thresholdValue + thresholdPlaceholder + ' required>' +
               '</div>' +
             '</div>' +
             '<div class="price-alert-field price-alert-field-email">' +
@@ -141,18 +142,56 @@
     var warningEl = container.querySelector('.price-alert-warning');
     var errorEl = container.querySelector('.price-alert-error');
 
+    // Track the reference price for savings/warnings (updated by ZIP lookup)
+    var refPrice = lowestPrice;
+
+    // When ZIP is entered and no price context yet, fetch local price to suggest a threshold
+    if (isPartialZip && !lowestPrice) {
+      var zipInput = container.querySelector('.price-alert-zip');
+      zipInput.addEventListener('blur', function () {
+        var z = zipInput.value.trim();
+        if (!/^\d{5}$/.test(z) || refPrice) return;
+        fetch('/api/v1/suppliers?zip=' + z + '&limit=5')
+          .then(function (res) { return res.ok ? res.json() : null; })
+          .then(function (resp) {
+            var suppliers = resp && resp.data ? resp.data : null;
+            if (!suppliers || !suppliers.length) return;
+            var cheapest = null;
+            for (var j = 0; j < suppliers.length; j++) {
+              var cp = suppliers[j].currentPrice;
+              var p = cp && cp.pricePerGallon ? cp.pricePerGallon : null;
+              if (p && p > 0 && (cheapest === null || p < cheapest)) cheapest = p;
+            }
+            if (cheapest && !thresholdInput._userEdited) {
+              refPrice = cheapest;
+              var suggested = Math.max(cheapest - 0.15, 1.50);
+              var rounded = Math.round(suggested * 100) / 100;
+              thresholdInput.value = rounded.toFixed(2);
+              thresholdInput.placeholder = '';
+              var s = calcSavings(cheapest, rounded);
+              var parts = [];
+              if (s && s > 0) parts.push('A $0.15 drop saves ~$' + s + ' on a 275-gal fill');
+              parts.push('No spam, only price drops.');
+              metaEl.textContent = parts.join(' \u00b7 ');
+            }
+          })
+          .catch(function () { /* non-critical */ });
+      });
+    }
+
     // Dynamic savings estimate
     thresholdInput.addEventListener('input', function () {
+      thresholdInput._userEdited = true;
       var val = parseFloat(thresholdInput.value);
       if (isNaN(val)) return;
-      var s = calcSavings(lowestPrice, val);
+      var s = refPrice ? calcSavings(refPrice, val) : null;
       var parts = [];
       if (s && s > 0) parts.push('A $0.15 drop saves ~$' + s + ' on a 275-gal fill');
       parts.push('No spam, only price drops.');
       metaEl.textContent = parts.join(' \u00b7 ');
 
       // Soft warning for unrealistic thresholds
-      if (val < lowestPrice - 1.00) {
+      if (refPrice && val < refPrice - 1.00) {
         warningEl.textContent = "That price hasn't been seen in this area recently \u2014 we'll still save your alert.";
         warningEl.style.display = '';
       } else {
@@ -236,23 +275,22 @@
     el.style.display = '';
   }
 
-  // Auto-init for elite pages that use data attributes
+  // Auto-init for pages that use data attributes (elite pages have price baked in,
+  // prices.html has data-price="" — form renders immediately either way)
   document.addEventListener('DOMContentLoaded', function () {
     var cards = document.querySelectorAll('.price-alert-card[data-price]');
     for (var i = 0; i < cards.length; i++) {
       var card = cards[i];
       var price = parseFloat(card.getAttribute('data-price'));
       var cardZip = card.getAttribute('data-zip') || '';
-      if (price > 0) {
-        // Give each card a unique ID for targeting
-        var id = 'price-alert-' + i;
-        card.id = id;
-        window.initPriceAlertForm('#' + id, {
-          zip: cardZip,
-          lowestPrice: price,
-          defaultThreshold: Math.max(price - 0.15, 1.50)
-        });
-      }
+      var hasPrice = price > 0;
+      var id = card.id || ('price-alert-' + i);
+      card.id = id;
+      window.initPriceAlertForm('#' + id, {
+        zip: cardZip,
+        lowestPrice: hasPrice ? price : null,
+        defaultThreshold: hasPrice ? Math.max(price - 0.15, 1.50) : null
+      });
     }
   });
 })();
