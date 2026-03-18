@@ -17587,8 +17587,13 @@
   },
   "fuelcellpetrol.com": {
     "enabled": true,
-    "pattern": "direct",
-    "notes": "PA Northampton County - Stockertown. COD. 75 gal min. Serves Lehigh Valley/Poconos.",
+    "pattern": "json_api",
+    "apiUrl": "https://fuelcellpetrol.com/wp-json/myplugin/v1/custom-endpoint/",
+    "apiMethod": "POST",
+    "apiBody": {"fuel_price": "18083"},
+    "jsonPath": "price",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "PA Northampton County - Stockertown. COD. 75 gal min. Homepage $3.84 is teaser; real 150 gal price from WP REST API with ZIP 18083. Serves Lehigh Valley/Poconos.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "18013",
