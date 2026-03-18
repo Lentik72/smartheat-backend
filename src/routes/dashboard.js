@@ -4394,6 +4394,8 @@ router.get('/alert-subscribers', async (req, res) => {
         pas.threshold_price,
         pas.source_page,
         pas.created_at,
+        pas.last_alert_sent_at,
+        pas.alert_count,
         CASE WHEN EXISTS (
           SELECT 1 FROM suppliers s
           WHERE s.active = true AND s.allow_price_display = true
@@ -4445,6 +4447,8 @@ router.get('/alert-subscribers', async (req, res) => {
         threshold: parseFloat(r.threshold_price),
         source: r.source_page,
         createdAt: r.created_at,
+        lastAlertSent: r.last_alert_sent_at,
+        alertCount: parseInt(r.alert_count) || 0,
         hasCoverage: r.has_coverage
       })),
       zipDensity: (() => {
