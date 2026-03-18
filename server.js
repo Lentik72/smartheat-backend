@@ -1273,8 +1273,9 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   }, { timezone: 'America/New_York' });
   logger.info('📊 Platform metrics scheduled: daily at 2:15 AM ET');
 
-  // Price alert daily check (8:00 AM ET)
-  cron.schedule('0 8 * * *', async () => {
+  // Price alert daily check (10:00 AM ET — after scraper has refreshed prices)
+  // Was 8 AM but that races with the scraper start, causing expired prices at check time
+  cron.schedule('0 10 * * *', async () => {
     logger.info('[PriceAlert] Starting daily check...');
     try {
       const alertService = new PriceAlertService(sequelize, logger);
@@ -1288,7 +1289,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       logger.error('[PriceAlert] Cron failed:', error.message);
     }
   }, { timezone: 'America/New_York' });
-  logger.info('🔔 Price alerts scheduled: daily at 8:00 AM ET');
+  logger.info('🔔 Price alerts scheduled: daily at 10:00 AM ET');
 
   // V2.6.0: Distributed scheduler - ACTIVE MODE
   // Spreads scrapes across 8AM-6PM to reduce detection risk
