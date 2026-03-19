@@ -146,12 +146,12 @@
     widget.innerHTML =
       '<button class="qr-dismiss" aria-label="Dismiss">&times;</button>' +
       '<a href="https://apps.apple.com/us/app/homeheat/id6747320571" target="_blank" class="qr-content">' +
-        '<img src="' + assetPath + 'images/app-icon.png" alt="HomeHeat" class="qr-app-icon">' +
+        '<img src="' + assetPath + 'images/app-icon.png" alt="HomeHeat" class="qr-app-icon" width="180" height="180">' +
         '<div class="qr-text">' +
           '<strong>Track your tank from your phone</strong>' +
           '<span>Scan with your iPhone camera to download free</span>' +
         '</div>' +
-        '<img src="' + assetPath + 'images/qr-appstore.png" alt="QR Code" class="qr-code">' +
+        '<img src="' + assetPath + 'images/qr-appstore.png" alt="QR Code" class="qr-code" width="144" height="144">' +
       '</a>';
 
     widget.style.display = 'none';

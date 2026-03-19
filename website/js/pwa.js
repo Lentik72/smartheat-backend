@@ -109,7 +109,7 @@
       <div class="pwa-banner-card">
         <button class="pwa-dismiss" aria-label="Close">&times;</button>
         <div class="pwa-banner-content">
-          <img src="/images/app-icon.png" alt="HomeHeat" class="pwa-icon">
+          <img src="/images/app-icon.png" alt="HomeHeat" class="pwa-icon" width="180" height="180">
           <div class="pwa-text">
             <strong>Save HomeHeat</strong>
             <span>See today's prices. Plan ahead.</span>

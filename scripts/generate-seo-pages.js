@@ -1621,7 +1621,7 @@ ${supplierRows}
   <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
     <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
     <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_seo&utm_medium=website&utm_campaign=seo_floating" class="floating-app-icon" id="floating-app-cta">
-      <img src="${assetPath}images/app-icon.png" alt="HomeHeat">
+      <img src="${assetPath}images/app-icon.png" alt="HomeHeat" width="180" height="180">
       <div class="float-text">
         <span class="float-title">Get HomeHeat</span>
         <span class="float-subtitle">Free on App Store</span>

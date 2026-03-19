@@ -316,8 +316,8 @@ app.use(express.static(path.join(__dirname, 'website'), {
       // HTML pages: cache 1 hour, revalidate after (SEO pages regenerate daily)
       res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
     } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
-      // Short cache for CSS/JS - versioned via query params
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      // Long cache for CSS/JS - versioned via query params (?v=hash), so content changes = new URL
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     } else if (filePath.match(/\.(png|jpg|jpeg|webp|gif|ico|svg|woff2?)$/)) {
       // Longer cache for images/fonts
       res.setHeader('Cache-Control', 'public, max-age=86400');

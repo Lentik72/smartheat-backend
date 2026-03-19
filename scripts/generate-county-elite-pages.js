@@ -651,7 +651,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   <link rel="manifest" href="${assetPath}manifest.json">
 
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
@@ -988,7 +989,7 @@ ${countySuppliers.map(s => {
   <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
     <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
     <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_floating" class="floating-app-icon" id="floating-app-cta">
-      <img src="${assetPath}images/app-icon.png" alt="HomeHeat">
+      <img src="${assetPath}images/app-icon.png" alt="HomeHeat" width="180" height="180">
       <div class="float-text">
         <span class="float-title">Get HomeHeat</span>
         <span class="float-subtitle">Free on App Store</span>
@@ -1045,7 +1046,8 @@ ${countySuppliers.map(s => {
   <link rel="manifest" href="${assetPath}manifest.json">
 
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
@@ -1387,7 +1389,7 @@ ${countySuppliers.map(s => {
   <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
     <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
     <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_floating" class="floating-app-icon" id="floating-app-cta">
-      <img src="${assetPath}images/app-icon.png" alt="HomeHeat">
+      <img src="${assetPath}images/app-icon.png" alt="HomeHeat" width="180" height="180">
       <div class="float-text">
         <span class="float-title">Get HomeHeat</span>
         <span class="float-subtitle">Free on App Store</span>

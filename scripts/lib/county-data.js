@@ -254,7 +254,7 @@ function getNavHTML(depth, activeLink = null) {
     <nav class="nav">
         <div class="nav-container">
             <a href="/" class="nav-logo">
-                <img src="${prefix}images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
+                <img src="${prefix}images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon" width="40" height="40">
                 HomeHeat
             </a>
             <button class="nav-toggle" aria-label="Toggle navigation">

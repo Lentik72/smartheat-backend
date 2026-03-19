@@ -355,7 +355,8 @@ function generateZipPageHTML(stats, history, county = null) {
   <link rel="manifest" href="${assetPath}manifest.json">
 
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 
   <!-- Schema.org Structured Data -->
   <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
@@ -367,7 +368,7 @@ function generateZipPageHTML(stats, history, county = null) {
   <nav class="nav">
     <div class="nav-container">
       <a href="/" class="nav-logo">
-        <img src="${assetPath}images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon">
+        <img src="${assetPath}images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon" width="40" height="40">
         HomeHeat
       </a>
       <button class="nav-toggle" aria-label="Toggle navigation">
@@ -595,7 +596,7 @@ function generateZipPageHTML(stats, history, county = null) {
   <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
     <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
     <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_zip&utm_medium=website&utm_campaign=zip_floating" class="floating-app-icon" id="floating-app-cta">
-      <img src="${assetPath}images/app-icon.png" alt="HomeHeat">
+      <img src="${assetPath}images/app-icon.png" alt="HomeHeat" width="180" height="180">
       <div class="float-text">
         <span class="float-title">Get HomeHeat</span>
         <span class="float-subtitle">Free on App Store</span>
