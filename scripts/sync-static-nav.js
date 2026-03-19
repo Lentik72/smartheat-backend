@@ -29,7 +29,7 @@ const FILE_NAV_CONFIG = {
   'privacy.html':       { depth: 0, activeLink: null },
   'terms.html':         { depth: 0, activeLink: null },
   'how-prices-work.html': { depth: 0, activeLink: null },
-  '404.html':           { depth: 0, activeLink: null },
+  '404.html':           { depth: 0, activeLink: null, absolute: true },
   'learn/index.html':   { depth: 1, activeLink: '/learn/' },
   // Learn articles are 1 level deep
   'learn/heating-oil-vs-heat-pump.html': { depth: 1, activeLink: '/learn/' },
@@ -68,7 +68,11 @@ for (const [relPath, config] of Object.entries(FILE_NAV_CONFIG)) {
     continue;
   }
 
-  const navHTML = getNavHTML(config.depth, config.activeLink);
+  let navHTML = getNavHTML(config.depth, config.activeLink);
+  // 404 page is served at arbitrary URL depths — must use absolute paths
+  if (config.absolute) {
+    navHTML = navHTML.replace(/src="(\.\.\/)*images\//g, 'src="/images/');
+  }
   const before = content.slice(0, startIdx + NAV_START.length);
   const after = content.slice(endIdx);
   const newContent = before + '\n' + navHTML + '\n' + after;
