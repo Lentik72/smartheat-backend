@@ -1815,12 +1815,19 @@ async function updatePricesHtml(pricesHtmlPath, states, prices, suppliers, FUEL)
             "@type": "Product",
             "name": `${FUEL.label} from ${d.supplier}`,
             "description": `Heating oil delivery in ${d.city}, ${d.state}`,
+            "image": "https://www.gethomeheat.com/images/heating-oil-product.jpg",
+            "brand": {
+              "@type": "Brand",
+              "name": "#2 Heating Oil"
+            },
+            "category": "Heating Fuel",
             "offers": {
               "@type": "Offer",
               "price": d.price,
               "priceCurrency": "USD",
               "unitCode": "GLL",
-              "availability": "https://schema.org/InStock"
+              "availability": "https://schema.org/InStock",
+              "priceValidUntil": new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
             }
           }
         }))
