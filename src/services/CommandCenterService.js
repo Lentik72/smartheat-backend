@@ -689,6 +689,41 @@ class CommandCenterService {
       });
     }
 
+    // Dormant claimed suppliers — no dashboard visit in 14+ days
+    try {
+      const [dormant] = await sequelize.query(`
+        SELECT s.name, s.city, s.state,
+          MAX(al.created_at) as last_visit
+        FROM suppliers s
+        WHERE s.verified = true
+          AND s.active = true
+          AND NOT EXISTS (
+            SELECT 1 FROM audit_logs al
+            WHERE al.action = 'dashboard_view'
+              AND al.details::jsonb->>'supplier_id' = s.id::text
+              AND al.created_at > NOW() - INTERVAL '14 days'
+          )
+        GROUP BY s.id, s.name, s.city, s.state
+      `);
+      if (dormant.length > 0) {
+        actions.push({
+          priority: 'medium',
+          label: 'ENGAGEMENT',
+          type: 'supplier',
+          text: `${dormant.length} claimed supplier${dormant.length > 1 ? 's' : ''} haven't visited their dashboard in 14 days`,
+          impact: 'Need nudge email to re-engage',
+          metric: dormant.length,
+          details: dormant.map(r => ({
+            name: r.name,
+            location: `${r.city}, ${r.state}`,
+            note: r.last_visit ? `Last visit: ${new Date(r.last_visit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'Never visited'
+          }))
+        });
+      }
+    } catch (e) {
+      // Best-effort — dormant check is non-critical
+    }
+
     return actions.sort((a, b) => {
       const p = { high: 0, medium: 1, low: 2 };
       return (p[a.priority] || 2) - (p[b.priority] || 2);

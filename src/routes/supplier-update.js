@@ -8,62 +8,8 @@
  */
 
 const express = require('express');
+const { validateMagicLink } = require('../lib/validate-magic-link');
 const router = express.Router();
-
-/**
- * Validate magic link token
- * Returns supplier info if valid, or error if invalid/expired
- */
-async function validateToken(sequelize, token, logger) {
-  if (!token) {
-    return { valid: false, error: 'Token required' };
-  }
-
-  const [rows] = await sequelize.query(`
-    SELECT
-      mlt.id as token_id,
-      mlt.supplier_id,
-      mlt.expires_at,
-      mlt.revoked_at,
-      mlt.use_count,
-      s.name as supplier_name,
-      s.city as supplier_city,
-      s.state as supplier_state,
-      s.phone as supplier_phone
-    FROM magic_link_tokens mlt
-    JOIN suppliers s ON mlt.supplier_id = s.id
-    WHERE mlt.token = :token
-      AND mlt.purpose = 'supplier_price_update'
-  `, { replacements: { token } });
-
-  if (rows.length === 0) {
-    logger?.warn('[SupplierUpdate] Invalid token attempted');
-    return { valid: false, error: 'Invalid link. Please request a new one.' };
-  }
-
-  const tokenData = rows[0];
-
-  // Check if revoked
-  if (tokenData.revoked_at) {
-    return { valid: false, error: 'This link has been revoked. Contact support for a new link.' };
-  }
-
-  // Check if expired
-  if (new Date(tokenData.expires_at) < new Date()) {
-    return { valid: false, error: 'This link has expired. Contact support for a new link.' };
-  }
-
-  return {
-    valid: true,
-    tokenId: tokenData.token_id,
-    supplierId: tokenData.supplier_id,
-    supplierName: tokenData.supplier_name,
-    supplierCity: tokenData.supplier_city,
-    supplierState: tokenData.supplier_state,
-    supplierPhone: tokenData.supplier_phone,
-    useCount: tokenData.use_count
-  };
-}
 
 /**
  * GET /api/supplier-update
@@ -76,7 +22,7 @@ router.get('/', async (req, res) => {
   try {
     const { token } = req.query;
 
-    const validation = await validateToken(sequelize, token, logger);
+    const validation = await validateMagicLink(sequelize, token, logger);
 
     if (!validation.valid) {
       return res.status(401).json({
@@ -181,7 +127,7 @@ router.post('/price', async (req, res) => {
     const { token, price, minGallons, notes } = req.body;
 
     // Validate token
-    const validation = await validateToken(sequelize, token, logger);
+    const validation = await validateMagicLink(sequelize, token, logger);
 
     if (!validation.valid) {
       return res.status(401).json({

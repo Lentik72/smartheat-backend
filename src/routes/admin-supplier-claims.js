@@ -189,31 +189,69 @@ router.get('/', requireAdmin, async (req, res) => {
     const statusCounts = {};
     counts.forEach(c => { statusCounts[c.status] = parseInt(c.count); });
 
+    // For verified claims, enrich with dashboard engagement data
+    let engagementMap = {};
+    if (status === 'verified' && claims.length > 0) {
+      try {
+        const supplierIds = claims.map(c => c.supplier_id);
+        const [engRows] = await sequelize.query(`
+          SELECT
+            details::jsonb->>'supplier_id' as supplier_id,
+            COUNT(*) FILTER (WHERE action = 'dashboard_view') as total_visits,
+            MAX(created_at) FILTER (WHERE action = 'dashboard_view') as last_dashboard_visit,
+            MAX(created_at) FILTER (WHERE action = 'supplier_price_update') as last_price_update,
+            MAX(CASE WHEN action = 'supplier_price_update' THEN (details::jsonb->>'source') END) as last_price_source
+          FROM audit_logs
+          WHERE (details::jsonb->>'supplier_id')::uuid = ANY(:ids)
+            AND action IN ('dashboard_view', 'supplier_price_update')
+          GROUP BY details::jsonb->>'supplier_id'
+        `, { replacements: { ids: supplierIds } });
+
+        engRows.forEach(r => { engagementMap[r.supplier_id] = r; });
+      } catch (e) {
+        // Engagement enrichment is best-effort
+      }
+    }
+
     res.json({
       success: true,
-      claims: claims.map(c => ({
-        id: c.id,
-        claimant: {
-          name: c.claimant_name,
-          email: c.claimant_email,
-          phone: c.claimant_phone,
-          role: c.claimant_role
-        },
-        supplier: {
-          id: c.supplier_id,
-          name: c.supplier_name,
-          slug: c.supplier_slug,
-          phone: c.supplier_phone,
-          city: c.supplier_city,
-          state: c.supplier_state,
-          website: c.supplier_website
-        },
-        status: c.status,
-        submittedAt: c.submitted_at,
-        verifiedAt: c.verified_at,
-        rejectedAt: c.rejected_at,
-        rejectionReason: c.rejection_reason
-      })),
+      claims: claims.map(c => {
+        const eng = engagementMap[c.supplier_id];
+        const result = {
+          id: c.id,
+          claimant: {
+            name: c.claimant_name,
+            email: c.claimant_email,
+            phone: c.claimant_phone,
+            role: c.claimant_role
+          },
+          supplier: {
+            id: c.supplier_id,
+            name: c.supplier_name,
+            slug: c.supplier_slug,
+            phone: c.supplier_phone,
+            city: c.supplier_city,
+            state: c.supplier_state,
+            website: c.supplier_website
+          },
+          status: c.status,
+          submittedAt: c.submitted_at,
+          verifiedAt: c.verified_at,
+          rejectedAt: c.rejected_at,
+          rejectionReason: c.rejection_reason
+        };
+
+        if (eng) {
+          result.engagement = {
+            totalVisits: parseInt(eng.total_visits || 0),
+            lastDashboardVisit: eng.last_dashboard_visit || null,
+            lastPriceUpdate: eng.last_price_update || null,
+            lastPriceSource: eng.last_price_source || null
+          };
+        }
+
+        return result;
+      }),
       counts: statusCounts
     });
 
@@ -312,7 +350,7 @@ router.post('/:claimId/verify', requireAdmin, async (req, res) => {
 
     // 5. Build magic link URL
     const baseUrl = process.env.BACKEND_URL || 'https://gethomeheat.com';
-    const magicLinkUrl = `${baseUrl}/update-price.html?token=${token}`;
+    const magicLinkUrl = `${baseUrl}/supplier-dashboard.html?token=${token}`;
 
     logger?.info(`[AdminClaims] Verified claim for ${claim.supplier_name}, magic link generated`);
 
@@ -575,7 +613,7 @@ router.post('/:claimId/regenerate', requireAdmin, async (req, res) => {
     });
 
     const baseUrl = process.env.BACKEND_URL || 'https://gethomeheat.com';
-    const magicLinkUrl = `${baseUrl}/update-price.html?token=${token}`;
+    const magicLinkUrl = `${baseUrl}/supplier-dashboard.html?token=${token}`;
 
     // Send email
     const emailSent = await sendMagicLinkEmail(
@@ -867,6 +905,44 @@ router.get('/funnel', requireAdmin, async (req, res) => {
     // Helper for safe percentage
     const pct = (num, den) => den > 0 ? (num / den * 100).toFixed(1) + '%' : '0%';
 
+    // 7. Post-verify funnel stages: dashboard_visit, price_update, return_visit
+    let postVerify = { dashboard_visit: 0, price_update: 0, return_visit: 0 };
+    try {
+      // Dashboard visits by verified suppliers
+      const [dashVisits] = await sequelize.query(`
+        SELECT COUNT(DISTINCT details::jsonb->>'supplier_id') as cnt
+        FROM audit_logs
+        WHERE action = 'dashboard_view'
+          AND created_at > NOW() - INTERVAL '30 days'
+      `);
+      postVerify.dashboard_visit = parseInt(dashVisits[0]?.cnt || 0);
+
+      // Price updates by verified suppliers (supplier_direct source)
+      const [priceUpdates] = await sequelize.query(`
+        SELECT COUNT(DISTINCT details::jsonb->>'supplier_id') as cnt
+        FROM audit_logs
+        WHERE action = 'supplier_price_update'
+          AND created_at > NOW() - INTERVAL '30 days'
+          AND (details::jsonb->>'source') = 'supplier_direct'
+      `);
+      postVerify.price_update = parseInt(priceUpdates[0]?.cnt || 0);
+
+      // Return visits (suppliers with 2+ distinct dashboard visit dates)
+      const [returnVisits] = await sequelize.query(`
+        SELECT COUNT(*) as cnt FROM (
+          SELECT details::jsonb->>'supplier_id' as sid
+          FROM audit_logs
+          WHERE action = 'dashboard_view'
+            AND created_at > NOW() - INTERVAL '30 days'
+          GROUP BY details::jsonb->>'supplier_id'
+          HAVING COUNT(DISTINCT created_at::date) >= 2
+        ) t
+      `);
+      postVerify.return_visit = parseInt(returnVisits[0]?.cnt || 0);
+    } catch (e) {
+      // Post-verify stages are best-effort
+    }
+
     res.json({
       success: true,
       funnel: {
@@ -876,12 +952,18 @@ router.get('/funnel', requireAdmin, async (req, res) => {
         page_views_organic: pageViewsOrganic,
         form_submits: formSubmits,
         verified,
-        rejected
+        rejected,
+        dashboard_visit: postVerify.dashboard_visit,
+        price_update: postVerify.price_update,
+        return_visit: postVerify.return_visit
       },
       conversion_rates: {
         outreach_to_view: pct(outreachOpened, outreachSent),
         view_to_submit: pct(formSubmits, pageViewsTotal),
-        submit_to_verify: pct(verified, formSubmits)
+        submit_to_verify: pct(verified, formSubmits),
+        verify_to_dashboard: pct(postVerify.dashboard_visit, verified),
+        dashboard_to_price: pct(postVerify.price_update, postVerify.dashboard_visit),
+        dashboard_to_return: pct(postVerify.return_visit, postVerify.dashboard_visit)
       },
       timing: {
         avg_hours_outreach_to_view: timingData.avg_hours_outreach_to_view,
@@ -1000,7 +1082,7 @@ router.get('/verify-quick', async (req, res) => {
     `, { replacements: { token: magicToken, supplierId: claim.supplier_id, expiresAt } });
 
     const baseUrl = process.env.BACKEND_URL || 'https://gethomeheat.com';
-    const magicLinkUrl = `${baseUrl}/update-price.html?token=${magicToken}`;
+    const magicLinkUrl = `${baseUrl}/supplier-dashboard.html?token=${magicToken}`;
 
     // Send magic link email
     await sendMagicLinkEmail(

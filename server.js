@@ -239,7 +239,7 @@ app.use((req, res, next) => {
     return res.redirect(301, `/prices?zip=${zipInPath[1]}`);
   }
   // Redirect .html to clean URL (except functional pages like update-price.html)
-  if (req.path.endsWith('.html') && !req.path.includes('update-price') && !req.path.includes('price-review') && !req.path.startsWith('/admin')) {
+  if (req.path.endsWith('.html') && !req.path.includes('update-price') && !req.path.includes('supplier-dashboard') && !req.path.includes('price-review') && !req.path.startsWith('/admin')) {
     const cleanPath = req.path.slice(0, -5);
     return res.redirect(301, cleanPath + (req._parsedUrl.search || ''));
   }
@@ -796,6 +796,7 @@ app.use('/api/supplier-claim', require('./src/routes/supplier-claim'));  // V2.1
 app.use('/api/supplier-request', require('./src/routes/supplier-request'));  // Add My Business self-service
 app.use('/api/admin/supplier-claims', require('./src/routes/admin-supplier-claims'));  // V2.11.0: Admin claim review
 app.use('/api/supplier-update', require('./src/routes/supplier-update'));  // V2.11.0: Supplier magic link price update
+app.use('/api/supplier-dashboard', require('./src/routes/supplier-dashboard'));  // V2.15.0: Supplier value dashboard
 app.use('/api', require('./src/routes/tracking'));  // V2.12.0: Click tracking for sniper outreach
 app.use('/api/dashboard', dashboardRoutes);  // V2.14.0: Analytics dashboard
 app.use('/api/zip', require('./src/routes/zip-stats'));  // V2.32.0: ZIP price intelligence

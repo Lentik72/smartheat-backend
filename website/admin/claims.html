@@ -458,7 +458,7 @@
             </div>
 
             <table id="claims-table" style="display: none;">
-                <thead>
+                <thead id="claims-thead">
                     <tr>
                         <th>Supplier</th>
                         <th>Phone to Call</th>
@@ -593,6 +593,27 @@
 
         function renderClaims() {
             const tbody = document.getElementById('claims-body');
+            const thead = document.getElementById('claims-thead');
+
+            // Update headers based on status
+            if (currentStatus === 'verified') {
+                thead.innerHTML = `<tr>
+                    <th>Supplier</th>
+                    <th>Phone to Call</th>
+                    <th>Claimant</th>
+                    <th>Dashboard Activity</th>
+                    <th>Actions</th>
+                </tr>`;
+            } else {
+                thead.innerHTML = `<tr>
+                    <th>Supplier</th>
+                    <th>Phone to Call</th>
+                    <th>Claimant</th>
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                </tr>`;
+            }
+
             tbody.innerHTML = claimsData.map(claim => {
                 const date = new Date(claim.submittedAt).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', year: 'numeric',
@@ -600,19 +621,44 @@
                 });
 
                 let actionsHtml = '';
+                let dateCol = '';
+
                 if (currentStatus === 'pending') {
                     actionsHtml = `
                         <button class="action-btn verify" data-action="verify" data-claim-id="${claim.id}">✓ Verify</button>
                         <button class="action-btn reject" data-action="reject" data-claim-id="${claim.id}">✗ Reject</button>
                     `;
+                    dateCol = `<td class="date-cell">${date}</td>`;
                 } else if (currentStatus === 'verified') {
                     actionsHtml = `
                         <button class="action-btn regenerate" data-action="regenerate" data-claim-id="${claim.id}">🔗 New Link</button>
                         <button class="action-btn revoke" data-action="revoke" data-claim-id="${claim.id}">⚠ Revoke</button>
                     `;
+                    // Dashboard activity column
+                    const eng = claim.engagement;
+                    if (eng) {
+                        const lastVisit = eng.lastDashboardVisit
+                            ? new Date(eng.lastDashboardVisit).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                            : 'Never';
+                        const lastPrice = eng.lastPriceUpdate
+                            ? new Date(eng.lastPriceUpdate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                            : 'Never';
+                        const isDormant = eng.lastDashboardVisit &&
+                            (Date.now() - new Date(eng.lastDashboardVisit).getTime()) > 14 * 86400000;
+                        dateCol = `<td class="date-cell" style="font-size:12px;">
+                            <div${isDormant ? ' style="color:#DC2626;font-weight:500;"' : ''}>
+                                Last visit: ${lastVisit}
+                            </div>
+                            <div>Visits: ${eng.totalVisits}</div>
+                            <div>Price update: ${lastPrice}</div>
+                        </td>`;
+                    } else {
+                        dateCol = `<td class="date-cell" style="font-size:12px;color:#999;">No activity</td>`;
+                    }
                 } else if (currentStatus === 'rejected') {
                     const reason = claim.rejectionReason || 'No reason provided';
                     actionsHtml = `<span style="color: #666; font-size: 13px;">${reason}</span>`;
+                    dateCol = `<td class="date-cell">${date}</td>`;
                 }
 
                 return `
@@ -629,7 +675,7 @@
                             <div class="email">${claim.claimant.email}</div>
                             <div class="role">${claim.claimant.role || 'Not specified'}</div>
                         </td>
-                        <td class="date-cell">${date}</td>
+                        ${dateCol}
                         <td class="actions-cell">${actionsHtml}</td>
                     </tr>
                 `;

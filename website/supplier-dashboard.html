@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
+    <script src="js/analytics.js"></script>
+    <title>Supplier Dashboard - HomeHeat</title>
+    <link rel="stylesheet" href="style.min.css?v=2ad730ee">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
+    <meta name="apple-itunes-app" content="app-id=6747320571">
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#FF6B35">
+    <style>
+        body { background: #f5f6f8; }
+        .dash-container { max-width: 860px; margin: 0 auto; padding: 24px 20px 48px; }
+
+        /* Loading / Error */
+        .dash-loading { text-align: center; padding: 80px 20px; }
+        .dash-spinner { width: 36px; height: 36px; border: 3px solid #e5e7eb; border-top-color: #FF6B35; border-radius: 50%; animation: ds 0.8s linear infinite; margin: 0 auto 14px; }
+        .dash-loading p { color: #94a3b8; font-size: 14px; }
+        @keyframes ds { to { transform: rotate(360deg); } }
+        .dash-error { text-align: center; padding: 80px 20px; }
+        .dash-error .error-icon { font-size: 40px; margin-bottom: 12px; }
+        .dash-error h2 { color: #1e293b; font-size: 18px; margin-bottom: 8px; }
+        .dash-error p { color: #64748b; max-width: 380px; margin: 0 auto; font-size: 14px; line-height: 1.5; }
+        .dash-error a { color: #FF6B35; }
+
+        /* Header — site sunset palette */
+        .dash-header {
+            background: linear-gradient(135deg, #FFB088 0%, #FF8C5A 50%, #FF6B35 100%);
+            border-radius: 12px; padding: 20px 22px 16px; margin-bottom: 14px;
+            color: #1a1a1a; position: relative; overflow: hidden;
+        }
+        .dash-header::before { content: ''; position: absolute; top: -40%; right: -15%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); pointer-events: none; }
+        .dash-privacy { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.3); color: rgba(26,26,26,0.8); padding: 4px 11px; border-radius: 16px; font-size: 11px; font-weight: 600; margin-bottom: 10px; }
+        .dash-supplier-info { margin-bottom: 6px; position: relative; }
+        .dash-supplier-info .verified-badge { display: inline-flex; align-items: center; gap: 3px; background: #15803d; color: white; padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .dash-supplier-info h1 { font-size: 21px; font-weight: 700; color: #1a1a1a; margin: 6px 0 1px; }
+        .dash-supplier-info .location { color: rgba(26,26,26,0.55); font-size: 13px; }
+        .dash-meta { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 12px; color: rgba(26,26,26,0.45); margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(26,26,26,0.1); }
+        .dash-meta .price-badge { font-weight: 600; color: #1a1a1a; }
+        .dash-meta .stale-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+        .dash-meta .stale-dot.fresh { background: #166534; }
+        .dash-meta .stale-dot.stale { background: #92400E; }
+
+        /* Banners */
+        .dash-urgency { background: #FFF7ED; border: 1px solid #FDBA74; border-radius: 8px; padding: 10px 14px; font-size: 12px; font-weight: 500; color: #9A3412; margin-bottom: 12px; display: none; }
+        .dash-impact { border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; font-size: 13px; display: none; line-height: 1.5; }
+        .dash-impact.drop { background: #F0FDF4; border: 1px solid #86EFAC; color: #166534; }
+        .dash-impact.raise { background: #FEF9C3; border: 1px solid #FDE047; color: #854D0E; }
+        .dash-impact strong { font-weight: 600; }
+        .dash-welcome { background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #1e40af; margin-bottom: 12px; display: none; }
+        .dash-stale-banner { background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #92400E; margin-bottom: 12px; display: none; }
+        .dash-seasonal { background: #EFF6FF; border: 1px solid #93C5FD; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #1E40AF; margin-bottom: 12px; display: none; }
+        .dash-zero-traffic { text-align: center; padding: 40px 16px; display: none; background: white; border-radius: 10px; border: 1px solid #e5e7eb; margin-bottom: 16px; }
+        .dash-zero-traffic .icon { font-size: 40px; margin-bottom: 10px; }
+        .dash-zero-traffic h2 { color: #1e293b; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+        .dash-zero-traffic p { color: #64748b; font-size: 13px; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+
+        /* Panel grid */
+        .dash-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .dash-panel { background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; }
+        .dash-panel-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #FF6B35; }
+
+        /* Demand metrics grid */
+        .demand-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: #e5e7eb; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+        .demand-metric { background: white; padding: 10px 6px; text-align: center; }
+        .demand-metric-value { font-size: 18px; font-weight: 700; color: #1e293b; line-height: 1; margin-bottom: 2px; }
+        .demand-metric:first-child .demand-metric-value { color: #FF6B35; }
+        .demand-metric-label { font-size: 9px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; }
+        .demand-breakdown { display: flex; gap: 10px; font-size: 11px; color: #94a3b8; }
+        .perf-divider { height: 1px; background: #e5e7eb; margin: 10px 0; }
+
+        /* Opportunity growth */
+        .opportunity-growth { text-align: center; padding: 6px 0; }
+        .opportunity-growth-number { font-size: 22px; font-weight: 700; color: #FF6B35; line-height: 1; margin-bottom: 3px; }
+        .opportunity-growth-label { font-size: 12px; color: #475569; margin-bottom: 6px; }
+        .opportunity-growth-note { font-size: 11px; color: #94a3b8; line-height: 1.4; }
+
+        /* Competitive panel */
+        .price-compare { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+        .price-compare-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; padding: 2px 0; }
+        .price-compare-row .label { color: #64748b; }
+        .price-compare-row .value { font-weight: 600; color: #1e293b; font-variant-numeric: tabular-nums; }
+        .price-compare-row .value.highlight { color: #FF6B35; }
+        .competitive-nudge { font-size: 12px; color: #475569; margin-top: 8px; padding: 8px 10px; background: #f8fafc; border-radius: 6px; line-height: 1.5; border-left: 2px solid #FF6B35; }
+        .competitive-note { font-size: 10px; color: #94a3b8; margin-top: 6px; }
+        .no-price-cta { text-align: center; padding: 10px 0; }
+        .no-price-cta p { color: #64748b; font-size: 13px; margin-bottom: 8px; }
+
+        /* Click share bar */
+        .share-bar-container { margin: 8px 0; }
+        .share-bar-track { height: 16px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+        .share-bar-fill { height: 100%; background: #FF6B35; border-radius: 4px; transition: width 0.5s ease; min-width: 2px; }
+        .share-bar-labels { display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; margin-top: 3px; }
+        .rank-badge { display: inline-flex; align-items: center; gap: 3px; background: #FFF7ED; color: #c2410c; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+        .rank-badge.winning { background: #F0FDF4; color: #16A34A; }
+
+        /* Missed volume */
+        .missed-headline { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+        .missed-label { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+        .confidence-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: #94a3b8; margin-top: 4px; }
+        .confidence-badge .dot { width: 5px; height: 5px; border-radius: 50%; }
+        .confidence-badge .dot.high { background: #16A34A; }
+        .confidence-badge .dot.medium { background: #F59E0B; }
+        .confidence-badge .dot.low { background: #DC2626; }
+
+        /* Stat rows — used across panels */
+        .dash-panel .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 13px; }
+        .dash-panel .stat-row + .stat-row { border-top: 1px solid #f1f5f9; }
+        .dash-panel .stat-label { color: #94a3b8; font-size: 12px; }
+        .dash-panel .stat-value { font-weight: 600; color: #1e293b; font-size: 13px; font-variant-numeric: tabular-nums; }
+        .dash-panel .trend { font-size: 10px; font-weight: 600; margin-left: 3px; }
+        .trend-up { color: #16A34A; } .trend-down { color: #DC2626; } .trend-flat { color: #94a3b8; }
+        .dash-panel .estimate-note { font-size: 11px; color: #94a3b8; margin-top: 6px; line-height: 1.4; padding-top: 6px; border-top: 1px solid #f1f5f9; }
+
+        /* Price update panel */
+        .dash-price-panel { grid-column: 1 / -1; background: #fffaf6; border-color: #fdd8b0; }
+        .price-status { font-size: 12px; margin-bottom: 10px; line-height: 1.4; }
+        .price-status-fresh { color: #475569; }
+        .price-status-stale { color: #92400E; background: #FEF3C7; display: inline-block; padding: 6px 10px; border-radius: 6px; }
+        .price-status-expired { color: #991b1b; background: #FEE2E2; display: inline-block; padding: 6px 10px; border-radius: 6px; font-weight: 500; }
+        .price-gap-alert { background: white; border-radius: 6px; padding: 8px 12px; font-size: 12px; color: #9A3412; margin-bottom: 10px; border: 1px solid #fed7aa; }
+        .price-gap-alert strong { font-weight: 700; }
+        .price-nudge-text { font-size: 12px; color: #64748b; margin-bottom: 12px; }
+        .price-form-row { display: flex; gap: 8px; align-items: flex-end; }
+        .price-form-group { flex: 1; }
+        .price-form-group label { display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .price-form-group input { width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; background: white; color: #1e293b; }
+        .price-form-group input:focus { outline: none; border-color: #FF6B35; box-shadow: 0 0 0 2px rgba(255,107,53,0.1); }
+        .price-form-group input.stale-highlight { border-color: #F59E0B; background: #FFFBEB; }
+        .price-form-group .input-prefix { position: relative; }
+        .price-form-group .input-prefix input { padding-left: 22px; }
+        .price-form-group .input-prefix::before { content: "$"; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px; }
+        .price-submit-btn { padding: 9px 20px; background: #FF6B35; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+        .price-submit-btn:hover { background: #e55a2b; }
+        .price-submit-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+        .price-form-error { color: #DC2626; font-size: 11px; margin-top: 4px; display: none; }
+        .price-form-success { color: #166534; font-size: 12px; font-weight: 600; margin-top: 6px; display: none; padding: 6px 10px; background: #F0FDF4; border-radius: 4px; }
+        .price-sms-alt { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 8px; }
+        .price-sms-alt strong { color: #64748b; }
+
+        /* Locked previews */
+        .dash-locked-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+        .dash-locked-section h3 { font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+        .locked-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .locked-card { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; cursor: pointer; transition: all 0.15s; }
+        .locked-card:hover { border-color: #FF6B35; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(255,107,53,0.08); }
+        .locked-card .locked-icon { font-size: 15px; margin-bottom: 4px; opacity: 0.5; }
+        .locked-card .locked-title { font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 2px; }
+        .locked-card .locked-desc { font-size: 10px; color: #94a3b8; }
+        .locked-card .locked-blur { height: 24px; margin-top: 6px; background: linear-gradient(180deg, transparent 0%, #f8fafc 80%); }
+        .locked-card .locked-blur-content { filter: blur(3px); user-select: none; font-size: 14px; font-weight: 700; color: #d1d5db; }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .dash-panels { grid-template-columns: 1fr; }
+            .locked-grid { grid-template-columns: 1fr; }
+            .dash-container { padding: 14px 12px 36px; }
+            .dash-header { padding: 16px; border-radius: 10px; }
+            .dash-supplier-info h1 { font-size: 19px; }
+            .demand-metric-value { font-size: 16px; }
+            .price-form-row { flex-direction: column; gap: 8px; align-items: stretch; }
+            .price-submit-btn { width: 100%; padding: 12px; }
+            .dash-meta { flex-direction: column; gap: 4px; align-items: flex-start; }
+        }
+
+        /* Toast */
+        .dash-toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 8px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.25); z-index: 2000; animation: ti 0.25s ease; }
+        @keyframes ti { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+        /* Print */
+        @media print {
+            .nav, footer, .dash-locked-section, .price-submit-btn { display: none !important; }
+            .dash-panel { break-inside: avoid; border: 1px solid #ccc; }
+            .dash-header { background: #f5f5f5; color: #1a1a1a; } .dash-header::before { display: none; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <img src="images/app-icon-small.png" alt="HomeHeat" class="nav-logo-icon" width="40" height="40">
+                HomeHeat
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/prices">Prices</a></li>
+                <li><a href="/for-suppliers">For Suppliers</a></li>
+                <li><a href="/learn/">Learn</a></li>
+                <li><a href="/support">Support</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="dash-container">
+        <!-- Loading State -->
+        <div id="dash-loading" class="dash-loading">
+            <div class="dash-spinner"></div>
+            <p>Loading your dashboard...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="dash-error" class="dash-error" style="display:none;">
+            <div class="error-icon">&#128279;</div>
+            <h2 id="dash-error-title">Link Issue</h2>
+            <p id="dash-error-message">This link is invalid or has expired.</p>
+            <p style="font-size: 13px; color: #6b7280; margin-top: 16px;">
+                Need help? Email <a href="mailto:support@gethomeheat.com">support@gethomeheat.com</a>
+            </p>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div id="dash-main" style="display:none;">
+            <!-- Header -->
+            <div class="dash-header">
+                <div class="dash-privacy">
+                    &#128274; Your metrics are private &mdash; only accessible via your secure link
+                </div>
+                <div class="dash-supplier-info">
+                    <span class="verified-badge">&#10003; Verified</span>
+                    <h1 id="dash-name"></h1>
+                    <div class="location" id="dash-location"></div>
+                </div>
+                <div class="dash-meta">
+                    <span>Dashboard refreshed <span id="dash-refreshed">just now</span></span>
+                    <span id="dash-price-badge"></span>
+                </div>
+            </div>
+
+            <!-- Conditional banners -->
+            <div id="dash-urgency" class="dash-urgency"></div>
+            <div id="dash-impact" class="dash-impact"></div>
+            <div id="dash-welcome" class="dash-welcome">
+                Here's how homeowners in your area interact with your listing.
+            </div>
+            <div id="dash-stale-banner" class="dash-stale-banner"></div>
+            <div id="dash-seasonal" class="dash-seasonal"></div>
+
+            <!-- Zero-traffic state (replaces panels) -->
+            <div id="dash-zero-traffic" class="dash-zero-traffic">
+                <div class="icon">&#9989;</div>
+                <h2>You're all set!</h2>
+                <p>Your listing is live. We'll show traffic data as homeowners search your area.</p>
+            </div>
+
+            <!-- Panel grid -->
+            <div id="dash-panels" class="dash-panels">
+                <!-- Panel 1: Your Performance (demand + position merged) -->
+                <div class="dash-panel" id="panel-performance">
+                    <div class="dash-panel-title">Your Performance</div>
+                    <div id="performance-content"></div>
+                </div>
+
+                <!-- Panel 2: Competitive Position -->
+                <div class="dash-panel" id="panel-competitive">
+                    <div class="dash-panel-title">Competitive Position</div>
+                    <div id="competitive-content"></div>
+                </div>
+
+                <!-- Panel 3: Market Opportunity (full mode only) -->
+                <div class="dash-panel" id="panel-opportunity">
+                    <div class="dash-panel-title">Market Opportunity</div>
+                    <div id="opportunity-content"></div>
+                </div>
+
+                <!-- Price Update (full-width) -->
+                <div class="dash-panel dash-price-panel" id="panel-price">
+                    <div class="dash-panel-title">Update Your Price</div>
+                    <div id="price-status" class="price-status" style="display:none;"></div>
+                    <div id="price-gap-alert" class="price-gap-alert" style="display:none;"></div>
+                    <div class="price-nudge-text">
+                        Suppliers closer to the lowest price consistently get more clicks.
+                    </div>
+                    <form id="price-form">
+                        <div id="price-tiers-container">
+                            <div class="price-form-row" data-tier="0">
+                                <div class="price-form-group">
+                                    <label>Price per Gallon</label>
+                                    <div class="input-prefix">
+                                        <input type="number" class="tier-price" step="0.001" min="1.50" max="8.00" placeholder="3.299" required>
+                                    </div>
+                                </div>
+                                <div class="price-form-group">
+                                    <label>Min Gallons</label>
+                                    <input type="number" class="tier-mingal" min="50" max="500" value="100" required>
+                                </div>
+                                <button type="submit" class="price-submit-btn" id="price-submit-btn">Update Price</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="price-form-error" class="price-form-error"></div>
+                    <div id="price-form-success" class="price-form-success"></div>
+                    <div class="price-sms-alt">or text your price to <strong>(845) 335-8855</strong></div>
+                </div>
+            </div>
+
+            <!-- Locked Previews -->
+            <div class="dash-locked-section" id="locked-section">
+                <h3>Unlock More Insights <span style="font-weight:400;font-size:12px;color:#9ca3af;">— COMING SOON</span></h3>
+                <div class="locked-grid">
+                    <div class="locked-card" data-preview="competitors">
+                        <div class="locked-icon">&#128274;</div>
+                        <div class="locked-title">See who is beating you</div>
+                        <div class="locked-desc">Named competitors and their prices</div>
+                        <div class="locked-blur">
+                            <div class="locked-blur-content">ABC Fuel $3.29</div>
+                        </div>
+                    </div>
+                    <div class="locked-card" data-preview="projections">
+                        <div class="locked-icon">&#128274;</div>
+                        <div class="locked-title">Exact revenue projections</div>
+                        <div class="locked-desc">If you drop $0.10, here's what happens</div>
+                        <div class="locked-blur">
+                            <div class="locked-blur-content">+$1,247/wk</div>
+                        </div>
+                    </div>
+                    <div class="locked-card" data-preview="trends">
+                        <div class="locked-icon">&#128274;</div>
+                        <div class="locked-title">90-day trend analysis</div>
+                        <div class="locked-desc">Seasonal patterns and your trajectory</div>
+                        <div class="locked-blur">
+                            <div class="locked-blur-content">&mdash;&mdash;&mdash;</div>
+                        </div>
+                    </div>
+                    <div class="locked-card" data-preview="routes">
+                        <div class="locked-icon">&#128274;</div>
+                        <div class="locked-title">Route cluster intelligence</div>
+                        <div class="locked-desc">ZIP-level demand and delivery optimization</div>
+                        <div class="locked-blur">
+                            <div class="locked-blur-content">10509: 12 searches</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="/for-suppliers">For Suppliers</a>
+            <a href="/prices">Prices</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+            <a href="/support">Support</a>
+        </div>
+        <p class="footer-audience">Built for homeowners who rely on heating oil or propane.</p>
+        <p>&copy; 2026 HomeHeat by Tsoir Advisors LLC. All rights reserved.</p>
+    </footer>
+
+    <script src="js/nav.js"></script>
+    <script src="js/supplier-dashboard.js?v=4"></script>
+</body>
+</html>
