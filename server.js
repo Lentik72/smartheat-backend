@@ -599,6 +599,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/115-reset-stale-regex-suppliers', label: 'Reset 3 suppliers (stale regex + Hometown Fuel json_api)' },
           { path: './src/migrations/116-reset-unclear-suppliers', label: 'Reset 3 suppliers (Premier Energy + Fettinger + Hollenbach)' },
           { path: './src/migrations/117-reset-wix-fixable-suppliers', label: 'Reset 3 suppliers (Higgins + Red Star + Kelleys — HTML entity regex fixes)' },
+          { path: './src/migrations/118-add-queens-college-point-supplier', label: "Angelo's Fuel Oil Co (Queens/College Point)" },
         ];
 
         let migrationErrors = 0;
