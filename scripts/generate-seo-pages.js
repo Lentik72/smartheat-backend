@@ -626,8 +626,8 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
 
   // Intelligence-first description — highlights county comparison for SEO
   const description = stateMedian
-    ? `Compare ${FUEL.label.toLowerCase()} prices across ${countyEliteData.length} counties in ${stateInfo.name}. Updated daily with prices from ${suppliers.length} suppliers.`
-    : `Compare ${suppliers.length} ${FUEL.label.toLowerCase()} suppliers in ${stateInfo.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Updated daily.`;
+    ? `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices across ${countyEliteData.length} counties in ${stateInfo.name}. Compare ${suppliers.length} suppliers updated daily.`
+    : `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${stateInfo.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Compare ${suppliers.length} suppliers.`;
 
   const html = generatePageHTML({
     type: 'state',
@@ -709,7 +709,7 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
     type: 'county',
     title: `${FUEL.label} Prices in ${countyName} County, ${stateInfo.name}`,
     h1: `${countyName} County ${FUEL.label} Prices`,
-    description: `Compare ${suppliers.length} ${FUEL.label.toLowerCase()} suppliers in ${countyName} County, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Updated daily.`,
+    description: `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${countyName} County, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Compare ${suppliers.length} suppliers.`,
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/${countySlug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
@@ -775,7 +775,7 @@ async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, 
     type: 'region',
     title: `${FUEL.label} Prices in ${region.name}, ${stateInfo.name}`,
     h1: `${region.name} ${FUEL.label} Prices`,
-    description: `Compare ${suppliers.length} ${FUEL.label.toLowerCase()} suppliers in ${region.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Covers ${region.counties.join(', ')} counties. Updated daily.`,
+    description: `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${region.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Covers ${region.counties.join(', ')} counties.`,
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/${region.slug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
@@ -861,7 +861,7 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
     type: 'city',
     title: `${FUEL.label} Prices in ${cityName}, ${stateCode}`,
     h1: `${cityName} ${FUEL.label} Prices`,
-    description: `Compare ${suppliers.length} ${FUEL.label.toLowerCase()} suppliers in ${cityName}, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Updated daily.`,
+    description: `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${cityName}, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Compare ${suppliers.length} suppliers.`,
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/${citySlug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
@@ -1064,19 +1064,26 @@ function generatePageHTML(data, FUEL) {
   };
 
   // Schema.org Product + AggregateOffer (triggers Google price rich snippets for aggregator sites)
-  const productSchema = (stats && stats.pricedCount >= 2) ? {
+  const productSchema = (stats && stats.pricedCount >= 2 && Number.isFinite(stats.min) && Number.isFinite(stats.max)) ? {
     "@context": "https://schema.org",
     "@type": "Product",
     "name": `${FUEL.label} in ${city ? `${city}, ${stateCode}` : county ? `${county} County, ${stateCode}` : stateInfo.name}`,
     "description": `Compare ${FUEL.label.toLowerCase()} prices from ${stats.pricedCount} COD suppliers in ${city ? `${city}, ${stateCode}` : county ? `${county} County, ${stateCode}` : stateInfo.name}. Updated daily.`,
     "url": canonicalUrl,
+    "image": "https://www.gethomeheat.com/images/heating-oil-product.jpg",
+    "brand": {
+      "@type": "Brand",
+      "name": "#2 Heating Oil"
+    },
+    "category": "Heating Fuel",
     "offers": {
       "@type": "AggregateOffer",
-      "lowPrice": stats.min,
-      "highPrice": stats.max,
+      "lowPrice": stats.min.toFixed(2),
+      "highPrice": stats.max.toFixed(2),
       "priceCurrency": "USD",
       "offerCount": stats.pricedCount,
-      "availability": "https://schema.org/InStock"
+      "availability": "https://schema.org/InStock",
+      "priceValidUntil": new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
     }
   } : null;
 

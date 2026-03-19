@@ -299,19 +299,26 @@ function generateZipPageHTML(stats, history, county = null) {
   };
 
   // Schema.org Product + AggregateOffer (triggers Google price rich snippets for aggregator sites)
-  const productSchema = (medianPrice && supplierCount >= 2) ? {
+  const productSchema = (medianPrice && supplierCount >= 2 && Number.isFinite(minPrice) && Number.isFinite(maxPrice)) ? {
     "@context": "https://schema.org",
     "@type": "Product",
     "name": `Heating Oil in ${regionName}`,
     "description": `Compare heating oil prices from ${supplierCount} COD suppliers in ${regionName} (ZIP codes ${zipPrefix}xx). Updated daily.`,
     "url": `https://www.gethomeheat.com/prices/zip/${zipPrefix}`,
+    "image": "https://www.gethomeheat.com/images/heating-oil-product.jpg",
+    "brand": {
+      "@type": "Brand",
+      "name": "#2 Heating Oil"
+    },
+    "category": "Heating Fuel",
     "offers": {
       "@type": "AggregateOffer",
       "lowPrice": minPrice.toFixed(2),
       "highPrice": maxPrice.toFixed(2),
       "priceCurrency": "USD",
       "offerCount": supplierCount,
-      "availability": "https://schema.org/InStock"
+      "availability": "https://schema.org/InStock",
+      "priceValidUntil": new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
     }
   } : null;
 
@@ -337,7 +344,7 @@ function generateZipPageHTML(stats, history, county = null) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Heating Oil Prices in ${escapeHtml(regionName)} (${zipPrefix}xx) - ${dateStr} | HomeHeat</title>
-  <meta name="description" content="${medianPrice ? `Current heating oil price in ${regionName}: $${medianPrice.toFixed(2)}/gal median from ${supplierCount} suppliers.` : `Heating oil prices for ZIP codes starting with ${zipPrefix}.`} Updated ${lastUpdate}.">
+  <meta name="description" content="${medianPrice ? `Today's (${lastUpdate}) heating oil prices in ${regionName}: $${medianPrice.toFixed(2)}/gal median from ${supplierCount} suppliers.` : `Heating oil prices for ZIP codes starting with ${zipPrefix}. Updated ${lastUpdate}.`}">
   <link rel="canonical" href="https://www.gethomeheat.com/prices/zip/${zipPrefix}">
 
   <!-- OpenGraph -->

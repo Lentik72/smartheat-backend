@@ -472,19 +472,26 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   };
 
   // Schema.org Product + AggregateOffer (triggers Google price rich snippets for aggregator sites)
-  const productSchema = (medianPrice && supplierCount >= 2) ? {
+  const productSchema = (medianPrice && supplierCount >= 2 && Number.isFinite(minPrice) && Number.isFinite(maxPrice)) ? {
     "@context": "https://schema.org",
     "@type": "Product",
     "name": `${FUEL.label} in ${countyName} County, ${stateCode}`,
     "description": `Compare ${FUEL.label.toLowerCase()} prices from ${supplierCount} COD suppliers in ${countyName} County, ${stateName}. Updated daily.`,
     "url": `https://www.gethomeheat.com/prices/county/${stateCode.toLowerCase()}/${slugify(countyName)}`,
+    "image": "https://www.gethomeheat.com/images/heating-oil-product.jpg",
+    "brand": {
+      "@type": "Brand",
+      "name": "#2 Heating Oil"
+    },
+    "category": "Heating Fuel",
     "offers": {
       "@type": "AggregateOffer",
       "lowPrice": minPrice.toFixed(2),
       "highPrice": maxPrice.toFixed(2),
       "priceCurrency": "USD",
       "offerCount": supplierCount,
-      "availability": "https://schema.org/InStock"
+      "availability": "https://schema.org/InStock",
+      "priceValidUntil": new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
     }
   } : null;
 
@@ -587,12 +594,12 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   let metaDescription;
   if (showPriceBanner && medianPrice) {
     if (priceSignal === 'down') {
-      metaDescription = `${FUEL.label} in ${countyName} County is down ${absChange.toFixed(0)}% — prices from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal from ${supplierCount} suppliers.`;
+      metaDescription = `Today's (${lastUpdate}) ${FUEL.label} in ${countyName} County is down ${absChange.toFixed(0)}% — prices from $${minPrice.toFixed(2)} to $${maxPrice.toFixed(2)}/gal from ${supplierCount} suppliers.`;
     } else {
-      metaDescription = `${FUEL.label} prices in ${countyName} County trending up ${absChange.toFixed(0)}%. Compare ${supplierCount} suppliers from $${minPrice.toFixed(2)}/gal.`;
+      metaDescription = `Today's (${lastUpdate}) ${FUEL.label} prices in ${countyName} County trending up ${absChange.toFixed(0)}%. Compare ${supplierCount} suppliers from $${minPrice.toFixed(2)}/gal.`;
     }
   } else if (medianPrice) {
-    metaDescription = `Current ${FUEL.label.toLowerCase()} price in ${countyName} County, ${stateName}: $${medianPrice.toFixed(2)}/gal median from ${supplierCount} suppliers across ${zipCount} ZIP codes. Updated ${lastUpdate}.`;
+    metaDescription = `Today's (${lastUpdate}) ${FUEL.label.toLowerCase()} price in ${countyName} County, ${stateName}: $${medianPrice.toFixed(2)}/gal median from ${supplierCount} suppliers across ${zipCount} ZIP codes.`;
   } else {
     metaDescription = `${FUEL.label} prices for ${countyName} County, ${stateName}.`;
   }
