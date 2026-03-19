@@ -43,8 +43,9 @@ const DEFAULT_PRIORITY = 0.5;
 const DEFAULT_CHANGEFREQ = 'weekly';
 
 // Files/dirs to skip
-const SKIP_FILES = new Set(['404.html', 'offline.html']);
-const SKIP_PREFIXES = ['_', '.'];
+const SKIP_FILES = new Set(['404.html', 'offline.html', 'update-price.html', 'supplier-dashboard.html', 'price-review.html']);
+const SKIP_DIRS = new Set(['admin']);
+const SKIP_PREFIXES = ['_', '.', 'google'];
 
 function getPriority(urlPath) {
   for (const rule of PRIORITY_RULES) {
@@ -94,8 +95,9 @@ function scanDirectory(dir) {
     if (entry.isDirectory()) {
       // Skip hidden/underscore dirs
       if (SKIP_PREFIXES.some(p => entry.name.startsWith(p))) continue;
-      // Skip asset directories
+      // Skip asset and internal directories
       if (['js', 'css', 'images', 'icons', 'fonts'].includes(entry.name)) continue;
+      if (SKIP_DIRS.has(entry.name)) continue;
       urls.push(...scanDirectory(fullPath));
     } else if (entry.name.endsWith('.html')) {
       const urlPath = fileToUrl(fullPath);
@@ -129,26 +131,48 @@ ${entries.join('\n')}
 </urlset>`;
 }
 
-// Main
-console.log('Scanning website/ for HTML pages...');
-const urls = scanDirectory(WEBSITE_DIR);
-console.log(`Found ${urls.length} pages`);
+/**
+ * Regenerate sitemap.xml by scanning all HTML pages in website/.
+ * Can be called as a module or run directly as a CLI script.
+ *
+ * @param {object} [options]
+ * @param {object} [options.logger] - Logger with .info()/.error() methods (defaults to console)
+ * @param {boolean} [options.dryRun] - If true, skip writing the file
+ * @returns {{ success: boolean, urlCount: number, sections: object }}
+ */
+function regenerateSitemap({ logger: log, dryRun: dry } = {}) {
+  const _log = log || { info: console.log, error: console.error };
+  const _dry = dry != null ? dry : dryRun;
 
-// Count by section
-const sections = {};
-for (const url of urls) {
-  const section = url.split('/')[1] || 'root';
-  sections[section] = (sections[section] || 0) + 1;
+  _log.info('Scanning website/ for HTML pages...');
+  const urls = scanDirectory(WEBSITE_DIR);
+  _log.info(`Found ${urls.length} pages`);
+
+  // Count by section
+  const sections = {};
+  for (const url of urls) {
+    const section = url.split('/')[1] || 'root';
+    sections[section] = (sections[section] || 0) + 1;
+  }
+  for (const [section, count] of Object.entries(sections).sort((a, b) => b[1] - a[1])) {
+    _log.info(`  ${section}: ${count}`);
+  }
+
+  const sitemap = generateSitemap(urls);
+
+  if (_dry) {
+    _log.info(`[DRY RUN] Would write ${sitemap.length} bytes to sitemap.xml`);
+  } else {
+    fs.writeFileSync(SITEMAP_PATH, sitemap, 'utf-8');
+    _log.info(`✅ Written sitemap.xml (${urls.length} URLs, ${sitemap.length} bytes)`);
+  }
+
+  return { success: true, urlCount: urls.length, sections };
 }
-for (const [section, count] of Object.entries(sections).sort((a, b) => b[1] - a[1])) {
-  console.log(`  ${section}: ${count}`);
-}
 
-const sitemap = generateSitemap(urls);
+module.exports = { regenerateSitemap };
 
-if (dryRun) {
-  console.log(`\n[DRY RUN] Would write ${sitemap.length} bytes to sitemap.xml`);
-} else {
-  fs.writeFileSync(SITEMAP_PATH, sitemap, 'utf-8');
-  console.log(`\n✅ Written sitemap.xml (${urls.length} URLs, ${sitemap.length} bytes)`);
+// CLI execution
+if (require.main === module) {
+  regenerateSitemap();
 }

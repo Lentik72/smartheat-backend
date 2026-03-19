@@ -1130,8 +1130,20 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       logger.error('❌ Price Trend page generation failed:', error.message);
     }
   }, { timezone: 'America/New_York' });
+  // Regenerate sitemap after all page generators have completed (scans website/ for all HTML pages)
+  cron.schedule('30 23 * * *', async () => {
+    try {
+      const { regenerateSitemap } = require('./scripts/generate-sitemap');
+      const result = regenerateSitemap({ logger, dryRun: false });
+      logger.info(`✅ Sitemap regenerated: ${result.urlCount} URLs`);
+    } catch (error) {
+      logger.error('❌ Sitemap regeneration failed:', error.message);
+    }
+  }, { timezone: 'America/New_York' });
+
   logger.info('📄 SEO + Supplier + ZIP/County Elite page generator scheduled: daily at 11:00 PM EST');
   logger.info('📄 Heating cost + Avg Bill + Price Trend page generators scheduled: daily at 11:15/11:20/11:25 PM EST');
+  logger.info('📄 Sitemap regeneration scheduled: daily at 11:30 PM EST');
 
   // Regenerate all pages on startup. Pages are in git (tracked before .gitignore),
   // so deploys start with the last-committed versions. Generators overwrite with fresh data.
@@ -1234,6 +1246,15 @@ const server = app.listen(PORT, '0.0.0.0', () => {
           });
         } catch (error) {
           logger.warn('⚠️ [Startup] Kerosene page generation failed (non-blocking):', error.message);
+        }
+
+        // Regenerate sitemap after ALL generators have completed (replaces legacy fragment-based approach)
+        try {
+          const { regenerateSitemap } = require('./scripts/generate-sitemap');
+          const result = regenerateSitemap({ logger, dryRun: false });
+          logger.info(`✅ [Startup] Sitemap regenerated: ${result.urlCount} URLs`);
+        } catch (error) {
+          logger.warn('⚠️ [Startup] Sitemap regeneration failed (non-blocking):', error.message);
         }
       } else {
         logger.error(`❌ [Startup] Page generation incomplete after ${elapsed}s — health returning 503, Railway will keep old deploy`);
