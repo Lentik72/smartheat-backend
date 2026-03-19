@@ -601,6 +601,8 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/117-reset-wix-fixable-suppliers', label: 'Reset 3 suppliers (Higgins + Red Star + Kelleys — HTML entity regex fixes)' },
           { path: './src/migrations/118-add-queens-college-point-supplier', label: "Angelo's Fuel Oil Co (Queens/College Point)" },
           { path: './src/migrations/119-add-supplier-active-index', label: 'Add partial index on suppliers.active for query performance' },
+          { path: './src/migrations/120-dashboard-indexes', label: 'Dashboard composite indexes' },
+          { path: './src/migrations/121-add-nashua-nh-suppliers', label: 'Shattuck Oil + Absco Heating (Nashua NH area)' },
         ];
 
         let migrationErrors = 0;
