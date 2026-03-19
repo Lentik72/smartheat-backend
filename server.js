@@ -603,6 +603,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/119-add-supplier-active-index', label: 'Add partial index on suppliers.active for query performance' },
           { path: './src/migrations/120-dashboard-indexes', label: 'Dashboard composite indexes' },
           { path: './src/migrations/121-add-nashua-nh-suppliers', label: 'Shattuck Oil + Absco Heating (Nashua NH area)' },
+          { path: './src/migrations/122-add-susquehanna-pa-suppliers', label: 'Windswept + Economy Heating (Susquehanna PA / Southern Tier NY)' },
         ];
 
         let migrationErrors = 0;
