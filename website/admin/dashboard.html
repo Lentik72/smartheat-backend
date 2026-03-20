@@ -1320,6 +1320,28 @@
               </div>
             </div>
 
+            <!-- Cron Job Health (Phase 2) -->
+            <div class="panel full-width" id="cron-health-panel">
+              <h3>Cron Jobs (24h) <span class="badge" id="cron-status-badge">...</span></h3>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Job</th>
+                      <th style="text-align:center">Status</th>
+                      <th style="text-align:right">Duration</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cron-jobs-body"></tbody>
+                </table>
+              </div>
+              <div id="cron-errors-section" class="hidden" style="margin-top:12px;">
+                <h4>Recent Errors</h4>
+                <div id="cron-errors-list"></div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

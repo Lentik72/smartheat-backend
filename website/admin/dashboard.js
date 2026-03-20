@@ -3445,12 +3445,67 @@ async function loadHealth() {
     // V2.13.0: Diagnostics (categorized failure analysis)
     if (health.diagnostics) renderDiagnostics(health.diagnostics);
 
+    // V3.1.0: Load cron health (non-blocking — don't fail the whole tab)
+    try { await loadCronHealth(); } catch (e) { console.warn('Cron health load failed:', e); }
+
     if (loadingEl) loadingEl.classList.add('hidden');
     if (contentEl) contentEl.classList.remove('hidden');
   } catch (error) {
     console.error('Failed to load health:', error);
     if (loadingEl) loadingEl.innerHTML = 'Failed to load health data.';
   }
+}
+
+// V3.1.0: Cron job health rendering
+async function loadCronHealth() {
+  const cronData = await api('/cron-health');
+  const tbody = document.getElementById('cron-jobs-body');
+  const badge = document.getElementById('cron-status-badge');
+  if (!tbody) return;
+
+  const failed = cronData.jobs.filter(j => j.status === 'failed' || j.status === 'missing');
+  if (badge) {
+    badge.textContent = failed.length === 0 ? 'All OK' : failed.length + ' issue(s)';
+    badge.style.background = failed.length === 0 ? 'var(--success)' : 'var(--danger)';
+  }
+
+  const statusIcon = { success: '✅', retried: '🔄', missing: '⏳', failed: '❌' };
+  tbody.innerHTML = cronData.jobs.map(j => `
+    <tr>
+      <td>${esc(j.label)}</td>
+      <td style="text-align:center">${statusIcon[j.status] || '—'}</td>
+      <td style="text-align:right;color:#666">${j.durationMs ? (j.durationMs / 1000).toFixed(1) + 's' : '—'}</td>
+      <td style="font-size:0.85em;color:#888">${j.message ? esc(j.message) : ''}</td>
+    </tr>
+  `).join('');
+
+  // Errors section
+  const errSection = document.getElementById('cron-errors-section');
+  const errList = document.getElementById('cron-errors-list');
+  if (cronData.errors && cronData.errors.length > 0 && errSection && errList) {
+    errSection.classList.remove('hidden');
+    errList.innerHTML = cronData.errors.slice(0, 5).map(e => `
+      <div style="background:#fef2f2;padding:6px 10px;border-radius:4px;margin:4px 0;font-size:0.85em">
+        <strong>${esc(e.service)}</strong>: ${esc(e.message)}
+        <span style="color:#999;font-size:0.8em;margin-left:8px">${timeAgo(e.created_at)}</span>
+      </div>
+    `).join('');
+  }
+
+  // Scraper alerts
+  if (cronData.scraperAlerts && cronData.scraperAlerts.length > 0) {
+    const panel = document.getElementById('cron-health-panel');
+    if (panel) {
+      const alertHtml = cronData.scraperAlerts.map(a => `
+        <div class="alert-item ${a.level === 'critical' ? 'alert-danger' : 'alert-warning'}">
+          ${esc(a.message)}
+        </div>
+      `).join('');
+      panel.insertAdjacentHTML('afterbegin', `<div class="health-alerts" style="margin-bottom:12px">${alertHtml}</div>`);
+    }
+  }
+
+  function esc(s) { return s ? String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
 }
 
 function renderFreshnessBar(freshness) {

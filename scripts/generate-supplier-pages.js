@@ -710,6 +710,8 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
     </a>
   </div>
 
+  <p class="disclaimer">Prices from public supplier websites. Confirm price and delivery minimum when ordering.</p>
+
   <footer class="footer">
     <div class="footer-links">
       <a href="/prices">Prices</a>

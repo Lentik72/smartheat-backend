@@ -611,6 +611,8 @@ function generateZipPageHTML(stats, history, county = null) {
     </a>
   </div>
 
+  <p class="disclaimer">Prices from public supplier websites. Confirm price and delivery minimum when ordering.</p>
+
   <footer class="footer">
     <div class="footer-links">
       <a href="/for-suppliers">For Suppliers</a>

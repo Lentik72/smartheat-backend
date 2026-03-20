@@ -448,6 +448,33 @@ class CoverageReportMailer {
   <h2>SmartHeat Daily Report</h2>
   <p><strong>Date:</strong> ${report.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
+  <!-- V3.1.0: Traffic light summary -->
+  ${(() => {
+    const cronFails = cronHealth?.jobs?.filter(j => j.status === 'failed' || j.status === 'missing').length || 0;
+    const cronRetries = cronHealth?.jobs?.filter(j => j.status === 'retried').length || 0;
+    const scraperIssues = cronHealth?.scraperAlerts?.length || 0;
+    const errors = activity.summary.errors || 0;
+    const totalIssues = cronFails + scraperIssues;
+
+    if (totalIssues > 0) {
+      return `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:12px 16px;margin:12px 0;font-size:14px">
+        <strong style="color:#dc2626">🔴 ${totalIssues} issue${totalIssues > 1 ? 's' : ''} need attention</strong>
+        ${cronFails > 0 ? `<br>• ${cronFails} cron job${cronFails > 1 ? 's' : ''} failed or missing` : ''}
+        ${scraperIssues > 0 ? `<br>• Scraper health alert` : ''}
+      </div>`;
+    }
+    if (cronRetries > 0 || errors > 3) {
+      return `<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px;margin:12px 0;font-size:14px">
+        <strong style="color:#d97706">🟡 System OK with warnings</strong>
+        ${cronRetries > 0 ? `<br>• ${cronRetries} cron job${cronRetries > 1 ? 's' : ''} recovered after retry` : ''}
+        ${errors > 3 ? `<br>• ${errors} API errors in 24h` : ''}
+      </div>`;
+    }
+    return `<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:12px 16px;margin:12px 0;font-size:14px">
+      <strong style="color:#059669">🟢 All systems healthy</strong>
+    </div>`;
+  })()}
+
   <!-- ===== ACTIVITY SUMMARY ===== -->
   <div class="stat-grid">
     <div class="stat-box">

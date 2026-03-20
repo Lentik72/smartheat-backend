@@ -941,6 +941,37 @@ router.get('/supplier-health', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/cron-health - Cron heartbeat history (Phase 2)
+router.get('/cron-health', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const CronMonitor = require('../services/CronMonitor');
+    const monitor = new CronMonitor(sequelize, logger);
+    const health = await monitor.getDailyHealth();
+
+    // Also get 7-day history for the timeline
+    const [history] = await sequelize.query(`
+      SELECT job_name, status, started_at, duration_ms, error_message
+      FROM cron_heartbeats
+      WHERE started_at > NOW() - INTERVAL '7 days'
+        AND job_name NOT LIKE '%:retry'
+      ORDER BY started_at DESC
+      LIMIT 100
+    `);
+
+    res.json({ ...health, history });
+  } catch (error) {
+    logger.error('[Dashboard] Cron health error:', error.message);
+    res.status(500).json({ error: 'Failed to load cron health', details: error.message });
+  }
+});
+
 // GET /api/dashboard/command-center - Intelligence hub data
 router.get('/command-center', async (req, res) => {
   const logger = req.app.locals.logger;
