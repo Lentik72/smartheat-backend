@@ -244,14 +244,14 @@ class CoverageReportMailer {
   /**
    * Send weekly summary
    */
-  async sendWeeklySummary(stats) {
+  async sendWeeklySummary(stats, businessMetrics = null) {
     const recipient = this.getRecipient();
     if (!recipient) return false;
 
     const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const subject = `SmartHeat Weekly Summary - ${date}`;
 
-    const html = this.formatWeeklySummary(stats);
+    const html = this.formatWeeklySummary(stats, businessMetrics);
     const success = await this.sendEmail(recipient, subject, html);
 
     if (success) {
@@ -263,18 +263,30 @@ class CoverageReportMailer {
   /**
    * Format weekly summary HTML
    */
-  formatWeeklySummary(stats) {
+  formatWeeklySummary(stats, bm = null) {
+    const delta = (curr, prev) => {
+      const c = parseInt(curr) || 0;
+      const p = parseInt(prev) || 0;
+      if (p === 0) return c > 0 ? '↑ new' : '';
+      const pct = Math.round(((c - p) / p) * 100);
+      if (pct > 0) return `<span style="color:#059669">↑ ${pct}%</span>`;
+      if (pct < 0) return `<span style="color:#dc2626">↓ ${Math.abs(pct)}%</span>`;
+      return '<span style="color:#666">→ 0%</span>';
+    };
+
     return `
 <!DOCTYPE html>
 <html>
 <head>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 650px; margin: 0 auto; }
     h2 { color: #1a1a1a; border-bottom: 2px solid #007AFF; padding-bottom: 8px; }
+    h3 { color: #444; margin-top: 28px; }
     .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 24px 0; }
     .stat-box { background: #f5f5f5; padding: 16px; border-radius: 8px; }
-    .stat-value { font-size: 32px; font-weight: 700; color: #007AFF; }
-    .stat-label { font-size: 14px; color: #666; }
+    .stat-value { font-size: 28px; font-weight: 700; color: #007AFF; }
+    .stat-delta { font-size: 13px; margin-top: 2px; }
+    .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
     .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
   </style>
 </head>
@@ -282,6 +294,41 @@ class CoverageReportMailer {
   <h2>SmartHeat Weekly Summary</h2>
   <p><strong>Week of:</strong> ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
 
+  ${bm ? `
+  <h3>Business Metrics (vs prior week)</h3>
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-value">${parseInt(bm.searches_7d) || 0}</div>
+      <div class="stat-delta">${delta(bm.searches_7d, bm.searches_prev_7d)}</div>
+      <div class="stat-label">ZIP Searches</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${parseInt(bm.clicks_7d) || 0}</div>
+      <div class="stat-delta">${delta(bm.clicks_7d, bm.clicks_prev_7d)}</div>
+      <div class="stat-label">Supplier Clicks</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${parseInt(bm.calls_7d) || 0}</div>
+      <div class="stat-delta">${delta(bm.calls_7d, bm.calls_prev_7d)}</div>
+      <div class="stat-label">Call Clicks</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${parseInt(bm.prices_scraped_7d) || 0}</div>
+      <div class="stat-delta">${delta(bm.prices_scraped_7d, bm.prices_scraped_prev_7d)}</div>
+      <div class="stat-label">Prices Scraped</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${parseInt(bm.alert_subscribers) || 0}</div>
+      <div class="stat-label">Alert Subscribers</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">${parseInt(bm.active_suppliers) || 0}</div>
+      <div class="stat-label">Active Suppliers</div>
+    </div>
+  </div>
+  ` : ''}
+
+  <h3>Coverage</h3>
   <div class="stat-grid">
     <div class="stat-box">
       <div class="stat-value">${stats.total_locations || 0}</div>
@@ -291,26 +338,19 @@ class CoverageReportMailer {
       <div class="stat-value">${stats.new_last_7d || 0}</div>
       <div class="stat-label">New This Week</div>
     </div>
-    <div class="stat-box">
-      <div class="stat-value">${stats.total_requests || 0}</div>
-      <div class="stat-label">Total API Requests</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-value">${(stats.no_coverage || 0) + (stats.poor_coverage || 0)}</div>
-      <div class="stat-label">Locations Needing Coverage</div>
-    </div>
   </div>
-
-  <h3>Coverage Breakdown</h3>
   <ul>
-    <li><strong>Good (5+ suppliers):</strong> ${stats.good_coverage || 0}</li>
-    <li><strong>Adequate (3-4 suppliers):</strong> ${stats.adequate_coverage || 0}</li>
-    <li><strong>Poor (1-2 suppliers):</strong> ${stats.poor_coverage || 0}</li>
+    <li><strong>Good (5+):</strong> ${stats.good_coverage || 0}</li>
+    <li><strong>Adequate (3-4):</strong> ${stats.adequate_coverage || 0}</li>
+    <li><strong>Poor (1-2):</strong> ${stats.poor_coverage || 0}</li>
     <li><strong>No coverage:</strong> ${stats.no_coverage || 0}</li>
   </ul>
 
   <div class="footer">
-    <p>This summary is auto-generated by SmartHeat Coverage Intelligence System.</p>
+    <p>
+      <a href="https://www.gethomeheat.com/admin/dashboard.html" style="display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">Open Dashboard</a>
+    </p>
+    <p>Auto-generated weekly by SmartHeat.</p>
   </div>
 </body>
 </html>

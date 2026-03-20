@@ -1566,8 +1566,32 @@ function scheduleCoverageIntelligence(cronMonitor) {
       logger.info('[CoverageIntelligence] Running weekly summary...');
       try {
         const stats = await intelligence.getCoverageStats();
+
+        // V3.1.0: Add business metrics with week-over-week deltas
+        let businessMetrics = null;
+        try {
+          const [thisWeek] = await sequelize.query(`
+            SELECT
+              COUNT(DISTINCT aa.zip_code) FILTER (WHERE aa.created_at > NOW() - INTERVAL '7 days') as searches_7d,
+              COUNT(DISTINCT aa.zip_code) FILTER (WHERE aa.created_at BETWEEN NOW() - INTERVAL '14 days' AND NOW() - INTERVAL '7 days') as searches_prev_7d,
+              (SELECT COUNT(*) FROM supplier_prices WHERE scraped_at > NOW() - INTERVAL '7 days' AND is_valid = true) as prices_scraped_7d,
+              (SELECT COUNT(*) FROM supplier_prices WHERE scraped_at BETWEEN NOW() - INTERVAL '14 days' AND NOW() - INTERVAL '7 days' AND is_valid = true) as prices_scraped_prev_7d,
+              (SELECT COUNT(*) FROM supplier_clicks WHERE created_at > NOW() - INTERVAL '7 days') as clicks_7d,
+              (SELECT COUNT(*) FROM supplier_clicks WHERE created_at BETWEEN NOW() - INTERVAL '14 days' AND NOW() - INTERVAL '7 days') as clicks_prev_7d,
+              (SELECT COUNT(*) FROM supplier_clicks WHERE action_type = 'call' AND created_at > NOW() - INTERVAL '7 days') as calls_7d,
+              (SELECT COUNT(*) FROM supplier_clicks WHERE action_type = 'call' AND created_at BETWEEN NOW() - INTERVAL '14 days' AND NOW() - INTERVAL '7 days') as calls_prev_7d,
+              (SELECT COUNT(*) FROM price_alert_subscribers WHERE active = true) as alert_subscribers,
+              (SELECT COUNT(*) FROM suppliers WHERE active = true AND allow_price_display = true) as active_suppliers
+            FROM api_activity aa
+            WHERE aa.created_at > NOW() - INTERVAL '14 days'
+          `);
+          businessMetrics = thisWeek[0];
+        } catch (bmErr) {
+          logger.warn('[WeeklySummary] Business metrics query failed:', bmErr.message);
+        }
+
         if (stats) {
-          await mailer.sendWeeklySummary(stats);
+          await mailer.sendWeeklySummary(stats, businessMetrics);
         }
       } catch (error) {
         logger.error('[CoverageIntelligence] Weekly summary failed:', error.message);
