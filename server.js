@@ -11,6 +11,7 @@ const { Sequelize } = require('sequelize');
 const cron = require('node-cron');
 const path = require('path');
 const fs = require('fs');
+const CronMonitor = require('./src/services/CronMonitor');
 require('dotenv').config();
 
 // Load package.json for version info
@@ -607,6 +608,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/123-add-morgan-oil-virginia', label: 'Morgan Oil Corporation (Marshall, VA — Loudoun/Fauquier 5-county)' },
           { path: './src/migrations/124-add-do-not-pitch-flag', label: 'Add do_not_pitch column to suppliers' },
           { path: './src/migrations/125-add-droplet-suppliers', label: 'Droplet Fuel: 19 new suppliers + do_not_pitch flag on 30 Droplet suppliers' },
+          { path: './src/migrations/126-add-cron-heartbeats', label: 'Cron heartbeats + error log tables (Phase 2 automation)' },
         ];
 
         let migrationErrors = 0;
@@ -932,6 +934,10 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info('🔒 Security: Helmet, CORS, Rate limiting enabled');
 
+  // V3.1.0: Initialize CronMonitor for heartbeat tracking, auto-retry, and drift detection
+  const cronMonitor = new CronMonitor(sequelize, logger);
+  cronMonitor.cleanup(); // Clean old heartbeats/errors on startup (non-blocking)
+
   // V2.6.0: DISABLED fixed 10 AM scrape - now using distributed scheduler (8AM-6PM)
   // Keeping commented for rollback if needed
   // cron.schedule('0 15 * * *', async () => {
@@ -952,33 +958,32 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // Catches suppliers who update prices after their morning distributed scrape
   // V2.32.0: Also triggers ZIP stats computation after scrape completes
   cron.schedule('0 21 * * *', async () => {
-    logger.info('⏰ Starting afternoon price scrape (4:00 PM EST)...');
-    try {
+    await cronMonitor.run('afternoon-scrape', async () => {
       const result = await runScraper({ sequelize, logger });
-      logger.info(`✅ Afternoon scrape complete: ${result.success} success, ${result.failed} failed`);
+      logger.info(`✅ Afternoon scrape: ${result.success} success, ${result.failed} failed`);
+
+      // Check scraper health (drift + anomaly detection)
+      const alerts = cronMonitor.checkScraperHealth(result);
+      if (alerts.length > 0) {
+        alerts.forEach(a => logger.warn(`[ScraperHealth] ${a.level}: ${a.message}`));
+      }
 
       // V2.32.0: Compute ZIP price stats after scrape
-      logger.info('📊 Computing ZIP price statistics...');
       const zipStatsComputer = new ZipStatsComputer(sequelize, logger);
       const statsResult = await zipStatsComputer.compute();
       if (statsResult.success) {
-        logger.info(`✅ ZIP stats computed: ${statsResult.updated} ZIPs updated in ${statsResult.durationMs}ms`);
-      } else {
-        logger.warn('⚠️  ZIP stats computation failed:', statsResult.error);
+        logger.info(`✅ ZIP stats: ${statsResult.updated} ZIPs (${statsResult.durationMs}ms)`);
       }
 
       // V2.33.0: Compute County price stats after ZIP stats
-      logger.info('📊 Computing County price statistics...');
       const countyStatsComputer = new CountyStatsComputer(sequelize, logger);
       const countyResult = await countyStatsComputer.compute();
       if (countyResult.success) {
-        logger.info(`✅ County stats computed: ${countyResult.updated} counties updated in ${countyResult.durationMs}ms`);
-      } else {
-        logger.warn('⚠️  County stats computation failed:', countyResult.error);
+        logger.info(`✅ County stats: ${countyResult.updated} counties (${countyResult.durationMs}ms)`);
       }
-    } catch (error) {
-      logger.error('❌ Afternoon scrape failed:', error.message);
-    }
+
+      return { success: result.success, failed: result.failed, rejected: result.rejected, alerts };
+    });
   }, {
     timezone: 'UTC' // 21:00 UTC = 4:00 PM EST
   });
@@ -987,161 +992,92 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // V2.17.0: Schedule SEO + Supplier page generation at 11:00 PM EST (low traffic period)
   // Generates static HTML pages directly on Railway for Google indexability
   cron.schedule('0 23 * * *', async () => {
-    logger.info('📄 Starting page generation (11:00 PM EST)...');
     const websiteDir = path.join(__dirname, 'website');
 
-    // Generate SEO pages (city/county/state)
-    try {
+    // SEO + Supplier pages (tracked together as the main 11 PM job)
+    await cronMonitor.run('seo-pages', async () => {
       const { generateSEOPages } = require('./scripts/generate-seo-pages');
+      const result = await generateSEOPages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+      if (result.success) logger.info(`✅ SEO pages: ${result.statePages} state pages`);
+      return result;
+    }, { retry: true });
 
-      const result = await generateSEOPages({
-        sequelize,
-        logger,
-        outputDir: websiteDir,
-        dryRun: false
-      });
-
-      if (result.success) {
-        logger.info(`✅ SEO pages generated: ${result.statePages} state pages, ${result.totalSuppliers} suppliers`);
-      } else {
-        logger.warn(`⚠️ SEO generation skipped: ${result.reason} (${result.totalSuppliers} suppliers)`);
-      }
-    } catch (error) {
-      logger.error('❌ SEO page generation failed:', error.message);
-    }
-
-    // Generate supplier profile pages
-    try {
+    await cronMonitor.run('supplier-pages', async () => {
       const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
-
       const supplierLogger = { log: (...args) => logger.info(args.join(' ')), error: (...args) => logger.error(args.join(' ')) };
-      const result = await generateSupplierPages({
-        sequelize,
-        logger: supplierLogger,
-        websiteDir
-      });
+      const result = await generateSupplierPages({ sequelize, logger: supplierLogger, websiteDir });
+      if (result.success) logger.info(`✅ Supplier pages: ${result.generated} pages`);
+      return result;
+    }, { retry: true });
 
-      if (result.success) {
-        logger.info(`✅ Supplier pages generated: ${result.generated} pages`);
-      } else {
-        logger.error(`❌ Supplier page generation failed: ${result.error}`);
-      }
-    } catch (error) {
-      logger.error('❌ Supplier page generation failed:', error.message);
-    }
-
-    // V2.32.0: Generate ZIP Elite pages
-    try {
+    await cronMonitor.run('zip-elite-pages', async () => {
       const { generateZipElitePages } = require('./scripts/generate-zip-elite-pages');
+      const result = await generateZipElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+      if (result.success) logger.info(`✅ ZIP Elite pages: ${result.generated} pages`);
+      return result;
+    }, { retry: false });
 
-      const result = await generateZipElitePages({
-        sequelize,
-        logger,
-        outputDir: websiteDir,
-        dryRun: false
-      });
-
-      if (result.success) {
-        logger.info(`✅ ZIP Elite pages generated: ${result.generated} pages`);
-      } else {
-        logger.error(`❌ ZIP Elite page generation failed`);
-      }
-    } catch (error) {
-      logger.error('❌ ZIP Elite page generation failed:', error.message);
-    }
-
-    // V2.33.0: Generate County Elite pages (auto-promotes when quality threshold met)
-    try {
+    await cronMonitor.run('county-elite-pages', async () => {
       const { generateCountyElitePages } = require('./scripts/generate-county-elite-pages');
+      const result = await generateCountyElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+      if (result.success) logger.info(`✅ County Elite pages: ${result.generated} pages`);
+      return result;
+    }, { retry: false });
 
-      const result = await generateCountyElitePages({
-        sequelize,
-        logger,
-        outputDir: websiteDir,
-        dryRun: false
-      });
-
-      if (result.success) {
-        logger.info(`✅ County Elite pages generated: ${result.generated} pages`);
-      } else {
-        logger.error(`❌ County Elite page generation failed`);
-      }
-    } catch (error) {
-      logger.error('❌ County Elite page generation failed:', error.message);
-    }
-
-    // V2.34.0: Generate kerosene pages (state, county, hub)
-    try {
+    // Kerosene pages (less critical, no retry)
+    await cronMonitor.run('kerosene-pages', async () => {
       const { generateSEOPages: generateSEOKerosene } = require('./scripts/generate-seo-pages');
       const result = await generateSEOKerosene({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
-      if (result.success) {
-        logger.info(`✅ Kerosene SEO state pages generated: ${result.statePages} states`);
-      }
-    } catch (error) {
-      logger.error('❌ Kerosene SEO page generation failed:', error.message);
-    }
+      if (result.success) logger.info(`✅ Kerosene SEO: ${result.statePages} states`);
 
-    try {
       const { generateCountyElitePages: generateCountyKerosene } = require('./scripts/generate-county-elite-pages');
-      const result = await generateCountyKerosene({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
-      if (result.success) {
-        logger.info(`✅ Kerosene county pages generated: ${result.generated} pages`);
-      }
-    } catch (error) {
-      logger.error('❌ Kerosene county page generation failed:', error.message);
-    }
+      const countyResult = await generateCountyKerosene({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
+      if (countyResult.success) logger.info(`✅ Kerosene county: ${countyResult.generated} pages`);
 
-    try {
       const { generateKeroseneHub } = require('./scripts/generate-kerosene-hub');
-      const result = await generateKeroseneHub({ sequelize, logger, dryRun: false });
-      if (result.success) {
-        logger.info(`✅ Kerosene hub page generated: ${result.states} states`);
-      }
-    } catch (error) {
-      logger.error('❌ Kerosene hub page generation failed:', error.message);
-    }
+      const hubResult = await generateKeroseneHub({ sequelize, logger, dryRun: false });
+      if (hubResult.success) logger.info(`✅ Kerosene hub: ${hubResult.states} states`);
+
+      return { seo: result, county: countyResult, hub: hubResult };
+    }, { retry: false });
   }, {
     timezone: 'America/New_York'
   });
   // Generate heating cost estimator pages (runs after SEO pages so sitemap fragment is fresh)
   cron.schedule('15 23 * * *', async () => {
-    try {
+    await cronMonitor.run('heating-cost-pages', async () => {
       const { generateHeatingCostPages } = require('./scripts/generate-heating-cost-pages');
       const result = await generateHeatingCostPages({ sequelize, dryRun: false });
-      logger.info(`✅ Heating cost pages generated: ${result.totalStatePages} state, ${result.totalCountyPages} county`);
-    } catch (error) {
-      logger.error('❌ Heating cost page generation failed:', error.message);
-    }
+      logger.info(`✅ Heating cost pages: ${result.totalStatePages} state, ${result.totalCountyPages} county`);
+      return result;
+    }, { retry: true });
   }, { timezone: 'America/New_York' });
   // Generate average heating bill pages (C2)
   cron.schedule('20 23 * * *', async () => {
-    try {
+    await cronMonitor.run('avg-bill-pages', async () => {
       const { generateAvgBillPages } = require('./scripts/generate-avg-bill-pages');
       const result = await generateAvgBillPages({ sequelize, dryRun: false });
-      logger.info(`✅ Avg Bill pages generated: ${result.totalStatePages} state, ${result.totalCountyPages} county`);
-    } catch (error) {
-      logger.error('❌ Avg Bill page generation failed:', error.message);
-    }
+      logger.info(`✅ Avg Bill pages: ${result.totalStatePages} state, ${result.totalCountyPages} county`);
+      return result;
+    }, { retry: true });
   }, { timezone: 'America/New_York' });
   // Generate price trend pages (C4)
   cron.schedule('25 23 * * *', async () => {
-    try {
+    await cronMonitor.run('price-trend-pages', async () => {
       const { generatePriceTrendPages } = require('./scripts/generate-price-trend-pages');
       const result = await generatePriceTrendPages({ sequelize, dryRun: false });
-      logger.info(`✅ Price Trend pages generated: ${result.totalStatePages} state, ${result.totalCountyPages} county`);
-    } catch (error) {
-      logger.error('❌ Price Trend page generation failed:', error.message);
-    }
+      logger.info(`✅ Price Trend pages: ${result.totalStatePages} state, ${result.totalCountyPages} county`);
+      return result;
+    }, { retry: true });
   }, { timezone: 'America/New_York' });
-  // Regenerate sitemap after all page generators have completed (scans website/ for all HTML pages)
+  // Regenerate sitemap after all page generators have completed
   cron.schedule('30 23 * * *', async () => {
-    try {
+    await cronMonitor.run('sitemap', async () => {
       const { regenerateSitemap } = require('./scripts/generate-sitemap');
       const result = regenerateSitemap({ logger, dryRun: false });
-      logger.info(`✅ Sitemap regenerated: ${result.urlCount} URLs`);
-    } catch (error) {
-      logger.error('❌ Sitemap regeneration failed:', error.message);
-    }
+      logger.info(`✅ Sitemap: ${result.urlCount} URLs`);
+      return result;
+    }, { retry: false });
   }, { timezone: 'America/New_York' });
 
   logger.info('📄 SEO + Supplier + ZIP/County Elite page generator scheduled: daily at 11:00 PM EST');
@@ -1270,17 +1206,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // V2.6.0: Monthly reset of phone_only suppliers (1st of each month at 6 AM EST)
   // Gives blocked sites another chance after a month
   cron.schedule('0 11 1 * *', async () => {
-    logger.info('🔄 Starting monthly phone_only reset (1st of month)...');
-    try {
+    await cronMonitor.run('monthly-reset', async () => {
       const count = await monthlyReset(sequelize, logger);
-      if (count > 0) {
-        logger.info(`✅ Monthly reset complete: ${count} suppliers reset to active`);
-      } else {
-        logger.info('✅ Monthly reset: No phone_only suppliers to reset');
-      }
-    } catch (error) {
-      logger.error('❌ Monthly reset failed:', error.message);
-    }
+      logger.info(`✅ Monthly reset: ${count} suppliers reset`);
+      return { suppliersReset: count };
+    }, { retry: false });
   }, {
     timezone: 'UTC' // 11 AM UTC = 6 AM EST
   });
@@ -1288,35 +1218,27 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 
   // Platform metrics snapshot (2:15 AM ET daily)
   cron.schedule('15 2 * * *', async () => {
-    logger.info('[PlatformMetrics] Starting daily computation...');
-    try {
+    await cronMonitor.run('platform-metrics', async () => {
       const metricsService = new PlatformMetricsService(sequelize, logger);
       const result = await metricsService.computeDaily();
       if (result.success) {
         logger.info(`[PlatformMetrics] Complete: ${result.day} (${result.durationMs}ms)`);
-      } else {
-        logger.info(`[PlatformMetrics] Skipped: ${result.reason}`);
       }
-    } catch (error) {
-      logger.error('[PlatformMetrics] Cron failed:', error.message);
-    }
+      return result;
+    });
   }, { timezone: 'America/New_York' });
   logger.info('📊 Platform metrics scheduled: daily at 2:15 AM ET');
 
   // Price alert daily check (8:00 AM ET)
   cron.schedule('0 8 * * *', async () => {
-    logger.info('[PriceAlert] Starting daily check...');
-    try {
+    await cronMonitor.run('price-alerts', async () => {
       const alertService = new PriceAlertService(sequelize, logger);
       const result = await alertService.runDailyCheck();
       if (result.success) {
-        logger.info(`[PriceAlert] Complete: sent=${result.alerts_sent}, skipped=${result.alerts_skipped}, zips=${result.zips_checked} (${result.durationMs}ms)`);
-      } else {
-        logger.info(`[PriceAlert] Skipped: ${result.reason}`);
+        logger.info(`[PriceAlert] sent=${result.alerts_sent}, skipped=${result.alerts_skipped} (${result.durationMs}ms)`);
       }
-    } catch (error) {
-      logger.error('[PriceAlert] Cron failed:', error.message);
-    }
+      return result;
+    });
   }, { timezone: 'America/New_York' });
   logger.info('🔔 Price alerts scheduled: daily at 8:00 AM ET');
 
@@ -1335,12 +1257,13 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   }
 
   // V2.3.0: Schedule Coverage Intelligence daily analysis
-  scheduleCoverageIntelligence();
+  // V3.1.0: Pass cronMonitor for cron health in daily email
+  scheduleCoverageIntelligence(cronMonitor);
 });
 
 // V2.3.0: Coverage Intelligence Scheduler
 // V2.4.0: Also sends Activity Analytics report
-function scheduleCoverageIntelligence() {
+function scheduleCoverageIntelligence(cronMonitor) {
   const CoverageIntelligenceService = require('./src/services/CoverageIntelligenceService');
   const CoverageReportMailer = require('./src/services/CoverageReportMailer');
   const ActivityAnalyticsService = require('./src/services/ActivityAnalyticsService');
@@ -1599,7 +1522,19 @@ function scheduleCoverageIntelligence() {
             logger.warn('[DailyReports] Failed to generate supplier diagnostics:', err.message);
           }
 
-          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics);
+          // V3.1.0: Gather cron health for daily email
+          let cronHealth = null;
+          try {
+            cronHealth = await cronMonitor.getDailyHealth();
+            const failedJobs = cronHealth.jobs.filter(j => j.status === 'failed' || j.status === 'missing');
+            if (failedJobs.length > 0) {
+              logger.warn(`[DailyReports] ${failedJobs.length} cron job(s) need attention: ${failedJobs.map(j => j.name).join(', ')}`);
+            }
+          } catch (err) {
+            logger.warn('[DailyReports] Failed to gather cron health:', err.message);
+          }
+
+          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics, cronHealth);
           logger.info('[DailyReports] Combined report sent');
         } else {
           logger.info('[DailyReports] No actionable items or activity - skipping email');

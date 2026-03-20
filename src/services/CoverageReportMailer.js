@@ -345,15 +345,15 @@ class CoverageReportMailer {
    * V2.12.0: Now includes click tracking stats for "Sniper" outreach
    * Reduces inbox clutter by combining both reports
    */
-  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null, supplierDiagnostics = null) {
+  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null, supplierDiagnostics = null, cronHealth = null) {
     const recipient = this.getRecipient();
     if (!recipient) {
       console.log('[CoverageReportMailer] No recipient configured');
       return false;
     }
 
-    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics);
-    const subject = this.getCombinedSubject(coverageReport, activityReport);
+    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics, cronHealth);
+    const subject = this.getCombinedSubject(coverageReport, activityReport, cronHealth);
 
     const success = await this.sendEmail(recipient, subject, html);
     if (success) {
@@ -365,7 +365,7 @@ class CoverageReportMailer {
   /**
    * Generate subject line for combined report
    */
-  getCombinedSubject(coverageReport, activityReport) {
+  getCombinedSubject(coverageReport, activityReport, cronHealth = null) {
     const date = new Date().toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric'
@@ -374,6 +374,12 @@ class CoverageReportMailer {
     const users = activityReport?.summary?.uniqueUsers || 0;
     const newLocs = coverageReport?.newLocations?.length || 0;
     const criticalGaps = coverageReport?.coverageGaps?.filter(g => g.supplierCount === 0).length || 0;
+
+    // V3.1.0: Flag cron failures in subject line
+    const cronFails = cronHealth?.jobs?.filter(j => j.status === 'failed' || j.status === 'missing').length || 0;
+    if (cronFails > 0) {
+      return `[CRON ALERT] SmartHeat: ${cronFails} job(s) failed, ${users} users - ${date}`;
+    }
 
     if (criticalGaps > 0) {
       return `[ACTION] SmartHeat: ${criticalGaps} gap${criticalGaps > 1 ? 's' : ''}, ${users} users - ${date}`;
@@ -392,7 +398,7 @@ class CoverageReportMailer {
    * V2.12.0: Added clickStats parameter for "Sniper" outreach tracking
    * V2.13.0: Added supplierDiagnostics for categorized failure analysis
    */
-  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null, supplierDiagnostics = null) {
+  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null, supplierDiagnostics = null, cronHealth = null) {
     const styles = `
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 650px; margin: 0 auto; }
       h2 { color: #1a1a1a; border-bottom: 2px solid #007AFF; padding-bottom: 8px; margin-top: 0; }
@@ -780,6 +786,45 @@ class CoverageReportMailer {
       <p>${report.supplierHealth.length} supplier${report.supplierHealth.length !== 1 ? 's have' : ' has'} no price updates in 7+ days.</p>
     ` : ''}
   `}
+
+  <!-- V3.1.0: Cron Health Section -->
+  ${cronHealth ? `
+    <div class="section-divider"></div>
+    <h3>${cronHealth.allHealthy ? '✅' : '⚠️'} System Health</h3>
+    ${cronHealth.scraperAlerts && cronHealth.scraperAlerts.length > 0 ? `
+      ${cronHealth.scraperAlerts.map(a => `
+        <p style="background: ${a.level === 'critical' ? '#fee2e2' : '#fef3c7'}; padding: 8px 12px; border-radius: 6px; margin: 4px 0;">
+          <strong>${a.level === 'critical' ? '🔴' : '🟡'} ${a.message}</strong>
+        </p>
+      `).join('')}
+    ` : ''}
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <tr style="background: #f0f0f0;">
+        <th style="text-align: left; padding: 6px 8px;">Job</th>
+        <th style="text-align: center; padding: 6px 8px;">Status</th>
+        <th style="text-align: right; padding: 6px 8px;">Duration</th>
+      </tr>
+      ${cronHealth.jobs.map(j => `
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 4px 8px;">${j.label}</td>
+          <td style="text-align: center; padding: 4px 8px;">
+            ${j.status === 'success' ? '✅' : j.status === 'retried' ? '🔄' : j.status === 'missing' ? '⏳' : '❌'}
+          </td>
+          <td style="text-align: right; padding: 4px 8px; color: #666;">
+            ${j.durationMs ? (j.durationMs / 1000).toFixed(1) + 's' : j.message || '—'}
+          </td>
+        </tr>
+      `).join('')}
+    </table>
+    ${cronHealth.errors && cronHealth.errors.length > 0 ? `
+      <h4 style="margin-top: 16px;">Recent Errors (24h)</h4>
+      ${cronHealth.errors.slice(0, 5).map(e => `
+        <p style="font-size: 12px; background: #fef2f2; padding: 6px 10px; border-radius: 4px; margin: 4px 0;">
+          <strong>${e.service}</strong>: ${e.message}
+        </p>
+      `).join('')}
+    ` : ''}
+  ` : ''}
 
   <div class="footer">
     <p>
