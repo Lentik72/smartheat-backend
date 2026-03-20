@@ -5807,7 +5807,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "11742" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "NY Holtsville/Suffolk County - COD. Droplet embedded POST.",
     "postalCodesServed": [
@@ -6163,7 +6163,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "12528" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "NY Highland/Ulster-Dutchess-Orange - COD. Droplet Fuel POST form.",
     "postalCodesServed": [
@@ -7818,7 +7818,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "07828" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "NJ Mount Olive/Morris-Sussex-Warren - COD. Droplet embedded POST.",
     "postalCodesServed": [
@@ -10205,7 +10205,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "06716" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "CT Wolcott/Hartford-Litchfield-New Haven - COD. Droplet embedded POST.",
     "postalCodesServed": [
@@ -11183,7 +11183,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "06096" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "CT Windsor Locks/Hartford County - COD. Droplet embedded POST.",
     "postalCodesServed": [
@@ -11868,7 +11868,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "06382" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "CT Uncasville/New London County - COD. Droplet embedded POST.",
     "postalCodesServed": [
@@ -18665,7 +18665,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "18235" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "PA Lehighton/Carbon County - Will-call confirmed. Droplet embedded POST. Serves Carbon/Schuylkill/Luzerne/Lehigh.",
     "postalCodesServed": [
@@ -18979,7 +18979,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "02891" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "RI Westerly/Washington-New London - COD confirmed (prior NOT COD note was wrong). Droplet embedded POST.",
     "postalCodesServed": [
@@ -19247,7 +19247,7 @@
     "pattern": "post_form",
     "lookupUrl": "https://orders.dropletfuel.com/wickedwarmoil/check-price/",
     "formBody": { "wcp_id": "2", "zip_code": "02831" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "RI Scituate + CT Windham + MA Worcester - COD. Droplet standalone POST.",
     "postalCodesServed": [
@@ -20528,7 +20528,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "03042" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "NH Southern/Rockingham-Hillsborough-Strafford - True COD. Droplet embedded POST.",
     "postalCodesServed": [
@@ -21169,7 +21169,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "03801" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "NH Greenland/Seacoast - COD. Droplet embedded POST.",
     "postalCodesServed": [
@@ -21353,7 +21353,7 @@
     "pattern": "post_form",
     "lookupUrl": "https://orders.dropletfuel.com/welchoil/check-price/",
     "formBody": { "wcp_id": "2", "zip_code": "03908" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "ME York → NH. Will-call primary. Droplet standalone POST.",
     "postalCodesServed": [
@@ -21604,7 +21604,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "12168" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "NY Stephentown/serves VT Bennington County - COD. Droplet embedded POST.",
     "postalCodesServed": [
@@ -23041,7 +23041,7 @@
     "pattern": "post_form",
     "lookupUrl": "https://orders.dropletfuel.com/vicandsons/check-price/",
     "formBody": { "wcp_id": "2", "zip_code": "04106" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "ME South Portland - COD. Droplet standalone POST. Parent of SoPo Fuel.",
     "postalCodesServed": [
@@ -23127,7 +23127,7 @@
     "pattern": "post_form",
     "lookupUrl": "https://orders.dropletfuel.com/sopofuel/check-price/",
     "formBody": { "wcp_id": "2", "zip_code": "04106" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "ME South Portland - Related to Vic & Sons. Droplet standalone POST. 2 ZIPs only.",
     "postalCodesServed": [
@@ -24170,7 +24170,7 @@
     "pattern": "post_form",
     "lookupUrl": "https://orders.dropletfuel.com/barrcofuel/check-price/",
     "formBody": { "wcp_id": "2", "zip_code": "10501" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "NY Westchester - COD. Droplet standalone POST. Slug: barrco-fuel",
     "postalCodesServed": [
@@ -27246,7 +27246,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "06082" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "CT East Windsor area - COD. Droplet embedded POST. Slug: ferguson-oil-ct",
     "postalCodesServed": [
@@ -34323,7 +34323,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "06489" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "CT Southington/Hartford-New Haven - COD. Droplet embedded POST. HOD #1110.",
     "postalCodesServed": [
@@ -34339,7 +34339,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "19030" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "PA Fairless Hills/Lower Bucks County - COD (Droplet). NOT T&M Fuel Attleboro MA.",
     "postalCodesServed": [
@@ -34353,7 +34353,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "02777" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "MA Swansea/Bristol County + RI Newport-Providence - COD. Droplet embedded POST.",
     "postalCodesServed": [
@@ -34369,7 +34369,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "02822" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "RI Exeter/South County - COD confirmed. Droplet embedded POST. Oil + kerosene + diesel.",
     "postalCodesServed": [
@@ -34385,7 +34385,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "03908" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "ME South Berwick → NH. COD. Droplet embedded POST. Oil + K1 kerosene + diesel.",
     "postalCodesServed": [
@@ -34400,7 +34400,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "19047" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "PA Langhorne/Bucks-Montgomery-Philadelphia - COD. Droplet embedded POST. Parent: ECI Comfort.",
     "postalCodesServed": [
@@ -34415,7 +34415,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "12548" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "NY Modena/Ulster-Dutchess-Orange - COD. Droplet embedded POST. NOT Affordable Fuel Corp (Putnam).",
     "postalCodesServed": [
@@ -34431,7 +34431,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "01475" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "MA Winchendon/North Central Worcester County - COD. Droplet embedded POST. Min 75 gal.",
     "postalCodesServed": [
@@ -34446,7 +34446,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "11764" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "NY Miller Place/Suffolk County - COD. Droplet embedded POST. Novellino family.",
     "postalCodesServed": [
@@ -34462,7 +34462,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "06254" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "CT North Franklin/Windham-New London-Tolland - COD. Droplet embedded POST. Min 50 gal. Vet/senior discount.",
     "postalCodesServed": [
@@ -34478,7 +34478,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "11706" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "NY Bay Shore/Suffolk County - COD. Droplet embedded POST.",
     "postalCodesServed": [
@@ -34495,7 +34495,7 @@
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "06712" },
-    "priceRegex": "tier_price_option\"[^>]*data-gal=\"150\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
     "hostGroup": "droplet",
     "notes": "CT Prospect/New Haven-Fairfield-Litchfield - COD. Droplet embedded POST. HOD #983. Min 50 gal.",
     "postalCodesServed": [

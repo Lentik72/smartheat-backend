@@ -26,7 +26,7 @@ const BROWSER_UA_POOL = [
   `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${_currentChrome - 2}.0.0.0 Safari/537.36`,
 ];
 
-const PRICE_REGEX = /tier_price_option"[^>]*data-gal="150"[^>]*>([0-9]+\.[0-9]{2,3})/;
+const PRICE_REGEX = /tier_price_option"[^>]*data-gal="[0-9]+"[^>]*>([0-9]+\.[0-9]{2,3})/;
 const FALLBACK_REGEX = /\$\s*([0-9]+\.[0-9]{2,3})/;
 
 async function checkSupplier(supplier) {

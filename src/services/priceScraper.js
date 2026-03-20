@@ -109,7 +109,7 @@ function extractPrice(html, config) {
 
   // If pattern is "table" (tiered pricing), get the appropriate tier price
   // If pattern is "direct", get the first match
-  if (config.pattern === 'table') {
+  if (config.pattern === 'table' || config.pattern === 'post_form') {
     // Sort prices ascending (lowest first = highest quantity tier)
     const sorted = [...matches].sort((a, b) => a - b);
 
