@@ -25,6 +25,11 @@ After changing key constants, run `npm run audit-docs`.
 - Frontend JS uses **relative URLs** for API calls (same-origin), never the Railway URL
 - Build script (`scripts/build.js`) minifies CSS/JS but does NOT touch server.js
 
+## Deploy & Rollback
+
+- **Deploy**: `npm run build && git push` (Railway auto-deploys from main). Verify with `npm run verify-deploy` (75s wait) or `npm run verify-deploy -- --skip-wait`. Use `--full` for API shape checks + sitemap + 404 handling.
+- **Rollback**: If a deploy breaks prod, revert the commit and push: `git revert HEAD && git push`. Railway will deploy the reverted state. Alternatively, use the Railway dashboard → Deployments → click the previous successful deploy → "Rollback". Failed deploys don't take the site down — Railway keeps the last healthy version active until a new healthy deploy succeeds.
+
 ## Coding Standards
 
 - No shortcuts, no patches, no hacks. Implement the proper solution on the first attempt.
