@@ -33,6 +33,109 @@ let shadowModeStartDate = null;
 let shadowModeStats = { executed: 0, byHour: {} };
 let phase11EmailSent = false; // Only send email once
 
+// V3.0.0: Host group rate limiting and circuit breaker (Droplet integration)
+const HOST_GROUP_MIN_SPACING_MS = 10 * 60 * 1000; // 10 minutes between same host group
+const HOST_GROUP_SLOW_SPACING_MS = 20 * 60 * 1000; // 20 minutes in slow mode
+const hostGroupLastScrape = new Map(); // hostGroup → Date timestamp
+
+// Circuit breaker state — in-memory only, resets on deploy (intentional)
+const circuitBreaker = {
+  droplet: {
+    blocks: 0,
+    windowStart: Date.now(),
+    slowMode: false,
+    paused: false,
+    pauseUntil: 0,
+    parseSuccesses: 0,
+    parseTotal: 0,
+  }
+};
+
+/**
+ * V3.0.0: Record a Droplet scrape result for circuit breaker tracking
+ * @param {'block'|'network'|'parse'|'success'} type - Failure classification
+ */
+function recordDropletResult(type) {
+  const state = circuitBreaker.droplet;
+
+  // Reset 1-hour window
+  if (Date.now() - state.windowStart > 3600000) {
+    state.blocks = 0;
+    state.windowStart = Date.now();
+    state.slowMode = false;
+  }
+
+  if (type === 'block') {
+    state.blocks++;
+    if (state.blocks >= 3) {
+      state.paused = true;
+      state.pauseUntil = Date.now() + 24 * 60 * 60 * 1000;
+      console.error('🚨 Droplet circuit breaker TRIPPED — 3+ blocks in 1h, pausing 24h');
+    } else if (state.blocks >= 2) {
+      state.slowMode = true;
+      console.warn('⚠️ Droplet slow mode — 2 blocks in 1h, doubling spacing');
+    }
+  }
+
+  // Track parse success rate
+  if (type === 'success' || type === 'parse') {
+    state.parseTotal++;
+    if (type === 'success') state.parseSuccesses++;
+
+    if (state.parseTotal >= 10) {
+      const rate = state.parseSuccesses / state.parseTotal;
+      if (rate < 0.8) {
+        console.warn(`⚠️ Droplet parsing degraded: ${Math.round(rate * 100)}% success rate (${state.parseSuccesses}/${state.parseTotal})`);
+      }
+    }
+  }
+}
+
+/**
+ * V3.0.0: Check if a Droplet scrape should proceed
+ * @returns {boolean} true if OK to scrape, false if blocked by circuit breaker or spacing
+ */
+function canScrapeDroplet() {
+  const state = circuitBreaker.droplet;
+  if (state.paused && Date.now() < state.pauseUntil) return false;
+  if (state.paused && Date.now() >= state.pauseUntil) {
+    // Auto-resume after pause window
+    state.paused = false;
+    state.blocks = 0;
+    state.slowMode = false;
+    console.info('ℹ️ Droplet circuit breaker reset — resuming scraping');
+  }
+  return true;
+}
+
+/**
+ * V3.0.0: Check host group spacing — returns ms to wait, or 0 if OK
+ * @param {string} hostGroup - Host group identifier (e.g., 'droplet')
+ * @returns {number} ms to wait before scraping, or 0 if ready
+ */
+function getHostGroupDelay(hostGroup) {
+  if (!hostGroup) return 0;
+
+  const lastScrape = hostGroupLastScrape.get(hostGroup);
+  if (!lastScrape) return 0;
+
+  const state = circuitBreaker[hostGroup];
+  const minSpacing = (state && state.slowMode)
+    ? HOST_GROUP_SLOW_SPACING_MS
+    : HOST_GROUP_MIN_SPACING_MS;
+
+  const elapsed = Date.now() - lastScrape;
+  return elapsed < minSpacing ? minSpacing - elapsed : 0;
+}
+
+/**
+ * V3.0.0: Mark that a host group was just scraped
+ * @param {string} hostGroup - Host group identifier
+ */
+function markHostGroupScrape(hostGroup) {
+  if (hostGroup) hostGroupLastScrape.set(hostGroup, Date.now());
+}
+
 /**
  * Calculate stable offset for a supplier based on ID hash
  * @param {string} supplierId - UUID of the supplier
@@ -268,8 +371,6 @@ async function executeScrape(supplierId, supplierName, sequelize, logger) {
 
   // Active mode: perform actual scrape
   try {
-    logger.info(`🔄 [ACTIVE] Scraping ${supplierName} at ${time}...`);
-
     // Import scraper
     const { scrapeSupplierPrice, loadScrapeConfig, getConfigForSupplier } = require('./priceScraper');
 
@@ -293,7 +394,36 @@ async function executeScrape(supplierId, supplierName, sequelize, logger) {
       return;
     }
 
+    // V3.0.0: Host group checks — kill switch, circuit breaker, spacing
+    if (config.hostGroup === 'droplet') {
+      if (process.env.SCRAPE_SKIP_DROPLET === 'true') {
+        logger.info(`   ⏭️  Skipped ${supplierName} (SCRAPE_SKIP_DROPLET)`);
+        return;
+      }
+      if (!canScrapeDroplet()) {
+        logger.info(`   ⏸️  Skipped ${supplierName} (Droplet circuit breaker active)`);
+        return;
+      }
+      const hostDelay = getHostGroupDelay('droplet');
+      if (hostDelay > 0) {
+        logger.info(`   ⏳ Delaying ${supplierName} ${Math.round(hostDelay / 60000)}min (host group spacing)`);
+        await new Promise(r => setTimeout(r, hostDelay));
+      }
+    }
+
+    logger.info(`🔄 [ACTIVE] Scraping ${supplierName} at ${time}...`);
+
     const result = await scrapeSupplierPrice(supplier, config);
+
+    // V3.0.0: Track Droplet results for circuit breaker
+    if (config.hostGroup === 'droplet') {
+      markHostGroupScrape('droplet');
+      if (result.success) {
+        recordDropletResult('success');
+      } else if (result.dropletFailureType) {
+        recordDropletResult(result.dropletFailureType);
+      }
+    }
 
     if (result.success) {
       // Save to database
@@ -591,6 +721,12 @@ module.exports = {
   getSchedulePreview,
   isWithinWindow,
   getShadowModeStats,
+
+  // V3.0.0: Host group / circuit breaker
+  recordDropletResult,
+  canScrapeDroplet,
+  getHostGroupDelay,
+  markHostGroupScrape,
 
   // Constants
   WINDOW_START_HOUR,

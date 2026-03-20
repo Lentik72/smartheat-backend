@@ -19,6 +19,19 @@ const https = require('https');
 
 const USER_AGENT = 'HomeHeatBot/1.0 (gethomeheat.com; published-price-aggregation)';
 
+// V3.0.0: Browser UA pool for post_form pattern (Droplet integration).
+// POST to a check-price form with a bot UA is unnatural — use clean browser UA.
+// Chrome version computed from date so UAs stay fresh without manual updates.
+// Chrome 132 released ~2025-01-14; new major version every ~5 weeks.
+const _chromeBase = 132;
+const _chromeBaseDate = new Date('2025-01-14');
+const _currentChrome = _chromeBase + Math.floor((Date.now() - _chromeBaseDate.getTime()) / (35 * 24 * 60 * 60 * 1000));
+const BROWSER_UA_POOL = [
+  `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${_currentChrome}.0.0.0 Safari/537.36`,
+  `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${_currentChrome - 1}.0.0.0 Safari/537.36`,
+  `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${_currentChrome - 2}.0.0.0 Safari/537.36`,
+];
+
 // Agent for sites with SSL certificate issues
 const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
@@ -189,6 +202,18 @@ async function scrapeSupplierPriceOnce(supplier, config) {
       };
     }
 
+    // V3.0.0: Kill switch for Droplet-hosted suppliers
+    if (config.hostGroup === 'droplet' && process.env.SCRAPE_SKIP_DROPLET === 'true') {
+      return {
+        supplierId: supplier.id,
+        supplierName: supplier.name,
+        success: false,
+        error: 'Droplet scraping disabled (SCRAPE_SKIP_DROPLET)',
+        duration: Date.now() - startTime,
+        retryable: false
+      };
+    }
+
     // Normalize URL
     let url = supplier.website;
     if (!url.startsWith('http')) {
@@ -270,6 +295,117 @@ async function scrapeSupplierPriceOnce(supplier, config) {
       }
     }
 
+    // V3.0.0: post_form pattern — POST form-encoded data to supplier's price endpoint.
+    // Used for Droplet Fuel-powered suppliers where prices are behind a ZIP code form.
+    if (config.pattern === 'post_form' && config.formBody) {
+      // Determine POST target URL
+      const postUrl = config.lookupUrl || url;
+
+      // ZIP rotation: pick random ZIP from service area to reduce fingerprinting
+      const zip = config.postalCodesServed?.length
+        ? config.postalCodesServed[Math.floor(Math.random() * config.postalCodesServed.length)]
+        : config.formBody.zip_code;
+      const formParams = new URLSearchParams({ ...config.formBody, zip_code: zip });
+      const browserUA = BROWSER_UA_POOL[Math.floor(Math.random() * BROWSER_UA_POOL.length)];
+
+      // Referer = supplier homepage (not the endpoint) — matches real browser behavior
+      let referer = supplier.website;
+      if (referer && !referer.startsWith('http')) referer = 'https://' + referer;
+
+      const postController = new AbortController();
+      const postTimeout = setTimeout(() => postController.abort(), 10000);
+
+      try {
+        const resp = await fetch(postUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': browserUA,
+            'Accept': 'text/html,application/xhtml+xml',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': referer || '',
+          },
+          body: formParams.toString(),
+          signal: postController.signal,
+        });
+        clearTimeout(postTimeout);
+
+        if (!resp.ok) {
+          // Classify failure for circuit breaker
+          const isBlock = resp.status === 403;
+          return {
+            supplierId: supplier.id, supplierName: supplier.name, success: false,
+            error: `POST HTTP ${resp.status}`,
+            duration: Date.now() - startTime,
+            retryable: resp.status >= 500,
+            dropletFailureType: isBlock ? 'block' : 'network',
+          };
+        }
+
+        const postHtml = await resp.text();
+
+        // Droplet-specific block detection in 200 responses
+        if (/captcha|blocked|rate.limit/i.test(postHtml)) {
+          return {
+            supplierId: supplier.id, supplierName: supplier.name, success: false,
+            error: 'Block text detected in POST response',
+            duration: Date.now() - startTime,
+            retryable: false,
+            dropletFailureType: 'block',
+          };
+        }
+
+        // Extract price using existing extractPrice() with config's priceRegex
+        const postPrice = extractPrice(postHtml, config);
+        const postFuelPrices = extractFuelPrices(postHtml, config);
+
+        if (postPrice === null) {
+          return {
+            supplierId: supplier.id, supplierName: supplier.name, success: false,
+            error: 'Price not found in POST response',
+            duration: Date.now() - startTime,
+            retryable: false,
+            fuelPrices: postFuelPrices,
+            dropletFailureType: 'parse',
+          };
+        }
+
+        const postRange = FUEL_PRICE_RANGES.heating_oil || [2.00, 5.50];
+        if (postPrice < postRange[0] || postPrice > postRange[1]) {
+          return {
+            supplierId: supplier.id, supplierName: supplier.name, success: false,
+            error: `POST price $${postPrice} outside valid range`,
+            duration: Date.now() - startTime,
+            retryable: false,
+            fuelPrices: postFuelPrices,
+            dropletFailureType: 'parse',
+          };
+        }
+
+        const postSourceType = config.displayable === false ? 'aggregator_signal' : 'scraped';
+        return {
+          supplierId: supplier.id, supplierName: supplier.name, success: true,
+          pricePerGallon: postPrice, minGallons: 150, fuelType: 'heating_oil',
+          sourceType: postSourceType, sourceUrl: postUrl,
+          scrapedAt: new Date(),
+          expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+          duration: Date.now() - startTime,
+          isAggregator: config.displayable === false,
+          fuelPrices: postFuelPrices,
+        };
+      } catch (postErr) {
+        clearTimeout(postTimeout);
+        const isTimeout = postErr.name === 'AbortError';
+        return {
+          supplierId: supplier.id, supplierName: supplier.name, success: false,
+          error: isTimeout ? 'POST timeout' : postErr.message,
+          duration: Date.now() - startTime,
+          retryable: isTimeout || postErr.code === 'ECONNRESET' || postErr.code === 'ETIMEDOUT',
+          dropletFailureType: 'network',
+        };
+      }
+    }
+
     // Fetch with timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
@@ -309,7 +445,8 @@ async function scrapeSupplierPriceOnce(supplier, config) {
 
     if (!response.ok) {
       // V2.9.0: For 403 blocks, try got-scraping with browser-like TLS fingerprint
-      if (response.status === 403) {
+      // V3.0.0: Skip for post_form — got-scraping does GET, would be wrong for POST endpoints
+      if (response.status === 403 && config.pattern !== 'post_form') {
         const gotScraping = await getGotScraping();
         if (gotScraping) {
           try {

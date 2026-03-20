@@ -605,6 +605,8 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/121-add-nashua-nh-suppliers', label: 'Shattuck Oil + Absco Heating (Nashua NH area)' },
           { path: './src/migrations/122-add-susquehanna-pa-suppliers', label: 'Windswept + Economy Heating (Susquehanna PA / Southern Tier NY)' },
           { path: './src/migrations/123-add-morgan-oil-virginia', label: 'Morgan Oil Corporation (Marshall, VA — Loudoun/Fauquier 5-county)' },
+          { path: './src/migrations/124-add-do-not-pitch-flag', label: 'Add do_not_pitch column to suppliers' },
+          { path: './src/migrations/125-add-droplet-suppliers', label: 'Droplet Fuel: 19 new suppliers + do_not_pitch flag on 30 Droplet suppliers' },
         ];
 
         let migrationErrors = 0;

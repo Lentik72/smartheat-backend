@@ -70,6 +70,7 @@ async function main() {
       FROM suppliers s
       WHERE s.active = true
         AND s.claimed_at IS NULL
+        AND s.do_not_pitch IS NOT TRUE
         AND s.phone IS NOT NULL
         AND s.email IS NOT NULL
         AND jsonb_array_length(COALESCE(s.postal_codes_served, '[]'::jsonb)) > 0
