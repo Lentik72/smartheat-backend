@@ -377,10 +377,13 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, histo
     ? new Date(countyStats.last_scrape_at).toISOString().split('T')[0]
     : today;
 
-  // Cross-links (conditional on eligibility)
+  // Cross-links (conditional on eligibility + file existence)
+  const { crossLinkExists } = require('./lib/county-data');
   let crossLinks = '';
-  crossLinks += `\n            <li><a href="/heating-cost/${stateAbbrev}/${countySlug}">Heating Cost Comparison in ${county} County</a></li>`;
-  if (eligibility.avgBill) {
+  if (crossLinkExists(`/heating-cost/${stateAbbrev}/${countySlug}`)) {
+    crossLinks += `\n            <li><a href="/heating-cost/${stateAbbrev}/${countySlug}">Heating Cost Comparison in ${county} County</a></li>`;
+  }
+  if (eligibility.avgBill && crossLinkExists(`/average-heating-bill/${stateAbbrev}/${countySlug}`)) {
     crossLinks += `\n            <li><a href="/average-heating-bill/${stateAbbrev}/${countySlug}">Average Heating Bill in ${county} County</a></li>`;
   }
 
@@ -647,8 +650,8 @@ function generateStatePageHTML(stateCode, stateInfo, stateStats, countyData) {
 
         <h3>Related</h3>
         <ul>
-            <li><a href="/heating-cost/${stateAbbrev}/">Heating Costs in ${stateName}</a></li>
-            <li><a href="/average-heating-bill/${stateAbbrev}/">Average Heating Bills in ${stateName}</a></li>
+            ${crossLinkExists(`/heating-cost/${stateAbbrev}`) ? `<li><a href="/heating-cost/${stateAbbrev}/">Heating Costs in ${stateName}</a></li>` : ''}
+            ${crossLinkExists(`/average-heating-bill/${stateAbbrev}`) ? `<li><a href="/average-heating-bill/${stateAbbrev}/">Average Heating Bills in ${stateName}</a></li>` : ''}
             <li><a href="/tools/heating-cost-calculator">Heating Cost Calculator</a></li>
             <li><a href="/prices/${stateAbbrev}/">${stateName} Oil Prices</a></li>
         </ul>

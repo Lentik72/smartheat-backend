@@ -146,10 +146,13 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, costs
     ? new Date(countyStats.last_scrape_at).toISOString().split('T')[0]
     : today;
 
-  // Cross-links (conditional on eligibility)
+  // Cross-links (conditional on eligibility + file existence)
+  const { crossLinkExists } = require('./lib/county-data');
   let crossLinks = '';
-  crossLinks += `\n            <li><a href="/heating-cost/${stateAbbrev}/${countySlug}">Heating Cost Comparison in ${county} County</a></li>`;
-  if (eligibility.priceTrend) {
+  if (crossLinkExists(`/heating-cost/${stateAbbrev}/${countySlug}`)) {
+    crossLinks += `\n            <li><a href="/heating-cost/${stateAbbrev}/${countySlug}">Heating Cost Comparison in ${county} County</a></li>`;
+  }
+  if (eligibility.priceTrend && crossLinkExists(`/price-trend/${stateAbbrev}/${countySlug}`)) {
     crossLinks += `\n            <li><a href="/price-trend/${stateAbbrev}/${countySlug}">Oil Price Trends in ${county} County</a></li>`;
   }
 

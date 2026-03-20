@@ -28,7 +28,12 @@ require('dotenv').config();
 const { getAllSuppliers, getCurrentPrices, getSuppliersForZips, computeFreshness } = require('./lib/supplier-data');
 
 // Fuel cost computation
-const { computeFuelCosts, init: initCountyData, getNavHTML } = require('./lib/county-data');
+const { computeFuelCosts, init: initCountyData, getNavHTML, crossLinkExists } = require('./lib/county-data');
+
+// V3.1.0: Safe cross-link — returns empty string if target doesn't exist on disk
+function safeLink(href, html) {
+  return crossLinkExists(href) ? html : '';
+}
 
 // Location resolver for ZIP lookups
 const locationResolver = require('../src/services/locationResolver');
@@ -809,7 +814,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
     <!-- Heating Cost Insights -->
     <section class="insight-section">
       <div class="insight-grid">
-        <a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-bill" data-referrer="insights_block">
+        ${crossLinkExists(`/average-heating-bill/${stateCode.toLowerCase()}/${slug}`) ? `<a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-bill" data-referrer="insights_block">` : '<div class="insight-card">'}
           <div class="insight-value">$${fuelCosts.fuels['heating-oil'] ? fuelCosts.fuels['heating-oil'].monthlyCost : '—'}/mo</div>
           <div class="insight-label">Monthly Heating Bill</div>
           <div class="insight-detail">2,000 sq ft home · Oil heat</div>
@@ -970,13 +975,14 @@ ${countySuppliers.map(s => {
       <p class="cta-micro android-only" style="display:none">Works like an app — no download needed.</p>
     </section>
 
-    <!-- Cross-sell: Heating Cost Comparison -->
+    <!-- Cross-sell: Heating Cost Comparison (only show links to pages that exist) -->
+    ${(crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) || crossLinkExists(`/average-heating-bill/${stateCode.toLowerCase()}/${slug}`) || crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slug}`)) ? `
     <section style="background: var(--primary-orange-light); padding: 1.25rem; border-radius: 8px; margin: 2rem 0;">
       <strong>What does heating cost in ${escapeHtml(countyName)} County?</strong>
-      <a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Heating costs</a> |
-      <a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Average bill</a> |
-      <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Price trends</a>
-    </section>
+      ${crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) ? `<a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Heating costs</a>` : ''}
+      ${crossLinkExists(`/average-heating-bill/${stateCode.toLowerCase()}/${slug}`) ? `${crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) ? ' | ' : ''}<a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Average bill</a>` : ''}
+      ${crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slug}`) ? `| <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Price trends</a>` : ''}
+    </section>` : ''}
 
     ${crossLinkSet.has(`${stats.county_name}|${stats.state_code}`) ? `
     <!-- V2.12.0: Cross-link to other fuel -->
@@ -1256,7 +1262,7 @@ ${countySuppliers.map(s => {
     <!-- Heating Cost Insights -->
     <section class="insight-section">
       <div class="insight-grid">
-        <a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-bill" data-referrer="insights_block">
+        ${crossLinkExists(`/average-heating-bill/${stateCode.toLowerCase()}/${slug}`) ? `<a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-bill" data-referrer="insights_block">` : '<div class="insight-card">'}
           <div class="insight-value">$${fuelCosts.fuels['heating-oil'] ? fuelCosts.fuels['heating-oil'].monthlyCost : '—'}/mo</div>
           <div class="insight-label">Monthly Heating Bill</div>
           <div class="insight-detail">2,000 sq ft home · Oil heat</div>
@@ -1370,13 +1376,14 @@ ${countySuppliers.map(s => {
       </div>
     </section>
 
-    <!-- Cross-sell: Heating Cost Comparison -->
+    <!-- Cross-sell: Heating Cost Comparison (only show links to pages that exist) -->
+    ${(crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) || crossLinkExists(`/average-heating-bill/${stateCode.toLowerCase()}/${slug}`) || crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slug}`)) ? `
     <section style="background: var(--primary-orange-light); padding: 1.25rem; border-radius: 8px; margin: 2rem 0;">
       <strong>What does heating cost in ${escapeHtml(countyName)} County?</strong>
-      <a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Heating costs</a> |
-      <a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Average bill</a> |
-      <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Price trends</a>
-    </section>
+      ${crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) ? `<a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Heating costs</a>` : ''}
+      ${crossLinkExists(`/average-heating-bill/${stateCode.toLowerCase()}/${slug}`) ? `${crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) ? ' | ' : ''}<a href="/average-heating-bill/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Average bill</a>` : ''}
+      ${crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slug}`) ? `| <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Price trends</a>` : ''}
+    </section>` : ''}
 
     ${crossLinkSet.has(`${stats.county_name}|${stats.state_code}`) ? `
     <!-- V2.12.0: Cross-link to other fuel -->

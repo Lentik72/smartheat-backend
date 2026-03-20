@@ -227,6 +227,19 @@ function getCountyEligibility(county, recentPriceCount) {
   };
 }
 
+/**
+ * V3.1.0: Check if a cross-linked page actually exists on disk.
+ * Resolves /path → website/path.html, website/path/index.html, or website/path
+ * Call AFTER init() so WEBSITE_DIR is set.
+ */
+function crossLinkExists(urlPath) {
+  if (!WEBSITE_DIR) return false;
+  const clean = urlPath.replace(/^\//, '').replace(/\/$/, '');
+  return fsSync.existsSync(path.join(WEBSITE_DIR, clean + '.html'))
+      || fsSync.existsSync(path.join(WEBSITE_DIR, clean, 'index.html'))
+      || fsSync.existsSync(path.join(WEBSITE_DIR, clean));
+}
+
 // ── HTML helpers ────────────────────────────────────────────────
 
 const _fileHashCache = {};
@@ -422,6 +435,7 @@ module.exports = {
   getCountyWeeklyHistory,
   // Eligibility
   getCountyEligibility,
+  crossLinkExists,
   // HTML helpers
   getFileHash,
   getCssPath,

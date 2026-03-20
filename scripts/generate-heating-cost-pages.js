@@ -122,12 +122,13 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, costs
     }
   }
 
-  // Cross-links (conditional on eligibility)
+  // Cross-links (conditional on eligibility + file existence)
+  const { crossLinkExists } = require('./lib/county-data');
   let crossLinks = '';
-  if (eligibility.avgBill) {
+  if (eligibility.avgBill && crossLinkExists(`/average-heating-bill/${stateAbbrev}/${countySlug}`)) {
     crossLinks += `\n            <li><a href="/average-heating-bill/${stateAbbrev}/${countySlug}">Average Heating Bill in ${county} County</a></li>`;
   }
-  if (eligibility.priceTrend) {
+  if (eligibility.priceTrend && crossLinkExists(`/price-trend/${stateAbbrev}/${countySlug}`)) {
     crossLinks += `\n            <li><a href="/price-trend/${stateAbbrev}/${countySlug}">Oil Price Trends in ${county} County</a></li>`;
   }
 

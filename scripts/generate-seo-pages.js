@@ -31,7 +31,7 @@ const locationResolver = require('../src/services/locationResolver');
 const { getAllSuppliers, getCurrentPrices, getSuppliersForZips } = require('./lib/supplier-data');
 
 // Shared nav/CSS helpers
-const { getNavHTML, init: initCountyData } = require('./lib/county-data');
+const { getNavHTML, init: initCountyData, crossLinkExists } = require('./lib/county-data');
 
 // Configuration
 const WEBSITE_DIR = path.join(__dirname, '../website');
@@ -1445,25 +1445,33 @@ function generatePageHTML(data, FUEL) {
       <p>${otherStates.map(s => `<a href="/prices/${s.abbrev}/">${s.name}</a>`).join(' · ')}</p>
     </section>` : '';
 
-  // Heating cost + avg bill + price trend cross-links
+  // Heating cost + avg bill + price trend cross-links (only link to pages that exist)
   let heatingCostLinkHtml = '';
   if (type === 'county' && county && stateInfo) {
     const countySlug = county.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    heatingCostLinkHtml = `
-    <section style="background: var(--primary-orange-light); padding: 1.25rem; border-radius: 8px; margin: 2rem 0;">
-      <strong>What does heating cost in ${escapeHtml(county)} County?</strong>
-      <a href="/heating-cost/${stateInfo.abbrev}/${countySlug}" style="font-weight: 600;">Heating costs</a> |
-      <a href="/average-heating-bill/${stateInfo.abbrev}/${countySlug}" style="font-weight: 600;">Average bill</a> |
-      <a href="/price-trend/${stateInfo.abbrev}/${countySlug}" style="font-weight: 600;">Price trends</a>
-    </section>`;
+    const hcLink = crossLinkExists(`/heating-cost/${stateInfo.abbrev}/${countySlug}`) ? `<a href="/heating-cost/${stateInfo.abbrev}/${countySlug}" style="font-weight: 600;">Heating costs</a>` : '';
+    const abLink = crossLinkExists(`/average-heating-bill/${stateInfo.abbrev}/${countySlug}`) ? `<a href="/average-heating-bill/${stateInfo.abbrev}/${countySlug}" style="font-weight: 600;">Average bill</a>` : '';
+    const ptLink = crossLinkExists(`/price-trend/${stateInfo.abbrev}/${countySlug}`) ? `<a href="/price-trend/${stateInfo.abbrev}/${countySlug}" style="font-weight: 600;">Price trends</a>` : '';
+    const links = [hcLink, abLink, ptLink].filter(Boolean).join(' | ');
+    if (links) {
+      heatingCostLinkHtml = `
+      <section style="background: var(--primary-orange-light); padding: 1.25rem; border-radius: 8px; margin: 2rem 0;">
+        <strong>What does heating cost in ${escapeHtml(county)} County?</strong>
+        ${links}
+      </section>`;
+    }
   } else if (type === 'state' && stateInfo) {
-    heatingCostLinkHtml = `
-    <section style="background: var(--primary-orange-light); padding: 1.25rem; border-radius: 8px; margin: 2rem 0;">
-      <strong>What does heating cost in ${escapeHtml(stateInfo.name)}?</strong>
-      <a href="/heating-cost/${stateInfo.abbrev}/" style="font-weight: 600;">Heating costs</a> |
-      <a href="/average-heating-bill/${stateInfo.abbrev}/" style="font-weight: 600;">Average bill</a> |
-      <a href="/price-trend/${stateInfo.abbrev}/" style="font-weight: 600;">Price trends</a>
-    </section>`;
+    const hcLink = crossLinkExists(`/heating-cost/${stateInfo.abbrev}`) ? `<a href="/heating-cost/${stateInfo.abbrev}/" style="font-weight: 600;">Heating costs</a>` : '';
+    const abLink = crossLinkExists(`/average-heating-bill/${stateInfo.abbrev}`) ? `<a href="/average-heating-bill/${stateInfo.abbrev}/" style="font-weight: 600;">Average bill</a>` : '';
+    const ptLink = crossLinkExists(`/price-trend/${stateInfo.abbrev}`) ? `<a href="/price-trend/${stateInfo.abbrev}/" style="font-weight: 600;">Price trends</a>` : '';
+    const links = [hcLink, abLink, ptLink].filter(Boolean).join(' | ');
+    if (links) {
+      heatingCostLinkHtml = `
+      <section style="background: var(--primary-orange-light); padding: 1.25rem; border-radius: 8px; margin: 2rem 0;">
+        <strong>What does heating cost in ${escapeHtml(stateInfo.name)}?</strong>
+        ${links}
+      </section>`;
+    }
   }
 
   // Determine relative path depth for assets
