@@ -604,6 +604,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/120-dashboard-indexes', label: 'Dashboard composite indexes' },
           { path: './src/migrations/121-add-nashua-nh-suppliers', label: 'Shattuck Oil + Absco Heating (Nashua NH area)' },
           { path: './src/migrations/122-add-susquehanna-pa-suppliers', label: 'Windswept + Economy Heating (Susquehanna PA / Southern Tier NY)' },
+          { path: './src/migrations/123-add-morgan-oil-virginia', label: 'Morgan Oil Corporation (Marshall, VA — Loudoun/Fauquier 5-county)' },
         ];
 
         let migrationErrors = 0;
