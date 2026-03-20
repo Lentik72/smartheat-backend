@@ -1419,7 +1419,7 @@ function generatePageHTML(data, FUEL) {
     <section class="hub-links">
       <h3>Cities in ${county} County</h3>
       <div class="link-grid">
-        ${cityLinks.slice(0, 20).map(c =>
+        ${cityLinks.map(c =>
           `<a href="${c.slug}">${escapeHtml(c.name)} <span class="count">(${c.count})</span></a>`
         ).join('\n        ')}
       </div>

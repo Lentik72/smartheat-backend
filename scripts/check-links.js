@@ -55,13 +55,25 @@ function buildFileIndex(files) {
   return index;
 }
 
-// Extract internal links from HTML
-function extractLinks(content) {
+// Extract internal links from HTML (absolute + relative)
+function extractLinks(content, filePath) {
   const links = [];
-  const regex = /href="(\/[^"#?]*)/g;
+  const regex = /href="([^"#?]*)/g;
   let match;
+  const fileDir = filePath ? '/' + path.relative(WEBSITE_DIR, path.dirname(filePath)).replace(/\\/g, '/') : '';
+
   while ((match = regex.exec(content)) !== null) {
-    links.push(match[1]);
+    const href = match[1];
+    // Skip external, mailto, tel, javascript
+    if (href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:') || href === '') continue;
+
+    if (href.startsWith('/')) {
+      links.push(href); // Absolute
+    } else {
+      // Relative — resolve against file's directory
+      const resolved = fileDir + '/' + href;
+      links.push(resolved.replace(/\/+/g, '/'));
+    }
   }
   return [...new Set(links)]; // dedupe per file
 }
@@ -85,7 +97,7 @@ let totalLinks = 0;
 
 for (const file of filesToCheck) {
   const content = fs.readFileSync(file, 'utf-8');
-  const links = extractLinks(content);
+  const links = extractLinks(content, file);
   const relFile = path.relative(WEBSITE_DIR, file);
 
   for (const link of links) {
@@ -122,13 +134,15 @@ if (sampleSize === 0) { // Only check orphans on full run
     const rel = '/' + path.relative(WEBSITE_DIR, file).replace(/\\/g, '/');
     const relNoIndex = rel.replace('/index.html', '/');
     const relBare = rel.replace('/index.html', '');
+    const relNoExt = rel.replace(/\.html$/, ''); // /heating-cost/ma/barnstable
 
     // Skip special pages
     if (rel === '/index.html' || rel === '/404.html' || rel.startsWith('/admin/')) continue;
 
     const count = (inboundCount.get(rel) || 0) +
                   (inboundCount.get(relNoIndex) || 0) +
-                  (inboundCount.get(relBare) || 0);
+                  (inboundCount.get(relBare) || 0) +
+                  (inboundCount.get(relNoExt) || 0);
 
     if (count === 0) {
       orphaned.push(rel);
