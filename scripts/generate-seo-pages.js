@@ -1605,6 +1605,13 @@ ${supplierRows}
     <!-- Cross-sell: Heating Cost Comparison -->
     ${heatingCostLinkHtml}
 
+    <!-- V3.1.0: Cross-fuel link for county pages (oil ↔ kerosene) -->
+    ${type === 'county' && county && stateInfo && crossLinkExists(`${FUEL.crossLinkUrl}/${stateInfo.abbrev}/${county.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-county`) ? `
+    <section class="cross-fuel-banner">
+      <h3>Also Available in ${escapeHtml(county)} County</h3>
+      <a href="${FUEL.crossLinkUrl}/${stateInfo.abbrev}/${county.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-county" class="cross-fuel-link">View ${FUEL.crossLinkLabel} Prices in ${escapeHtml(county)} County →</a>
+    </section>` : ''}
+
     <!-- Hub Links (Counties/Cities) - for non-state pages -->
     ${type !== 'state' ? hubLinksHtml : ''}
 
