@@ -228,8 +228,8 @@
   "afcofuel.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NY Kingston/Ulster County - COD price shown",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "NY Kingston/Ulster County - COD price shown. $ and price split across spans with &nbsp; wrapper.",
+    "priceRegex": "&nbsp;([0-9]+\\.[0-9]{3})&nbsp;",
     "postalCodesServed": [
       "12401",
       "12402",
@@ -3926,8 +3926,8 @@
   "stormvilleoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NY - Stormville Oil - Dutchess/Putnam/Upper Westchester. Shows X.XXX per gallon.",
-    "priceRegex": "([0-9]+\\.[0-9]{3})\\s*per gallon",
+    "notes": "NY - Stormville Oil - Dutchess/Putnam/Upper Westchester. Price in super-large-text div, 'per gallon' in separate div below.",
+    "priceRegex": "super-large-text\">([0-9]+\\.[0-9]{3})",
     "postalCodesServed": [
       "10501",
       "10505",
@@ -7306,10 +7306,10 @@
     ]
   },
   "eaglepetroleumco.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "table",
     "targetTier": 1,
-    "notes": "NJ/PA - Eagle Petroleum - tiered pricing. data-price attr has prices. 150gal ($3.099) is lowest of 2 tiers shown.",
+    "notes": "DISABLED 2026-03-20: site returning 503 errors. NJ/PA - Eagle Petroleum - tiered pricing.",
     "priceRegex": "data-price=\"([0-9]+\\.[0-9]{2,3})\"",
     "postalCodesServed": [
       "07001",
@@ -9540,9 +9540,9 @@
     ]
   },
   "joesfuelct.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "CT Bridgeport/Fairfield - daily updated price",
+    "notes": "DISABLED 2026-03-20: Squarespace shows bare '$' with no number — price manually removed. CT Bridgeport/Fairfield.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "06468",
@@ -11717,9 +11717,9 @@
     ]
   },
   "westconnenergy.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "table",
-    "notes": "CT Southwestern - 17 towns - cash/credit pricing",
+    "notes": "DISABLED 2026-03-20: '$Call' for all tiers — prices blanked. CT Southwestern - 17 towns.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "06401",
@@ -11792,9 +11792,9 @@
     ]
   },
   "reddooroil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "CT Hartford County - Simsbury area",
+    "notes": "DISABLED 2026-03-20: 'call for pricing' due to market volatility. CT Hartford County - Simsbury area.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "06001",
@@ -11996,12 +11996,12 @@
     ]
   },
   "williamsfueloil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "table",
     "targetTier": 2,
     "name": "Williams Fuel Oil",
     "phone": "(860) 684-9123",
-    "notes": "CT Stafford Springs/Tolland County - COD tiered pricing (100-149/150-299/300-499/500+). targetTier=2 gets 150 gal price.",
+    "notes": "DISABLED 2026-03-20: tier labels shown but all dollar amounts removed. CT Stafford Springs/Tolland County.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "01028",
@@ -13821,8 +13821,9 @@
     ]
   },
   "curtinbrosoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
+    "notes": "DISABLED 2026-03-20: 'Call for price'. MA Halifax/South Shore.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
   "daddysoil.com": {
@@ -14681,10 +14682,10 @@
     ]
   },
   "brodeurandsons.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
     "pricePath": "/fuel-oil/",
-    "notes": "MA New Bedford/Bristol County - Family owned since 1929. COD table pricing on fuel-oil page.",
+    "notes": "DISABLED 2026-03-20: COD pricing table exists but all price fields empty. MA New Bedford/Bristol County.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "02330",
@@ -15286,9 +15287,9 @@
     ]
   },
   "aorlandooil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "MA Framingham/Middlesex-Worcester - Will-call confirmed. Wix SSR, price on homepage.",
+    "notes": "DISABLED 2026-03-20: Wix SSR — no dollar amounts in static HTML (490KB page). Price behind Wix JS runtime. MA Framingham/Middlesex-Worcester.",
     "priceRegex": "Today.{0,10}Oil Price \\$([0-9]+\\.[0-9]{2})",
     "postalCodesServed": [
       "01519",
@@ -16323,9 +16324,10 @@
     }
   },
   "ferrofueloil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
     "pricePath": "/fuel-delivery/heating-oil-delivery/",
+    "notes": "DISABLED 2026-03-20: 'Today's Oil Price $' with empty price field. PA Boothwyn/Delaware County.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
   },
   "tcfueloil.com": {
@@ -17510,9 +17512,9 @@
     ]
   },
   "ransonfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "PA Pottstown - COD heating oil - price displayed on homepage",
+    "notes": "DISABLED 2026-03-20: 'call the office for pricing' due to market volatility. PA Pottstown - COD heating oil.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "19341",
@@ -19205,8 +19207,70 @@
   "saveonoilcompany.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "RI - Save-On Oil - Providence - COD rate displayed",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "notes": "RI - Save-On Oil - Pawtucket - COD rate displayed. Serves most of RI + Southern MA border towns.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "02703",
+      "02760",
+      "02762",
+      "02769",
+      "02771",
+      "02804",
+      "02806",
+      "02809",
+      "02814",
+      "02815",
+      "02816",
+      "02817",
+      "02818",
+      "02822",
+      "02825",
+      "02827",
+      "02828",
+      "02829",
+      "02830",
+      "02832",
+      "02835",
+      "02852",
+      "02857",
+      "02858",
+      "02860",
+      "02861",
+      "02863",
+      "02864",
+      "02865",
+      "02874",
+      "02876",
+      "02879",
+      "02881",
+      "02882",
+      "02885",
+      "02886",
+      "02887",
+      "02888",
+      "02889",
+      "02891",
+      "02892",
+      "02893",
+      "02895",
+      "02896",
+      "02903",
+      "02904",
+      "02905",
+      "02906",
+      "02907",
+      "02908",
+      "02909",
+      "02910",
+      "02911",
+      "02914",
+      "02915",
+      "02916",
+      "02917",
+      "02919",
+      "02920",
+      "02921"
+    ]
   },
   "niteoil.net": {
     "enabled": true,
@@ -19286,9 +19350,9 @@
     ]
   },
   "rambonespragueoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "RI North Scituate - Providence/Kent counties - 100 gal min - Drupal 7 price block",
+    "notes": "DISABLED 2026-03-20: Drupal price block empty (<div class=price></div>). RI North Scituate - Providence/Kent counties.",
     "priceRegex": "class=\"price\">([0-9]+\\.[0-9]{2})",
     "postalCodesServed": [
       "02802",
@@ -20321,9 +20385,9 @@
     ]
   },
   "jimmyjrsoil.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "NH Weare/Central - True COD. Cash price shown.",
+    "notes": "DISABLED 2026-03-20: 'Due to Market Volatility Call the office'. NH Weare/Central - True COD.",
     "priceRegex": "Cash price\\s*:\\s*\\$([0-9]+\\.[0-9]{2})",
     "postalCodesServed": [
       "03045",
@@ -21113,10 +21177,10 @@
     ]
   },
   "noblefuelsinc.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
     "pricePath": "/online-store/ols/products/home-heating-kerosine-hm-htn-krs1",
-    "notes": "ME North Berwick → NH Seacoast. COD cash/check only. Price in OG meta tag on product page. NO www prefix (TLS fails with www).",
+    "notes": "DISABLED 2026-03-20: product:price:amount set to 0.00 — price zeroed out. ME North Berwick → NH Seacoast. COD cash/check only.",
     "priceRegex": "product:price:amount\" content=\"([0-9]+\\.[0-9]{2})\"",
     "postalCodesServed": [
       "03801",
@@ -21491,11 +21555,11 @@
     }
   },
   "gechafuels.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
     "name": "Gecha Fuels",
     "phone": "(802) 483-9333",
-    "notes": "VT Pittsford/Rutland-Addison County - COD cash discount. Price of the Day in Revolution Slider.",
+    "notes": "DISABLED 2026-03-20: 'contact our office for the current daily rate'. VT Pittsford/Rutland-Addison County - COD cash discount.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2})/gal",
     "postalCodesServed": [
       "05251",
@@ -23275,9 +23339,9 @@
     ]
   },
   "jjsullivaninc.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
-    "notes": "CT Guilford/New Haven County - Will-call since 1925. Today's Fuel Prices on homepage.",
+    "notes": "DISABLED 2026-03-20: no fuel prices in static HTML — Beaver Builder site, price removed or behind JS. CT Guilford/New Haven County.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "06405",
