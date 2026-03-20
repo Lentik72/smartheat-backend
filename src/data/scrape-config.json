@@ -6159,7 +6159,7 @@
     ]
   },
   "everreadyoilny.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "12528" },
@@ -18661,7 +18661,7 @@
     ]
   },
   "tirpakenergy.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "18235" },
@@ -19243,7 +19243,7 @@
     ]
   },
   "wickedwarmoil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "lookupUrl": "https://orders.dropletfuel.com/wickedwarmoil/check-price/",
     "formBody": { "wcp_id": "2", "zip_code": "02831" },
@@ -21165,7 +21165,7 @@
     ]
   },
   "flagshipfuelco.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "03801" },
@@ -21349,7 +21349,7 @@
     ]
   },
   "welchheatingoil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "lookupUrl": "https://orders.dropletfuel.com/welchoil/check-price/",
     "formBody": { "wcp_id": "2", "zip_code": "03908" },
@@ -21600,7 +21600,7 @@
     ]
   },
   "morsefuels.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "12168" },
@@ -23037,7 +23037,7 @@
     ]
   },
   "vicandsonsfuelco.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "lookupUrl": "https://orders.dropletfuel.com/vicandsons/check-price/",
     "formBody": { "wcp_id": "2", "zip_code": "04106" },
@@ -23123,7 +23123,7 @@
     ]
   },
   "sopofuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "lookupUrl": "https://orders.dropletfuel.com/sopofuel/check-price/",
     "formBody": { "wcp_id": "2", "zip_code": "04106" },
@@ -24166,7 +24166,7 @@
     ]
   },
   "barrcofuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "lookupUrl": "https://orders.dropletfuel.com/barrcofuel/check-price/",
     "formBody": { "wcp_id": "2", "zip_code": "10501" },
@@ -27242,7 +27242,7 @@
     ]
   },
   "ferguson-oil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": { "wcp_id": "2", "zip_code": "06082" },
