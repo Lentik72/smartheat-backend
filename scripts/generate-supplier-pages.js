@@ -577,19 +577,25 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
 
   // makesOffer — only if BOTH currency AND price exist
   if (hasPrice && latestPrice.price_per_gallon) {
+    const priceValidUntil = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
     schemaData.makesOffer = {
       "@type": "Offer",
       "priceCurrency": "USD",
       "price": latestPrice.price_per_gallon.toFixed(2),
+      "priceValidUntil": priceValidUntil,
       "itemOffered": {
         "@type": "Product",
         "name": "Heating Oil",
+        "description": "#2 heating oil for residential delivery, priced per gallon COD.",
+        "image": "https://www.gethomeheat.com/images/heating-oil-product.jpg",
+        "brand": { "@type": "Brand", "name": "#2 Heating Oil" },
         "offers": {
           "@type": "Offer",
           "price": latestPrice.price_per_gallon.toFixed(2),
           "priceCurrency": "USD",
           "unitCode": "GLL",
-          "availability": "https://schema.org/InStock"
+          "availability": "https://schema.org/InStock",
+          "priceValidUntil": priceValidUntil
         }
       }
     };

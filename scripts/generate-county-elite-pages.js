@@ -539,7 +539,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
             "priceCurrency": "USD",
             "unitCode": "GLL",
             "unitText": "gallon"
-          }
+          },
+          "priceValidUntil": new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
         }
       }
     }))

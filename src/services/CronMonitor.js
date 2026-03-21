@@ -155,7 +155,7 @@ class CronMonitor {
         { name: 'price-trend-pages', label: 'Price Trend Pages (11:25 PM)', window: 26 },
         { name: 'sitemap', label: 'Sitemap (11:30 PM)', window: 26 },
         { name: 'platform-metrics', label: 'Platform Metrics (2:15 AM)', window: 26 },
-        { name: 'price-alerts', label: 'Price Alerts (8 AM)', window: 26 },
+        // price-alerts (8 AM) intentionally excluded — runs after the 6 AM email
       ];
 
       // Get latest heartbeat per job in the last 26 hours
