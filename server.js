@@ -609,6 +609,8 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/124-add-do-not-pitch-flag', label: 'Add do_not_pitch column to suppliers' },
           { path: './src/migrations/125-add-droplet-suppliers', label: 'Droplet Fuel: 19 new suppliers + do_not_pitch flag on 30 Droplet suppliers' },
           { path: './src/migrations/126-add-cron-heartbeats', label: 'Cron heartbeats + error log tables (Phase 2 automation)' },
+          { path: './src/migrations/127-reset-stale-audit-suppliers', label: 'Reset backoff for 5 stale-audit suppliers' },
+          { path: './src/migrations/128-add-sunrise-heating-stamford', label: 'Sunrise Heating Fuels (Stamford NY — Delaware/Schoharie/Greene/Otsego)' },
         ];
 
         let migrationErrors = 0;
