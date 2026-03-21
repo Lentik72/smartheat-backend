@@ -11618,6 +11618,17 @@
       "06489"
     ]
   },
+  "brothersheatingoil.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MD Hagerstown/Washington County - No prices on website. Cash/credit prepay for all deliveries. 125 gal min.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "21713", "21715", "21719", "21720", "21722", "21733", "21734",
+      "21740", "21741", "21742", "21746", "21750", "21756", "21767",
+      "21779", "21782", "21783", "21795"
+    ]
+  },
   "brothersoil.com": {
     "enabled": true,
     "pattern": "direct",
@@ -19470,6 +19481,17 @@
       "02915"
     ]
   },
+  "steffeyfindlay.com": {
+    "enabled": false,
+    "pattern": "direct",
+    "notes": "DISABLED: MD Hagerstown/Washington County - No prices on website. COD + will-call confirmed. Est. 1937.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "21713", "21715", "21719", "21720", "21722", "21733", "21734",
+      "21740", "21741", "21742", "21746", "21750", "21756", "21767",
+      "21779", "21782", "21783", "21795"
+    ]
+  },
   "stopandgooil.com": {
     "enabled": false,
     "pattern": "direct",
@@ -22244,7 +22266,10 @@
       "22611",
       "22620",
       "22663",
-      "22712"
+      "22712",
+      "21713", "21715", "21719", "21720", "21722", "21733", "21734",
+      "21740", "21741", "21742", "21746", "21750", "21756", "21767",
+      "21779", "21782", "21783", "21795"
     ]
   },
   "_section_ME": "=== MAINE ===",

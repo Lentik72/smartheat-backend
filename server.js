@@ -612,6 +612,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/127-reset-stale-audit-suppliers', label: 'Reset backoff for 5 stale-audit suppliers' },
           { path: './src/migrations/128-add-sunrise-heating-stamford', label: 'Sunrise Heating Fuels (Stamford NY — Delaware/Schoharie/Greene/Otsego)' },
           { path: './src/migrations/129-add-jk-sons-fuel-margaretville', label: 'JK & Sons Fuel Oil (Margaretville NY — Delaware/6-county)' },
+          { path: './src/migrations/130-add-hancock-md-suppliers', label: 'Steffey & Findlay + Brothers Heating Oil (Hancock/Hagerstown MD)' },
         ];
 
         let migrationErrors = 0;
