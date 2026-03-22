@@ -63,11 +63,10 @@
     var zip = options.zip || '';
     var lowestPrice = options.lowestPrice || null;
     var defaultThreshold = options.defaultThreshold || (lowestPrice ? Math.max(lowestPrice - 0.15, 1.50) : null);
-    var isPartialZip = zip.length < 5;
     var isUpdateMode = getUrlParam('update_alert') === '1';
 
-    // Check if returning visitor with existing alert
-    var saved = !isPartialZip ? getSavedAlert(zip) : null;
+    // Check if returning visitor with existing alert (only if we have a full ZIP)
+    var saved = zip.length >= 5 ? getSavedAlert(zip) : null;
 
     if (saved && !isUpdateMode) {
       // Show "alert active" state
@@ -80,12 +79,12 @@
       container.style.display = '';
       container.querySelector('.price-alert-update-link').addEventListener('click', function (e) {
         e.preventDefault();
-        renderForm(container, zip, lowestPrice, saved.threshold, isPartialZip);
+        renderForm(container, zip, lowestPrice, saved.threshold);
       });
       return;
     }
 
-    renderForm(container, zip, lowestPrice, isUpdateMode && saved ? saved.threshold : defaultThreshold, isPartialZip);
+    renderForm(container, zip, lowestPrice, isUpdateMode && saved ? saved.threshold : defaultThreshold);
 
     // Auto-scroll if update_alert=1
     if (isUpdateMode) {
@@ -93,7 +92,7 @@
     }
   };
 
-  function renderForm(container, zip, lowestPrice, threshold, isPartialZip) {
+  function renderForm(container, zip, lowestPrice, threshold) {
     var hasThreshold = threshold !== null && threshold !== undefined && !isNaN(threshold);
     var roundedThreshold = hasThreshold ? Math.round(threshold * 100) / 100 : null;
     var savings = lowestPrice && roundedThreshold ? calcSavings(lowestPrice, roundedThreshold) : null;
@@ -103,15 +102,13 @@
 
     container.innerHTML =
       '<div class="price-alert-inner">' +
-        '<div class="price-alert-title">Get alerted when prices drop</div>' +
+        '<div class="price-alert-title">Alert me when prices drop to my target</div>' +
         '<form class="price-alert-form">' +
           '<div class="price-alert-fields">' +
-            (isPartialZip
-              ? '<div class="price-alert-field">' +
-                  '<label class="price-alert-label">Your ZIP</label>' +
-                  '<input type="text" class="price-alert-zip" maxlength="5" pattern="\\d{5}" placeholder="' + (zip || 'ZIP') + '" value="' + zip + '" required>' +
-                '</div>'
-              : '<input type="hidden" class="price-alert-zip" value="' + zip + '">') +
+            '<div class="price-alert-field">' +
+              '<label class="price-alert-label">Your ZIP</label>' +
+              '<input type="text" class="price-alert-zip" maxlength="5" pattern="\\d{5}" placeholder="' + (zip || 'ZIP') + '" value="' + zip + '" required>' +
+            '</div>' +
             '<div class="price-alert-field">' +
               '<label class="price-alert-label">Target price</label>' +
               '<div class="price-alert-input-wrap">' +
@@ -145,8 +142,8 @@
     // Track the reference price for savings/warnings (updated by ZIP lookup)
     var refPrice = lowestPrice;
 
-    // When ZIP is entered and no price context yet, fetch local price to suggest a threshold
-    if (isPartialZip && !lowestPrice) {
+    // When ZIP is entered/changed and no price context yet, fetch local price to suggest a threshold
+    if (!lowestPrice) {
       var zipInput = container.querySelector('.price-alert-zip');
       zipInput.addEventListener('blur', function () {
         var z = zipInput.value.trim();

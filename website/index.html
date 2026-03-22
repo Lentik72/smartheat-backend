@@ -28,7 +28,7 @@
 
     <script>(function(){var u=navigator.userAgent;document.documentElement.className+=(/Android/i.test(u)?' platform-android':/iPhone|iPad|iPod/i.test(u)||('MacIntel'===navigator.platform&&navigator.maxTouchPoints>1)?' platform-ios':' platform-desktop');})();</script>
     <link rel="preload" as="image" type="image/webp" href="images/screenshot-1-home.webp">
-    <link rel="stylesheet" href="style.min.css?v=2ad730ee">
+    <link rel="stylesheet" href="style.min.css?v=fb9ca8cd">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
@@ -491,16 +491,16 @@
                     <span class="hero-badge desktop-only">Free for Homeowners</span>
                     <span class="hero-badge android-only">Free for Homeowners</span>
                 </div>
-                <h1>Live heating oil prices in your area.</h1>
-                <p class="hero-tagline">See what suppliers are charging near you — and know when to refill before you run out.</p>
-                <p class="hero-emotional">Never get surprised by an empty tank.</p>
+                <h1>You're probably overpaying for heating oil.</h1>
+                <p class="hero-tagline">Most homeowners pay $300–$800 more per year than they need to. Compare live prices from local suppliers and stop overpaying.</p>
+                <p class="hero-emotional">No signup. No contracts. Just the truth about what heating oil costs near you.</p>
 
                 <form class="hero-zip-form" id="hero-zip-form">
                     <input type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5"
                            placeholder="Enter your ZIP code" id="hero-zip-input" required>
-                    <button type="submit"><span class="btn-full">See Local Prices</span><span class="btn-short">See Prices</span></button>
+                    <button type="submit"><span class="btn-full">See What You Should Pay</span><span class="btn-short">Check Prices</span></button>
                 </form>
-                <p class="hero-zip-helper">We'll show prices near your ZIP. No signup needed.</p>
+                <p class="hero-zip-helper">See real supplier prices near your ZIP. No signup needed.</p>
                 <div class="hero-zip-error" id="hero-zip-error"></div>
                 <div class="hero-zip-expand" id="hero-zip-expand" style="display:none;">
                     <p class="expand-msg" id="expand-msg"></p>
@@ -522,7 +522,7 @@
 
                 <p class="hero-proof-line">
                     <span class="pulse-dot"></span>
-                    Updated daily from <strong id="hero-supplier-count" class="loading-pulse">---</strong> real supplier listings
+                    <strong id="hero-supplier-count" class="loading-pulse">---</strong> suppliers compared · prices updated <span id="hero-as-of">today</span>
                 </p>
 
                 <p class="hero-trust-line">Free. No account. No hardware required.</p>
@@ -740,6 +740,6 @@
     <script src="js/nav.js?v=0dd6767d"></script>
     <script src="js/widgets.js?v=567bef31"></script>
     <script src="js/pwa.js?v=e90c4348"></script>
-    <script src="js/home.js?v=1f6a3ee6"></script>
+    <script src="js/home.js?v=86423ba2"></script>
 </body>
 </html>

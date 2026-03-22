@@ -158,6 +158,12 @@
             var asOfDate = new Date(data.asOf);
             var asOfStr = 'As of ' + asOfDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             setDynamic('stat-as-of', asOfStr);
+            // Hero proof line — show "today" or date
+            var now = new Date();
+            var heroAsOf = (asOfDate.toDateString() === now.toDateString())
+                ? 'today'
+                : asOfDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            setDynamic('hero-as-of', heroAsOf);
         }
     }
 

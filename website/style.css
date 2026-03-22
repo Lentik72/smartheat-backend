@@ -1392,6 +1392,12 @@ body {
     line-height: 1.2;
 }
 
+.prices-savings-hook {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-orange);
+    margin-bottom: 0.25rem;
+}
 .prices-subtitle {
     font-size: 1.1rem;
     font-weight: 500;

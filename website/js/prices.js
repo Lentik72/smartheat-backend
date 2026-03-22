@@ -205,8 +205,20 @@
         }
       }
 
-      // Default alert form renders on DOMContentLoaded via price-alerts.js auto-init.
-      // ZIP-blur lookup populates threshold with local data when user enters their ZIP.
+      // Seed default alert form with national lowest price + remembered ZIP
+      if (data.topDeals && data.topDeals.length > 0 && typeof window.initPriceAlertForm === 'function') {
+        var nationalLowest = parseFloat(data.topDeals[0].price);
+        if (nationalLowest > 0) {
+          var rememberedZip = '';
+          try { rememberedZip = localStorage.getItem('homeheat_last_zip') || ''; } catch (e) {}
+          if (!/^\d{5}$/.test(rememberedZip)) rememberedZip = '';
+          window.initPriceAlertForm('#default-alert-container', {
+            zip: rememberedZip,
+            lowestPrice: nationalLowest,
+            defaultThreshold: Math.max(nationalLowest - 0.20, 1.50)
+          });
+        }
+      }
 
     } catch (err) {
       // Silently fail - keep static values from HTML
