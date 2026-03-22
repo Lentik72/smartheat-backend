@@ -614,6 +614,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/129-add-jk-sons-fuel-margaretville', label: 'JK & Sons Fuel Oil (Margaretville NY — Delaware/6-county)' },
           { path: './src/migrations/130-add-hancock-md-suppliers', label: 'Steffey & Findlay + Brothers Heating Oil (Hancock/Hagerstown MD)' },
           { path: './src/migrations/131-add-woodruff-energy-bridgeton', label: 'Woodruff Energy (Bridgeton NJ — 6-county South Jersey)' },
+          { path: './src/migrations/132-add-patriot-discount-oil-nj', label: 'Patriot Discount Oil (Whitehouse NJ — Hunterdon/Warren/Somerset/Morris)' },
         ];
 
         let migrationErrors = 0;
