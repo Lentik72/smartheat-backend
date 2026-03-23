@@ -3026,11 +3026,12 @@ let currentMapView = 'engagement';
 // Load Coverage tab
 async function loadCoverage() {
   try {
-    const [overview, geographic, unified, alertSubs] = await Promise.all([
+    const [overview, geographic, unified, alertSubs, coverageRequests] = await Promise.all([
       api(`/overview?days=${currentDays}`),
       api(`/geographic?days=${currentDays}`),
       cachedApi(`/unified?days=${currentDays}`),
-      api('/alert-subscribers').catch(() => ({ total: 0, topZips: [], recent: [], zipDensity: [] }))
+      api('/alert-subscribers').catch(() => ({ total: 0, topZips: [], recent: [], zipDensity: [] })),
+      api('/coverage-requests').catch(() => ({ total: 0, topZips: [], fuelTotals: {}, recent: [] }))
     ]);
 
     updateHeaderMetrics(unified);
@@ -3163,6 +3164,50 @@ async function loadCoverage() {
           `;
           alertBody.appendChild(row);
         });
+      }
+    }
+
+    // Render coverage requests panel
+    const crTotalEl = document.getElementById('coverage-requests-total');
+    if (crTotalEl) crTotalEl.textContent = `(${coverageRequests.total} active)`;
+
+    const crFuelEl = document.getElementById('coverage-requests-fuel-totals');
+    if (crFuelEl && coverageRequests.fuelTotals) {
+      const ft = coverageRequests.fuelTotals;
+      crFuelEl.textContent = `Oil: ${ft.oil || 0} · Kerosene: ${ft.kero || 0} · Propane: ${ft.propane || 0}`;
+    }
+
+    const crBody = document.getElementById('coverage-requests-body');
+    if (crBody) {
+      crBody.innerHTML = '';
+      if (coverageRequests.topZips.length === 0) {
+        crBody.innerHTML = '<tr><td colspan="8" class="no-data">No coverage requests yet</td></tr>';
+      } else {
+        coverageRequests.topZips.forEach(z => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${z.zip}</td>
+            <td>${z.city || '—'}</td>
+            <td>${z.state ? z.state.toUpperCase() : '—'}</td>
+            <td><strong>${z.requests}</strong></td>
+            <td>${z.oil}</td>
+            <td>${z.kero}</td>
+            <td>${z.propane}</td>
+            <td>${z.hasCoverageNow ? '<span style="color:#22c55e">Yes</span>' : '<span style="color:#ef4444">No</span>'}</td>
+          `;
+          crBody.appendChild(row);
+        });
+      }
+    }
+
+    const crRecentBody = document.getElementById('coverage-requests-recent-body');
+    if (crRecentBody) {
+      if (coverageRequests.recent.length === 0) {
+        crRecentBody.textContent = 'No recent signups.';
+      } else {
+        crRecentBody.innerHTML = coverageRequests.recent.map(r =>
+          `<div style="margin-bottom: 4px;">${r.email} — ${r.zip} ${r.city ? '(' + r.city + ', ' + (r.state || '').toUpperCase() + ')' : ''} — ${r.fuels.join(', ')} — ${new Date(r.createdAt).toLocaleDateString()}</div>`
+        ).join('');
       }
     }
 

@@ -4508,4 +4508,100 @@ router.get('/alert-subscribers', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/coverage-requests - Coverage request demand signal
+router.get('/coverage-requests', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  try {
+    // Check if table exists
+    const [tableCheck] = await sequelize.query(`
+      SELECT 1 FROM information_schema.tables WHERE table_name = 'coverage_requests'
+    `);
+    if (tableCheck.length === 0) {
+      return res.json({ total: 0, topZips: [], fuelTotals: {}, recent: [] });
+    }
+
+    // Total active requests
+    const [totalRows] = await sequelize.query(`
+      SELECT COUNT(*) AS total FROM coverage_requests WHERE active = true
+    `);
+
+    // Top 15 ZIPs by request count with fuel type breakdown
+    const [topZips] = await sequelize.query(`
+      SELECT
+        cr.zip_code,
+        cr.city,
+        cr.state,
+        COUNT(*) AS request_count,
+        COUNT(*) FILTER (WHERE 'heating_oil' = ANY(fuel_types)) AS oil_count,
+        COUNT(*) FILTER (WHERE 'kerosene' = ANY(fuel_types)) AS kero_count,
+        COUNT(*) FILTER (WHERE 'propane' = ANY(fuel_types)) AS propane_count,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM suppliers s
+          WHERE s.active = true AND s.allow_price_display = true
+            AND EXISTS (
+              SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) z WHERE z = cr.zip_code
+            )
+        ) THEN true ELSE false END AS has_coverage_now
+      FROM coverage_requests cr
+      WHERE cr.active = true
+      GROUP BY cr.zip_code, cr.city, cr.state
+      ORDER BY request_count DESC
+      LIMIT 15
+    `);
+
+    // Fuel type totals
+    const [fuelRows] = await sequelize.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE 'heating_oil' = ANY(fuel_types)) AS oil,
+        COUNT(*) FILTER (WHERE 'kerosene' = ANY(fuel_types)) AS kero,
+        COUNT(*) FILTER (WHERE 'propane' = ANY(fuel_types)) AS propane
+      FROM coverage_requests
+      WHERE active = true
+    `);
+
+    // Recent 20 signups (masked emails)
+    const [recent] = await sequelize.query(`
+      SELECT
+        CONCAT(LEFT(email, 2), '***@', SPLIT_PART(email, '@', 2)) AS masked_email,
+        zip_code, city, state, fuel_types, created_at
+      FROM coverage_requests
+      WHERE active = true
+      ORDER BY created_at DESC
+      LIMIT 20
+    `);
+
+    res.json({
+      total: parseInt(totalRows[0].total) || 0,
+      topZips: topZips.map(z => ({
+        zip: z.zip_code,
+        city: z.city,
+        state: z.state,
+        requests: parseInt(z.request_count),
+        oil: parseInt(z.oil_count),
+        kero: parseInt(z.kero_count),
+        propane: parseInt(z.propane_count),
+        hasCoverageNow: z.has_coverage_now
+      })),
+      fuelTotals: {
+        oil: parseInt(fuelRows[0]?.oil) || 0,
+        kero: parseInt(fuelRows[0]?.kero) || 0,
+        propane: parseInt(fuelRows[0]?.propane) || 0
+      },
+      recent: recent.map(r => ({
+        email: r.masked_email,
+        zip: r.zip_code,
+        city: r.city,
+        state: r.state,
+        fuels: r.fuel_types,
+        createdAt: r.created_at
+      }))
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Coverage requests error:', error.message);
+    res.status(500).json({ error: 'Failed to load coverage requests', details: error.message });
+  }
+});
+
 module.exports = router;

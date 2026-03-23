@@ -2344,6 +2344,240 @@ body {
     cursor: pointer;
 }
 
+/* Coverage Request Form (empty state) */
+.empty-state-avg {
+    font-size: 0.95rem;
+    color: var(--text-gray);
+    margin-bottom: 1.5rem;
+}
+
+.coverage-request-wrapper {
+    max-width: 440px;
+    margin: 1.5rem auto;
+    text-align: left;
+}
+
+.coverage-request-heading {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary, #1a1a1a);
+    margin-bottom: 0.75rem;
+    text-align: center;
+}
+
+.coverage-request-fuels {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.coverage-request-fuel-primary {
+    font-weight: 600;
+    color: var(--text-primary, #1a1a1a);
+}
+
+.coverage-request-fuel-also {
+    color: var(--text-gray);
+    font-size: 0.85rem;
+}
+
+.coverage-request-fuel-secondary {
+    color: var(--text-gray);
+    font-size: 0.85rem;
+}
+
+.coverage-request-fuel-secondary input,
+.coverage-request-fuel-primary input {
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.coverage-request-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.coverage-request-input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.coverage-request-zip {
+    width: 70px;
+    flex-shrink: 0;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.coverage-request-honeypot {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+    height: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+.coverage-request-btn {
+    padding: 0.6rem 1.25rem;
+    background: var(--primary-orange, #F5A623);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.coverage-request-btn:hover {
+    opacity: 0.9;
+}
+
+.coverage-request-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.coverage-request-note {
+    font-size: 0.8rem;
+    color: var(--text-gray);
+    text-align: center;
+    margin: 0;
+}
+
+.coverage-request-error {
+    font-size: 0.85rem;
+    color: #dc2626;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.coverage-request-already {
+    text-align: center;
+    padding: 1rem;
+    background: #f0f7ff;
+    border-radius: 8px;
+}
+
+.coverage-request-already p {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+    color: var(--text-primary, #1a1a1a);
+}
+
+.coverage-request-update-link {
+    font-size: 0.85rem;
+    color: #2563eb;
+}
+
+.coverage-request-success {
+    text-align: center;
+    padding: 1.25rem;
+    background: #f0fdf4;
+    border-radius: 8px;
+}
+
+.coverage-request-success-icon {
+    font-size: 2rem;
+    color: #16a34a;
+    margin-bottom: 0.5rem;
+}
+
+.coverage-request-success p {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    color: var(--text-primary, #1a1a1a);
+}
+
+.coverage-request-success-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.coverage-request-success-links a {
+    font-size: 0.9rem;
+    color: #2563eb;
+}
+
+/* Nearby ZIP suggestions */
+.nearby-zips-section {
+    margin: 1.25rem 0;
+    text-align: center;
+}
+
+.nearby-zips-label {
+    font-size: 0.9rem;
+    color: var(--text-gray);
+    margin-bottom: 0.5rem;
+}
+
+.nearby-zip-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.nearby-zip-btn {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: #2563eb;
+    font-family: inherit;
+}
+
+.nearby-zip-btn:hover {
+    background: #f0f7ff;
+    border-color: #2563eb;
+}
+
+@media (max-width: 600px) {
+    .coverage-request-form {
+        flex-wrap: wrap;
+    }
+    .coverage-request-input {
+        flex: 1 1 100%;
+        margin-bottom: 0.25rem;
+    }
+    .coverage-request-zip {
+        width: auto;
+        flex: 1;
+    }
+    .coverage-request-btn {
+        flex: 1;
+    }
+    .coverage-request-fuels {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .coverage-request-fuel-also {
+        margin-top: 0.1rem;
+    }
+    .coverage-request-wrapper {
+        margin: 1rem auto;
+    }
+}
+
 /* App CTA Section */
 .app-cta-section {
     text-align: center;

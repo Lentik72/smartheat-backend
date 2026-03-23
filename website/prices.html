@@ -22,7 +22,7 @@
     <meta name="keywords" content="heating oil prices, heating oil cost, oil prices by zip code, cheap heating oil, heating oil comparison, heating oil NY, heating oil CT, heating oil MA, heating oil NJ, heating oil PA">
     <link rel="canonical" href="https://www.gethomeheat.com/prices">
 
-    <link rel="stylesheet" href="style.min.css?v=fb9ca8cd">
+    <link rel="stylesheet" href="style.min.css?v=2dcec529">
 
     <!-- Schema markup for SEO -->
     <script id="schema-markup" type="application/ld+json">
@@ -78,7 +78,7 @@
                         "priceCurrency": "USD",
                         "unitCode": "GLL",
                         "availability": "https://schema.org/InStock",
-                        "priceValidUntil": "2026-03-29"
+                        "priceValidUntil": "2026-03-30"
                     }
                 }
             },
@@ -101,7 +101,7 @@
                         "priceCurrency": "USD",
                         "unitCode": "GLL",
                         "availability": "https://schema.org/InStock",
-                        "priceValidUntil": "2026-03-29"
+                        "priceValidUntil": "2026-03-30"
                     }
                 }
             },
@@ -124,7 +124,7 @@
                         "priceCurrency": "USD",
                         "unitCode": "GLL",
                         "availability": "https://schema.org/InStock",
-                        "priceValidUntil": "2026-03-29"
+                        "priceValidUntil": "2026-03-30"
                     }
                 }
             },
@@ -147,7 +147,7 @@
                         "priceCurrency": "USD",
                         "unitCode": "GLL",
                         "availability": "https://schema.org/InStock",
-                        "priceValidUntil": "2026-03-29"
+                        "priceValidUntil": "2026-03-30"
                     }
                 }
             },
@@ -170,7 +170,7 @@
                         "priceCurrency": "USD",
                         "unitCode": "GLL",
                         "availability": "https://schema.org/InStock",
-                        "priceValidUntil": "2026-03-29"
+                        "priceValidUntil": "2026-03-30"
                     }
                 }
             }
@@ -741,7 +741,7 @@
     <section class="prices-hero-v2">
         <h1>Today's Heating Oil Prices Near You</h1>
         <p class="prices-savings-hook">You could save $40–$120 per delivery just by comparing suppliers.</p>
-        <p class="prices-subtitle">Compare today's heating oil prices from <span id="pulse-suppliers">51+</span> suppliers across <span id="pulse-states">12</span> states in the Northeast. Updated daily.</p>
+        <p class="prices-subtitle">Compare today's heating oil prices from <span id="pulse-suppliers">46+</span> suppliers across <span id="pulse-states">12</span> states in the Northeast. Updated daily.</p>
 
         <form id="zip-form" class="zip-form">
             <input
@@ -773,7 +773,7 @@
         <div class="lowest-price-card" id="lowest-price-card" style="min-height: 120px;">
                 <p class="lowest-label">Lowest K-1 Kerosene Price Today</p>
                 <span class="lowest-value">$5.46/gal</span>
-                <span class="lowest-vs-avg">$0.31 below Northeast average</span>
+                <span class="lowest-vs-avg">$0.33 below Northeast average</span>
                 <p class="lowest-supplier">O&#039;Farrell Energy — Bowdoinham, ME</p>
             </div>
     </section>
@@ -781,7 +781,7 @@
     <!-- Default Leaderboard - National Dashboard -->
     <section id="default-leaderboard" class="leaderboard-v2">
         <h2>Today's Heating Oil Prices Across the Northeast</h2>
-        <p class="leaderboard-date" id="leaderboard-date">Updated March 21, 2026</p>
+        <p class="leaderboard-date" id="leaderboard-date">Updated March 22, 2026</p>
         <p class="leaderboard-trust"><span id="leaderboard-suppliers">571</span> suppliers · <span id="leaderboard-states">14</span> states · updated daily</p>
 
         <div class="leaderboard-grid-v2">
@@ -798,7 +798,7 @@
                         </tr>
                         <tr>
                             <td><a href="prices/nh/">New Hampshire</a></td>
-                            <td>$5.98 avg</td>
+                            <td>$6.05 avg</td>
                             <td>4 suppliers</td>
                             <td><a href="prices/nh/">See all →</a></td>
                         </tr>
@@ -962,15 +962,61 @@
     <section id="empty-state" class="prices-section" style="display: none;">
         <div class="empty-state-content">
             <div class="empty-icon">📍</div>
-            <h2>No suppliers found</h2>
-            <p>We don't have pricing data for <span id="empty-zip">your area</span> yet.</p>
-            <p class="empty-coverage">Coverage is strongest in NY, CT, NJ, MA, PA, NH, RI, and ME. We're expanding daily.</p>
+            <h2>No pricing data yet for <span id="empty-zip">your area</span></h2>
+            <p id="empty-state-avg" class="empty-state-avg" style="display: none;">
+                Heating oil in <strong id="empty-state-name"></strong> averages <strong id="empty-avg-price"></strong>/gal
+                based on <span id="empty-supplier-count"></span> suppliers we track statewide.
+            </p>
+
+            <!-- Coverage Request Form -->
+            <div id="coverage-request-form-wrapper" class="coverage-request-wrapper">
+                <div id="coverage-request-already" class="coverage-request-already" style="display: none;">
+                    <p>You're already signed up for notifications in <strong id="coverage-already-zip"></strong>.</p>
+                    <a href="#" id="coverage-update-link" class="coverage-request-update-link">Update preferences</a>
+                </div>
+                <div id="coverage-request-form-inner">
+                    <p class="coverage-request-heading">Get notified as soon as prices are available in your area</p>
+                    <div class="coverage-request-fuels">
+                        <label class="coverage-request-fuel-primary">
+                            <input type="checkbox" name="fuel_heating_oil" checked disabled> Heating Oil
+                        </label>
+                        <span class="coverage-request-fuel-also">Also interested in:</span>
+                        <label class="coverage-request-fuel-secondary">
+                            <input type="checkbox" name="fuel_kerosene"> Kerosene
+                        </label>
+                        <label class="coverage-request-fuel-secondary">
+                            <input type="checkbox" name="fuel_propane"> Propane
+                        </label>
+                    </div>
+                    <form id="coverage-request-form" class="coverage-request-form" autocomplete="on">
+                        <input type="email" id="coverage-email" placeholder="Email" required autocomplete="email" class="coverage-request-input">
+                        <input type="text" id="coverage-zip" placeholder="ZIP" required maxlength="5" pattern="\d{5}" class="coverage-request-zip">
+                        <input type="text" name="website_url" tabindex="-1" autocomplete="off" class="coverage-request-honeypot">
+                        <button type="submit" id="coverage-submit-btn" class="coverage-request-btn">Notify Me</button>
+                    </form>
+                    <p class="coverage-request-note">We'll only email when prices appear. No spam.</p>
+                    <p id="coverage-request-error" class="coverage-request-error" style="display: none;"></p>
+                </div>
+                <div id="coverage-request-success" class="coverage-request-success" style="display: none;">
+                    <div class="coverage-request-success-icon">✓</div>
+                    <p>We'll notify you as soon as prices are available in <strong id="coverage-success-location"></strong>.</p>
+                    <div id="coverage-success-links" class="coverage-request-success-links"></div>
+                </div>
+            </div>
+
+            <!-- Nearby ZIP suggestions -->
+            <div id="nearby-zips" class="nearby-zips-section" style="display: none;">
+                <p class="nearby-zips-label">Or try nearby ZIPs:</p>
+                <div id="nearby-zip-buttons" class="nearby-zip-buttons"></div>
+            </div>
+
             <p class="empty-suggestion ios-only">Know a local supplier? <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_prices&utm_medium=website&utm_campaign=empty_state_add">Add them in the app</a> — it helps everyone.</p>
             <div class="empty-app-pitch ios-only">
                 <p class="empty-app-cta-strong">Even without local prices, the app can help.</p>
                 <p class="empty-app-cta">HomeHeat tracks your tank level and predicts when you'll run out — no matter where you live.</p>
                 <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_prices&utm_medium=website&utm_campaign=empty_state_download" class="empty-app-button">Get HomeHeat Free →</a>
             </div>
+            <p class="empty-coverage">Coverage is strongest in NY, CT, NJ, MA, PA, NH, RI, and ME. We're expanding daily.</p>
         </div>
     </section>
 
@@ -1152,7 +1198,7 @@
 
     <script src="js/nav.js"></script>
     <script src="js/price-alerts.js?v=90311662"></script>
-    <script src="js/prices.js?v=4343738c"></script>
+    <script src="js/prices.js?v=ec5efa59"></script>
     <script src="js/widgets.js?v=567bef31"></script>
     <script src="js/pwa.js"></script>
     <script src="js/personalization.js?v=5aa6b261"></script>

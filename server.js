@@ -615,6 +615,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/130-add-hancock-md-suppliers', label: 'Steffey & Findlay + Brothers Heating Oil (Hancock/Hagerstown MD)' },
           { path: './src/migrations/131-add-woodruff-energy-bridgeton', label: 'Woodruff Energy (Bridgeton NJ — 6-county South Jersey)' },
           { path: './src/migrations/132-add-patriot-discount-oil-nj', label: 'Patriot Discount Oil (Whitehouse NJ — Hunterdon/Warren/Somerset/Morris)' },
+          { path: './src/migrations/133-create-coverage-requests', label: 'Coverage requests table (empty ZIP email notifications)' },
         ];
 
         let migrationErrors = 0;
@@ -818,6 +819,7 @@ app.use('/api/webhook/twilio', smsWebhookRoutes);  // V2.18.0: SMS price updates
 app.use('/api/outreach', require('./src/routes/outreach'));  // Supplier email unsubscribe
 app.use('/api/webhook', require('./src/routes/outreach'));  // Resend bounce/complaint webhook
 app.use('/api/price-alerts', require('./src/routes/price-alerts'));  // Price alert subscribe/unsubscribe
+app.use('/api/coverage-request', require('./src/routes/coverage-request'));  // Coverage request for empty ZIPs
 app.use('/api/v1/heating-cost', require('./src/routes/heating-cost'));  // Multi-fuel cost comparison
 app.use('/api/v1', require('./src/routes/user-events'));  // Lightweight user event tracking
 

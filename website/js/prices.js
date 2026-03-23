@@ -118,6 +118,7 @@
   let currentSuppliers = [];
   let pageLoadTime = Date.now();
   let lastClickTime = 0; // For debouncing click tracking
+  let leaderboardData = null; // Cached leaderboard for empty state context
 
   // Fetch Market Pulse data (live supplier stats)
   async function fetchMarketPulse() {
@@ -150,6 +151,9 @@
       if (!res.ok) return;
 
       const data = await res.json();
+
+      // Cache for empty state context
+      leaderboardData = data;
 
       // Update leaderboard date
       const leaderboardDate = document.getElementById('leaderboard-date');
@@ -764,12 +768,208 @@
     }
   }
 
-  // Show empty state
+  // ZIP prefix → 2-letter state abbreviation (lowercase, for matching leaderboard data)
+  var ZIP_PREFIX_TO_STATE = {
+    '01':'ma','02':'ma','03':'nh','04':'me','05':'vt','06':'ct',
+    '07':'nj','08':'nj','10':'ny','11':'ny','12':'ny','13':'ny',
+    '14':'ny','15':'pa','16':'pa','17':'pa','18':'pa','19':'pa',
+    '20':'dc','21':'md','22':'va','23':'va','24':'wv','25':'wv',
+    '26':'wv','27':'nc','28':'nc','29':'sc','30':'ga','31':'ga',
+    '32':'fl','33':'fl','34':'fl','35':'al','36':'al','37':'tn',
+    '38':'tn','39':'ms','40':'ky','41':'ky','42':'ky','43':'oh',
+    '44':'oh','45':'oh','46':'in','47':'in','48':'mi','49':'mi',
+    '50':'ia','51':'ia','52':'ia','53':'wi','54':'wi','55':'mn',
+    '56':'mt','57':'sd','58':'nd','59':'mt','60':'il','61':'il',
+    '62':'il','63':'mo','64':'mo','65':'mo','66':'ks','67':'ks',
+    '68':'ne','69':'ne','70':'la','71':'la','72':'ar','73':'ok',
+    '74':'ok','75':'tx','76':'tx','77':'tx','78':'tx','79':'tx',
+    '80':'co','81':'co','82':'wy','83':'id','84':'ut','85':'az',
+    '86':'az','87':'nm','88':'nm','89':'nv','90':'ca','91':'ca',
+    '92':'ca','93':'ca','94':'ca','95':'ca','96':'hi','97':'or',
+    '98':'wa','99':'ak'
+  };
+
+  function getStateFromZipPrefix(zip) {
+    if (!zip || zip.length < 2) return null;
+    // Handle RI (028, 029) and DE (197, 198, 199) 3-digit prefixes
+    var p3 = zip.substring(0, 3);
+    if (p3 === '028' || p3 === '029') return 'ri';
+    if (p3 === '197' || p3 === '198' || p3 === '199') return 'de';
+    return ZIP_PREFIX_TO_STATE[zip.substring(0, 2)] || null;
+  }
+
+  // Show empty state with coverage request form
   function showEmpty(zip) {
     document.getElementById('empty-zip').textContent = zip;
+
+    // State average context from cached leaderboard
+    var stateAvgEl = document.getElementById('empty-state-avg');
+    if (leaderboardData && leaderboardData.stateAverages) {
+      var stateCode = getStateFromZipPrefix(zip);
+      if (stateCode) {
+        var stateData = leaderboardData.stateAverages.find(function(s) { return s.state === stateCode; });
+        if (stateData) {
+          document.getElementById('empty-state-name').textContent = stateData.stateName;
+          document.getElementById('empty-avg-price').textContent = '$' + stateData.avgPrice.toFixed(2);
+          document.getElementById('empty-supplier-count').textContent = stateData.supplierCount;
+          stateAvgEl.style.display = 'block';
+        } else {
+          stateAvgEl.style.display = 'none';
+        }
+      } else {
+        stateAvgEl.style.display = 'none';
+      }
+    } else {
+      if (stateAvgEl) stateAvgEl.style.display = 'none';
+    }
+
+    // Pre-fill ZIP in coverage form
+    var coverageZipInput = document.getElementById('coverage-zip');
+    if (coverageZipInput) coverageZipInput.value = zip;
+
+    // Check localStorage for existing signup
+    var formInner = document.getElementById('coverage-request-form-inner');
+    var alreadyDiv = document.getElementById('coverage-request-already');
+    var successDiv = document.getElementById('coverage-request-success');
+    try {
+      var existing = localStorage.getItem('homeheat_coverage_' + zip);
+      if (existing && alreadyDiv && formInner) {
+        document.getElementById('coverage-already-zip').textContent = zip;
+        alreadyDiv.style.display = 'block';
+        formInner.style.display = 'none';
+        successDiv.style.display = 'none';
+      } else {
+        if (alreadyDiv) alreadyDiv.style.display = 'none';
+        if (formInner) formInner.style.display = 'block';
+        if (successDiv) successDiv.style.display = 'none';
+      }
+    } catch (e) {
+      // localStorage unavailable — show form
+    }
+
     showNearbyZips(zip);
     showState('empty');
+    logAnalytics('coverage_empty_shown', { zip: zip });
   }
+
+  // Coverage request "Update preferences" link — reveal form
+  (function() {
+    var updateLink = document.getElementById('coverage-update-link');
+    if (updateLink) {
+      updateLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        var alreadyDiv = document.getElementById('coverage-request-already');
+        var formInner = document.getElementById('coverage-request-form-inner');
+        if (alreadyDiv) alreadyDiv.style.display = 'none';
+        if (formInner) formInner.style.display = 'block';
+      });
+    }
+  })();
+
+  // Coverage request form submission
+  (function() {
+    var form = document.getElementById('coverage-request-form');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      var emailInput = document.getElementById('coverage-email');
+      var zipInput2 = document.getElementById('coverage-zip');
+      var submitBtn = document.getElementById('coverage-submit-btn');
+      var errorEl = document.getElementById('coverage-request-error');
+      var honeypot = form.querySelector('[name="website_url"]');
+
+      var email = (emailInput.value || '').trim();
+      var zip2 = (zipInput2.value || '').trim();
+
+      // Client-side honeypot check
+      if (honeypot && honeypot.value) return;
+
+      // Basic client-side validation
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        errorEl.textContent = 'Please enter a valid email address.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (!zip2 || !/^\d{5}$/.test(zip2)) {
+        errorEl.textContent = 'Please enter a valid 5-digit ZIP code.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      // Gather fuel types
+      var fuelTypes = ['heating_oil'];
+      if (form.querySelector('[name="fuel_kerosene"]') && form.querySelector('[name="fuel_kerosene"]').checked) {
+        fuelTypes.push('kerosene');
+      }
+      if (form.querySelector('[name="fuel_propane"]') && form.querySelector('[name="fuel_propane"]').checked) {
+        fuelTypes.push('propane');
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      errorEl.style.display = 'none';
+
+      fetch(API_BASE + '/api/coverage-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          zip_code: zip2,
+          fuel_types: fuelTypes,
+          source_page: window.location.pathname
+        })
+      })
+      .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+      .then(function(result) {
+        if (result.ok && result.data.success) {
+          // Save to localStorage
+          try { localStorage.setItem('homeheat_coverage_' + zip2, Date.now().toString()); } catch (e) {}
+
+          // Show success state
+          var formInner = document.getElementById('coverage-request-form-inner');
+          var successDiv = document.getElementById('coverage-request-success');
+          var alreadyDiv = document.getElementById('coverage-request-already');
+          if (formInner) formInner.style.display = 'none';
+          if (alreadyDiv) alreadyDiv.style.display = 'none';
+
+          var location = result.data.city && result.data.state
+            ? result.data.city + ', ' + result.data.state.toUpperCase()
+            : zip2;
+          document.getElementById('coverage-success-location').textContent = location;
+
+          // Build conditional success links
+          var linksHtml = '';
+          if (leaderboardData && leaderboardData.stateAverages) {
+            var stateCode = getStateFromZipPrefix(zip2);
+            if (stateCode) {
+              var stateData = leaderboardData.stateAverages.find(function(s) { return s.state === stateCode; });
+              if (stateData) {
+                linksHtml += '<a href="/prices/' + stateCode + '/">View ' + escapeHtml(stateData.stateName) + ' heating oil prices</a>';
+              }
+            }
+          }
+          linksHtml += '<a href="/prices">View all prices</a>';
+          document.getElementById('coverage-success-links').innerHTML = linksHtml;
+
+          if (successDiv) successDiv.style.display = 'block';
+          logAnalytics('coverage_request', { zip: zip2, fuels: fuelTypes.join(',') });
+        } else {
+          errorEl.textContent = result.data.error || 'Something went wrong — please try again.';
+          errorEl.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Notify Me';
+        }
+      })
+      .catch(function() {
+        errorEl.textContent = 'Something went wrong — please try again.';
+        errorEl.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Notify Me';
+      });
+    });
+  })();
 
   // Show error
   function showError(message) {

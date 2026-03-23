@@ -144,6 +144,14 @@ class PriceAlertService {
         durationMs: Date.now() - startTime
       };
 
+      // Check coverage requests (empty ZIP notifications)
+      try {
+        result.coverage_notified = await this.checkCoverageRequests();
+      } catch (coverageErr) {
+        this.logger.error('[PriceAlert] Coverage request check failed:', coverageErr.message);
+        result.coverage_notified = 0;
+      }
+
       this.logger.info(`[PriceAlert] Complete: ${JSON.stringify(result)}`);
       return result;
 
@@ -343,6 +351,165 @@ class PriceAlertService {
     const count = meta?.rowCount || 0;
     if (count > 0) {
       this.logger.info(`[PriceAlert] Deactivated ${count} zombie subscribers.`);
+    }
+  }
+
+  /**
+   * Check coverage_requests for ZIPs that now have supplier coverage.
+   * Sends "coverage added" email to users who requested notification.
+   * Limits to 50 per run to prevent bulk sends.
+   */
+  async checkCoverageRequests() {
+    // Check if table exists
+    const [tableCheck] = await this.sequelize.query(`
+      SELECT 1 FROM information_schema.tables WHERE table_name = 'coverage_requests'
+    `);
+    if (tableCheck.length === 0) return 0;
+
+    // Find coverage requests where the ZIP now has active suppliers with prices
+    const [matches] = await this.sequelize.query(`
+      SELECT cr.id, cr.email, cr.zip_code, cr.city, cr.state, cr.unsubscribe_token
+      FROM coverage_requests cr
+      WHERE cr.active = true
+        AND cr.notified_at IS NULL
+        AND EXISTS (
+          SELECT 1 FROM suppliers s
+          JOIN supplier_prices sp ON s.id = sp.supplier_id
+          WHERE s.active = true
+            AND s.allow_price_display = true
+            AND sp.is_valid = true
+            AND sp.scraped_at > NOW() - INTERVAL '72 hours'
+            AND sp.fuel_type = 'heating_oil'
+            AND EXISTS (
+              SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS zip
+              WHERE zip = cr.zip_code
+            )
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM price_alert_subscribers pas
+          WHERE pas.email = cr.email AND pas.zip_code = cr.zip_code AND pas.active = true
+        )
+      LIMIT 50
+    `);
+
+    if (matches.length === 0) return 0;
+
+    let notified = 0;
+    for (const match of matches) {
+      // Get supplier count for this ZIP
+      const [countRows] = await this.sequelize.query(`
+        SELECT COUNT(DISTINCT s.id) AS cnt
+        FROM suppliers s
+        JOIN supplier_prices sp ON s.id = sp.supplier_id
+        WHERE s.active = true
+          AND s.allow_price_display = true
+          AND sp.is_valid = true
+          AND sp.scraped_at > NOW() - INTERVAL '72 hours'
+          AND sp.fuel_type = 'heating_oil'
+          AND EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS zip
+            WHERE zip = :zipCode
+          )
+      `, { replacements: { zipCode: match.zip_code } });
+      const supplierCount = parseInt(countRows[0]?.cnt) || 0;
+
+      const success = await this.sendCoverageAddedEmail(match, supplierCount);
+      if (success) {
+        await this.sequelize.query(`
+          UPDATE coverage_requests
+          SET notified_at = NOW(), notified_fuel_type = 'heating_oil', updated_at = NOW()
+          WHERE id = :id
+        `, { replacements: { id: match.id } });
+        notified++;
+      }
+    }
+
+    if (notified > 0) {
+      this.logger.info(`[PriceAlert] Coverage-added notifications sent: ${notified}`);
+    }
+    return notified;
+  }
+
+  /**
+   * Send "coverage added" email for a coverage request.
+   */
+  async sendCoverageAddedEmail(match, supplierCount) {
+    const { email, zip_code, city, state, unsubscribe_token } = match;
+
+    const location = city && state ? `${city}, ${state.toUpperCase()}` : zip_code;
+    const priceUrl = `${SITE_URL}/prices.html?zip=${zip_code}&utm_source=coverage_added&utm_medium=email`;
+    const unsubUrl = `${SITE_URL}/api/coverage-request/unsubscribe?token=${unsubscribe_token}`;
+    const appUrl = 'https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=coverage_added&utm_campaign=notification';
+
+    const subject = `Heating oil prices now available near ${zip_code}`;
+    const supplierNote = supplierCount > 0 ? ` from ${supplierCount} supplier${supplierCount !== 1 ? 's' : ''}` : '';
+
+    const html = `
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; background: #fff;">
+  ${this.buildEmailHeader()}
+
+  <div style="padding: 0 20px;">
+    <h2 style="font-size: 20px; color: #1a1a1a; margin: 0 0 16px;">Great news — we now track heating oil prices near you!</h2>
+
+    <div style="background: #f0fdf4; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0; font-size: 15px; color: #333;">We now have heating oil pricing data${supplierNote} delivering to <strong>${location}</strong>.</p>
+    </div>
+
+    <p style="margin: 16px 0 24px; text-align: center;">
+      <a href="${priceUrl}" style="display: inline-block; background: #2563eb; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">See today's prices →</a>
+    </p>
+
+    <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin: 0 0 24px; text-align: center; border: 1px solid #e5e7eb;">
+      <img src="${SITE_URL}/images/app-icon-192.png" alt="HomeHeat" width="48" height="48" style="border-radius: 12px; margin-bottom: 8px;">
+      <div style="font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px;">Never miss the best time to order</div>
+      <div style="font-size: 13px; color: #666; margin-bottom: 14px;">HomeHeat for iPhone tracks your tank level and predicts when to order at the lowest price.</div>
+      <a href="${appUrl}" style="display: inline-block; background: #000; color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 500;"><span style="font-size: 9px; display: block; font-weight: 400; line-height: 1; margin-bottom: 2px;">Download on the</span><span style="font-size: 16px; font-weight: 600; line-height: 1;">App Store</span></a>
+    </div>
+  </div>
+
+  <p style="font-size: 12px; color: #888; margin-top: 32px; padding: 0 20px; border-top: 1px solid #eee; padding-top: 16px; text-align: center;">
+    <a href="${unsubUrl}" style="color: #888;">Unsubscribe</a> · <a href="${SITE_URL}/privacy.html" style="color: #888;">Privacy Policy</a>
+    <br><br>HomeHeat · Katonah, NY 10536
+  </p>
+</div>`;
+
+    if (DRY_RUN) {
+      this.logger.info(`[PriceAlert] DRY RUN - Would send coverage-added to ${email}`);
+      return true;
+    }
+
+    if (!RESEND_API_KEY) {
+      this.logger.error('[PriceAlert] RESEND_API_KEY not set, skipping coverage-added email.');
+      return false;
+    }
+
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: FROM_EMAIL,
+          to: [email],
+          reply_to: REPLY_TO,
+          subject,
+          html
+        })
+      });
+
+      const result = await response.json();
+      if (response.ok && result.id) {
+        this.logger.info(`[PriceAlert] Coverage-added email sent to ${email} for ZIP ${zip_code}`);
+        return true;
+      }
+
+      this.logger.error(`[PriceAlert] Coverage-added email failed for ${email}:`, result);
+      return false;
+    } catch (err) {
+      this.logger.error(`[PriceAlert] Coverage-added email error for ${email}:`, err.message);
+      return false;
     }
   }
 
