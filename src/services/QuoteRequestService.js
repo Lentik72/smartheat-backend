@@ -89,7 +89,7 @@ class QuoteRequestService {
       hour: 'numeric',
       hour12: false
     }));
-    return true; // TEMPORARY: force business hours for E2E test — REVERT AFTER TEST
+    return etHour >= BUSINESS_HOURS.start && etHour < BUSINESS_HOURS.end;
   }
 
   /** Generate 4-digit OTP (cryptographically secure) */
