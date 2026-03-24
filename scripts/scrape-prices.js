@@ -6,6 +6,7 @@
  * V2.1.0: Support for aggregator_signal source type (displayable=false)
  * V2.6.0: Backoff logic for blocked sites (cooldown + phone_only)
  * V2.7.0: Price change protection - reject suspicious drops > 25%
+ * V3.1.0: Market outlier detection - reject prices > 20% below market median
  *
  * Runs daily at 10:00 AM EST (15:00 UTC) via node-cron in server.js
  *
@@ -154,6 +155,31 @@ async function runScraper(options = {}) {
     // V2.7.0: Price change protection threshold
     const MAX_PRICE_DROP_PERCENT = 0.25; // Reject drops > 25%
 
+    // V3.1.0: Market outlier detection — reject prices far below the pack
+    // Catches scraping artifacts (e.g., gas station prices, card prices, wrong page section)
+    const MAX_BELOW_MEDIAN_PERCENT = 0.20; // Reject prices > 20% below market median
+    const MIN_SUPPLIERS_FOR_MEDIAN = 5;    // Need enough data for a meaningful median
+    let marketMedian = null;
+    {
+      const [medianResult] = await sequelize.query(`
+        SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sp.price_per_gallon::numeric) as median_price,
+               COUNT(DISTINCT sp.supplier_id) as supplier_count
+        FROM supplier_prices sp
+        JOIN suppliers s ON sp.supplier_id = s.id
+        WHERE sp.is_valid = true
+          AND sp.fuel_type = 'heating_oil'
+          AND sp.expires_at > NOW()
+          AND s.active = true
+          AND s.allow_price_display = true
+      `);
+      if (medianResult.length > 0 && parseInt(medianResult[0].supplier_count) >= MIN_SUPPLIERS_FOR_MEDIAN) {
+        marketMedian = parseFloat(medianResult[0].median_price);
+        log.info(`📊 Market median: $${marketMedian.toFixed(3)} (${medianResult[0].supplier_count} suppliers)`);
+      } else {
+        log.info(`📊 Market median: skipped (< ${MIN_SUPPLIERS_FOR_MEDIAN} active suppliers)`);
+      }
+    }
+
     const DELAY_MS = 2000; // 2 seconds between requests
 
     for (let i = 0; i < scrapableSuppliers.length; i++) {
@@ -221,6 +247,25 @@ async function runScraper(options = {}) {
               });
               priceRejected = true;
               // Move from success to rejected (don't count as success)
+              results.success.pop();
+            }
+          }
+
+          // V3.1.0: Market outlier detection — reject prices far below the pack
+          if (!priceRejected && marketMedian) {
+            const newPrice = result.pricePerGallon;
+            const belowMedian = (marketMedian - newPrice) / marketMedian;
+            if (belowMedian > MAX_BELOW_MEDIAN_PERCENT) {
+              log.warn(`   ⚠️  OUTLIER REJECTED: $${newPrice.toFixed(3)} is ${(belowMedian * 100).toFixed(0)}% below market median $${marketMedian.toFixed(3)}`);
+              results.rejected.push({
+                supplierName: supplier.name,
+                supplierId: supplier.id,
+                newPrice,
+                marketMedian,
+                belowMedianPercent: belowMedian * 100,
+                reason: `${(belowMedian * 100).toFixed(0)}% below median exceeds ${MAX_BELOW_MEDIAN_PERCENT * 100}% threshold`
+              });
+              priceRejected = true;
               results.success.pop();
             }
           }
@@ -391,12 +436,16 @@ async function runScraper(options = {}) {
       });
     }
 
-    // V2.7.0: Show rejected prices (suspicious drops)
+    // V2.7.0: Show rejected prices (suspicious drops + outliers)
     if (results.rejected.length > 0) {
       log.info('');
-      log.warn('🚫 Rejected prices (suspicious drops):');
+      log.warn('🚫 Rejected prices:');
       results.rejected.forEach(r => {
-        log.warn(`  - ${r.supplierName}: $${r.newPrice.toFixed(3)} (${r.dropPercent.toFixed(0)}% drop from $${r.previousPrice.toFixed(3)})`);
+        if (r.marketMedian) {
+          log.warn(`  - ${r.supplierName}: $${r.newPrice.toFixed(3)} (${r.belowMedianPercent.toFixed(0)}% below median $${r.marketMedian.toFixed(3)}) — likely scraping artifact`);
+        } else {
+          log.warn(`  - ${r.supplierName}: $${r.newPrice.toFixed(3)} (${r.dropPercent.toFixed(0)}% drop from $${r.previousPrice.toFixed(3)})`);
+        }
       });
       log.info('   → Use verify-price.js to manually update if prices are correct');
     }

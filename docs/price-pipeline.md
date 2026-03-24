@@ -7,6 +7,8 @@ constants:
   scraped_price_expiry: "48 hours"
   sms_price_expiry: "7 days"
   max_price_drop: "25%"
+  max_below_median: "20%"
+  min_suppliers_for_median: 5
 ---
 
 # Price Pipeline
@@ -20,7 +22,7 @@ Prices enter via two channels (scraping and SMS), pass through validation, and a
 ```
 scrape-config.json → DistributedScheduler (hash-based time per supplier)
                    → priceScraper.js (fetch + extract)
-                   → validate ($2.00–$5.00) + 25% drop protection
+                   → validate ($2.00–$5.00) + 25% drop protection + 20% outlier detection
                    → supplier_prices (source_type='scraped', expires 48h)
 
 SMS inbound → sms-price-service.js (parse + match by phone_last10)
@@ -111,6 +113,7 @@ The diagnostics replace three legacy sections (Scrape Health stats, Yesterday's 
 
 - Scraper sets expiry to 48h (model default comment says 24h — scraper is authoritative)
 - 25% drop protection: if new price drops >25% from previous, it's rejected entirely (not saved)
+- 20% outlier detection: if new price is >20% below market median (needs ≥5 suppliers), it's rejected — catches scraping artifacts like card prices or wrong page sections
 - Auto-heal: if no valid prices but recently-scraped ones exist (within 7 days), extends their expiry by 48h
 - Distributed scheduler: SHA256(supplier_id) mod 600 minutes → stable daily time + ±15min jitter
 - Failure rate alert fires when >20% of scrapes fail in a run
