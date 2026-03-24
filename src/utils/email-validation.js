@@ -7,7 +7,8 @@ const DISPOSABLE_DOMAINS = new Set([
   'grr.la', 'guerrillamail.biz', 'guerrillamail.de', 'guerrillamail.net',
   'trashmail.com', 'trashmail.me', 'trashmail.net', 'dispostable.com',
   'maildrop.cc', 'mailnesia.com', 'tempail.com', 'tempmailaddress.com',
-  'getairmail.com', 'fakeinbox.com', 'mailcatch.com', 'mintemail.com'
+  'getairmail.com', 'fakeinbox.com', 'mailcatch.com', 'mintemail.com',
+  'example.com'
 ]);
 
 function isValidEmail(email) {

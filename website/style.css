@@ -2303,6 +2303,209 @@ body {
     }
 }
 
+/* ─── Get Quotes Form (heatingoil-h1fy) ─── */
+.get-quotes-card {
+    max-width: 600px;
+    margin: 1rem auto;
+    padding: 1rem 1.25rem;
+    background: var(--background-card, #fff);
+    border: 2px solid var(--primary-orange, #FF6B35);
+    border-radius: 12px;
+    text-align: center;
+}
+.get-quotes-inner {
+    font-size: 0.9rem;
+    color: var(--text-dark);
+}
+.get-quotes-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    color: var(--text-dark);
+}
+.get-quotes-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.get-quotes-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-items: flex-end;
+}
+.get-quotes-field {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+.get-quotes-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.get-quotes-name,
+.get-quotes-phone,
+.get-quotes-gallons {
+    padding: 0 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    height: 40px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+.get-quotes-name { min-width: 160px; }
+.get-quotes-phone { min-width: 150px; }
+.get-quotes-gallons { width: 90px; }
+.get-quotes-name:focus,
+.get-quotes-phone:focus,
+.get-quotes-gallons:focus {
+    outline: none;
+    border-color: var(--primary-orange, #FF6B35);
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+}
+.get-quotes-tank-level {
+    text-align: left;
+    width: 100%;
+    max-width: 480px;
+    margin: 4px auto;
+}
+.get-quotes-radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 4px;
+}
+.get-quotes-radio {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+}
+.get-quotes-consent {
+    font-size: 0.75rem;
+    color: #666;
+    text-align: left;
+    max-width: 480px;
+    line-height: 1.4;
+    margin: 4px auto;
+}
+.get-quotes-consent a { color: var(--primary-orange, #FF6B35); }
+.get-quotes-btn {
+    padding: 0 24px;
+    height: 44px;
+    background: var(--primary-orange, #FF6B35);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    min-width: 200px;
+}
+.get-quotes-btn:hover { background: var(--primary-orange-hover, #E55A2B); }
+.get-quotes-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.get-quotes-error {
+    color: #dc2626;
+    font-size: 0.82rem;
+    margin-top: 4px;
+    text-align: center;
+}
+.get-quotes-meta {
+    font-size: 0.8rem;
+    color: var(--text-gray, #666);
+    margin-top: 8px;
+}
+.get-quotes-check {
+    color: #16a34a;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+.get-quotes-success {
+    padding: 12px 0;
+}
+.get-quotes-after-hours {
+    background: #FEF3C7;
+    border: 1px solid #F59E0B;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: #92400E;
+    margin-bottom: 12px;
+    text-align: left;
+}
+.get-quotes-after-hours-result {
+    padding: 12px 0;
+}
+.get-quotes-otp-msg {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0 0 12px;
+}
+.get-quotes-otp-input-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+.get-quotes-otp-input {
+    width: 120px;
+    height: 48px;
+    font-size: 1.5rem;
+    text-align: center;
+    letter-spacing: 0.3em;
+    border: 2px solid #d0d5dd;
+    border-radius: 8px;
+    font-weight: 600;
+}
+.get-quotes-otp-input:focus {
+    outline: none;
+    border-color: var(--primary-orange, #FF6B35);
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+}
+.get-quotes-fallback-list {
+    margin-top: 12px;
+    text-align: left;
+}
+.get-quotes-fallback-item {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color, #E5D8D0);
+    font-size: 0.9rem;
+}
+.get-quotes-fallback-item:last-child { border-bottom: none; }
+.get-quotes-fallback-item a {
+    color: var(--primary-orange, #FF6B35);
+    text-decoration: none;
+    font-weight: 500;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+}
+.get-quotes-fallback-item a:hover { text-decoration: underline; }
+@media (max-width: 600px) {
+    .get-quotes-fields {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+    .get-quotes-name,
+    .get-quotes-phone,
+    .get-quotes-gallons {
+        width: 100%;
+        min-width: unset;
+    }
+    .get-quotes-btn { width: 100%; }
+    .get-quotes-radio-group { flex-direction: column; gap: 0; }
+}
+
 /* Empty State */
 .empty-state-content,
 .error-state-content {

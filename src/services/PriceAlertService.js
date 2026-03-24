@@ -606,6 +606,19 @@ class PriceAlertService {
       <a href="${priceUrl}" style="display: inline-block; background: #2563eb; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Compare all suppliers in ${zip_code}</a>
     </p>
 
+    ${(() => {
+      const trialZips = (process.env.QUOTE_TRIAL_ZIPS || '').split(',').filter(Boolean);
+      const quoteAvailable = trialZips.length === 0 || trialZips.includes(zip_code);
+      if (!quoteAvailable || process.env.DISABLE_QUOTE_SYSTEM === 'true') return '';
+      const quoteUrl = `${SITE_URL}/prices?zip=${zip_code}&get_quotes=1&utm_source=price_alert&utm_campaign=get_quotes`;
+      return `
+    <div style="background: #fff7ed; border: 1px solid #fb923c; border-radius: 8px; padding: 16px; margin: 0 0 24px; text-align: center;">
+      <div style="font-weight: 600; color: #1a1a1a; margin-bottom: 4px;">Need a delivery soon?</div>
+      <div style="font-size: 13px; color: #666; margin-bottom: 12px;">Get quotes from local suppliers — they'll call you directly.</div>
+      <a href="${quoteUrl}" style="display: inline-block; background: #f97316; color: #fff; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Get Quotes</a>
+    </div>`;
+    })()}
+
     <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin: 0 0 24px; text-align: center; border: 1px solid #e5e7eb;">
       <img src="${SITE_URL}/images/app-icon-192.png" alt="HomeHeat" width="48" height="48" style="border-radius: 12px; margin-bottom: 8px;">
       <div style="font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px;">Never miss the best time to order</div>

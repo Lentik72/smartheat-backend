@@ -1,0 +1,365 @@
+// website/js/get-quotes.js
+// "Get Quotes" form — consumer requests delivery quotes from local suppliers
+// Part of Smart Quote Request system (heatingoil-h1fy)
+
+(function () {
+  'use strict';
+
+  /**
+   * Initialize the Get Quotes form.
+   * @param {string} containerSelector - CSS selector for the container
+   * @param {object} options
+   * @param {string} options.zip - 5-digit ZIP code
+   * @param {number} options.supplierCount - Number of available suppliers
+   */
+  window.initGetQuotesForm = function (containerSelector, options) {
+    var container = document.querySelector(containerSelector);
+    if (!container) return;
+
+    var zip = options.zip || '';
+    var supplierCount = options.supplierCount || 0;
+    var mode = options.mode || 'routed'; // 'routed' = opted-in suppliers, 'cold' = no opted-in
+    var coldFallbackPhones = options.fallback_phones || null;
+    var formRenderedAt = Date.now();
+    var requestId = null;
+
+    // Check if after business hours (7am-7pm ET)
+    var etHour = parseInt(new Date().toLocaleString('en-US', {
+      timeZone: 'America/New_York', hour: 'numeric', hour12: false
+    }));
+    var isAfterHours = etHour < 7 || etHour >= 19;
+
+    container.style.display = 'block';
+    renderForm();
+
+    function renderForm() {
+      // --- Build banner: merge after-hours + cold into one if both apply ---
+      var banner = '';
+      if (mode === 'cold' && isAfterHours) {
+        banner = '<div class="get-quotes-after-hours" style="background:#EFF6FF; border-color:#3B82F6; color:#1E40AF;">' +
+          'We\'re expanding in your area. It\'s currently outside business hours — for fastest service, ' +
+          'call suppliers below. Requests submitted now will be sent at 7 AM ET.' +
+        '</div>';
+      } else if (mode === 'cold') {
+        banner = '<div class="get-quotes-after-hours" style="background:#EFF6FF; border-color:#3B82F6; color:#1E40AF;">' +
+          'We\'re expanding in your area — we\'ve identified suppliers nearby. You can call them directly below.' +
+        '</div>';
+      } else if (isAfterHours) {
+        banner = '<div class="get-quotes-after-hours">' +
+          'It\'s currently outside business hours. Requests submitted now will be sent to suppliers at 7 AM ET. ' +
+          'For immediate help, call suppliers directly below.' +
+        '</div>';
+      }
+
+      // --- Title ---
+      var title = mode === 'cold'
+        ? 'Request quotes (limited availability in your area)'
+        : 'Get quotes from ' + supplierCount + ' local supplier' + (supplierCount !== 1 ? 's' : '');
+
+      // --- Phone list: in cold mode, show ABOVE form as primary action ---
+      var coldPhoneList = (mode === 'cold' && coldFallbackPhones) ? buildPhoneList(coldFallbackPhones) : '';
+      var phonesAboveForm = mode === 'cold' && coldPhoneList
+        ? '<div style="margin-bottom:12px;">' +
+            '<div style="font-weight:600; font-size:0.9rem; margin-bottom:4px;">Call suppliers now (fastest option):</div>' +
+            coldPhoneList +
+            '<div style="font-size:0.72rem; color:#999; margin-top:4px;">Prices shown are the latest available — confirm when calling.</div>' +
+          '</div>'
+        : '';
+
+      // --- Meta text ---
+      var metaText = mode === 'cold'
+        ? 'We\'ll verify your phone and use your request to improve supplier coverage in your area.'
+        : 'We\'ll send a verification code to your phone. No spam, no account required.';
+
+      // --- Why submit (cold mode motivation) ---
+      var whySubmit = mode === 'cold'
+        ? '<div class="get-quotes-meta" style="font-size:0.78rem; margin-top:4px;">Submitting helps us expand coverage and get better pricing options in your area.</div>'
+        : '';
+
+      container.innerHTML =
+        '<div class="get-quotes-inner">' +
+          banner +
+          '<div class="get-quotes-title">' + title + '</div>' +
+          phonesAboveForm +
+          '<form class="get-quotes-form">' +
+            '<div class="get-quotes-fields">' +
+              '<div class="get-quotes-field">' +
+                '<label class="get-quotes-label">Your name</label>' +
+                '<input type="text" class="get-quotes-name" maxlength="100" required autocomplete="name">' +
+              '</div>' +
+              '<div class="get-quotes-field">' +
+                '<label class="get-quotes-label">Phone</label>' +
+                '<input type="tel" class="get-quotes-phone" maxlength="14" required autocomplete="tel" ' +
+                  'placeholder="(914) 555-1234" inputmode="tel">' +
+              '</div>' +
+              '<div class="get-quotes-field">' +
+                '<label class="get-quotes-label">Approx. gallons</label>' +
+                '<input type="number" class="get-quotes-gallons" min="75" max="500" value="150" required inputmode="numeric">' +
+              '</div>' +
+            '</div>' +
+            '<div class="get-quotes-tank-level">' +
+              '<label class="get-quotes-label">How full is your tank?</label>' +
+              '<div class="get-quotes-radio-group">' +
+                '<label class="get-quotes-radio"><input type="radio" name="tank_level" value="empty"> Nearly empty</label>' +
+                '<label class="get-quotes-radio"><input type="radio" name="tank_level" value="quarter"> About &frac14;</label>' +
+                '<label class="get-quotes-radio"><input type="radio" name="tank_level" value="half"> About &frac12;</label>' +
+                '<label class="get-quotes-radio"><input type="radio" name="tank_level" value="not_sure"> Not sure</label>' +
+              '</div>' +
+            '</div>' +
+            '<div class="get-quotes-consent">' +
+              '<label><input type="checkbox" class="get-quotes-consent-check" required> ' +
+                'I consent to sharing my name and phone with up to 3 local suppliers who may call me. ' +
+                'HomeHeat may send up to 2 follow-up texts about your request. ' +
+                'Your request becomes inactive after 24 hours. ' +
+                '<a href="/privacy" target="_blank">Privacy Policy</a>' +
+              '</label>' +
+            '</div>' +
+            '<input type="text" name="website_url" style="display:none" tabindex="-1" autocomplete="off">' +
+            '<div class="get-quotes-error" style="display:none;"></div>' +
+            '<button type="submit" class="get-quotes-btn">Get Quotes &rarr;</button>' +
+          '</form>' +
+          '<div class="get-quotes-meta">' + metaText + '</div>' +
+          whySubmit +
+        '</div>';
+
+      var form = container.querySelector('.get-quotes-form');
+      form.addEventListener('submit', handleSubmit);
+
+      // Track form engagement
+      var formStarted = false;
+      form.addEventListener('focusin', function (e) {
+        if (!formStarted && e.target.tagName === 'INPUT') {
+          formStarted = true;
+          if (typeof gtag === 'function') {
+            gtag('event', 'quote_form_started', { zip: zip });
+          }
+        }
+      });
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      var form = container.querySelector('.get-quotes-form');
+      var errorEl = container.querySelector('.get-quotes-error');
+      var btn = container.querySelector('.get-quotes-btn');
+      errorEl.style.display = 'none';
+
+      var name = container.querySelector('.get-quotes-name').value.trim();
+      var phone = container.querySelector('.get-quotes-phone').value.trim();
+      var gallons = container.querySelector('.get-quotes-gallons').value;
+      var honeypot = form.querySelector('[name="website_url"]').value;
+      var consentChecked = container.querySelector('.get-quotes-consent-check').checked;
+
+      var tankRadio = form.querySelector('input[name="tank_level"]:checked');
+      var tankLevel = tankRadio ? tankRadio.value : 'not_sure';
+
+      // Validation
+      if (!name) return showError(errorEl, 'Please enter your name.');
+      if (!phone || phone.replace(/\D/g, '').length < 10) return showError(errorEl, 'Please enter a valid 10-digit phone number.');
+      if (!gallons || parseInt(gallons) < 75) return showError(errorEl, 'Minimum 75 gallons.');
+      if (!consentChecked) return showError(errorEl, 'Please agree to the terms to continue.');
+
+      btn.disabled = true;
+      btn.textContent = 'Sending code...';
+
+      fetch('/api/quote-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          consumer_name: name,
+          consumer_phone: phone,
+          consumer_zip: zip,
+          gallons_requested: parseInt(gallons),
+          tank_level: tankLevel,
+          source_page: window.location.pathname + window.location.search,
+          honeypot: honeypot,
+          form_rendered_at: formRenderedAt
+        })
+      })
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (result) {
+          if (!result.ok || result.data.error) {
+            showError(errorEl, result.data.error || 'Something went wrong.');
+            btn.disabled = false;
+            btn.textContent = 'Get Quotes \u2192';
+            return;
+          }
+
+          // No opted-in suppliers — show fallback phones directly
+          if (result.data.no_suppliers_opted_in) {
+            renderFallback(result.data.fallback_phones, result.data.message);
+            return;
+          }
+
+          // Success — show OTP verification
+          requestId = result.data.request_id;
+          renderOTPForm(phone);
+
+          if (typeof gtag === 'function') {
+            gtag('event', 'quote_otp_sent', { zip: zip });
+          }
+        })
+        .catch(function () {
+          showError(errorEl, 'Network error. Please try again.');
+          btn.disabled = false;
+          btn.textContent = 'Get Quotes \u2192';
+        });
+    }
+
+    function renderOTPForm(phone) {
+      var digits = phone.replace(/\D/g, '');
+      var display = '(***) ***-' + digits.slice(-4);
+
+      container.innerHTML =
+        '<div class="get-quotes-inner">' +
+          '<div class="get-quotes-title">Verify your phone</div>' +
+          '<p class="get-quotes-otp-msg">We sent a 4-digit code to <strong>' + display + '</strong></p>' +
+          '<form class="get-quotes-otp-form">' +
+            '<div class="get-quotes-otp-input-wrap">' +
+              '<input type="text" class="get-quotes-otp-input" maxlength="4" pattern="\\d{4}" ' +
+                'inputmode="numeric" autocomplete="one-time-code" autofocus placeholder="0000">' +
+            '</div>' +
+            '<div class="get-quotes-error" style="display:none;"></div>' +
+            '<button type="submit" class="get-quotes-btn">Verify &amp; Send to Suppliers</button>' +
+          '</form>' +
+          '<div class="get-quotes-meta">Code expires in 10 minutes.</div>' +
+        '</div>';
+
+      var otpForm = container.querySelector('.get-quotes-otp-form');
+      otpForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var code = container.querySelector('.get-quotes-otp-input').value.trim();
+        var errorEl = container.querySelector('.get-quotes-error');
+        var btn = container.querySelector('.get-quotes-btn');
+        errorEl.style.display = 'none';
+
+        if (!code || !/^\d{4}$/.test(code)) {
+          return showError(errorEl, 'Please enter the 4-digit code.');
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Verifying...';
+
+        fetch('/api/quote-request/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ request_id: requestId, code: code })
+        })
+          .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+          .then(function (result) {
+            if (!result.ok || result.data.error) {
+              showError(errorEl, result.data.error || 'Something went wrong.');
+              btn.disabled = false;
+              btn.textContent = 'Verify & Send to Suppliers';
+              return;
+            }
+
+            // Zero suppliers at verify time — show fallback
+            if (result.data.suppliers_notified === 0 && result.data.fallback_phones) {
+              if (result.data.queued) {
+                renderAfterHours(result.data.fallback_phones);
+              } else {
+                renderFallback(result.data.fallback_phones, 'We couldn\'t reach any suppliers right now. Call directly:');
+              }
+              return;
+            }
+
+            // Success — show confirmation
+            renderConfirmation(result.data);
+
+            if (typeof gtag === 'function') {
+              gtag('event', 'quote_dispatched', { zip: zip, suppliers_notified: result.data.suppliers_notified });
+            }
+          })
+          .catch(function () {
+            showError(errorEl, 'Network error. Please try again.');
+            btn.disabled = false;
+            btn.textContent = 'Verify & Send to Suppliers';
+          });
+      });
+    }
+
+    function renderConfirmation(data) {
+      var n = data.suppliers_notified;
+      var directPhones = buildPhoneList(data.fallback_phones);
+
+      // Cold ZIP: no suppliers dispatched, demand captured
+      if (n === 0) {
+        container.innerHTML =
+          '<div class="get-quotes-inner get-quotes-success">' +
+            '<span class="get-quotes-check">&#10003;</span> ' +
+            'We\'re expanding in your area. We\'ve identified suppliers nearby and are notifying them about your request.' +
+            '<div style="margin-top:12px; font-weight:600;">Call these suppliers directly now:</div>' +
+            directPhones +
+            '<div class="get-quotes-meta" style="margin-top:8px;">We\'ll improve coverage here — thanks for helping us grow.</div>' +
+          '</div>';
+        return;
+      }
+
+      var notifyText = n === 1
+        ? 'We\'ve notified the best available supplier in your area. Expect a call shortly.'
+        : 'We\'ve notified ' + n + ' local suppliers. You may receive 1\u2013' + n + ' calls shortly. ' +
+          'Most requests get a response within 30\u201360 minutes.';
+
+      if (data.is_business_hours) {
+        container.innerHTML =
+          '<div class="get-quotes-inner get-quotes-success">' +
+            '<span class="get-quotes-check">&#10003;</span> ' + notifyText +
+            '<div class="get-quotes-meta" style="margin-top:8px;">Suppliers may call from unknown or local numbers.</div>' +
+            (directPhones ? '<div style="margin-top:12px; font-size:0.85rem; color:#666;">Or call directly:</div>' + directPhones : '') +
+          '</div>';
+      } else {
+        renderAfterHours(data.fallback_phones);
+      }
+    }
+
+    function renderAfterHours(phones) {
+      var phoneList = buildPhoneList(phones);
+      container.innerHTML =
+        '<div class="get-quotes-inner get-quotes-after-hours-result">' +
+          '<span class="get-quotes-check">&#10003;</span> ' +
+          'It\'s currently outside business hours. Your request will be sent at 7 AM ET.' +
+          '<div style="margin-top:12px; font-weight:600;">Need oil sooner? Call directly:</div>' +
+          phoneList +
+        '</div>';
+    }
+
+    function renderFallback(phones, message) {
+      var phoneList = buildPhoneList(phones);
+      container.innerHTML =
+        '<div class="get-quotes-inner">' +
+          '<div class="get-quotes-title">' + escapeHtml(message || 'Call suppliers directly') + '</div>' +
+          phoneList +
+        '</div>';
+    }
+
+    function buildPhoneList(phones) {
+      if (!phones || phones.length === 0) return '';
+      var html = '<div class="get-quotes-fallback-list">';
+      phones.forEach(function (s) {
+        var priceText = s.price ? ' — $' + Number(s.price).toFixed(2) + '/gal' : '';
+        html += '<div class="get-quotes-fallback-item">' +
+          '<strong>' + escapeHtml(s.name) + '</strong>' + priceText +
+          '<br><a href="tel:' + escapeHtml(s.phone) + '">' + escapeHtml(s.phone) + '</a>' +
+        '</div>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function showError(el, msg) {
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  };
+})();

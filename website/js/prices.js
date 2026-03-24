@@ -433,6 +433,23 @@
       });
     }
 
+    // Initialize Get Quotes form (trial ZIPs with opted-in suppliers only)
+    if (typeof window.initGetQuotesForm === 'function') {
+      fetch('/api/quote-request/availability?zip=' + zip)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          if (data && data.available) {
+            window.initGetQuotesForm('#get-quotes-container', {
+              zip: zip,
+              supplierCount: data.supplier_count,
+              mode: data.mode || 'routed',
+              fallback_phones: data.fallback_phones || null
+            });
+          }
+        })
+        .catch(function () { /* silently fail — form just won't show */ });
+    }
+
     // Show PWA install banner after user has seen value (Android only)
     if (typeof window.showPwaInstallBanner === 'function') {
       setTimeout(() => window.showPwaInstallBanner(), 1500);

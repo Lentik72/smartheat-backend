@@ -4508,6 +4508,104 @@ router.get('/alert-subscribers', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/quote-requests - Smart Quote Request stats (heatingoil-h1fy)
+router.get('/quote-requests', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const [[totals]] = await sequelize.query(`
+      SELECT
+        COUNT(*) AS total_requests,
+        COUNT(*) FILTER (WHERE phone_verified = true) AS verified,
+        COUNT(*) FILTER (WHERE status = 'dispatched') AS dispatched,
+        COUNT(*) FILTER (WHERE consumer_notified_fallback = true) AS fallback_sent,
+        COUNT(*) FILTER (WHERE status = 'expired') AS expired,
+        COUNT(*) FILTER (WHERE consumer_outcome = 'contacted') AS user_contacted,
+        COUNT(*) FILTER (WHERE consumer_outcome = 'not_contacted') AS user_not_contacted
+      FROM quote_requests
+    `);
+
+    const [[supplierStats]] = await sequelize.query(`
+      SELECT
+        COUNT(*) AS total_lead_sends,
+        COUNT(*) FILTER (WHERE responded_at IS NOT NULL) AS supplier_responses,
+        COUNT(*) FILTER (WHERE status = 'failed') AS sms_failures
+      FROM quote_request_suppliers
+    `);
+
+    const [[optinStats]] = await sequelize.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE lead_opted_in = true) AS opted_in,
+        COUNT(*) FILTER (WHERE leads_opted_out_at IS NOT NULL) AS opted_out
+      FROM suppliers
+      WHERE active = true
+    `);
+
+    // Unserved leads: dispatched > 6h ago, no supplier response, during business hours
+    const [[unserved]] = await sequelize.query(`
+      SELECT COUNT(*) AS cnt
+      FROM quote_requests qr
+      WHERE qr.status = 'dispatched'
+        AND qr.dispatched_at < NOW() - INTERVAL '6 hours'
+        AND NOT EXISTS (
+          SELECT 1 FROM quote_request_suppliers qrs
+          WHERE qrs.quote_request_id = qr.id AND qrs.responded_at IS NOT NULL
+        )
+    `);
+
+    // Top ZIPs
+    const [topZips] = await sequelize.query(`
+      SELECT consumer_zip AS zip, COUNT(*) AS requests,
+             COUNT(*) FILTER (WHERE status = 'dispatched') AS dispatched
+      FROM quote_requests
+      GROUP BY consumer_zip
+      ORDER BY requests DESC
+      LIMIT 10
+    `);
+
+    // Recent requests
+    const [recent] = await sequelize.query(`
+      SELECT id, consumer_zip, gallons_requested, tank_level, status,
+             dispatched_at, consumer_outcome, created_at,
+             (SELECT COUNT(*) FROM quote_request_suppliers qrs WHERE qrs.quote_request_id = qr.id AND qrs.responded_at IS NOT NULL) AS supplier_responses
+      FROM quote_requests qr
+      ORDER BY created_at DESC
+      LIMIT 20
+    `);
+
+    const dispatched = parseInt(totals.dispatched) || 0;
+    const responses = parseInt(supplierStats.supplier_responses) || 0;
+    const contacted = parseInt(totals.user_contacted) || 0;
+    const totalOutcomes = contacted + (parseInt(totals.user_not_contacted) || 0);
+
+    res.json({
+      total_requests: parseInt(totals.total_requests) || 0,
+      verified: parseInt(totals.verified) || 0,
+      dispatched,
+      supplier_responses: responses,
+      supplier_response_rate: dispatched > 0 ? (responses / dispatched * 100).toFixed(0) + '%' : '—',
+      user_contacted: contacted,
+      user_contact_rate: totalOutcomes > 0 ? (contacted / totalOutcomes * 100).toFixed(0) + '%' : '—',
+      unserved_leads: parseInt(unserved.cnt) || 0,
+      fallback_sent: parseInt(totals.fallback_sent) || 0,
+      sms_failures: parseInt(supplierStats.sms_failures) || 0,
+      expired: parseInt(totals.expired) || 0,
+      opted_in_suppliers: parseInt(optinStats.opted_in) || 0,
+      opted_out_suppliers: parseInt(optinStats.opted_out) || 0,
+      top_zips: topZips,
+      recent
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Quote requests error:', error.message);
+    res.status(500).json({ error: 'Failed to load quote requests', details: error.message });
+  }
+});
+
 // GET /api/dashboard/coverage-requests - Coverage request demand signal
 router.get('/coverage-requests', async (req, res) => {
   const logger = req.app.locals.logger;

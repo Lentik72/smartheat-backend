@@ -616,6 +616,8 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/131-add-woodruff-energy-bridgeton', label: 'Woodruff Energy (Bridgeton NJ — 6-county South Jersey)' },
           { path: './src/migrations/132-add-patriot-discount-oil-nj', label: 'Patriot Discount Oil (Whitehouse NJ — Hunterdon/Warren/Somerset/Morris)' },
           { path: './src/migrations/133-create-coverage-requests', label: 'Coverage requests table (empty ZIP email notifications)' },
+          { path: './src/migrations/134-create-quote-requests', label: 'Quote requests + supplier junction tables (heatingoil-h1fy)' },
+          { path: './src/migrations/135-add-supplier-lead-columns', label: 'Supplier lead opt-in columns (heatingoil-h1fy)' },
         ];
 
         let migrationErrors = 0;
@@ -648,6 +650,12 @@ if (API_KEYS.DATABASE_URL) {
         const smsPriceService = new SmsPriceService(sequelize, logger);
         app.locals.smsPriceService = smsPriceService;
         logger.info('✅ SMS Price Service initialized');
+
+        // Smart Quote Request Service (heatingoil-h1fy)
+        const QuoteRequestService = require('./src/services/QuoteRequestService');
+        const quoteRequestService = new QuoteRequestService(sequelize, logger);
+        app.locals.quoteRequestService = quoteRequestService;
+        logger.info('✅ Quote Request Service initialized');
 
         logger.info('📊 Database ready for operations');
       })
@@ -820,6 +828,8 @@ app.use('/api/outreach', require('./src/routes/outreach'));  // Supplier email u
 app.use('/api/webhook', require('./src/routes/outreach'));  // Resend bounce/complaint webhook
 app.use('/api/price-alerts', require('./src/routes/price-alerts'));  // Price alert subscribe/unsubscribe
 app.use('/api/coverage-request', require('./src/routes/coverage-request'));  // Coverage request for empty ZIPs
+app.use('/api/quote-request', require('./src/routes/quote-request'));  // Smart Quote Request system (heatingoil-h1fy)
+app.use('/api/webhook/twilio-leads', require('./src/routes/lead-sms-webhook'));  // Lead SMS inbound (separate from price SMS)
 app.use('/api/v1/heating-cost', require('./src/routes/heating-cost'));  // Multi-fuel cost comparison
 app.use('/api/v1', require('./src/routes/user-events'));  // Lightweight user event tracking
 
@@ -1249,6 +1259,33 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     });
   }, { timezone: 'America/New_York' });
   logger.info('🔔 Price alerts scheduled: daily at 8:00 AM ET');
+
+  // Smart Quote Request crons (heatingoil-h1fy)
+  if (process.env.DISABLE_QUOTE_SYSTEM !== 'true') {
+    const quoteService = app.locals.quoteRequestService;
+    if (quoteService) {
+      // 7:00 AM ET — Dispatch queued after-hours quote requests
+      cron.schedule('0 7 * * *', async () => {
+        await cronMonitor.run('quote-queue', async () => {
+          return await quoteService.processQueue();
+        });
+      }, { timezone: 'America/New_York' });
+
+      // Every hour — Fallback notifications + outcome checks + expiration
+      cron.schedule('0 * * * *', async () => {
+        await cronMonitor.run('quote-maintenance', async () => {
+          const [fallbacks, outcomes, expired] = await Promise.all([
+            quoteService.sendFallbackNotification(),
+            quoteService.sendOutcomeCheck(),
+            quoteService.expireStaleRequests(),
+          ]);
+          return { fallbacks, outcomes, expired };
+        });
+      }, { timezone: 'America/New_York' });
+
+      logger.info('📋 Quote request crons scheduled: 7 AM dispatch + hourly maintenance');
+    }
+  }
 
   // V2.6.0: Distributed scheduler - ACTIVE MODE
   // Spreads scrapes across 8AM-6PM to reduce detection risk
