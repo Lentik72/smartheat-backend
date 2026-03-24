@@ -1077,7 +1077,7 @@ class QuoteRequestService {
       const optinUrl = `${SITE_URL}/api/quote-request/supplier-optin?supplier=${supplier.slug}&token=${optinHmac}`;
 
       try {
-        await fetch('https://api.resend.com/emails', {
+        const emailRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1100,9 +1100,15 @@ class QuoteRequestService {
           })
         });
 
-        await this._logAudit(supplier.id, 'system', 'lead_activation_email', { zip, gallons });
+        if (!emailRes.ok) {
+          const errBody = await emailRes.text();
+          this.logger.error(`[QuoteRequest] Activation email API error for ${supplier.slug}: ${emailRes.status} ${errBody}`);
+        } else {
+          await this._logAudit(supplier.id, 'system', 'lead_activation_email', { zip, gallons });
+          this.logger.info(`[QuoteRequest] Activation email sent to ${supplier.slug} for ZIP ${zip}`);
+        }
       } catch (err) {
-        this.logger.warn(`[QuoteRequest] Activation email failed for ${supplier.slug}: ${err.message}`);
+        this.logger.error(`[QuoteRequest] Activation email failed for ${supplier.slug}: ${err.message}`);
       }
     }
   }
