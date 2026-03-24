@@ -1567,6 +1567,23 @@ function scheduleCoverageIntelligence(cronMonitor) {
             logger.warn('[DailyReports] Failed to generate supplier diagnostics:', err.message);
           }
 
+          // V3.1.1: Gather recent price rejections (outliers + drops) from last 24h
+          let priceRejections = null;
+          try {
+            const [rejectRows] = await sequelize.query(`
+              SELECT rejections FROM scrape_runs
+              WHERE run_at > NOW() - INTERVAL '24 hours'
+                AND rejections != '[]'::jsonb
+              ORDER BY run_at DESC LIMIT 1
+            `);
+            if (rejectRows.length > 0 && rejectRows[0].rejections && rejectRows[0].rejections.length > 0) {
+              priceRejections = rejectRows[0].rejections;
+              logger.info(`[DailyReports] ${priceRejections.length} price rejection(s) in last 24h`);
+            }
+          } catch (err) {
+            logger.warn('[DailyReports] Failed to gather price rejections:', err.message);
+          }
+
           // V3.1.0: Gather cron health for daily email
           let cronHealth = null;
           try {
@@ -1579,7 +1596,7 @@ function scheduleCoverageIntelligence(cronMonitor) {
             logger.warn('[DailyReports] Failed to gather cron health:', err.message);
           }
 
-          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics, cronHealth);
+          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics, cronHealth, priceRejections);
           logger.info('[DailyReports] Combined report sent');
         } else {
           logger.info('[DailyReports] No actionable items or activity - skipping email');

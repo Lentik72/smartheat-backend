@@ -501,15 +501,16 @@ async function runScraper(options = {}) {
     if (!opts.dryRun) {
       try {
         await sequelize.query(`
-          INSERT INTO scrape_runs (run_at, success_count, failed_count, skipped_count, duration_ms, failures)
-          VALUES (NOW(), $1, $2, $3, $4, $5::jsonb)
+          INSERT INTO scrape_runs (run_at, success_count, failed_count, skipped_count, duration_ms, failures, rejections)
+          VALUES (NOW(), $1, $2, $3, $4, $5::jsonb, $6::jsonb)
         `, {
           bind: [
             results.success.length,
             results.failed.length,
             suppliers.length - scrapableSuppliers.length,
             runDuration,
-            JSON.stringify(failuresArray)
+            JSON.stringify(failuresArray),
+            JSON.stringify(results.rejected)
           ]
         });
         log.info('📝 Scrape run logged to database');

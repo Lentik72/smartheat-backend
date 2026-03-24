@@ -385,15 +385,15 @@ class CoverageReportMailer {
    * V2.12.0: Now includes click tracking stats for "Sniper" outreach
    * Reduces inbox clutter by combining both reports
    */
-  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null, supplierDiagnostics = null, cronHealth = null) {
+  async sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null, supplierDiagnostics = null, cronHealth = null, priceRejections = null) {
     const recipient = this.getRecipient();
     if (!recipient) {
       console.log('[CoverageReportMailer] No recipient configured');
       return false;
     }
 
-    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics, cronHealth);
-    const subject = this.getCombinedSubject(coverageReport, activityReport, cronHealth);
+    const html = this.formatCombinedReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics, cronHealth, priceRejections);
+    const subject = this.getCombinedSubject(coverageReport, activityReport, cronHealth, priceRejections);
 
     const success = await this.sendEmail(recipient, subject, html);
     if (success) {
@@ -405,7 +405,7 @@ class CoverageReportMailer {
   /**
    * Generate subject line for combined report
    */
-  getCombinedSubject(coverageReport, activityReport, cronHealth = null) {
+  getCombinedSubject(coverageReport, activityReport, cronHealth = null, priceRejections = null) {
     const date = new Date().toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric'
@@ -419,6 +419,11 @@ class CoverageReportMailer {
     const cronFails = cronHealth?.jobs?.filter(j => j.status === 'failed' || j.status === 'missing').length || 0;
     if (cronFails > 0) {
       return `[CRON ALERT] SmartHeat: ${cronFails} job(s) failed, ${users} users - ${date}`;
+    }
+
+    // V3.1.1: Flag price rejections in subject line
+    if (priceRejections && priceRejections.length > 0) {
+      return `[PRICE ALERT] SmartHeat: ${priceRejections.length} price(s) blocked, ${users} users - ${date}`;
     }
 
     if (criticalGaps > 0) {
@@ -437,8 +442,9 @@ class CoverageReportMailer {
    * V2.10.2: Added priceReviewLink parameter for manual price verification
    * V2.12.0: Added clickStats parameter for "Sniper" outreach tracking
    * V2.13.0: Added supplierDiagnostics for categorized failure analysis
+   * V3.1.1: Added priceRejections for outlier/drop rejection alerts
    */
-  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null, supplierDiagnostics = null, cronHealth = null) {
+  formatCombinedReport(coverageReport, activityReport, priceReviewLink = null, clickStats = null, claimFunnel = null, supplierDiagnostics = null, cronHealth = null, priceRejections = null) {
     const styles = `
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #333; max-width: 650px; margin: 0 auto; }
       h2 { color: #1a1a1a; border-bottom: 2px solid #007AFF; padding-bottom: 8px; margin-top: 0; }
@@ -766,6 +772,30 @@ class CoverageReportMailer {
   ${activity.summary.errors > 0 ? `
     <h3>⚠️ Errors</h3>
     <p><strong>${activity.summary.errors}</strong> API errors in the last 24 hours.</p>
+  ` : ''}
+
+  <!-- ===== PRICE REJECTIONS (V3.1.1) ===== -->
+  ${priceRejections && priceRejections.length > 0 ? `
+    <h3>🚫 Price Rejections (${priceRejections.length})</h3>
+    <p style="color: #b91c1c; font-weight: 600;">Prices auto-blocked from display — likely scraping artifacts.</p>
+    <table>
+      <tr>
+        <th>Supplier</th>
+        <th>Scraped</th>
+        <th>Reason</th>
+      </tr>
+      ${priceRejections.map(r => `
+        <tr class="critical">
+          <td>${r.supplierName}</td>
+          <td>$${r.newPrice.toFixed(2)}</td>
+          <td>${r.marketMedian
+            ? `${r.belowMedianPercent.toFixed(0)}% below median ($${r.marketMedian.toFixed(2)})`
+            : `${r.dropPercent.toFixed(0)}% drop from $${r.previousPrice.toFixed(2)}`
+          }</td>
+        </tr>
+      `).join('')}
+    </table>
+    <p style="font-size: 13px; color: #555;">Check scrape-config.json regex if a supplier keeps appearing here.</p>
   ` : ''}
 
   <!-- ===== SUPPLIER HEALTH REPORT (V2.13.0) ===== -->
