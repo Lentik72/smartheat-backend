@@ -789,7 +789,7 @@ class CoverageReportMailer {
           <td>${r.supplierName}</td>
           <td>$${r.newPrice.toFixed(2)}</td>
           <td>${r.marketMedian
-            ? `${r.belowMedianPercent.toFixed(0)}% below median ($${r.marketMedian.toFixed(2)})`
+            ? `${r.belowMedianPercent.toFixed(0)}% below ${r.state || ''} median ($${r.marketMedian.toFixed(2)})`
             : `${r.dropPercent.toFixed(0)}% drop from $${r.previousPrice.toFixed(2)}`
           }</td>
         </tr>

@@ -157,12 +157,14 @@ async function runScraper(options = {}) {
 
     // V3.1.0: Market outlier detection — reject prices far below the pack
     // Catches scraping artifacts (e.g., gas station prices, card prices, wrong page section)
-    const MAX_BELOW_MEDIAN_PERCENT = 0.20; // Reject prices > 20% below market median
+    // V3.1.2: State-level median (not national) — prices vary significantly by state
+    const MAX_BELOW_MEDIAN_PERCENT = 0.25; // Reject prices > 25% below state median
     const MIN_SUPPLIERS_FOR_MEDIAN = 5;    // Need enough data for a meaningful median
-    let marketMedian = null;
+    const stateMedians = {};
     {
-      const [medianResult] = await sequelize.query(`
-        SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sp.price_per_gallon::numeric) as median_price,
+      const [medianRows] = await sequelize.query(`
+        SELECT s.state,
+               PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sp.price_per_gallon::numeric) as median_price,
                COUNT(DISTINCT sp.supplier_id) as supplier_count
         FROM supplier_prices sp
         JOIN suppliers s ON sp.supplier_id = s.id
@@ -171,13 +173,15 @@ async function runScraper(options = {}) {
           AND sp.expires_at > NOW()
           AND s.active = true
           AND s.allow_price_display = true
+          AND s.state IS NOT NULL
+        GROUP BY s.state
+        HAVING COUNT(DISTINCT sp.supplier_id) >= ${MIN_SUPPLIERS_FOR_MEDIAN}
       `);
-      if (medianResult.length > 0 && parseInt(medianResult[0].supplier_count) >= MIN_SUPPLIERS_FOR_MEDIAN) {
-        marketMedian = parseFloat(medianResult[0].median_price);
-        log.info(`📊 Market median: $${marketMedian.toFixed(3)} (${medianResult[0].supplier_count} suppliers)`);
-      } else {
-        log.info(`📊 Market median: skipped (< ${MIN_SUPPLIERS_FOR_MEDIAN} active suppliers)`);
+      for (const row of medianRows) {
+        stateMedians[row.state] = parseFloat(row.median_price);
       }
+      const stateList = Object.entries(stateMedians).map(([st, m]) => `${st}: $${m.toFixed(2)}`).join(', ');
+      log.info(`📊 State medians (${Object.keys(stateMedians).length} states): ${stateList || 'none (< 5 suppliers per state)'}`);
     }
 
     const DELAY_MS = 2000; // 2 seconds between requests
@@ -251,19 +255,21 @@ async function runScraper(options = {}) {
             }
           }
 
-          // V3.1.0: Market outlier detection — reject prices far below the pack
-          if (!priceRejected && marketMedian) {
+          // V3.1.2: State-level outlier detection — reject prices far below the state pack
+          const stateMedian = supplier.state ? stateMedians[supplier.state] : null;
+          if (!priceRejected && stateMedian) {
             const newPrice = result.pricePerGallon;
-            const belowMedian = (marketMedian - newPrice) / marketMedian;
+            const belowMedian = (stateMedian - newPrice) / stateMedian;
             if (belowMedian > MAX_BELOW_MEDIAN_PERCENT) {
-              log.warn(`   ⚠️  OUTLIER REJECTED: $${newPrice.toFixed(3)} is ${(belowMedian * 100).toFixed(0)}% below market median $${marketMedian.toFixed(3)}`);
+              log.warn(`   ⚠️  OUTLIER REJECTED: $${newPrice.toFixed(3)} is ${(belowMedian * 100).toFixed(0)}% below ${supplier.state} median $${stateMedian.toFixed(3)}`);
               results.rejected.push({
                 supplierName: supplier.name,
                 supplierId: supplier.id,
+                state: supplier.state,
                 newPrice,
-                marketMedian,
+                marketMedian: stateMedian,
                 belowMedianPercent: belowMedian * 100,
-                reason: `${(belowMedian * 100).toFixed(0)}% below median exceeds ${MAX_BELOW_MEDIAN_PERCENT * 100}% threshold`
+                reason: `${(belowMedian * 100).toFixed(0)}% below ${supplier.state} median exceeds ${MAX_BELOW_MEDIAN_PERCENT * 100}% threshold`
               });
               priceRejected = true;
               results.success.pop();
@@ -442,7 +448,7 @@ async function runScraper(options = {}) {
       log.warn('🚫 Rejected prices:');
       results.rejected.forEach(r => {
         if (r.marketMedian) {
-          log.warn(`  - ${r.supplierName}: $${r.newPrice.toFixed(3)} (${r.belowMedianPercent.toFixed(0)}% below median $${r.marketMedian.toFixed(3)}) — likely scraping artifact`);
+          log.warn(`  - ${r.supplierName}: $${r.newPrice.toFixed(3)} (${r.belowMedianPercent.toFixed(0)}% below ${r.state || ''} median $${r.marketMedian.toFixed(3)}) — likely scraping artifact`);
         } else {
           log.warn(`  - ${r.supplierName}: $${r.newPrice.toFixed(3)} (${r.dropPercent.toFixed(0)}% drop from $${r.previousPrice.toFixed(3)})`);
         }
