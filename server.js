@@ -618,6 +618,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/133-create-coverage-requests', label: 'Coverage requests table (empty ZIP email notifications)' },
           { path: './src/migrations/134-create-quote-requests', label: 'Quote requests + supplier junction tables (heatingoil-h1fy)' },
           { path: './src/migrations/135-add-supplier-lead-columns', label: 'Supplier lead opt-in columns (heatingoil-h1fy)' },
+          { path: './src/migrations/136-add-scrape-runs-rejections', label: 'Scrape runs rejections column (outlier detection)' },
         ];
 
         let migrationErrors = 0;
