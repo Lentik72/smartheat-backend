@@ -1066,7 +1066,7 @@ class QuoteRequestService {
       // Skip if we already emailed this supplier about a lead in the last 7 days
       const [recent] = await this.sequelize.query(`
         SELECT 1 FROM audit_logs
-        WHERE supplier_id = :id AND action = 'lead_activation_email'
+        WHERE target_id = :id AND action = 'lead_activation_email'
           AND created_at > NOW() - INTERVAL '7 days'
         LIMIT 1
       `, { replacements: { id: supplier.id } });
@@ -1113,18 +1113,19 @@ class QuoteRequestService {
     }
   }
 
-  /** Log to audit_logs */
-  async _logAudit(supplierId, actor, action, details) {
+  /** Log to audit_logs (uses actual schema: admin_user_id, admin_email, action, target_id, details, metadata) */
+  async _logAudit(targetId, actor, action, details) {
     try {
       await this.sequelize.query(`
-        INSERT INTO audit_logs (supplier_id, actor, action, details, created_at, updated_at)
-        VALUES (:supplierId, :actor, :action, :details, NOW(), NOW())
+        INSERT INTO audit_logs (id, admin_user_id, admin_email, action, target_id, target_type, details, metadata, severity, created_at, updated_at)
+        VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', :actor, :action, :targetId, 'quote_request', :details, :metadata, 'low', NOW(), NOW())
       `, {
         replacements: {
-          supplierId: supplierId || null,
-          actor,
+          actor: actor || 'system',
           action,
-          details: JSON.stringify(details)
+          targetId: targetId || null,
+          details: JSON.stringify(details),
+          metadata: JSON.stringify(details)
         }
       });
     } catch (err) {
