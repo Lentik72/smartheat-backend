@@ -17978,8 +17978,8 @@
     "enabled": true,
     "pattern": "direct",
     "pricePath": "/home-heating",
-    "notes": "PA York - Recovered via got-scraping TLS fallback (was 403). Fragment #PRICING removed (gets URL-encoded, causes 404).",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "PA York - Recovered via got-scraping TLS fallback (was 403). Fragment #PRICING removed (gets URL-encoded, causes 404). Regex targets 150-gal delivered tier — page also lists Pacific Pride card prices and gasoline which are NOT delivery prices.",
+    "priceRegex": "Heating\\s+Oil\\s+150[^$]*\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "17007",
       "17011",
