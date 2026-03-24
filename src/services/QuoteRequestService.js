@@ -1035,6 +1035,9 @@ class QuoteRequestService {
    * "A customer in your area requested heating oil today. Enable leads: [link]"
    */
   async _sendActivationEmails(zip, gallons) {
+    // Gated by env var — don't send until testing is complete
+    if (process.env.DISABLE_ACTIVATION_EMAILS !== 'false') return;
+
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     if (!RESEND_API_KEY) return;
 
