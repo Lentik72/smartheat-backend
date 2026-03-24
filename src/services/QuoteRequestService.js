@@ -37,7 +37,7 @@ const FALLBACK_DELAY_MINUTES_LOW_SUPPLY = 30; // 1 supplier = faster fallback
 const OUTCOME_CHECK_HOURS = 6;
 const MAX_REQUESTS_PER_PHONE_PER_DAY = 3;
 const MAX_OTP_SMS_PER_DAY = parseInt(process.env.QUOTE_MAX_OTP_PER_DAY) || 50;
-const BUSINESS_HOURS = { start: 7, end: 19 }; // ET
+const BUSINESS_HOURS = { start: 6, end: 19 }; // ET — suppliers plan routes as early as 6 AM
 const MIN_FORM_TIME_MS = 3000;
 const ADVISORY_LOCK_KEY = 742019233;
 

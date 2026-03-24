@@ -1264,8 +1264,8 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   if (process.env.DISABLE_QUOTE_SYSTEM !== 'true') {
     const quoteService = app.locals.quoteRequestService;
     if (quoteService) {
-      // 7:00 AM ET — Dispatch queued after-hours quote requests
-      cron.schedule('0 7 * * *', async () => {
+      // 6:00 AM ET — Dispatch queued after-hours quote requests (suppliers plan routes early)
+      cron.schedule('0 6 * * *', async () => {
         await cronMonitor.run('quote-queue', async () => {
           return await quoteService.processQueue();
         });
