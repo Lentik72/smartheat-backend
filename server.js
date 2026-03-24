@@ -831,6 +831,8 @@ app.use('/api/price-alerts', require('./src/routes/price-alerts'));  // Price al
 app.use('/api/coverage-request', require('./src/routes/coverage-request'));  // Coverage request for empty ZIPs
 app.use('/api/quote-request', require('./src/routes/quote-request'));  // Smart Quote Request system (heatingoil-h1fy)
 app.use('/api/webhook/twilio-leads', require('./src/routes/lead-sms-webhook'));  // Lead SMS inbound (separate from price SMS)
+// Short URL for supplier "Confirm you called" link (keeps SMS clean)
+app.get('/r/:token', (req, res) => res.redirect(301, `/api/quote-request/supplier-response?t=${req.params.token}`));
 app.use('/api/v1/heating-cost', require('./src/routes/heating-cost'));  // Multi-fuel cost comparison
 app.use('/api/v1', require('./src/routes/user-events'));  // Lightweight user event tracking
 

@@ -495,9 +495,10 @@ class QuoteRequestService {
       if (sent >= MAX_SUPPLIERS_PER_LEAD) break;
 
       const token = QuoteRequestService.generateToken();
-      const responseUrl = `${SITE_URL}/api/quote-request/supplier-response?t=${token}`;
-      const claimUrl = `${SITE_URL}/claim/${supplier.slug}`;
+      // Short URL for SMS (redirects to full response handler)
       const othersCount = notifiedCount - 1;
+
+      const shortResponseUrl = `${SITE_URL}/r/${token}`;
 
       const smsBody = [
         `HOMEHEAT LEAD`,
@@ -506,14 +507,12 @@ class QuoteRequestService {
         ``,
         `→ Call ${smsName}`,
         `  ${consumerPhone}`,
-        ``,
-        othersCount > 0 ? `Sent to ${othersCount} other supplier${othersCount > 1 ? 's' : ''}` : '',
+        othersCount > 0 ? `\nSent to ${othersCount} other supplier${othersCount > 1 ? 's' : ''}` : '',
         ``,
         `Confirm you called:`,
-        responseUrl,
+        shortResponseUrl,
         ``,
-        `Your listing: ${claimUrl}`,
-        `Reply STOP to opt out · Msg rates may apply`
+        `STOP to opt out · Msg rates may apply`
       ].filter(line => line !== false && line !== null && line !== undefined).join('\n');
 
       // Insert junction row
