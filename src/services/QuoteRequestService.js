@@ -913,7 +913,7 @@ class QuoteRequestService {
     const [lastLeads] = scoredIds.length > 0 ? await this.sequelize.query(`
       SELECT DISTINCT ON (supplier_id) supplier_id, sms_sent_at, responded_at
       FROM quote_request_suppliers
-      WHERE supplier_id = ANY(:ids)
+      WHERE supplier_id IN (:ids)
       ORDER BY supplier_id, created_at DESC
     `, { replacements: { ids: scoredIds } }) : [[]];
 
