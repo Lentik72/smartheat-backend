@@ -1040,7 +1040,12 @@ class QuoteRequestService {
 
     // Find non-opted suppliers who serve this ZIP and have an email
     const [candidates] = await this.sequelize.query(`
-      SELECT s.id, s.name, s.slug, s.email, s.city, s.state
+      SELECT s.id, s.name, s.slug, s.email, s.city, s.state,
+             s.postal_codes_served AS "postalCodesServed",
+             s.service_cities AS "serviceCities",
+             s.service_counties AS "serviceCounties",
+             s.service_area_radius AS "serviceAreaRadius",
+             s.lat, s.lng
       FROM suppliers s
       WHERE s.active = true
         AND (s.lead_opted_in = false OR s.lead_opted_in IS NULL)

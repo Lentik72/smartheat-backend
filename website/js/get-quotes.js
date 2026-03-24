@@ -97,15 +97,6 @@
                 '<input type="number" class="get-quotes-gallons" min="75" max="500" value="150" required inputmode="numeric">' +
               '</div>' +
             '</div>' +
-            '<div class="get-quotes-tank-level">' +
-              '<label class="get-quotes-label">How full is your tank?</label>' +
-              '<div class="get-quotes-radio-group">' +
-                '<label class="get-quotes-radio"><input type="radio" name="tank_level" value="empty"> Nearly empty</label>' +
-                '<label class="get-quotes-radio"><input type="radio" name="tank_level" value="quarter"> About &frac14;</label>' +
-                '<label class="get-quotes-radio"><input type="radio" name="tank_level" value="half"> About &frac12;</label>' +
-                '<label class="get-quotes-radio"><input type="radio" name="tank_level" value="not_sure"> Not sure</label>' +
-              '</div>' +
-            '</div>' +
             '<div class="get-quotes-consent">' +
               '<label><input type="checkbox" class="get-quotes-consent-check" required> ' +
                 'I consent to sharing my name and phone with up to 3 local suppliers who may call me. ' +
@@ -168,8 +159,7 @@
       var honeypot = form.querySelector('[name="website_url"]').value;
       var consentChecked = container.querySelector('.get-quotes-consent-check').checked;
 
-      var tankRadio = form.querySelector('input[name="tank_level"]:checked');
-      var tankLevel = tankRadio ? tankRadio.value : 'not_sure';
+      var tankLevel = 'not_sure';
 
       // Validation
       if (!name) return showError(errorEl, 'Please enter your name.');
