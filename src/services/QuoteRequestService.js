@@ -97,9 +97,9 @@ class QuoteRequestService {
     return String(crypto.randomInt(1000, 10000));
   }
 
-  /** Generate secure token */
+  /** Generate secure token (base64url, 22 chars — short enough for SMS) */
   static generateToken() {
-    return crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(16).toString('base64url');
   }
 
   /** Generate HMAC for supplier opt-in link */
@@ -501,18 +501,18 @@ class QuoteRequestService {
       const shortResponseUrl = `${SITE_URL}/r/${token}`;
 
       const smsBody = [
-        `HOMEHEAT LEAD`,
+        `New Oil Request via HomeHeat`,
         ``,
-        `${request.consumer_zip} · ~${request.gallons_requested} gal${tankLevelText}`,
+        `ZIP ${request.consumer_zip} · ~${request.gallons_requested} gal${tankLevelText}`,
         ``,
-        `→ Call ${smsName}`,
-        `  ${consumerPhone}`,
+        `Call: ${smsName}`,
+        consumerPhone,
         othersCount > 0 ? `\nSent to ${othersCount} other supplier${othersCount > 1 ? 's' : ''}` : '',
         ``,
-        `Confirm you called:`,
+        `After you call, tap to confirm:`,
         shortResponseUrl,
         ``,
-        `STOP to opt out · Msg rates may apply`
+        `STOP to opt out`
       ].filter(line => line !== false && line !== null && line !== undefined).join('\n');
 
       // Insert junction row
