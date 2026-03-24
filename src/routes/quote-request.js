@@ -119,15 +119,32 @@ router.get('/supplier-response', async (req, res) => {
     }
 
     if (result.already_responded) {
-      return res.send(renderPage('Already Confirmed',
-        `<p>You already confirmed contacting this customer. Thanks, ${esc(result.supplier_name)}!</p>`
-      ));
+      return res.send(renderPage('Already Confirmed', `
+        <div style="max-width:480px; margin:0 auto; text-align:center;">
+          <div style="font-size:2rem; margin-bottom:8px;">✓</div>
+          <h2 style="margin:0 0 8px; color:#1a1a1a;">Already Confirmed</h2>
+          <p style="color:#666;">You already confirmed contacting ${esc(result.consumer_name)}. Thanks, ${esc(result.supplier_name)}!</p>
+        </div>
+      `));
     }
 
-    res.send(renderPage('Thank You!',
-      `<p>Thanks, ${esc(result.supplier_name)}! We've noted that you contacted ${esc(result.consumer_name)}.</p>
-       <p style="color:#666; font-size:14px; margin-top:16px;">Keep responding to leads to continue receiving them.</p>`
-    ));
+    res.send(renderPage('Lead Confirmed', `
+      <div style="max-width:480px; margin:0 auto; text-align:center;">
+        <div style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:12px; padding:24px;">
+          <div style="font-size:2rem; margin-bottom:8px;">✓</div>
+          <h2 style="color:#16A34A; margin:0 0 8px;">Confirmed</h2>
+          <p style="color:#374151; margin:0 0 12px;">
+            Thanks, <strong>${esc(result.supplier_name)}</strong>! We've noted that you contacted <strong>${esc(result.consumer_name)}</strong>.
+          </p>
+          <p style="font-size:13px; color:#666; margin:0;">
+            Keep responding to leads to continue receiving them.
+          </p>
+        </div>
+        <p style="margin-top:20px; font-size:13px; color:#999;">
+          <a href="https://www.gethomeheat.com/for-suppliers" style="color:#FF6B35;">Learn more about HomeHeat for suppliers →</a>
+        </p>
+      </div>
+    `));
   } catch (err) {
     res.status(500).send(renderPage('Error', '<p>Something went wrong. Please try again.</p>'));
   }
@@ -247,7 +264,7 @@ router.post('/supplier-optin', async (req, res) => {
     // Send welcome test SMS to confirm the number works
     const welcomeResult = await service.sendLeadSMS(
       lead_phone,
-      `Welcome to HomeHeat lead alerts! You'll receive delivery requests from homeowners in your area at this number. Reply STOP anytime to opt out. Msg & data rates may apply.`
+      `HOMEHEAT\n\nYou're set up for lead alerts.\n\nWhen a homeowner nearby requests heating oil, we'll text you their details here.\n\nReply STOP anytime to opt out.\nMsg rates may apply.`
     );
 
     // If SMS failed, revert opt-in — don't leave them opted-in but unreachable

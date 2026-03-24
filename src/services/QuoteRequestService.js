@@ -283,7 +283,7 @@ class QuoteRequestService {
     // --- Send OTP SMS ---
     const otpResult = await this.sendLeadSMS(
       consumer_phone,
-      `HomeHeat: Your verification code is ${otp}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Msg & data rates may apply.`
+      `HomeHeat\n\nYour verification code: ${otp}\n\nExpires in ${OTP_EXPIRY_MINUTES} min. Msg & data rates may apply.`
     );
 
     if (!otpResult) {
@@ -500,15 +500,21 @@ class QuoteRequestService {
       const othersCount = notifiedCount - 1;
 
       const smsBody = [
-        `via HomeHeat — local heating oil prices`,
-        `Lead (${request.consumer_zip}): ~${request.gallons_requested} gal${tankLevelText}`,
-        `Call: ${smsName} ${consumerPhone}`,
+        `HOMEHEAT LEAD`,
+        ``,
+        `${request.consumer_zip} · ~${request.gallons_requested} gal${tankLevelText}`,
+        ``,
+        `→ Call ${smsName}`,
+        `  ${consumerPhone}`,
+        ``,
         othersCount > 0 ? `Sent to ${othersCount} other supplier${othersCount > 1 ? 's' : ''}` : '',
-        `Called them? Tap: ${responseUrl}`,
-        `Claim your listing: ${claimUrl}`,
-        `Reply STOP to opt out`,
-        `Msg & data rates may apply`
-      ].filter(Boolean).join('\n');
+        ``,
+        `Confirm you called:`,
+        responseUrl,
+        ``,
+        `Your listing: ${claimUrl}`,
+        `Reply STOP to opt out · Msg rates may apply`
+      ].filter(line => line !== false && line !== null && line !== undefined).join('\n');
 
       // Insert junction row
       await this.sequelize.query(`
@@ -795,11 +801,11 @@ class QuoteRequestService {
       // Build fallback message with lowest price (conversion moment)
       const cheapest = top[0];
       const priceText = cheapest.currentPrice
-        ? `Lowest nearby: $${cheapest.currentPrice.pricePerGallon}/gal at ${cheapest.name}`
-        : `Try ${cheapest.name}`;
-      const phoneList = top.map(s => `${s.name}: ${s.phone}`).join('\n');
+        ? `Best price: $${cheapest.currentPrice.pricePerGallon}/gal — ${cheapest.name}`
+        : cheapest.name;
+      const phoneList = top.map(s => `→ ${s.name}: ${s.phone}`).join('\n');
 
-      const msg = `HomeHeat: Haven't heard back from suppliers yet.\n${priceText}\nCall directly:\n${phoneList}`;
+      const msg = `HomeHeat\n\nNo supplier has responded yet.\n\n${priceText}\n\nCall directly:\n${phoneList}\n\nMsg rates may apply.`;
 
       const result = await this.sendLeadSMS(row.consumer_phone, msg);
       if (result) {
@@ -835,7 +841,7 @@ class QuoteRequestService {
 
     let sent = 0;
     for (const row of rows) {
-      const msg = `HomeHeat: Did a supplier contact you about your heating oil request? Reply 1=Yes 2=No`;
+      const msg = `HomeHeat\n\nDid a supplier contact you about your oil request?\n\nReply 1 = Yes\nReply 2 = No`;
       const result = await this.sendLeadSMS(row.consumer_phone, msg);
 
       if (result) {
