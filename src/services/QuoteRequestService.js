@@ -529,8 +529,8 @@ class QuoteRequestService {
 
         // Insert supplier_engagements for leaderboard
         await this.sequelize.query(`
-          INSERT INTO supplier_engagements (supplier_id, supplier_name, engagement_type, user_zip, source, created_at, updated_at)
-          VALUES (:supplierId, :name, 'request_quote', :zip, 'quote_system', NOW(), NOW())
+          INSERT INTO supplier_engagements (supplier_id, supplier_name, engagement_type, user_zip, source, created_at)
+          VALUES (:supplierId, :name, 'request_quote', :zip, 'quote_system', NOW())
         `, { replacements: { supplierId: supplier.id, name: supplier.name, zip: request.consumer_zip } });
       } else {
         failed++;
