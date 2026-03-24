@@ -196,6 +196,12 @@ class QuoteRequestService {
     const phone10 = extractLast10(consumer_phone);
     if (!phone10) return { error: 'Please enter a valid 10-digit US phone number.' };
 
+    // Block premium/toll numbers and non-geographic
+    const areaCode = phone10.slice(0, 3);
+    if (['900', '976', '555'].includes(areaCode)) {
+      return { error: 'Please enter a standard US mobile or landline number.' };
+    }
+
     const zip = (consumer_zip || '').trim().slice(0, 5);
     if (!isValidZip(zip)) return { error: 'Please enter a valid 5-digit ZIP code.' };
     if (!this.isTrialZip(zip)) return { error: 'Not available in your area yet.' };

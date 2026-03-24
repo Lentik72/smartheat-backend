@@ -125,6 +125,24 @@
       var form = container.querySelector('.get-quotes-form');
       form.addEventListener('submit', handleSubmit);
 
+      // Auto-format phone as (XXX) XXX-XXXX while typing
+      var phoneInput = container.querySelector('.get-quotes-phone');
+      phoneInput.addEventListener('input', function () {
+        var digits = this.value.replace(/\D/g, '');
+        // Strip leading 1 (US country code)
+        if (digits.length > 10 && digits[0] === '1') digits = digits.slice(1);
+        // Cap at 10 digits
+        if (digits.length > 10) digits = digits.slice(0, 10);
+        // Format as (XXX) XXX-XXXX
+        if (digits.length >= 7) {
+          this.value = '(' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6);
+        } else if (digits.length >= 4) {
+          this.value = '(' + digits.slice(0, 3) + ') ' + digits.slice(3);
+        } else if (digits.length > 0) {
+          this.value = '(' + digits;
+        }
+      });
+
       // Track form engagement
       var formStarted = false;
       form.addEventListener('focusin', function (e) {
@@ -155,7 +173,14 @@
 
       // Validation
       if (!name) return showError(errorEl, 'Please enter your name.');
-      if (!phone || phone.replace(/\D/g, '').length < 10) return showError(errorEl, 'Please enter a valid 10-digit phone number.');
+      var phoneDigits = phone.replace(/\D/g, '');
+      if (phoneDigits.length > 10 && phoneDigits[0] === '1') phoneDigits = phoneDigits.slice(1);
+      if (phoneDigits.length !== 10) return showError(errorEl, 'Please enter a valid 10-digit US phone number.');
+      // Block premium/toll numbers (900, 976) and non-geographic (555)
+      var areaCode = phoneDigits.slice(0, 3);
+      if (areaCode === '900' || areaCode === '976' || areaCode === '555') {
+        return showError(errorEl, 'Please enter a standard US mobile or landline number.');
+      }
       if (!gallons || parseInt(gallons) < 75) return showError(errorEl, 'Minimum 75 gallons.');
       if (!consentChecked) return showError(errorEl, 'Please agree to the terms to continue.');
 
