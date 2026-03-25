@@ -33,52 +33,50 @@
     renderForm();
 
     function renderForm() {
-      // --- Build banner: merge after-hours + cold into one if both apply ---
-      var banner = '';
-      if (mode === 'cold' && isAfterHours) {
-        banner = '<div class="get-quotes-after-hours" style="background:#EFF6FF; border-color:#3B82F6; color:#1E40AF;">' +
-          'We\'re expanding in your area. It\'s currently outside business hours — for fastest service, ' +
-          'call suppliers below. Requests submitted now will be sent at 7 AM ET.' +
-        '</div>';
-      } else if (mode === 'cold') {
-        banner = '<div class="get-quotes-after-hours" style="background:#EFF6FF; border-color:#3B82F6; color:#1E40AF;">' +
-          'Limited instant quote coverage — call suppliers directly below.' +
-        '</div>';
-      } else if (isAfterHours) {
-        banner = '<div class="get-quotes-after-hours">' +
-          'It\'s currently outside business hours. Requests submitted now will be sent to suppliers at 7 AM ET. ' +
-          'For immediate help, call suppliers directly below.' +
-        '</div>';
+      if (mode === 'cold') {
+        renderColdForm();
+      } else {
+        renderRoutedForm();
       }
+    }
 
-      // --- Title ---
-      var title = mode === 'cold'
-        ? 'Call suppliers or request quotes'
-        : 'Get quotes from ' + supplierCount + ' local supplier' + (supplierCount !== 1 ? 's' : '');
-
-      // --- Phone list: in cold mode, show ABOVE form as primary action ---
-      var coldPhoneList = (mode === 'cold' && coldFallbackPhones) ? buildPhoneList(coldFallbackPhones) : '';
-      var phonesAboveForm = mode === 'cold' && coldPhoneList
-        ? '<div style="margin-bottom:12px;">' +
-            '<div style="font-weight:600; font-size:0.9rem; margin-bottom:4px;">Call suppliers now (fastest option):</div>' +
-            coldPhoneList +
-            '<div style="font-size:0.72rem; color:#999; margin-top:4px;">Prices shown are the latest available — confirm when calling.</div>' +
+    function renderRoutedForm() {
+      var afterHoursBanner = isAfterHours
+        ? '<div class="get-quotes-after-hours">' +
+            'Outside business hours. Requests will be sent at 6 AM ET.' +
           '</div>'
         : '';
 
-      // --- Meta text ---
-      var metaText = mode === 'cold'
-        ? 'Submit to help us bring instant quotes to your area.'
-        : 'No spam, no account required.';
+      container.innerHTML =
+        '<div class="get-quotes-inner">' +
+          afterHoursBanner +
+          '<div class="get-quotes-title">Get quotes from ' + supplierCount + ' local supplier' + (supplierCount !== 1 ? 's' : '') + '</div>' +
+          renderFormFields() +
+          '<div class="get-quotes-meta">No spam, no account required.</div>' +
+        '</div>';
 
-      var whySubmit = '';
+      attachFormHandlers();
+    }
+
+    function renderColdForm() {
+      var coldPhoneList = coldFallbackPhones ? buildPhoneList(coldFallbackPhones) : '';
 
       container.innerHTML =
         '<div class="get-quotes-inner">' +
-          banner +
-          '<div class="get-quotes-title">' + title + '</div>' +
-          phonesAboveForm +
-          '<form class="get-quotes-form">' +
+          '<div class="get-quotes-title">Suppliers near you</div>' +
+          coldPhoneList +
+          '<div style="font-size:0.72rem; color:#999; margin:4px 0 16px;">Confirm prices when calling.</div>' +
+          '<div style="border-top:1px solid #E5D8D0; padding-top:16px; margin-top:4px;">' +
+            '<div style="font-size:0.85rem; color:#666; margin-bottom:8px;">Want instant quotes? Leave your details and we\'ll notify you when available.</div>' +
+            renderFormFields() +
+          '</div>' +
+        '</div>';
+
+      attachFormHandlers();
+    }
+
+    function renderFormFields() {
+      return '<form class="get-quotes-form">' +
             '<div class="get-quotes-fields">' +
               '<div class="get-quotes-field">' +
                 '<label class="get-quotes-label">Your name</label>' +
@@ -96,19 +94,17 @@
             '</div>' +
             '<div class="get-quotes-consent">' +
               '<label><input type="checkbox" class="get-quotes-consent-check" required> ' +
-                'I consent to sharing my name and phone with up to 3 local suppliers who may call me. ' +
-                'HomeHeat may send up to 2 follow-up texts about your request. ' +
-                'Your request becomes inactive after 24 hours. ' +
+                'I consent to sharing my info with up to 3 local suppliers. ' +
                 '<a href="/privacy" target="_blank">Privacy Policy</a>' +
               '</label>' +
             '</div>' +
             '<input type="text" name="website_url" style="display:none" tabindex="-1" autocomplete="off">' +
             '<div class="get-quotes-error" style="display:none;"></div>' +
             '<button type="submit" class="get-quotes-btn">Get Quotes &rarr;</button>' +
-          '</form>' +
-          '<div class="get-quotes-meta">' + metaText + '</div>' +
-          whySubmit +
-        '</div>';
+          '</form>';
+    }
+
+    function attachFormHandlers() {
 
       var form = container.querySelector('.get-quotes-form');
       form.addEventListener('submit', handleSubmit);
