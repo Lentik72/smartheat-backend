@@ -42,7 +42,7 @@
         '</div>';
       } else if (mode === 'cold') {
         banner = '<div class="get-quotes-after-hours" style="background:#EFF6FF; border-color:#3B82F6; color:#1E40AF;">' +
-          'We\'re expanding in your area — we\'ve identified suppliers nearby. You can call them directly below.' +
+          'Limited instant quote coverage — call suppliers directly below.' +
         '</div>';
       } else if (isAfterHours) {
         banner = '<div class="get-quotes-after-hours">' +
@@ -53,7 +53,7 @@
 
       // --- Title ---
       var title = mode === 'cold'
-        ? 'Request quotes (limited availability in your area)'
+        ? 'Call suppliers or request quotes'
         : 'Get quotes from ' + supplierCount + ' local supplier' + (supplierCount !== 1 ? 's' : '');
 
       // --- Phone list: in cold mode, show ABOVE form as primary action ---
@@ -68,13 +68,10 @@
 
       // --- Meta text ---
       var metaText = mode === 'cold'
-        ? 'We\'ll verify your phone and use your request to improve supplier coverage in your area.'
-        : 'We\'ll send a verification code to your phone. No spam, no account required.';
+        ? 'Submit to help us bring instant quotes to your area.'
+        : 'No spam, no account required.';
 
-      // --- Why submit (cold mode motivation) ---
-      var whySubmit = mode === 'cold'
-        ? '<div class="get-quotes-meta" style="font-size:0.78rem; margin-top:4px;">Submitting helps us expand coverage and get better pricing options in your area.</div>'
-        : '';
+      var whySubmit = '';
 
       container.innerHTML =
         '<div class="get-quotes-inner">' +

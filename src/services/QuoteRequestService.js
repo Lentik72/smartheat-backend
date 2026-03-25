@@ -1044,6 +1044,18 @@ class QuoteRequestService {
     // Test mode: override all recipient emails to a safe address
     const emailOverride = process.env.ACTIVATION_EMAIL_OVERRIDE || null;
 
+    // Per-ZIP daily cap: max 1 activation batch per ZIP per day
+    const [zipRecent] = await this.sequelize.query(`
+      SELECT 1 FROM audit_logs
+      WHERE action = 'lead_activation_email' AND details LIKE :zipPattern
+        AND created_at > NOW() - INTERVAL '24 hours'
+      LIMIT 1
+    `, { replacements: { zipPattern: `%"zip":"${zip}"%` } });
+    if (zipRecent.length > 0) {
+      this.logger.info(`[QuoteRequest] Activation emails already sent for ZIP ${zip} today — skipping`);
+      return;
+    }
+
     // Find non-opted suppliers who serve this ZIP and have an email
     const [candidates] = await this.sequelize.query(`
       SELECT s.id, s.name, s.slug, s.email, s.city, s.state,
