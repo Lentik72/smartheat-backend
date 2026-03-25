@@ -269,13 +269,10 @@
               return;
             }
 
-            // Zero suppliers at verify time — show fallback
-            if (result.data.suppliers_notified === 0 && result.data.fallback_phones) {
-              if (result.data.queued) {
-                renderAfterHours(result.data.fallback_phones);
-              } else {
-                renderFallback(result.data.fallback_phones, 'We couldn\'t reach any suppliers right now. Call directly:');
-              }
+            // Zero suppliers — cold mode or after-hours
+            if (result.data.suppliers_notified === 0) {
+              // All paths go through renderConfirmation which handles n === 0 properly
+              renderConfirmation(result.data);
               return;
             }
 
@@ -303,10 +300,10 @@
         container.innerHTML =
           '<div class="get-quotes-inner get-quotes-success">' +
             '<span class="get-quotes-check">&#10003;</span> ' +
-            'We\'re expanding in your area. We\'ve identified suppliers nearby and are notifying them about your request.' +
-            '<div style="margin-top:12px; font-weight:600;">Call these suppliers directly now:</div>' +
+            'Thanks! We\'re expanding in your area.' +
+            '<div style="margin-top:12px; font-weight:600;">Call these suppliers directly:</div>' +
             directPhones +
-            '<div class="get-quotes-meta" style="margin-top:8px;">We\'ll improve coverage here — thanks for helping us grow.</div>' +
+            '<div class="get-quotes-meta" style="margin-top:12px;">Your request helps us bring instant quotes to your area. We\'ll notify local suppliers about the demand here.</div>' +
           '</div>';
         return;
       }

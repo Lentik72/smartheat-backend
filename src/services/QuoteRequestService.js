@@ -1035,11 +1035,14 @@ class QuoteRequestService {
    * "A customer in your area requested heating oil today. Enable leads: [link]"
    */
   async _sendActivationEmails(zip, gallons) {
-    // Gated by env var — don't send until testing is complete
-    if (process.env.DISABLE_ACTIVATION_EMAILS !== 'false') return;
+    // Gated by env var — must be explicitly enabled
+    if (process.env.ENABLE_ACTIVATION_EMAILS !== 'true') return;
 
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     if (!RESEND_API_KEY) return;
+
+    // Test mode: override all recipient emails to a safe address
+    const emailOverride = process.env.ACTIVATION_EMAIL_OVERRIDE || null;
 
     // Find non-opted suppliers who serve this ZIP and have an email
     const [candidates] = await this.sequelize.query(`
@@ -1085,9 +1088,9 @@ class QuoteRequestService {
           headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: 'Leo from HomeHeat <hello@gethomeheat.com>',
-            to: supplier.email,
+            to: emailOverride || supplier.email,
             reply_to: 'support@gethomeheat.com',
-            subject: `You missed a heating oil lead in ${zip}`,
+            subject: `${emailOverride ? '[TEST] ' : ''}You missed a heating oil lead in ${zip}`,
             html: `
               <div style="font-family: -apple-system, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
                 <p>Hi ${escapeHtml(supplier.name)},</p>
