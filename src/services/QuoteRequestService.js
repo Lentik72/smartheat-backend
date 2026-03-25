@@ -1089,18 +1089,58 @@ class QuoteRequestService {
             from: 'Leo from HomeHeat <hello@gethomeheat.com>',
             to: emailOverride || supplier.email,
             reply_to: 'support@gethomeheat.com',
-            subject: `${emailOverride ? '[TEST] ' : ''}You missed a heating oil lead in ${zip}`,
+            subject: `${emailOverride ? '[TEST] ' : ''}A homeowner in ${zip} requested heating oil today`,
             html: `
-              <div style="font-family: -apple-system, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-                <p>Hi${supplier.contact_name ? ' ' + escapeHtml(supplier.contact_name) : ''},</p>
-                <p>A homeowner in <strong>${zip}</strong> requested <strong>~${gallons} gallons</strong> of heating oil today through HomeHeat.</p>
-                <p>You weren't able to receive this lead because you're not set up for instant alerts. We sent it to other suppliers in your area.</p>
-                <p style="text-align: center; margin: 24px 0;">
-                  <a href="${optinUrl}" style="display: inline-block; background: #FF6B35; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Enable Free Lead Alerts</a>
-                </p>
-                <p style="font-size: 13px; color: #666;">When you opt in, we'll text you instantly when homeowners in your area request quotes. Free during our beta. You can opt out anytime.</p>
-                <p style="font-size: 12px; color: #999;">— Leo, HomeHeat</p>
-              </div>
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #fff;">
+  <!-- Header -->
+  <div style="padding: 20px 24px; border-bottom: 1px solid #f0f0f0;">
+    <img src="${SITE_URL}/images/app-icon-192.png" alt="HomeHeat" width="36" height="36" style="border-radius: 8px; vertical-align: middle;">
+    <span style="font-size: 18px; font-weight: 600; color: #1a1a1a; vertical-align: middle; margin-left: 8px;">HomeHeat</span>
+  </div>
+
+  <!-- Body -->
+  <div style="padding: 24px;">
+    <p style="font-size: 14px; color: #666; margin: 0 0 16px; line-height: 1.5;">Hi${supplier.contact_name ? ' ' + escapeHtml(supplier.contact_name) : ''},</p>
+
+    <p style="font-size: 12px; color: #999; margin: 0 0 16px;">You're receiving this because <strong>${escapeHtml(supplier.name)}</strong> is listed as a heating oil supplier in the ${zip} area on HomeHeat.</p>
+
+    <!-- Lead card -->
+    <div style="background: #FFF7ED; border: 1px solid #FDBA74; border-radius: 10px; padding: 16px; margin: 0 0 20px;">
+      <div style="font-size: 13px; color: #9A3412; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600;">Customer Request</div>
+      <div style="font-size: 16px; color: #1a1a1a; font-weight: 600;">ZIP ${zip} · ~${gallons} gallons</div>
+      <div style="font-size: 13px; color: #666; margin-top: 4px;">Requested today through HomeHeat</div>
+    </div>
+
+    <p style="font-size: 14px; color: #374151; line-height: 1.6; margin: 0 0 20px;">You weren't set up to receive this request, so we sent it to other suppliers in your area.</p>
+
+    <!-- CTA -->
+    <p style="text-align: center; margin: 24px 0;">
+      <a href="${optinUrl}" style="display: inline-block; background: #FF6B35; color: #fff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Get Notified of Customer Requests</a>
+    </p>
+
+    <p style="font-size: 13px; color: #666; text-align: center; margin: 0 0 20px;">When you opt in, we'll text you instantly when homeowners nearby request oil. Free during our beta.</p>
+
+    <!-- Links -->
+    <div style="border-top: 1px solid #f0f0f0; padding-top: 16px; margin-top: 8px;">
+      <p style="font-size: 13px; color: #666; margin: 0 0 6px;">
+        <a href="${SITE_URL}/supplier/${supplier.slug}" style="color: #FF6B35; text-decoration: none;">View your listing on HomeHeat →</a>
+      </p>
+      <p style="font-size: 13px; color: #666; margin: 0;">
+        <a href="${SITE_URL}/prices?zip=${zip}" style="color: #FF6B35; text-decoration: none;">See local pricing in ${zip} →</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="padding: 16px 24px; background: #F9FAFB; border-top: 1px solid #f0f0f0; font-size: 12px; color: #999; line-height: 1.5;">
+    <p style="margin: 0 0 4px;"><strong>HomeHeat</strong> helps homeowners compare local heating oil prices and connect with suppliers.</p>
+    <p style="margin: 0 0 4px;">
+      <a href="${SITE_URL}/for-suppliers" style="color: #FF6B35; text-decoration: none;">Learn more for suppliers</a> ·
+      <a href="mailto:support@gethomeheat.com" style="color: #FF6B35; text-decoration: none;">support@gethomeheat.com</a>
+    </p>
+    <p style="margin: 0; color: #bbb;">You can opt out of these emails anytime by replying "unsubscribe".</p>
+  </div>
+</div>
             `
           })
         });
