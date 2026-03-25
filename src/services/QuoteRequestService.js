@@ -1023,7 +1023,10 @@ class QuoteRequestService {
    */
   async _sendActivationEmails(zip, gallons) {
     // Gated by env var — must be explicitly enabled
-    if (process.env.ENABLE_ACTIVATION_EMAILS !== 'true') return;
+    if (process.env.ENABLE_ACTIVATION_EMAILS !== 'true') {
+      this.logger.info(`[QuoteRequest] Activation emails disabled (ENABLE_ACTIVATION_EMAILS not set)`);
+      return;
+    }
 
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     if (!RESEND_API_KEY) return;
