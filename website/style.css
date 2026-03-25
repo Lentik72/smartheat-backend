@@ -2305,11 +2305,10 @@ body {
 
 /* ─── Get Quotes Form (heatingoil-h1fy) ─── */
 .get-quotes-card {
-    max-width: 600px;
-    margin: 1rem auto;
-    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    padding: 1rem;
     background: var(--background-card, #fff);
-    border: 2px solid var(--primary-orange, #FF6B35);
+    border: 1px solid var(--primary-orange, #FF6B35);
     border-radius: 12px;
     text-align: center;
 }
