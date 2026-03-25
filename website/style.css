@@ -2334,6 +2334,7 @@ body {
     gap: 10px;
     justify-content: center;
     align-items: flex-end;
+    width: 100%;
 }
 .get-quotes-field {
     display: flex;
@@ -2502,6 +2503,8 @@ body {
         min-width: unset;
     }
     .get-quotes-btn { width: 100%; }
+    .get-quotes-field-btn { width: 100%; }
+    .get-quotes-field-btn .get-quotes-label { display: none; }
     .get-quotes-radio-group { flex-direction: column; gap: 0; }
 }
 

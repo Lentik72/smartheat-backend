@@ -91,6 +91,10 @@
                 '<label class="get-quotes-label">Approx. gallons</label>' +
                 '<input type="number" class="get-quotes-gallons" min="75" max="500" value="150" required inputmode="numeric">' +
               '</div>' +
+              '<div class="get-quotes-field get-quotes-field-btn">' +
+                '<label class="get-quotes-label">&nbsp;</label>' +
+                '<button type="submit" class="get-quotes-btn">' + (mode === 'cold' ? 'Submit Request &rarr;' : 'Get Quotes &rarr;') + '</button>' +
+              '</div>' +
             '</div>' +
             '<div class="get-quotes-consent">' +
               '<label><input type="checkbox" class="get-quotes-consent-check" required> ' +
@@ -100,7 +104,6 @@
             '</div>' +
             '<input type="text" name="website_url" style="display:none" tabindex="-1" autocomplete="off">' +
             '<div class="get-quotes-error" style="display:none;"></div>' +
-            '<button type="submit" class="get-quotes-btn">' + (mode === 'cold' ? 'Submit Request &rarr;' : 'Get Quotes &rarr;') + '</button>' +
           '</form>';
     }
 
