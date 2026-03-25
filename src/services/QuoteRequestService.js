@@ -1080,6 +1080,8 @@ class QuoteRequestService {
 
       const optinHmac = QuoteRequestService.generateOptinHMAC(supplier.slug);
       const optinUrl = `${SITE_URL}/api/quote-request/supplier-optin?supplier=${supplier.slug}&token=${optinHmac}`;
+      const unsubToken = CLAIM_SECRET ? crypto.createHmac('sha256', CLAIM_SECRET).update(supplier.slug).digest('hex') : '';
+      const unsubUrl = `${SITE_URL}/api/outreach/unsubscribe?supplier=${encodeURIComponent(supplier.slug)}&token=${unsubToken}`;
 
       try {
         const emailRes = await fetch('https://api.resend.com/emails', {
@@ -1132,13 +1134,18 @@ class QuoteRequestService {
   </div>
 
   <!-- Footer -->
-  <div style="padding: 16px 24px; background: #F9FAFB; border-top: 1px solid #f0f0f0; font-size: 12px; color: #999; line-height: 1.5;">
-    <p style="margin: 0 0 4px;"><strong>HomeHeat</strong> helps homeowners compare local heating oil prices and connect with suppliers.</p>
-    <p style="margin: 0 0 4px;">
-      <a href="${SITE_URL}/for-suppliers" style="color: #FF6B35; text-decoration: none;">Learn more for suppliers</a> ·
-      <a href="mailto:support@gethomeheat.com" style="color: #FF6B35; text-decoration: none;">support@gethomeheat.com</a>
+  <div style="padding: 16px 24px; background: #F9FAFB; border-top: 1px solid #f0f0f0; font-size: 12px; color: #999; line-height: 1.6;">
+    <p style="margin: 0 0 8px;"><strong>HomeHeat</strong> helps homeowners compare local heating oil prices and connect with suppliers.</p>
+    <p style="margin: 0 0 8px;">
+      Questions? Contact us at <a href="mailto:support@gethomeheat.com" style="color: #FF6B35; text-decoration: none;">support@gethomeheat.com</a>
+      <br><a href="${SITE_URL}/for-suppliers" style="color: #FF6B35; text-decoration: none;">Learn more about HomeHeat for suppliers →</a>
     </p>
-    <p style="margin: 0; color: #bbb;">You can opt out of these emails anytime by replying "unsubscribe".</p>
+    <p style="margin: 0 0 4px; color: #bbb;">
+      <a href="${unsubUrl}" style="color: #bbb; text-decoration: underline;">Unsubscribe from these emails</a>
+    </p>
+    <p style="margin: 0; color: #ccc;">
+      Want to update or remove your listing? Email <a href="mailto:support@gethomeheat.com" style="color: #bbb;">support@gethomeheat.com</a>
+    </p>
   </div>
 </div>
             `
