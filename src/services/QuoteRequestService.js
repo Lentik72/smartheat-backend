@@ -1091,7 +1091,7 @@ class QuoteRequestService {
             from: 'Leo from HomeHeat <hello@gethomeheat.com>',
             to: emailOverride || supplier.email,
             reply_to: 'support@gethomeheat.com',
-            subject: `${emailOverride ? '[TEST] ' : ''}A homeowner in ${zip} requested heating oil today`,
+            subject: `${emailOverride ? '[TEST] ' : ''}Heating oil request in ${zip} today (~${gallons} gallons)`,
             html: `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #fff;">
   <!-- Header -->
@@ -1102,22 +1102,23 @@ class QuoteRequestService {
 
   <!-- Body -->
   <div style="padding: 24px;">
-    <p style="font-size: 14px; color: #666; margin: 0 0 16px; line-height: 1.5;">Hi${supplier.contact_name ? ' ' + escapeHtml(supplier.contact_name) : ''},</p>
+    <p style="font-size: 14px; color: #374151; margin: 0 0 4px; line-height: 1.5;">Hi${supplier.contact_name ? ' ' + escapeHtml(supplier.contact_name) : ''},</p>
+    <p style="font-size: 14px; color: #374151; margin: 0 0 16px; line-height: 1.5;">A homeowner in your area requested heating oil today.</p>
 
     <p style="font-size: 12px; color: #999; margin: 0 0 16px;">You're receiving this because <strong>${escapeHtml(supplier.name)}</strong> is listed as a heating oil supplier in the ${zip} area on HomeHeat.</p>
 
     <!-- Lead card -->
     <div style="background: #FFF7ED; border: 1px solid #FDBA74; border-radius: 10px; padding: 16px; margin: 0 0 20px;">
       <div style="font-size: 13px; color: #9A3412; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600;">Customer Request</div>
-      <div style="font-size: 16px; color: #1a1a1a; font-weight: 600;">ZIP ${zip} · ~${gallons} gallons</div>
+      <div style="font-size: 16px; color: #1a1a1a; font-weight: 600;">ZIP ${zip} · ~${gallons} gallons needed</div>
       <div style="font-size: 13px; color: #666; margin-top: 4px;">Requested today through HomeHeat</div>
     </div>
 
-    <p style="font-size: 14px; color: #374151; line-height: 1.6; margin: 0 0 20px;">You weren't set up to receive this request, so we sent it to other suppliers in your area.</p>
+    <p style="font-size: 14px; color: #374151; line-height: 1.6; margin: 0 0 20px;">This customer request went to other suppliers in your area.</p>
 
     <!-- CTA -->
     <p style="text-align: center; margin: 24px 0;">
-      <a href="${optinUrl}" style="display: inline-block; background: #FF6B35; color: #fff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Get Notified of Customer Requests</a>
+      <a href="${optinUrl}" style="display: inline-block; background: #FF6B35; color: #fff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Start Receiving Customer Requests</a>
     </p>
 
     <p style="font-size: 13px; color: #666; text-align: center; margin: 0 0 20px;">When you opt in, we'll text you instantly when homeowners nearby request oil. Free during our beta.</p>
