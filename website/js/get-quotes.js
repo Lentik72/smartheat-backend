@@ -59,17 +59,11 @@
     }
 
     function renderColdForm() {
-      var coldPhoneList = coldFallbackPhones ? buildPhoneList(coldFallbackPhones) : '';
-
       container.innerHTML =
         '<div class="get-quotes-inner">' +
-          '<div class="get-quotes-title">Best available suppliers near you</div>' +
-          coldPhoneList +
-          '<div style="font-size:0.72rem; color:#999; margin:4px 0 16px;">Confirm prices when calling.</div>' +
-          '<div style="border-top:1px solid #f0ebe7; padding-top:14px; margin-top:4px;">' +
-            '<div style="font-size:0.85rem; color:#666; margin-bottom:8px;">Prefer to get calls instead? Leave your details below.</div>' +
-            renderFormFields() +
-          '</div>' +
+          '<div class="get-quotes-title">Want suppliers to call you?</div>' +
+          '<div style="font-size:0.85rem; color:#666; margin-bottom:8px;">Leave your details and we\'ll connect you with local suppliers.</div>' +
+          renderFormFields() +
         '</div>';
 
       attachFormHandlers();
