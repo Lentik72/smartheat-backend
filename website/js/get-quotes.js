@@ -50,7 +50,7 @@
       container.innerHTML =
         '<div class="get-quotes-inner">' +
           afterHoursBanner +
-          '<div class="get-quotes-title">Get quotes from ' + supplierCount + ' local supplier' + (supplierCount !== 1 ? 's' : '') + '</div>' +
+          '<div class="get-quotes-title">Get quotes from local suppliers</div>' +
           renderFormFields() +
           '<div class="get-quotes-meta">No spam, no account required.</div>' +
         '</div>';
