@@ -63,11 +63,11 @@
 
       container.innerHTML =
         '<div class="get-quotes-inner">' +
-          '<div class="get-quotes-title">Suppliers near you</div>' +
+          '<div class="get-quotes-title">Best available suppliers near you</div>' +
           coldPhoneList +
           '<div style="font-size:0.72rem; color:#999; margin:4px 0 16px;">Confirm prices when calling.</div>' +
-          '<div style="border-top:1px solid #E5D8D0; padding-top:16px; margin-top:4px;">' +
-            '<div style="font-size:0.85rem; color:#666; margin-bottom:8px;">Want instant quotes? Leave your details and we\'ll notify you when available.</div>' +
+          '<div style="border-top:1px solid #f0ebe7; padding-top:14px; margin-top:4px;">' +
+            '<div style="font-size:0.85rem; color:#666; margin-bottom:8px;">Prefer to get calls instead? Leave your details below.</div>' +
             renderFormFields() +
           '</div>' +
         '</div>';
@@ -100,7 +100,7 @@
             '</div>' +
             '<input type="text" name="website_url" style="display:none" tabindex="-1" autocomplete="off">' +
             '<div class="get-quotes-error" style="display:none;"></div>' +
-            '<button type="submit" class="get-quotes-btn">Get Quotes &rarr;</button>' +
+            '<button type="submit" class="get-quotes-btn">' + (mode === 'cold' ? 'Submit Request &rarr;' : 'Get Quotes &rarr;') + '</button>' +
           '</form>';
     }
 
