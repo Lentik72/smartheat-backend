@@ -53,30 +53,10 @@ router.post('/', createLimiter, async (req, res) => {
   }
 });
 
-/**
- * POST /api/quote-request/verify — Verify OTP + dispatch
- */
-router.post('/verify', verifyLimiter, async (req, res) => {
-  const service = req.app.locals.quoteRequestService;
-  const logger = req.app.locals.logger;
-
-  if (!service) {
-    return res.status(503).json({ error: 'Quote system not available.' });
-  }
-
-  try {
-    const { request_id, code } = req.body;
-    const result = await service.verifyOTP(request_id, code);
-
-    if (result.error) {
-      return res.status(400).json({ error: result.error });
-    }
-
-    res.json(result);
-  } catch (err) {
-    logger.error(`[QuoteRequest Route] Verify failed: ${err.message}`);
-    res.status(500).json({ error: 'Something went wrong. Please try again.' });
-  }
+// POST /api/quote-request/verify — DEPRECATED (replaced by link verification at /v/:id)
+// Kept as stub to avoid 404 if old JS still cached
+router.post('/verify', (req, res) => {
+  res.status(410).json({ error: 'Verification is now done via the link in your text message.' });
 });
 
 /**

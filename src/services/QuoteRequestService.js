@@ -102,6 +102,23 @@ class QuoteRequestService {
     return crypto.randomBytes(16).toString('base64url');
   }
 
+  /** Generate verify hash for consumer link verification (no DB column needed) */
+  static generateVerifyHash(requestId) {
+    if (!CLAIM_SECRET) return 'nosecret';
+    return crypto.createHmac('sha256', CLAIM_SECRET).update(`verify:${requestId}`).digest('hex').slice(0, 16);
+  }
+
+  /** Verify consumer link hash */
+  static verifyLinkHash(requestId, hash) {
+    const expected = QuoteRequestService.generateVerifyHash(requestId);
+    if (!hash || expected === 'nosecret') return false;
+    try {
+      return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(hash.slice(0, 16)));
+    } catch {
+      return false;
+    }
+  }
+
   /** Generate HMAC for supplier opt-in link */
   static generateOptinHMAC(slug) {
     if (!CLAIM_SECRET) return null;
@@ -249,16 +266,11 @@ class QuoteRequestService {
       return { error: 'You already have an active request for this ZIP code.' };
     }
 
-    // --- Pre-OTP supplier check ---
-    // Even with 0 opted-in suppliers, we proceed with OTP to:
-    // (a) verify the consumer is real (prevents fake activation emails)
-    // (b) capture verified demand signal
-    // (c) trigger activation emails to non-opted suppliers
+    // --- Pre-verify supplier check ---
     const eligibleSuppliers = await this._getEligibleSuppliers(zip);
     const isColdZip = eligibleSuppliers.length === 0;
 
-    // --- Generate OTP and create request ---
-    const otp = QuoteRequestService.generateOTP();
+    // --- Create request ---
     const isBusinessHrs = this.isBusinessHours();
 
     const [insertResult] = await this.sequelize.query(`
@@ -270,14 +282,14 @@ class QuoteRequestService {
       ) VALUES (
         :name, :phone, :phone10, :zip,
         :gallons, :level, false,
-        :otp, 0, NOW() + INTERVAL '${OTP_EXPIRY_MINUTES} minutes',
+        NULL, 0, NOW() + INTERVAL '${OTP_EXPIRY_MINUTES} minutes',
         'pending_verification', :source_page, :is_business_hours, '', :form_rendered_at
       )
       RETURNING id
     `, {
       replacements: {
         name, phone: consumer_phone, phone10, zip,
-        gallons, level, otp,
+        gallons, level,
         source_page: source_page || null,
         is_business_hours: isBusinessHrs,
         form_rendered_at: form_rendered_at ? parseInt(form_rendered_at) : null
@@ -286,51 +298,59 @@ class QuoteRequestService {
 
     const requestId = insertResult[0].id;
 
-    // --- Send OTP SMS ---
-    const otpResult = await this.sendLeadSMS(
+    // --- Generate verify link (HMAC of request ID — no DB column needed) ---
+    const verifyHash = QuoteRequestService.generateVerifyHash(requestId);
+    const verifyUrl = `${SITE_URL}/v/${requestId}?h=${verifyHash}`;
+
+    // --- Send verify SMS ---
+    const smsResult = await this.sendLeadSMS(
       consumer_phone,
-      `HomeHeat\n\nYour verification code: ${otp}\n\nExpires in ${OTP_EXPIRY_MINUTES} min. Msg & data rates may apply.`
+      `HomeHeat\n\nTap to confirm your oil request:\n${verifyUrl}\n\nExpires in ${OTP_EXPIRY_MINUTES} min.`
     );
 
-    if (!otpResult) {
-      // SMS failed — mark as cancelled
+    if (!smsResult) {
       await this.sequelize.query(
         `UPDATE quote_requests SET status = 'cancelled', updated_at = NOW() WHERE id = :id`,
         { replacements: { id: requestId } }
       );
-      return { error: 'Could not send verification code. Please try again.' };
+      return { error: 'Could not send verification link. Please try again.' };
     }
 
-    // Log to audit
     await this._logAudit(null, 'system', 'quote_request_created', { requestId, zip, gallons, phone10: phone10.slice(-4) });
 
     return {
       success: true,
       request_id: requestId,
-      expires_in_minutes: OTP_EXPIRY_MINUTES,
+      verify_sent: true,
       is_business_hours: isBusinessHrs,
       mode: isColdZip ? 'cold' : 'routed'
     };
   }
 
-  // ─── Verify OTP (Step 2: code entry → dispatch) ───────────
+  // ─── Verify by Link (Step 2: user taps SMS link → dispatch) ───────────
 
   /**
-   * Verify OTP code and dispatch to suppliers (or queue for after-hours).
+   * Verify consumer by link tap and dispatch to suppliers.
+   * Called when user taps the verify URL in their SMS.
    * Returns { success, suppliers_notified, ... } or { error }
    */
-  async verifyOTP(requestId, code) {
+  async verifyByLink(requestId, hash) {
     if (DISABLED) return { error: 'Quote system is currently disabled.' };
 
-    if (!requestId || !code) return { error: 'Request ID and code are required.' };
+    if (!requestId || !hash) return { error: 'Invalid verification link.' };
 
-    // Fetch the request with row lock to prevent concurrent verification
+    // Verify HMAC
+    if (!QuoteRequestService.verifyLinkHash(requestId, hash)) {
+      return { error: 'Invalid or expired verification link.' };
+    }
+
+    // Fetch the request with row lock
     const [rows] = await this.sequelize.query(`
       SELECT * FROM quote_requests WHERE id = :id AND status = 'pending_verification'
       FOR UPDATE SKIP LOCKED
     `, { replacements: { id: requestId } });
 
-    if (rows.length === 0) return { error: 'Request not found or already processed.' };
+    if (rows.length === 0) return { error: 'Request not found or already confirmed.' };
 
     const request = rows[0];
 
@@ -340,43 +360,10 @@ class QuoteRequestService {
         `UPDATE quote_requests SET status = 'expired', updated_at = NOW() WHERE id = :id`,
         { replacements: { id: requestId } }
       );
-      return { error: 'Verification code expired. Please submit a new request.' };
+      return { error: 'This link has expired. Please submit a new request.' };
     }
 
-    // Check attempts
-    if (request.verification_attempts >= OTP_MAX_ATTEMPTS) {
-      await this.sequelize.query(
-        `UPDATE quote_requests SET status = 'cancelled', updated_at = NOW() WHERE id = :id`,
-        { replacements: { id: requestId } }
-      );
-      return { error: 'Too many attempts. Please submit a new request.' };
-    }
-
-    // Increment attempts
-    await this.sequelize.query(
-      `UPDATE quote_requests SET verification_attempts = verification_attempts + 1, updated_at = NOW() WHERE id = :id`,
-      { replacements: { id: requestId } }
-    );
-
-    // Constant-time comparison
-    const codeStr = String(code).trim();
-    const storedCode = request.verification_code;
-    let match = false;
-    try {
-      match = crypto.timingSafeEqual(
-        Buffer.from(codeStr.padEnd(4, '0')),
-        Buffer.from(storedCode.padEnd(4, '0'))
-      );
-    } catch {
-      match = false;
-    }
-
-    if (!match) {
-      const remaining = OTP_MAX_ATTEMPTS - request.verification_attempts - 1;
-      return { error: `Incorrect code. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.` };
-    }
-
-    // --- OTP verified ---
+    // --- Link verified ---
     await this.sequelize.query(`
       UPDATE quote_requests
       SET phone_verified = true, status = 'verified', updated_at = NOW()

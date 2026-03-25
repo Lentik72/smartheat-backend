@@ -434,11 +434,18 @@
     }
 
     // Initialize Get Quotes form (trial ZIPs with opted-in suppliers only)
+    // Insert quote form after 3rd supplier card (not above the list)
     if (typeof window.initGetQuotesForm === 'function') {
       fetch('/api/quote-request/availability?zip=' + zip)
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (data) {
           if (data && data.available) {
+            // Move the container after the 3rd supplier card
+            var cards = document.querySelectorAll('#supplier-cards > .supplier-card');
+            var container = document.getElementById('get-quotes-container');
+            if (cards.length >= 3 && container) {
+              cards[2].after(container);
+            }
             window.initGetQuotesForm('#get-quotes-container', {
               zip: zip,
               supplierCount: data.supplier_count,

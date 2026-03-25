@@ -833,6 +833,31 @@ app.use('/api/quote-request', require('./src/routes/quote-request'));  // Smart 
 app.use('/api/webhook/twilio-leads', require('./src/routes/lead-sms-webhook'));  // Lead SMS inbound (separate from price SMS)
 // Short URL for supplier "Confirm you called" link (keeps SMS clean)
 app.get('/r/:token', (req, res) => res.redirect(301, `/api/quote-request/supplier-response?t=${req.params.token}`));
+// Consumer verify link — user taps this in SMS to confirm their quote request
+app.get('/v/:requestId', async (req, res) => {
+  const service = req.app.locals.quoteRequestService;
+  const { escapeHtml } = require('./src/utils/html');
+  if (!service) return res.status(503).send('Service unavailable');
+  try {
+    const result = await service.verifyByLink(req.params.requestId, req.query.h);
+    if (result.error) {
+      return res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HomeHeat</title><style>body{font-family:-apple-system,sans-serif;margin:0;padding:40px 20px;background:#FEF3EB;color:#1a1a1a;text-align:center;}a{color:#FF6B35;}</style></head><body><h2>Link Issue</h2><p>${escapeHtml(result.error)}</p><p><a href="/prices">Search for suppliers →</a></p></body></html>`);
+    }
+    const n = result.suppliers_notified || 0;
+    const phones = (result.fallback_phones || []).map(s =>
+      `<div style="padding:8px 0;border-bottom:1px solid #E5D8D0;"><strong>${escapeHtml(s.name)}</strong>${s.price ? ' — $' + Number(s.price).toFixed(2) + '/gal' : ''}<br><a href="tel:${escapeHtml(s.phone)}" style="color:#FF6B35;font-weight:500;">${escapeHtml(s.phone)}</a></div>`
+    ).join('');
+    const statusMsg = n > 0
+      ? (n === 1 ? 'We\'ve notified the best available supplier.' : `We\'ve notified ${n} local suppliers.`)
+      : 'We\'re expanding in your area.';
+    const expectMsg = n > 0
+      ? 'Expect a call shortly. Suppliers may call from unknown numbers.'
+      : 'We\'ll notify local suppliers about demand here.';
+    res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Request Confirmed — HomeHeat</title><style>body{font-family:-apple-system,sans-serif;margin:0;padding:20px;background:#FEF3EB;color:#1a1a1a;}a{color:#FF6B35;}.card{max-width:480px;margin:20px auto;background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}.ok{background:#F0FDF4;border:1px solid #86EFAC;border-radius:10px;padding:16px;text-align:center;margin-bottom:16px;}.ok h2{color:#16A34A;margin:0 0 4px;}.ok p{color:#666;margin:4px 0 0;font-size:14px;}</style></head><body><div class="card"><div class="ok"><div style="font-size:2rem;">✓</div><h2>${statusMsg}</h2><p>${expectMsg}</p></div>${phones ? '<div style="font-size:0.9rem;color:#666;margin-bottom:4px;">Or call directly:</div>' + phones : ''}<p style="text-align:center;margin-top:16px;font-size:13px;color:#999;"><a href="/prices">Back to prices</a></p></div></body></html>`);
+  } catch (err) {
+    res.status(500).send('Something went wrong.');
+  }
+});
 app.use('/api/v1/heating-cost', require('./src/routes/heating-cost'));  // Multi-fuel cost comparison
 app.use('/api/v1', require('./src/routes/user-events'));  // Lightweight user event tracking
 

@@ -168,7 +168,7 @@
       if (!consentChecked) return showError(errorEl, 'Please agree to the terms to continue.');
 
       btn.disabled = true;
-      btn.textContent = 'Sending code...';
+      btn.textContent = 'Sending...';
 
       fetch('/api/quote-request', {
         method: 'POST',
@@ -189,99 +189,32 @@
           if (!result.ok || result.data.error) {
             showError(errorEl, result.data.error || 'Something went wrong.');
             btn.disabled = false;
-            btn.textContent = 'Get Quotes \u2192';
+            btn.textContent = mode === 'cold' ? 'Submit Request \u2192' : 'Get Quotes \u2192';
             return;
           }
 
-          // No opted-in suppliers — show fallback phones directly
-          if (result.data.no_suppliers_opted_in) {
-            renderFallback(result.data.fallback_phones, result.data.message);
-            return;
-          }
-
-          // Success — show OTP verification
-          requestId = result.data.request_id;
-          renderOTPForm(phone);
+          // Show "check your phone" — user taps the link in SMS to verify
+          var digits = phone.replace(/\D/g, '');
+          var display = '(***) ***-' + digits.slice(-4);
+          container.innerHTML =
+            '<div class="get-quotes-inner">' +
+              '<div style="background:#EFF6FF; border:1px solid #93C5FD; border-radius:10px; padding:20px; text-align:center;">' +
+                '<div style="font-size:1.5rem; margin-bottom:8px;">📱</div>' +
+                '<div style="font-weight:600; color:#1E40AF; margin-bottom:4px;">Check your phone</div>' +
+                '<div style="font-size:0.9rem; color:#666;">We sent a confirmation link to <strong>' + display + '</strong></div>' +
+                '<div style="font-size:0.85rem; color:#999; margin-top:8px;">Tap the link in your text message to confirm your request.</div>' +
+              '</div>' +
+            '</div>';
 
           if (typeof gtag === 'function') {
-            gtag('event', 'quote_otp_sent', { zip: zip });
+            gtag('event', 'quote_verify_sent', { zip: zip });
           }
         })
         .catch(function () {
           showError(errorEl, 'Network error. Please try again.');
           btn.disabled = false;
-          btn.textContent = 'Get Quotes \u2192';
+          btn.textContent = mode === 'cold' ? 'Submit Request \u2192' : 'Get Quotes \u2192';
         });
-    }
-
-    function renderOTPForm(phone) {
-      var digits = phone.replace(/\D/g, '');
-      var display = '(***) ***-' + digits.slice(-4);
-
-      container.innerHTML =
-        '<div class="get-quotes-inner">' +
-          '<div class="get-quotes-title">Verify your phone</div>' +
-          '<p class="get-quotes-otp-msg">We sent a 4-digit code to <strong>' + display + '</strong></p>' +
-          '<form class="get-quotes-otp-form">' +
-            '<div class="get-quotes-otp-input-wrap">' +
-              '<input type="text" class="get-quotes-otp-input" maxlength="4" pattern="\\d{4}" ' +
-                'inputmode="numeric" autocomplete="one-time-code" autofocus placeholder="0000">' +
-            '</div>' +
-            '<div class="get-quotes-error" style="display:none;"></div>' +
-            '<button type="submit" class="get-quotes-btn">Verify &amp; Send to Suppliers</button>' +
-          '</form>' +
-          '<div class="get-quotes-meta">Code expires in 10 minutes.</div>' +
-        '</div>';
-
-      var otpForm = container.querySelector('.get-quotes-otp-form');
-      otpForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var code = container.querySelector('.get-quotes-otp-input').value.trim();
-        var errorEl = container.querySelector('.get-quotes-error');
-        var btn = container.querySelector('.get-quotes-btn');
-        errorEl.style.display = 'none';
-
-        if (!code || !/^\d{4}$/.test(code)) {
-          return showError(errorEl, 'Please enter the 4-digit code.');
-        }
-
-        btn.disabled = true;
-        btn.textContent = 'Verifying...';
-
-        fetch('/api/quote-request/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ request_id: requestId, code: code })
-        })
-          .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
-          .then(function (result) {
-            if (!result.ok || result.data.error) {
-              showError(errorEl, result.data.error || 'Something went wrong.');
-              btn.disabled = false;
-              btn.textContent = 'Verify & Send to Suppliers';
-              return;
-            }
-
-            // Zero suppliers — cold mode or after-hours
-            if (result.data.suppliers_notified === 0) {
-              // All paths go through renderConfirmation which handles n === 0 properly
-              renderConfirmation(result.data);
-              return;
-            }
-
-            // Success — show confirmation
-            renderConfirmation(result.data);
-
-            if (typeof gtag === 'function') {
-              gtag('event', 'quote_dispatched', { zip: zip, suppliers_notified: result.data.suppliers_notified });
-            }
-          })
-          .catch(function () {
-            showError(errorEl, 'Network error. Please try again.');
-            btn.disabled = false;
-            btn.textContent = 'Verify & Send to Suppliers';
-          });
-      });
     }
 
     function renderConfirmation(data) {
