@@ -291,27 +291,34 @@
       // Cold ZIP: no suppliers dispatched, demand captured
       if (n === 0) {
         container.innerHTML =
-          '<div class="get-quotes-inner get-quotes-success">' +
-            '<span class="get-quotes-check">&#10003;</span> ' +
-            'Thanks! We\'re expanding in your area.' +
-            '<div style="margin-top:12px; font-weight:600;">Call these suppliers directly:</div>' +
+          '<div class="get-quotes-inner">' +
+            '<div style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:10px; padding:16px; text-align:center; margin-bottom:12px;">' +
+              '<div style="font-size:1.5rem; margin-bottom:4px;">✓</div>' +
+              '<div style="font-weight:600; color:#16A34A;">Request received</div>' +
+              '<div style="font-size:0.85rem; color:#666; margin-top:4px;">We\'ll notify local suppliers about demand in your area.</div>' +
+            '</div>' +
+            '<div style="font-weight:600; font-size:0.9rem; margin-bottom:4px;">Call suppliers directly:</div>' +
             directPhones +
-            '<div class="get-quotes-meta" style="margin-top:12px;">Your request helps us bring instant quotes to your area. We\'ll notify local suppliers about the demand here.</div>' +
           '</div>';
         return;
       }
 
       var notifyText = n === 1
-        ? 'We\'ve notified the best available supplier in your area. Expect a call shortly.'
-        : 'We\'ve notified ' + n + ' local suppliers. You may receive 1\u2013' + n + ' calls shortly. ' +
-          'Most requests get a response within 30\u201360 minutes.';
+        ? 'We\'ve notified the best available supplier in your area.'
+        : 'We\'ve notified ' + n + ' local suppliers.';
+      var expectText = n === 1
+        ? 'Expect a call shortly.'
+        : 'You may receive 1\u2013' + n + ' calls within 30\u201360 minutes.';
 
       if (data.is_business_hours) {
         container.innerHTML =
-          '<div class="get-quotes-inner get-quotes-success">' +
-            '<span class="get-quotes-check">&#10003;</span> ' + notifyText +
-            '<div class="get-quotes-meta" style="margin-top:8px;">Suppliers may call from unknown or local numbers.</div>' +
-            (directPhones ? '<div style="margin-top:12px; font-size:0.85rem; color:#666;">Or call directly:</div>' + directPhones : '') +
+          '<div class="get-quotes-inner">' +
+            '<div style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:10px; padding:16px; text-align:center; margin-bottom:12px;">' +
+              '<div style="font-size:1.5rem; margin-bottom:4px;">✓</div>' +
+              '<div style="font-weight:600; color:#16A34A;">' + notifyText + '</div>' +
+              '<div style="font-size:0.85rem; color:#666; margin-top:4px;">' + expectText + ' Suppliers may call from unknown numbers.</div>' +
+            '</div>' +
+            (directPhones ? '<div style="font-size:0.85rem; color:#666; margin-bottom:4px;">Or call directly:</div>' + directPhones : '') +
           '</div>';
       } else {
         renderAfterHours(data.fallback_phones);

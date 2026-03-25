@@ -1058,7 +1058,7 @@ class QuoteRequestService {
 
     // Find non-opted suppliers who serve this ZIP and have an email
     const [candidates] = await this.sequelize.query(`
-      SELECT s.id, s.name, s.slug, s.email, s.city, s.state,
+      SELECT s.id, s.name, s.slug, s.email, s.contact_name, s.city, s.state,
              s.postal_codes_served AS "postalCodesServed",
              s.service_cities AS "serviceCities",
              s.service_counties AS "serviceCounties",
@@ -1105,7 +1105,7 @@ class QuoteRequestService {
             subject: `${emailOverride ? '[TEST] ' : ''}You missed a heating oil lead in ${zip}`,
             html: `
               <div style="font-family: -apple-system, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-                <p>Hi ${escapeHtml(supplier.name)},</p>
+                <p>Hi${supplier.contact_name ? ' ' + escapeHtml(supplier.contact_name) : ''},</p>
                 <p>A homeowner in <strong>${zip}</strong> requested <strong>~${gallons} gallons</strong> of heating oil today through HomeHeat.</p>
                 <p>You weren't able to receive this lead because you're not set up for instant alerts. We sent it to other suppliers in your area.</p>
                 <p style="text-align: center; margin: 24px 0;">
