@@ -4558,7 +4558,7 @@ router.get('/quote-requests', async (req, res) => {
         )
     `);
 
-    // Top ZIPs
+    // Top ZIPs with supply gap
     const [topZips] = await sequelize.query(`
       SELECT consumer_zip AS zip, COUNT(*) AS requests,
              COUNT(*) FILTER (WHERE status = 'dispatched') AS dispatched
@@ -4568,24 +4568,101 @@ router.get('/quote-requests', async (req, res) => {
       LIMIT 10
     `);
 
-    // Recent requests
-    const [recent] = await sequelize.query(`
-      SELECT id, consumer_zip, gallons_requested, tank_level, status,
-             dispatched_at, consumer_outcome, created_at,
-             (SELECT COUNT(*) FROM quote_request_suppliers qrs WHERE qrs.quote_request_id = qr.id AND qrs.responded_at IS NOT NULL) AS supplier_responses
+    // ZIP supply gap: requests vs opted-in suppliers per ZIP
+    const [zipGaps] = await sequelize.query(`
+      SELECT qr.consumer_zip AS zip,
+             COUNT(DISTINCT qr.id) AS demand,
+             COUNT(DISTINCT CASE WHEN s.lead_opted_in = true THEN s.id END) AS supply
       FROM quote_requests qr
-      ORDER BY created_at DESC
-      LIMIT 20
+      LEFT JOIN suppliers s ON s.active = true AND s.lead_opted_in = true
+        AND s.postal_codes_served @> ARRAY[qr.consumer_zip]
+      GROUP BY qr.consumer_zip
+      ORDER BY COUNT(DISTINCT qr.id) DESC
+      LIMIT 15
+    `).catch(() => [[]]);
+
+    // Speed metrics: time to first supplier response
+    const [[speedMetrics]] = await sequelize.query(`
+      SELECT
+        AVG(first_response_mins) AS avg_first_response,
+        MIN(first_response_mins) AS fastest_response,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY first_response_mins) AS median_response
+      FROM (
+        SELECT qr.id,
+          EXTRACT(EPOCH FROM (MIN(qrs.responded_at) - qr.dispatched_at)) / 60 AS first_response_mins
+        FROM quote_requests qr
+        JOIN quote_request_suppliers qrs ON qrs.quote_request_id = qr.id
+          AND qrs.responded_at IS NOT NULL
+        WHERE qr.status = 'dispatched' AND qr.dispatched_at IS NOT NULL
+        GROUP BY qr.id, qr.dispatched_at
+      ) sub
+      WHERE first_response_mins > 0
+    `).catch(() => [[{}]]);
+
+    // Funnel: submit → verify → dispatch → response → contact
+    const totalReqs = parseInt(totals.total_requests) || 0;
+    const verified = parseInt(totals.verified) || 0;
+    const dispatchedCount = parseInt(totals.dispatched) || 0;
+    const responsesCount = parseInt(supplierStats.supplier_responses) || 0;
+    const contactedCount = parseInt(totals.user_contacted) || 0;
+
+    const funnel = [
+      { stage: 'Submitted', count: totalReqs, rate: null },
+      { stage: 'Verified', count: verified, rate: totalReqs > 0 ? Math.round(verified / totalReqs * 100) : null },
+      { stage: 'Dispatched', count: dispatchedCount, rate: verified > 0 ? Math.round(dispatchedCount / verified * 100) : null },
+      { stage: 'Responded', count: responsesCount, rate: dispatchedCount > 0 ? Math.round(responsesCount / dispatchedCount * 100) : null },
+      { stage: 'Contacted', count: contactedCount, rate: responsesCount > 0 ? Math.round(contactedCount / responsesCount * 100) : null }
+    ];
+
+    // Source performance: conversion by source page
+    const [sourceStats] = await sequelize.query(`
+      SELECT
+        COALESCE(source_page, 'unknown') AS source,
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE phone_verified = true) AS verified,
+        COUNT(*) FILTER (WHERE status = 'dispatched') AS dispatched,
+        COUNT(*) FILTER (WHERE consumer_outcome = 'contacted') AS contacted
+      FROM quote_requests
+      GROUP BY COALESCE(source_page, 'unknown')
+      ORDER BY COUNT(*) DESC
+      LIMIT 10
     `);
 
-    const dispatched = parseInt(totals.dispatched) || 0;
-    const responses = parseInt(supplierStats.supplier_responses) || 0;
-    const contacted = parseInt(totals.user_contacted) || 0;
+    const sourcePerf = sourceStats.map(s => ({
+      source: s.source,
+      total: parseInt(s.total) || 0,
+      verified: parseInt(s.verified) || 0,
+      dispatched: parseInt(s.dispatched) || 0,
+      contacted: parseInt(s.contacted) || 0,
+      verify_rate: parseInt(s.total) > 0 ? Math.round(parseInt(s.verified) / parseInt(s.total) * 100) : null,
+      dispatch_rate: parseInt(s.verified) > 0 ? Math.round(parseInt(s.dispatched) / parseInt(s.verified) * 100) : null
+    }));
+
+    const dispatched = dispatchedCount;
+    const responses = responsesCount;
+    const contacted = contactedCount;
     const totalOutcomes = contacted + (parseInt(totals.user_not_contacted) || 0);
 
+    // Enriched top ZIPs with supply gap
+    const gapMap = {};
+    for (const g of (zipGaps || [])) {
+      gapMap[g.zip] = { supply: parseInt(g.supply) || 0, demand: parseInt(g.demand) || 0 };
+    }
+    const enrichedZips = topZips.map(z => ({
+      ...z,
+      requests: parseInt(z.requests) || 0,
+      dispatched: parseInt(z.dispatched) || 0,
+      suppliers: gapMap[z.zip]?.supply || 0,
+      gap_score: gapMap[z.zip] ? (
+        (gapMap[z.zip].supply === 0) ? 'no_supply' :
+        (parseInt(z.requests) / gapMap[z.zip].supply > 5) ? 'critical' :
+        (parseInt(z.requests) / gapMap[z.zip].supply > 2) ? 'tight' : 'healthy'
+      ) : 'unknown'
+    }));
+
     res.json({
-      total_requests: parseInt(totals.total_requests) || 0,
-      verified: parseInt(totals.verified) || 0,
+      total_requests: totalReqs,
+      verified,
       dispatched,
       supplier_responses: responses,
       supplier_response_rate: dispatched > 0 ? (responses / dispatched * 100).toFixed(0) + '%' : '—',
@@ -4597,12 +4674,244 @@ router.get('/quote-requests', async (req, res) => {
       expired: parseInt(totals.expired) || 0,
       opted_in_suppliers: parseInt(optinStats.opted_in) || 0,
       opted_out_suppliers: parseInt(optinStats.opted_out) || 0,
-      top_zips: topZips,
-      recent
+      top_zips: enrichedZips,
+      funnel,
+      speed: {
+        avg_minutes: speedMetrics?.avg_first_response ? Math.round(parseFloat(speedMetrics.avg_first_response)) : null,
+        fastest_minutes: speedMetrics?.fastest_response ? Math.round(parseFloat(speedMetrics.fastest_response)) : null,
+        median_minutes: speedMetrics?.median_response ? Math.round(parseFloat(speedMetrics.median_response)) : null
+      },
+      source_performance: sourcePerf
     });
   } catch (error) {
     logger.error('[Dashboard] Quote requests error:', error.message);
     res.status(500).json({ error: 'Failed to load quote requests', details: error.message });
+  }
+});
+
+// GET /api/dashboard/quote-requests/orders - Full order detail with nested supplier info
+router.get('/quote-requests/orders', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 25));
+    const offset = (page - 1) * limit;
+    const status = req.query.status || null;
+
+    const whereClause = status ? `WHERE status = :status` : '';
+
+    const [[countRow]] = await sequelize.query(
+      `SELECT COUNT(*) AS total FROM quote_requests ${whereClause}`,
+      { replacements: status ? { status } : {} }
+    );
+    const total = parseInt(countRow.total) || 0;
+
+    const [orders] = await sequelize.query(
+      `SELECT id, consumer_name, consumer_phone, consumer_phone_last10, consumer_zip,
+              gallons_requested, tank_level, source_page, phone_verified, status,
+              is_business_hours, dispatched_at, expires_at, consumer_notified_fallback,
+              consumer_outcome, consumer_outcome_at, created_at, updated_at
+       FROM quote_requests
+       ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT :limit OFFSET :offset`,
+      { replacements: { ...(status ? { status } : {}), limit, offset } }
+    );
+
+    // Fetch supplier details for all returned orders in one query
+    let suppliersMap = {};
+    if (orders.length > 0) {
+      const orderIds = orders.map(o => o.id);
+      const [supplierRows] = await sequelize.query(
+        `SELECT qrs.quote_request_id, s.name, s.city, s.state, s.phone, s.slug,
+                qrs.status AS send_status, qrs.sms_sent_at, qrs.responded_at
+         FROM quote_request_suppliers qrs
+         JOIN suppliers s ON s.id = qrs.supplier_id
+         WHERE qrs.quote_request_id = ANY($1::uuid[])`,
+        { bind: [orderIds] }
+      );
+      for (const row of supplierRows) {
+        const key = row.quote_request_id;
+        if (!suppliersMap[key]) suppliersMap[key] = [];
+        suppliersMap[key].push({
+          name: row.name,
+          city: row.city,
+          state: row.state,
+          phone: row.phone,
+          slug: row.slug,
+          send_status: row.send_status,
+          sms_sent_at: row.sms_sent_at,
+          responded_at: row.responded_at
+        });
+      }
+    }
+
+    const enriched = orders.map(o => ({
+      ...o,
+      suppliers: suppliersMap[o.id] || []
+    }));
+
+    res.json({
+      orders: enriched,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    logger.error('[Dashboard] Quote requests orders error:', error.message);
+    res.status(500).json({ error: 'Failed to load quote request orders', details: error.message });
+  }
+});
+
+// GET /api/dashboard/quote-requests/consumers - Aggregated stats per consumer phone
+router.get('/quote-requests/consumers', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const [rows] = await sequelize.query(`
+      SELECT
+        consumer_phone_last10,
+        MAX(consumer_name) AS name,
+        COUNT(*) AS total_requests,
+        COUNT(*) FILTER (WHERE phone_verified = true) AS verified,
+        COUNT(*) FILTER (WHERE status = 'dispatched') AS dispatched,
+        COUNT(*) FILTER (WHERE status = 'expired') AS expired,
+        COUNT(*) FILTER (WHERE consumer_outcome = 'contacted') AS contacted,
+        COUNT(*) FILTER (WHERE consumer_outcome = 'not_contacted') AS not_contacted,
+        SUM(gallons_requested) AS total_gallons,
+        ARRAY_AGG(DISTINCT consumer_zip) AS zips,
+        MIN(created_at) AS first_request,
+        MAX(created_at) AS last_request
+      FROM quote_requests
+      GROUP BY consumer_phone_last10
+      ORDER BY last_request DESC
+    `);
+
+    const consumers = rows.map(r => {
+      const totalRequests = parseInt(r.total_requests) || 0;
+      const contacted = parseInt(r.contacted) || 0;
+      const notContacted = parseInt(r.not_contacted) || 0;
+      const totalOutcomes = contacted + notContacted;
+      return {
+        phone: r.consumer_phone_last10,
+        name: r.name,
+        total_requests: totalRequests,
+        verified: parseInt(r.verified) || 0,
+        dispatched: parseInt(r.dispatched) || 0,
+        expired: parseInt(r.expired) || 0,
+        contacted,
+        not_contacted: notContacted,
+        total_gallons: parseInt(r.total_gallons) || 0,
+        zips: r.zips || [],
+        first_request: r.first_request,
+        last_request: r.last_request,
+        is_repeat: totalRequests > 1,
+        contact_rate: totalOutcomes > 0 ? (contacted / totalOutcomes * 100).toFixed(0) + '%' : '—'
+      };
+    });
+
+    res.json({ consumers });
+  } catch (error) {
+    logger.error('[Dashboard] Quote requests consumers error:', error.message);
+    res.status(500).json({ error: 'Failed to load quote request consumers', details: error.message });
+  }
+});
+
+// GET /api/dashboard/quote-requests/suppliers - Per-supplier lead performance
+router.get('/quote-requests/suppliers', async (req, res) => {
+  const logger = req.app.locals.logger;
+  const sequelize = req.app.locals.sequelize;
+
+  if (!sequelize) {
+    return res.status(503).json({ error: 'Database not available' });
+  }
+
+  try {
+    const [rows] = await sequelize.query(`
+      SELECT
+        s.id,
+        s.name,
+        s.slug,
+        s.city,
+        s.state,
+        s.phone,
+        s.lead_opted_in_at,
+        COUNT(qrs.id) AS total_leads,
+        COUNT(qrs.id) FILTER (WHERE qrs.status = 'sent') AS sent,
+        COUNT(qrs.id) FILTER (WHERE qrs.responded_at IS NOT NULL) AS responded,
+        COUNT(qrs.id) FILTER (WHERE qrs.status = 'failed') AS failed,
+        MIN(qrs.created_at) AS first_lead_at,
+        MAX(qrs.created_at) AS last_lead_at,
+        AVG(
+          EXTRACT(EPOCH FROM (qrs.responded_at - qrs.sms_sent_at)) / 60.0
+        ) FILTER (WHERE qrs.responded_at IS NOT NULL AND qrs.sms_sent_at IS NOT NULL) AS avg_response_minutes
+      FROM suppliers s
+      LEFT JOIN quote_request_suppliers qrs ON qrs.supplier_id = s.id
+      WHERE s.lead_opted_in = true
+      GROUP BY s.id, s.name, s.slug, s.city, s.state, s.phone, s.lead_opted_in_at
+      ORDER BY total_leads DESC, s.name ASC
+    `);
+
+    const suppliers = rows.map(r => {
+      const totalLeads = parseInt(r.total_leads) || 0;
+      const sent = parseInt(r.sent) || 0;
+      const responded = parseInt(r.responded) || 0;
+      const failed = parseInt(r.failed) || 0;
+      const responseRate = sent > 0 ? responded / sent : 0;
+      const failureRate = totalLeads > 0 ? failed / totalLeads : 0;
+      const avgResponseMinutes = r.avg_response_minutes != null ? parseFloat(r.avg_response_minutes).toFixed(1) : null;
+
+      let health;
+      if (totalLeads === 0) {
+        health = 'no_leads';
+      } else if (failureRate > 0.5) {
+        health = 'sms_problem';
+      } else if (responseRate >= 0.5) {
+        health = 'good';
+      } else if (responseRate >= 0.2) {
+        health = 'fair';
+      } else {
+        health = 'poor';
+      }
+
+      return {
+        name: r.name,
+        slug: r.slug,
+        city: r.city,
+        state: r.state,
+        phone: r.phone,
+        total_leads: totalLeads,
+        sent,
+        responded,
+        failed,
+        response_rate: sent > 0 ? (responseRate * 100).toFixed(0) + '%' : '—',
+        failure_rate: totalLeads > 0 ? (failureRate * 100).toFixed(0) + '%' : '—',
+        avg_response_minutes: avgResponseMinutes,
+        first_lead_at: r.first_lead_at,
+        last_lead_at: r.last_lead_at,
+        lead_opted_in_at: r.lead_opted_in_at,
+        health
+      };
+    });
+
+    res.json({ suppliers });
+  } catch (error) {
+    logger.error('[Dashboard] Quote requests suppliers error:', error.message);
+    res.status(500).json({ error: 'Failed to load quote request supplier stats', details: error.message });
   }
 });
 

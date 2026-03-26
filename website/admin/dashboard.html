@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SmartHeat Analytics Dashboard</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="dashboard.css?v=1772006405">
+  <link rel="stylesheet" href="dashboard.css?v=1772006406">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Leaflet for maps -->
@@ -74,6 +74,11 @@
             <span class="nav-item-icon">📋</span>
             <span class="nav-item-label">Claims</span>
             <span class="nav-badge" id="claims-badge" style="display:none">0</span>
+          </button>
+          <button class="nav-item" data-tab="quote-requests">
+            <span class="nav-item-icon">💬</span>
+            <span class="nav-item-label">Quote Requests</span>
+            <span class="nav-badge" id="qr-unserved-badge" style="display:none">0</span>
           </button>
           <button class="nav-item" data-tab="website">
             <span class="nav-item-icon">🌐</span>
@@ -1790,6 +1795,218 @@
       </section>
 
       <!-- Claims Tab -->
+      <!-- QUOTE REQUESTS TAB -->
+      <section id="tab-quote-requests" class="tab-panel">
+        <div class="qr-container">
+
+          <!-- Sub-tabs -->
+          <div class="qr-subtabs" id="qr-subtabs">
+            <button class="qr-subtab active" data-qr-tab="overview">Overview</button>
+            <button class="qr-subtab" data-qr-tab="orders">Orders</button>
+            <button class="qr-subtab" data-qr-tab="consumers">Consumers</button>
+            <button class="qr-subtab" data-qr-tab="suppliers">Suppliers</button>
+          </div>
+
+          <!-- OVERVIEW PANEL -->
+          <div class="qr-panel active" id="qr-panel-overview">
+
+            <!-- Metric Cards -->
+            <div class="qr-metrics">
+              <div class="qr-card">
+                <div class="qr-card-value" id="qr-total">--</div>
+                <div class="qr-card-label">Total Requests</div>
+              </div>
+              <div class="qr-card">
+                <div class="qr-card-value" id="qr-verified">--</div>
+                <div class="qr-card-label">Verified</div>
+              </div>
+              <div class="qr-card">
+                <div class="qr-card-value" id="qr-dispatched">--</div>
+                <div class="qr-card-label">Dispatched</div>
+              </div>
+              <div class="qr-card accent">
+                <div class="qr-card-value" id="qr-response-rate">--</div>
+                <div class="qr-card-label">Supplier Response Rate</div>
+              </div>
+              <div class="qr-card">
+                <div class="qr-card-value" id="qr-contact-rate">--</div>
+                <div class="qr-card-label">User Contact Rate</div>
+              </div>
+              <div class="qr-card">
+                <div class="qr-card-value" id="qr-opted-in">--</div>
+                <div class="qr-card-label">Opted-In Suppliers</div>
+              </div>
+              <div class="qr-card">
+                <div class="qr-card-value" id="qr-opted-out">--</div>
+                <div class="qr-card-label">Opted-Out</div>
+              </div>
+              <div class="qr-card" id="qr-unserved-card">
+                <div class="qr-card-value" id="qr-unserved">--</div>
+                <div class="qr-card-label">Unserved Leads</div>
+              </div>
+              <div class="qr-card">
+                <div class="qr-card-value" id="qr-expired">--</div>
+                <div class="qr-card-label">Expired</div>
+              </div>
+              <div class="qr-card">
+                <div class="qr-card-value" id="qr-fallback-sent">--</div>
+                <div class="qr-card-label">Fallback Sent</div>
+              </div>
+              <div class="qr-card" id="qr-sms-fail-card">
+                <div class="qr-card-value" id="qr-sms-failures">--</div>
+                <div class="qr-card-label">SMS Failures</div>
+              </div>
+            </div>
+
+            <!-- Top ZIPs -->
+            <div class="qr-section">
+              <h3 class="qr-section-title">Top ZIPs by Demand</h3>
+              <table class="qr-table" id="qr-zips-table">
+                <thead>
+                  <tr>
+                    <th>ZIP</th>
+                    <th>Requests</th>
+                    <th>Dispatched</th>
+                    <th>Suppliers</th>
+                    <th>Gap</th>
+                  </tr>
+                </thead>
+                <tbody id="qr-zips-body"></tbody>
+              </table>
+              <div id="qr-zips-empty" class="qr-empty" style="display:none">No ZIP data yet</div>
+            </div>
+
+            <!-- Speed Metrics -->
+            <div class="qr-section">
+              <h3 class="qr-section-title">Speed Metrics</h3>
+              <div class="qr-speed-cards">
+                <div class="qr-speed-card">
+                  <div class="qr-speed-value" id="qr-speed-avg">--</div>
+                  <div class="qr-speed-label">Avg First Response</div>
+                </div>
+                <div class="qr-speed-card">
+                  <div class="qr-speed-value" id="qr-speed-median">--</div>
+                  <div class="qr-speed-label">Median Response</div>
+                </div>
+                <div class="qr-speed-card">
+                  <div class="qr-speed-value" id="qr-speed-fastest">--</div>
+                  <div class="qr-speed-label">Fastest Response</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Funnel -->
+            <div class="qr-section">
+              <h3 class="qr-section-title">Conversion Funnel</h3>
+              <div class="qr-funnel" id="qr-funnel"></div>
+            </div>
+
+            <!-- Source Performance -->
+            <div class="qr-section">
+              <h3 class="qr-section-title">Source Performance</h3>
+              <table class="qr-table" id="qr-source-table" style="display:none">
+                <thead>
+                  <tr>
+                    <th>Source Page</th>
+                    <th>Requests</th>
+                    <th>Verify Rate</th>
+                    <th>Dispatch Rate</th>
+                    <th>Contacted</th>
+                  </tr>
+                </thead>
+                <tbody id="qr-source-body"></tbody>
+              </table>
+              <div id="qr-source-empty" class="qr-empty" style="display:none">No source data yet</div>
+            </div>
+
+          </div><!-- /overview panel -->
+
+          <!-- ORDERS PANEL -->
+          <div class="qr-panel" id="qr-panel-orders">
+            <div class="qr-toolbar">
+              <label class="qr-toolbar-label">Status:</label>
+              <select class="qr-select" id="qr-orders-filter">
+                <option value="">All</option>
+                <option value="pending">Pending</option>
+                <option value="verified">Verified</option>
+                <option value="dispatched">Dispatched</option>
+                <option value="expired">Expired</option>
+                <option value="fallback_sent">Fallback Sent</option>
+              </select>
+            </div>
+            <div id="qr-orders-loading" class="qr-loading">Loading orders...</div>
+            <table class="qr-table qr-orders-table" id="qr-orders-table" style="display:none">
+              <thead>
+                <tr>
+                  <th class="qr-expand-col"></th>
+                  <th>Consumer</th>
+                  <th>ZIP</th>
+                  <th>Gallons</th>
+                  <th class="qr-hide-mobile">Tank</th>
+                  <th>Status</th>
+                  <th>Suppliers</th>
+                  <th>Outcome</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="qr-orders-body"></tbody>
+            </table>
+            <div id="qr-orders-empty" class="qr-empty" style="display:none">No orders found</div>
+            <div class="qr-pagination" id="qr-orders-pagination" style="display:none">
+              <button class="qr-page-btn" id="qr-orders-prev">&#8592; Prev</button>
+              <span class="qr-page-info" id="qr-orders-page-info"></span>
+              <button class="qr-page-btn" id="qr-orders-next">Next &#8594;</button>
+            </div>
+          </div><!-- /orders panel -->
+
+          <!-- CONSUMERS PANEL -->
+          <div class="qr-panel" id="qr-panel-consumers">
+            <div id="qr-consumers-loading" class="qr-loading">Loading consumers...</div>
+            <table class="qr-table" id="qr-consumers-table" style="display:none">
+              <thead>
+                <tr>
+                  <th>Consumer</th>
+                  <th>Phone</th>
+                  <th>ZIPs</th>
+                  <th>Requests</th>
+                  <th>Gallons</th>
+                  <th>Verified</th>
+                  <th>Dispatched</th>
+                  <th>Contacted</th>
+                  <th>First</th>
+                  <th>Last</th>
+                </tr>
+              </thead>
+              <tbody id="qr-consumers-body"></tbody>
+            </table>
+            <div id="qr-consumers-empty" class="qr-empty" style="display:none">No consumer data yet</div>
+          </div><!-- /consumers panel -->
+
+          <!-- SUPPLIERS PANEL -->
+          <div class="qr-panel" id="qr-panel-suppliers">
+            <div id="qr-suppliers-loading" class="qr-loading">Loading suppliers...</div>
+            <table class="qr-table" id="qr-suppliers-table" style="display:none">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Location</th>
+                  <th>Leads</th>
+                  <th>Responded</th>
+                  <th>Response Rate</th>
+                  <th>Avg Response</th>
+                  <th>Failures</th>
+                  <th>Health</th>
+                  <th>Opted In</th>
+                </tr>
+              </thead>
+              <tbody id="qr-suppliers-body"></tbody>
+            </table>
+            <div id="qr-suppliers-empty" class="qr-empty" style="display:none">No suppliers opted in yet</div>
+          </div><!-- /suppliers panel -->
+
+        </div>
+      </section>
+
       <section id="tab-claims" class="tab-panel">
         <div class="claims-container">
           <!-- Funnel Metrics -->

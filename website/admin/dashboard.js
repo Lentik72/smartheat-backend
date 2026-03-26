@@ -202,7 +202,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
 // Tab navigation handler (shared between tabs and sidebar)
 function handleTabSwitch(target) {
-  const validTabs = ['command-center','leaderboard','app-analytics','retention','growth','coverage','health','suppliers','claims','website','settings'];
+  const validTabs = ['command-center','leaderboard','app-analytics','retention','growth','coverage','health','suppliers','claims','quote-requests','website','settings'];
   if (!validTabs.includes(target)) target = 'command-center';
 
   // Destroy intelligence charts on tab leave
@@ -250,6 +250,7 @@ function handleTabSwitch(target) {
   if (target === 'website') loadWebsite();
   if (target === 'suppliers') loadSuppliers();
   if (target === 'claims') loadClaims();
+  if (target === 'quote-requests') loadQuoteRequests();
 }
 
 // Tab navigation (legacy)
@@ -3842,6 +3843,7 @@ async function loadDashboard() {
   await Promise.all([
     loadCommandCenter(),
     updateClaimsBadge(),
+    updateQrBadge(),
     cachedApi(`/unified?days=${currentDays}`).then(updateHeaderMetrics).catch(() => {})
   ]);
 }
@@ -4206,3 +4208,470 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.key === 'Escape') claimsCloseRejectModal();
   });
 });
+
+// ========================================
+// QUOTE REQUESTS TAB
+// ========================================
+
+let qrCurrentSubtab = 'overview';
+let qrOverviewLoaded = false;
+let qrOrdersLoaded = false;
+let qrConsumersLoaded = false;
+let qrSuppliersLoaded = false;
+let qrOrdersPage = 1;
+let qrOrdersFilter = '';
+let qrExpandedOrderId = null;
+
+async function updateQrBadge() {
+  try {
+    const data = await api('/quote-requests');
+    const badge = document.getElementById('qr-unserved-badge');
+    if (badge && data.unserved_leads > 0) {
+      badge.textContent = data.unserved_leads;
+      badge.style.display = '';
+    }
+  } catch (e) { /* silent */ }
+}
+
+function loadQuoteRequests() {
+  // Bind sub-tab click handlers once (guard with data-bound)
+  const subtabsEl = document.getElementById('qr-subtabs');
+  if (subtabsEl && !subtabsEl.dataset.bound) {
+    subtabsEl.dataset.bound = '1';
+    subtabsEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.qr-subtab');
+      if (!btn) return;
+      const tab = btn.dataset.qrTab;
+      if (!tab) return;
+      subtabsEl.querySelectorAll('.qr-subtab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.qr-panel').forEach(p => p.classList.remove('active'));
+      const panel = document.getElementById('qr-panel-' + tab);
+      if (panel) panel.classList.add('active');
+      qrCurrentSubtab = tab;
+      loadQrSubtab(tab);
+    });
+
+    // Orders filter change
+    const filterEl = document.getElementById('qr-orders-filter');
+    if (filterEl) {
+      filterEl.addEventListener('change', () => {
+        qrOrdersFilter = filterEl.value;
+        qrOrdersPage = 1;
+        qrOrdersLoaded = false;
+        loadQrOrders();
+      });
+    }
+
+    // Orders pagination — event delegation on tbody parent table
+    const ordersTable = document.getElementById('qr-orders-table');
+    if (ordersTable) {
+      ordersTable.addEventListener('click', (e) => {
+        const toggle = e.target.closest('.qr-expand-toggle');
+        if (!toggle) return;
+        const orderId = toggle.dataset.orderId;
+        const detailRow = document.getElementById('qr-detail-' + orderId);
+        if (!detailRow) return;
+        if (qrExpandedOrderId && qrExpandedOrderId !== orderId) {
+          const prevDetail = document.getElementById('qr-detail-' + qrExpandedOrderId);
+          if (prevDetail) prevDetail.style.display = 'none';
+          const prevToggle = document.querySelector(`.qr-expand-toggle[data-order-id="${qrExpandedOrderId}"]`);
+          if (prevToggle) prevToggle.textContent = '+';
+        }
+        const isOpen = detailRow.style.display !== 'none';
+        detailRow.style.display = isOpen ? 'none' : '';
+        toggle.textContent = isOpen ? '+' : '−';
+        qrExpandedOrderId = isOpen ? null : orderId;
+      });
+    }
+
+    const prevBtn = document.getElementById('qr-orders-prev');
+    const nextBtn = document.getElementById('qr-orders-next');
+    if (prevBtn) prevBtn.addEventListener('click', () => {
+      if (qrOrdersPage > 1) { qrOrdersPage--; loadQrOrders(); }
+    });
+    if (nextBtn) nextBtn.addEventListener('click', () => {
+      qrOrdersPage++;
+      loadQrOrders();
+    });
+  }
+
+  loadQrSubtab(qrCurrentSubtab);
+}
+
+function loadQrSubtab(tab) {
+  if (tab === 'overview') loadQrOverview();
+  else if (tab === 'orders') loadQrOrders();
+  else if (tab === 'consumers') loadQrConsumers();
+  else if (tab === 'suppliers') loadQrSuppliers();
+}
+
+async function loadQrOverview() {
+  if (qrOverviewLoaded) return;
+
+  try {
+    const data = await api('/quote-requests');
+
+    // Metric cards
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val !== undefined && val !== null ? val : '—';
+    };
+    setText('qr-total', data.total_requests);
+    setText('qr-verified', data.verified);
+    setText('qr-dispatched', data.dispatched);
+    setText('qr-response-rate', data.supplier_response_rate);
+    setText('qr-contact-rate', data.user_contact_rate);
+    setText('qr-opted-in', data.opted_in_suppliers);
+    setText('qr-opted-out', data.opted_out_suppliers);
+    setText('qr-unserved', data.unserved_leads);
+    setText('qr-expired', data.expired);
+    setText('qr-fallback-sent', data.fallback_sent);
+    setText('qr-sms-failures', data.sms_failures);
+
+    // Highlight unserved if > 0
+    const unservedCard = document.getElementById('qr-unserved-card');
+    if (unservedCard && data.unserved_leads > 0) {
+      unservedCard.classList.add('warn-active');
+    }
+    // Highlight SMS failures if > 0
+    const smsCard = document.getElementById('qr-sms-fail-card');
+    if (smsCard && data.sms_failures > 0) {
+      smsCard.classList.add('warn-active');
+    }
+
+    // Unserved badge in sidebar
+    const badge = document.getElementById('qr-unserved-badge');
+    if (badge && data.unserved_leads > 0) {
+      badge.textContent = data.unserved_leads;
+      badge.style.display = '';
+    }
+
+    // Top ZIPs with supply gap
+    const zipsTable = document.getElementById('qr-zips-table');
+    const zipsEmpty = document.getElementById('qr-zips-empty');
+    if (data.top_zips && data.top_zips.length > 0) {
+      const zipsBody = document.getElementById('qr-zips-body');
+      zipsBody.innerHTML = data.top_zips.map(z => {
+        const gapClass = z.gap_score === 'no_supply' ? 'qr-gap-none' :
+                         z.gap_score === 'critical' ? 'qr-gap-critical' :
+                         z.gap_score === 'tight' ? 'qr-gap-tight' : 'qr-gap-healthy';
+        const gapLabel = z.gap_score === 'no_supply' ? 'No supply' :
+                         z.gap_score === 'critical' ? 'Critical' :
+                         z.gap_score === 'tight' ? 'Tight' :
+                         z.gap_score === 'healthy' ? 'Healthy' : '—';
+        return `<tr>
+          <td><strong>${z.zip}</strong></td>
+          <td>${z.requests}</td>
+          <td>${z.dispatched}</td>
+          <td>${z.suppliers !== undefined ? z.suppliers : '—'}</td>
+          <td><span class="qr-gap ${gapClass}">${gapLabel}</span></td>
+        </tr>`;
+      }).join('');
+      if (zipsTable) zipsTable.style.display = '';
+      if (zipsEmpty) zipsEmpty.style.display = 'none';
+    } else {
+      if (zipsTable) zipsTable.style.display = 'none';
+      if (zipsEmpty) zipsEmpty.style.display = '';
+    }
+
+    // Speed metrics
+    if (data.speed) {
+      setText('qr-speed-avg', data.speed.avg_minutes != null ? data.speed.avg_minutes + 'm' : '—');
+      setText('qr-speed-median', data.speed.median_minutes != null ? data.speed.median_minutes + 'm' : '—');
+      setText('qr-speed-fastest', data.speed.fastest_minutes != null ? data.speed.fastest_minutes + 'm' : '—');
+    }
+
+    // Funnel
+    const funnelEl = document.getElementById('qr-funnel');
+    if (funnelEl && data.funnel && data.funnel.length > 0) {
+      const maxCount = data.funnel[0].count || 1;
+      funnelEl.innerHTML = data.funnel.map((f, i) => {
+        const width = maxCount > 0 ? Math.max(5, Math.round(f.count / maxCount * 100)) : 5;
+        const rateStr = f.rate != null ? `<span class="qr-funnel-rate">${f.rate}%</span>` : '';
+        const arrow = i > 0 ? '<span class="qr-funnel-arrow">→</span>' : '';
+        return `<div class="qr-funnel-step">
+          <div class="qr-funnel-label">${arrow}${f.stage} ${rateStr}</div>
+          <div class="qr-funnel-bar-wrap">
+            <div class="qr-funnel-bar" style="width:${width}%"></div>
+            <span class="qr-funnel-count">${f.count}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Source performance
+    const sourceTable = document.getElementById('qr-source-table');
+    const sourceEmpty = document.getElementById('qr-source-empty');
+    if (data.source_performance && data.source_performance.length > 0) {
+      const sourceBody = document.getElementById('qr-source-body');
+      sourceBody.innerHTML = data.source_performance.map(s => {
+        const pageName = s.source.replace(/^\//, '').replace(/\.html$/, '') || 'direct';
+        return `<tr>
+          <td>${pageName}</td>
+          <td>${s.total}</td>
+          <td>${s.verify_rate != null ? s.verify_rate + '%' : '—'}</td>
+          <td>${s.dispatch_rate != null ? s.dispatch_rate + '%' : '—'}</td>
+          <td>${s.contacted}</td>
+        </tr>`;
+      }).join('');
+      if (sourceTable) sourceTable.style.display = '';
+      if (sourceEmpty) sourceEmpty.style.display = 'none';
+    } else {
+      if (sourceTable) sourceTable.style.display = 'none';
+      if (sourceEmpty) sourceEmpty.style.display = '';
+    }
+
+    qrOverviewLoaded = true;
+  } catch (error) {
+    console.error('QR overview load error:', error);
+  }
+}
+
+function qrStatusClass(status) {
+  if (!status) return 'status-pending';
+  const s = status.toLowerCase();
+  if (s === 'dispatched') return 'status-dispatched';
+  if (s === 'expired') return 'status-expired';
+  if (s === 'verified') return 'status-verified';
+  if (s === 'fallback_sent') return 'status-fallback';
+  return 'status-pending';
+}
+
+function qrStatusLabel(status) {
+  if (!status) return 'pending';
+  return status.replace(/_/g, ' ');
+}
+
+function qrFmtDate(iso, includeTime) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const opts = { month: 'short', day: 'numeric' };
+  if (includeTime) { opts.hour = 'numeric'; opts.minute = '2-digit'; }
+  return d.toLocaleDateString('en-US', opts);
+}
+
+function qrIsAfterHours(iso) {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const h = d.getHours();
+  return h < 8 || h >= 18;
+}
+
+async function loadQrOrders() {
+  // Orders always re-fetches for freshness
+  const loadingEl = document.getElementById('qr-orders-loading');
+  const tableEl = document.getElementById('qr-orders-table');
+  const emptyEl = document.getElementById('qr-orders-empty');
+  const paginationEl = document.getElementById('qr-orders-pagination');
+  const pageInfoEl = document.getElementById('qr-orders-page-info');
+  const prevBtn = document.getElementById('qr-orders-prev');
+  const nextBtn = document.getElementById('qr-orders-next');
+
+  if (loadingEl) loadingEl.style.display = '';
+  if (tableEl) tableEl.style.display = 'none';
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (paginationEl) paginationEl.style.display = 'none';
+
+  qrExpandedOrderId = null;
+
+  try {
+    let endpoint = `/quote-requests/orders?page=${qrOrdersPage}`;
+    if (qrOrdersFilter) endpoint += `&status=${encodeURIComponent(qrOrdersFilter)}`;
+    const data = await api(endpoint);
+
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    const orders = data.orders || [];
+    if (orders.length === 0) {
+      if (emptyEl) emptyEl.style.display = '';
+      qrOrdersLoaded = true;
+      return;
+    }
+
+    const tbody = document.getElementById('qr-orders-body');
+    tbody.innerHTML = orders.map(o => {
+      const afterHours = qrIsAfterHours(o.created_at);
+      const verifiedBadge = o.consumer_verified
+        ? '<span class="qr-verified-badge">verified</span>' : '';
+      const repeatBadge = o.consumer_repeat
+        ? '<span class="qr-repeat-badge">repeat</span>' : '';
+      const ahBadge = afterHours
+        ? '<span class="qr-after-hours">after-hrs</span>' : '';
+      const consumerName = o.consumer_name
+        ? `<strong>${o.consumer_name}</strong>` : '<em class="qr-anon">anonymous</em>';
+      const consumerPhone = o.consumer_phone
+        ? `<br><small>${o.consumer_phone}</small>` : '';
+      const tankLabel = o.tank_level ? o.tank_level.replace(/_/g, ' ') : '—';
+      const outcome = o.consumer_outcome === 'contacted' ? 'Contacted'
+                    : o.consumer_outcome === 'not_contacted' ? 'Not contacted' : '—';
+      const suppCount = `${o.suppliers_responded || 0}/${o.suppliers_dispatched || 0}`;
+      const sc = qrStatusClass(o.status);
+      const sl = qrStatusLabel(o.status);
+
+      // Supplier breakdown rows for expandable detail
+      const supplierRows = (o.suppliers || []).map(s => {
+        const ssc = qrStatusClass(s.status);
+        const ssl = qrStatusLabel(s.status);
+        return `<div class="qr-supplier-row">
+          <span class="qr-supplier-name">${s.name}</span>
+          <span class="qr-supplier-loc">${s.city || ''}${s.state ? ', ' + s.state : ''}</span>
+          <span class="qr-supplier-phone">${s.phone || '—'}</span>
+          <span class="qr-status ${ssc}">${ssl}</span>
+          <span class="qr-supplier-sent">${s.sent_at ? qrFmtDate(s.sent_at, true) : '—'}</span>
+          <span class="qr-supplier-responded">${s.responded_at ? qrFmtDate(s.responded_at, true) : '—'}</span>
+        </div>`;
+      }).join('') || '<div class="qr-supplier-row qr-no-suppliers">No suppliers dispatched</div>';
+
+      const sourcePage = o.source_page || '—';
+      const dispatchedAt = o.dispatched_at ? qrFmtDate(o.dispatched_at, true) : '—';
+      const expiresAt = o.expires_at ? qrFmtDate(o.expires_at, true) : '—';
+      const fallbackStatus = o.fallback_sent ? 'Sent' : 'Not sent';
+
+      return `<tr class="qr-order-row" data-order-id="${o.id}">
+        <td class="qr-expand-col">
+          <button class="qr-expand-toggle" data-order-id="${o.id}" title="Expand">+</button>
+        </td>
+        <td>${consumerName}${verifiedBadge}${repeatBadge}${consumerPhone}</td>
+        <td><strong>${o.consumer_zip}</strong></td>
+        <td>${o.gallons_requested || '—'}</td>
+        <td class="qr-hide-mobile">${tankLabel}</td>
+        <td><span class="qr-status ${sc}">${sl}</span></td>
+        <td>${suppCount}</td>
+        <td>${outcome}</td>
+        <td>${qrFmtDate(o.created_at, true)}${ahBadge}</td>
+      </tr>
+      <tr class="qr-detail-row" id="qr-detail-${o.id}" style="display:none">
+        <td colspan="9">
+          <div class="qr-order-detail">
+            <div class="qr-order-meta">
+              <span><strong>Source:</strong> ${sourcePage}</span>
+              <span><strong>Dispatched:</strong> ${dispatchedAt}</span>
+              <span><strong>Fallback:</strong> ${fallbackStatus}</span>
+              <span><strong>Expires:</strong> ${expiresAt}</span>
+            </div>
+            <div class="qr-supplier-breakdown">
+              <div class="qr-supplier-breakdown-header">
+                <span>Supplier</span><span>Location</span><span>Phone</span>
+                <span>Status</span><span>Sent</span><span>Responded</span>
+              </div>
+              ${supplierRows}
+            </div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    if (tableEl) tableEl.style.display = '';
+
+    // Pagination
+    const totalPages = data.total_pages || 1;
+    const currentPage = data.page || qrOrdersPage;
+    if (totalPages > 1) {
+      if (paginationEl) paginationEl.style.display = '';
+      if (pageInfoEl) pageInfoEl.textContent = `Page ${currentPage} of ${totalPages}`;
+      if (prevBtn) prevBtn.disabled = currentPage <= 1;
+      if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+    }
+
+    qrOrdersLoaded = true;
+  } catch (error) {
+    console.error('QR orders load error:', error);
+    if (loadingEl) loadingEl.textContent = 'Failed to load orders';
+  }
+}
+
+async function loadQrConsumers() {
+  if (qrConsumersLoaded) return;
+
+  const loadingEl = document.getElementById('qr-consumers-loading');
+  const tableEl = document.getElementById('qr-consumers-table');
+  const emptyEl = document.getElementById('qr-consumers-empty');
+
+  try {
+    const data = await api('/quote-requests/consumers');
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    const consumers = data.consumers || [];
+    if (consumers.length === 0) {
+      if (emptyEl) emptyEl.style.display = '';
+      qrConsumersLoaded = true;
+      return;
+    }
+
+    const tbody = document.getElementById('qr-consumers-body');
+    tbody.innerHTML = consumers.map(c => {
+      const repeatBadge = c.request_count > 1
+        ? '<span class="qr-repeat-badge">repeat</span>' : '';
+      const name = c.name
+        ? `<strong>${c.name}</strong>${repeatBadge}` : `<em class="qr-anon">anonymous</em>${repeatBadge}`;
+      const zips = Array.isArray(c.zips) ? c.zips.join(', ') : (c.zips || '—');
+      return `<tr>
+        <td>${name}</td>
+        <td>${c.phone || '—'}</td>
+        <td>${zips}</td>
+        <td>${c.request_count || 0}</td>
+        <td>${c.total_gallons || '—'}</td>
+        <td>${c.verified_count || 0}</td>
+        <td>${c.dispatched_count || 0}</td>
+        <td>${c.contacted_count || 0}</td>
+        <td>${qrFmtDate(c.first_request_at, false)}</td>
+        <td>${qrFmtDate(c.last_request_at, false)}</td>
+      </tr>`;
+    }).join('');
+
+    if (tableEl) tableEl.style.display = '';
+    qrConsumersLoaded = true;
+  } catch (error) {
+    console.error('QR consumers load error:', error);
+    if (loadingEl) loadingEl.textContent = 'Failed to load consumers';
+  }
+}
+
+async function loadQrSuppliers() {
+  if (qrSuppliersLoaded) return;
+
+  const loadingEl = document.getElementById('qr-suppliers-loading');
+  const tableEl = document.getElementById('qr-suppliers-table');
+  const emptyEl = document.getElementById('qr-suppliers-empty');
+
+  try {
+    const data = await api('/quote-requests/suppliers');
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    const suppliers = data.suppliers || [];
+    if (suppliers.length === 0) {
+      if (emptyEl) emptyEl.style.display = '';
+      qrSuppliersLoaded = true;
+      return;
+    }
+
+    const tbody = document.getElementById('qr-suppliers-body');
+    tbody.innerHTML = suppliers.map(s => {
+      const health = s.health || 'none';
+      const healthLabel = health.charAt(0).toUpperCase() + health.slice(1);
+      const location = [s.city, s.state].filter(Boolean).join(', ') || '—';
+      const responseRate = s.response_rate !== undefined && s.response_rate !== null
+        ? s.response_rate : '—';
+      const avgResponse = s.avg_response_minutes
+        ? `${Math.round(s.avg_response_minutes)}m` : '—';
+      return `<tr>
+        <td><strong>${s.name}</strong></td>
+        <td>${location}</td>
+        <td>${s.leads_received || 0}</td>
+        <td>${s.leads_responded || 0}</td>
+        <td>${responseRate}</td>
+        <td>${avgResponse}</td>
+        <td>${s.sms_failures || 0}</td>
+        <td><span class="qr-health qr-health-${health}">${healthLabel}</span></td>
+        <td>${qrFmtDate(s.opted_in_at, false)}</td>
+      </tr>`;
+    }).join('');
+
+    if (tableEl) tableEl.style.display = '';
+    qrSuppliersLoaded = true;
+  } catch (error) {
+    console.error('QR suppliers load error:', error);
+    if (loadingEl) loadingEl.textContent = 'Failed to load suppliers';
+  }
+}
