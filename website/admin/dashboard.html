@@ -1876,13 +1876,36 @@
               <div id="qr-zips-empty" class="qr-empty" style="display:none">No ZIP data yet</div>
             </div>
 
+            <!-- Marketplace Health -->
+            <div class="qr-section">
+              <h3 class="qr-section-title">Marketplace Health</h3>
+              <div class="qr-speed-cards">
+                <div class="qr-speed-card">
+                  <div class="qr-speed-value" id="qr-match-rate">--</div>
+                  <div class="qr-speed-label">Match Rate</div>
+                </div>
+                <div class="qr-speed-card">
+                  <div class="qr-speed-value" id="qr-lead-value">--</div>
+                  <div class="qr-speed-label">Est. GMV</div>
+                </div>
+                <div class="qr-speed-card">
+                  <div class="qr-speed-value" id="qr-avg-gallons">--</div>
+                  <div class="qr-speed-label">Avg Gallons/Lead</div>
+                </div>
+                <div class="qr-speed-card">
+                  <div class="qr-speed-value" id="qr-avg-price">--</div>
+                  <div class="qr-speed-label">Avg Market Price</div>
+                </div>
+              </div>
+            </div>
+
             <!-- Speed Metrics -->
             <div class="qr-section">
               <h3 class="qr-section-title">Speed Metrics</h3>
               <div class="qr-speed-cards">
                 <div class="qr-speed-card">
                   <div class="qr-speed-value" id="qr-speed-avg">--</div>
-                  <div class="qr-speed-label">Avg First Response</div>
+                  <div class="qr-speed-label">Avg Supplier Response</div>
                 </div>
                 <div class="qr-speed-card">
                   <div class="qr-speed-value" id="qr-speed-median">--</div>
@@ -1891,6 +1914,14 @@
                 <div class="qr-speed-card">
                   <div class="qr-speed-value" id="qr-speed-fastest">--</div>
                   <div class="qr-speed-label">Fastest Response</div>
+                </div>
+                <div class="qr-speed-card">
+                  <div class="qr-speed-value" id="qr-contact-avg">--</div>
+                  <div class="qr-speed-label">Avg Time to Contact</div>
+                </div>
+                <div class="qr-speed-card">
+                  <div class="qr-speed-value" id="qr-contact-median">--</div>
+                  <div class="qr-speed-label">Median Time to Contact</div>
                 </div>
               </div>
             </div>
@@ -1993,6 +2024,7 @@
                   <th>Leads</th>
                   <th>Responded</th>
                   <th>Response Rate</th>
+                  <th>Win Rate</th>
                   <th>Avg Response</th>
                   <th>Failures</th>
                   <th>Health</th>

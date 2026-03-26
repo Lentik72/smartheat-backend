@@ -4638,6 +4638,63 @@ router.get('/quote-requests', async (req, res) => {
       dispatch_rate: parseInt(s.verified) > 0 ? Math.round(parseInt(s.dispatched) / parseInt(s.verified) * 100) : null
     }));
 
+    // Time to contact: dispatched_at → consumer_outcome_at (for "contacted" outcomes)
+    const [[contactSpeed]] = await sequelize.query(`
+      SELECT
+        AVG(EXTRACT(EPOCH FROM (consumer_outcome_at - dispatched_at)) / 60) AS avg_contact_mins,
+        MIN(EXTRACT(EPOCH FROM (consumer_outcome_at - dispatched_at)) / 60) AS fastest_contact_mins,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (
+          ORDER BY EXTRACT(EPOCH FROM (consumer_outcome_at - dispatched_at)) / 60
+        ) AS median_contact_mins
+      FROM quote_requests
+      WHERE consumer_outcome = 'contacted'
+        AND consumer_outcome_at IS NOT NULL
+        AND dispatched_at IS NOT NULL
+        AND consumer_outcome_at > dispatched_at
+    `).catch(() => [[{}]]);
+
+    // Lead value: gallons * avg market price
+    const [[avgPrice]] = await sequelize.query(`
+      SELECT AVG(price) AS avg_price
+      FROM supplier_prices
+      WHERE fuel_type = 'heating_oil'
+        AND scraped_at > NOW() - INTERVAL '7 days'
+    `).catch(() => [[{}]]);
+
+    const avgPriceNum = avgPrice?.avg_price ? parseFloat(avgPrice.avg_price) : null;
+
+    const [[leadValueStats]] = await sequelize.query(`
+      SELECT
+        SUM(gallons_requested) AS total_gallons,
+        AVG(gallons_requested) AS avg_gallons,
+        COUNT(*) FILTER (WHERE status = 'dispatched') AS dispatched_count
+      FROM quote_requests
+    `);
+
+    const totalGallons = parseInt(leadValueStats?.total_gallons) || 0;
+    const avgGallons = leadValueStats?.avg_gallons ? Math.round(parseFloat(leadValueStats.avg_gallons)) : null;
+    const estimatedGmv = avgPriceNum && totalGallons > 0
+      ? Math.round(totalGallons * avgPriceNum)
+      : null;
+
+    // Match rate (marketplace health): leads where at least one supplier responded / total dispatched
+    const [[matchData]] = await sequelize.query(`
+      SELECT
+        COUNT(DISTINCT qr.id) FILTER (
+          WHERE EXISTS (
+            SELECT 1 FROM quote_request_suppliers qrs
+            WHERE qrs.quote_request_id = qr.id AND qrs.responded_at IS NOT NULL
+          )
+        ) AS matched,
+        COUNT(DISTINCT qr.id) AS total_dispatched
+      FROM quote_requests qr
+      WHERE qr.status = 'dispatched'
+    `).catch(() => [[{}]]);
+
+    const matched = parseInt(matchData?.matched) || 0;
+    const totalDispatched = parseInt(matchData?.total_dispatched) || 0;
+    const matchRate = totalDispatched > 0 ? Math.round(matched / totalDispatched * 100) : null;
+
     const dispatched = dispatchedCount;
     const responses = responsesCount;
     const contacted = contactedCount;
@@ -4681,6 +4738,18 @@ router.get('/quote-requests', async (req, res) => {
         fastest_minutes: speedMetrics?.fastest_response ? Math.round(parseFloat(speedMetrics.fastest_response)) : null,
         median_minutes: speedMetrics?.median_response ? Math.round(parseFloat(speedMetrics.median_response)) : null
       },
+      contact_speed: {
+        avg_minutes: contactSpeed?.avg_contact_mins ? Math.round(parseFloat(contactSpeed.avg_contact_mins)) : null,
+        fastest_minutes: contactSpeed?.fastest_contact_mins ? Math.round(parseFloat(contactSpeed.fastest_contact_mins)) : null,
+        median_minutes: contactSpeed?.median_contact_mins ? Math.round(parseFloat(contactSpeed.median_contact_mins)) : null
+      },
+      lead_value: {
+        total_gallons: totalGallons,
+        avg_gallons: avgGallons,
+        avg_price: avgPriceNum ? parseFloat(avgPriceNum.toFixed(2)) : null,
+        estimated_gmv: estimatedGmv
+      },
+      match_rate: matchRate,
       source_performance: sourcePerf
     });
   } catch (error) {
@@ -4858,7 +4927,13 @@ router.get('/quote-requests/suppliers', async (req, res) => {
         MAX(qrs.created_at) AS last_lead_at,
         AVG(
           EXTRACT(EPOCH FROM (qrs.responded_at - qrs.sms_sent_at)) / 60.0
-        ) FILTER (WHERE qrs.responded_at IS NOT NULL AND qrs.sms_sent_at IS NOT NULL) AS avg_response_minutes
+        ) FILTER (WHERE qrs.responded_at IS NOT NULL AND qrs.sms_sent_at IS NOT NULL) AS avg_response_minutes,
+        COUNT(qrs.id) FILTER (
+          WHERE EXISTS (
+            SELECT 1 FROM quote_requests qr2
+            WHERE qr2.id = qrs.quote_request_id AND qr2.consumer_outcome = 'contacted'
+          )
+        ) AS leads_contacted
       FROM suppliers s
       LEFT JOIN quote_request_suppliers qrs ON qrs.supplier_id = s.id
       WHERE s.lead_opted_in = true
@@ -4874,6 +4949,8 @@ router.get('/quote-requests/suppliers', async (req, res) => {
       const responseRate = sent > 0 ? responded / sent : 0;
       const failureRate = totalLeads > 0 ? failed / totalLeads : 0;
       const avgResponseMinutes = r.avg_response_minutes != null ? parseFloat(r.avg_response_minutes).toFixed(1) : null;
+      const leadsContacted = parseInt(r.leads_contacted) || 0;
+      const winRate = sent > 0 ? leadsContacted / sent : 0;
 
       let health;
       if (totalLeads === 0) {
@@ -4904,6 +4981,8 @@ router.get('/quote-requests/suppliers', async (req, res) => {
         first_lead_at: r.first_lead_at,
         last_lead_at: r.last_lead_at,
         lead_opted_in_at: r.lead_opted_in_at,
+        win_rate: sent > 0 ? (winRate * 100).toFixed(0) + '%' : '—',
+        leads_contacted: leadsContacted,
         health
       };
     });

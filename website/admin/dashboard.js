@@ -4375,11 +4375,23 @@ async function loadQrOverview() {
       if (zipsEmpty) zipsEmpty.style.display = '';
     }
 
+    // Marketplace health
+    setText('qr-match-rate', data.match_rate != null ? data.match_rate + '%' : '—');
+    if (data.lead_value) {
+      setText('qr-lead-value', data.lead_value.estimated_gmv != null ? '$' + data.lead_value.estimated_gmv.toLocaleString() : '—');
+      setText('qr-avg-gallons', data.lead_value.avg_gallons != null ? data.lead_value.avg_gallons : '—');
+      setText('qr-avg-price', data.lead_value.avg_price != null ? '$' + data.lead_value.avg_price.toFixed(2) : '—');
+    }
+
     // Speed metrics
     if (data.speed) {
       setText('qr-speed-avg', data.speed.avg_minutes != null ? data.speed.avg_minutes + 'm' : '—');
       setText('qr-speed-median', data.speed.median_minutes != null ? data.speed.median_minutes + 'm' : '—');
       setText('qr-speed-fastest', data.speed.fastest_minutes != null ? data.speed.fastest_minutes + 'm' : '—');
+    }
+    if (data.contact_speed) {
+      setText('qr-contact-avg', data.contact_speed.avg_minutes != null ? data.contact_speed.avg_minutes + 'm' : '—');
+      setText('qr-contact-median', data.contact_speed.median_minutes != null ? data.contact_speed.median_minutes + 'm' : '—');
     }
 
     // Funnel
@@ -4661,6 +4673,7 @@ async function loadQrSuppliers() {
         <td>${s.leads_received || 0}</td>
         <td>${s.leads_responded || 0}</td>
         <td>${responseRate}</td>
+        <td>${s.win_rate || '—'}</td>
         <td>${avgResponse}</td>
         <td>${s.sms_failures || 0}</td>
         <td><span class="qr-health qr-health-${health}">${healthLabel}</span></td>
