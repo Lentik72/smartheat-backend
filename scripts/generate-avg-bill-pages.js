@@ -262,7 +262,6 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, costs
     </section>
 
     ${getFooterHTML(depth)}
-    <script src="${'../'.repeat(depth)}js/pwa.js"></script>
 </body>
 </html>`;
 }
@@ -418,7 +417,6 @@ function generateStatePageHTML(stateCode, stateInfo, stateStats, countyData, cos
     </section>
 
     ${getFooterHTML(depth)}
-    <script src="${'../'.repeat(depth)}js/pwa.js"></script>
 </body>
 </html>`;
 }
@@ -782,7 +780,6 @@ function generateIndexPageHTML(statesData) {
     ${getFooterHTML(depth)}
     <script src="${'../'.repeat(depth)}js/nav.min.js" defer></script>
     <script src="${'../'.repeat(depth)}js/widgets.min.js" defer></script>
-    <script src="${'../'.repeat(depth)}js/pwa.js"></script>
 </body>
 </html>`;
 }
