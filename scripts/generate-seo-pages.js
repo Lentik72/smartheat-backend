@@ -395,8 +395,9 @@ async function generateSEOPages(options = {}) {
     log(`\n✅ Generated _leaderboard-snippet.html`);
 
     // V2.17.0: Update prices.html with fresh leaderboard data
+    // Only heating_oil should update prices.html — kerosene has its own hub page
     const pricesHtmlPath = path.join(websiteDir, 'prices.html');
-    if (!dryRun) {
+    if (!dryRun && FUEL.fuelType === 'heating_oil') {
       try {
         await updatePricesHtml(pricesHtmlPath, generatedPages.states, prices, suppliers, FUEL);
         log(`✅ Updated prices.html with fresh leaderboard data`);
