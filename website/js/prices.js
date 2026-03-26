@@ -265,7 +265,9 @@
 
     if (zipParam && /^\d{5}$/.test(zipParam)) {
       zipInput.value = zipParam;
-      lookupPrices(zipParam);
+      lookupPrices(zipParam).then(() => {
+        window.scrollTo(0, 0);
+      });
     } else if (savedZip && /^\d{5}$/.test(savedZip)) {
       zipInput.value = savedZip;
     }
