@@ -29,7 +29,7 @@ const {
   getCountyOilStats, getStateOilStats, getRecentPriceCount,
   getCountyWeeklyHistory, getCountyEligibility,
   getCssPath, getNavHTML, getFooterHTML,
-  slugify, formatPrice,
+  slugify, formatPrice, crossLinkExists,
 } = require('./lib/county-data');
 
 // Configuration
@@ -378,7 +378,6 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, histo
     : today;
 
   // Cross-links (conditional on eligibility + file existence)
-  const { crossLinkExists } = require('./lib/county-data');
   let crossLinks = '';
   if (crossLinkExists(`/heating-cost/${stateAbbrev}/${countySlug}`)) {
     crossLinks += `\n            <li><a href="/heating-cost/${stateAbbrev}/${countySlug}">Heating Cost Comparison in ${county} County</a></li>`;
