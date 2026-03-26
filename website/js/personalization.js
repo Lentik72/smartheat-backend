@@ -97,7 +97,11 @@
             if (tab.href.includes(stateInfo.path)) {
                 tab.classList.add('active');
                 // Scroll tab into view on mobile
-                tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                const tabContainer = tab.closest('.state-tabs');
+                if (tabContainer) {
+                    const targetLeft = tab.offsetLeft - tabContainer.offsetWidth / 2 + tab.offsetWidth / 2;
+                    tabContainer.scrollTo({ left: targetLeft, behavior: 'smooth' });
+                }
             }
         });
     }
