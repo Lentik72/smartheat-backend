@@ -176,6 +176,7 @@ async function generateKeroseneHub(options = {}) {
   <link rel="canonical" href="${BASE_URL}/prices/kerosene/">
   <meta property="og:title" content="K-1 Kerosene Prices by State">
   <meta property="og:description" content="Compare K-1 kerosene prices from local suppliers. Updated daily.">
+  <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:url" content="${BASE_URL}/prices/kerosene/">
   <meta property="og:type" content="website">
   <link rel="stylesheet" href="${cssPath}">

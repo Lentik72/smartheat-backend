@@ -350,6 +350,7 @@ function generateZipPageHTML(stats, history, county = null) {
   <!-- OpenGraph -->
   <meta property="og:title" content="Heating Oil Prices in ${escapeHtml(regionName)} - ${dateStr}">
   <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : 'Compare local heating oil prices.'}">
+  <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:url" content="https://www.gethomeheat.com/prices/zip/${zipPrefix}">
   <meta property="og:type" content="website">
 

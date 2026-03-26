@@ -172,6 +172,7 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, costs
 
     <meta property="og:title" content="${title}">
     <meta property="og:description" content="${description}">
+    <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
     <meta property="og:url" content="${canonicalURL}">
     <meta property="og:type" content="article">
     <meta name="twitter:card" content="summary">
@@ -342,6 +343,7 @@ function generateStatePageHTML(stateCode, stateInfo, stateStats, countyData, cos
 
     <meta property="og:title" content="${title}">
     <meta property="og:description" content="${description}">
+    <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
     <meta property="og:url" content="${canonicalURL}">
     <meta property="og:type" content="article">
     <meta name="twitter:card" content="summary">
@@ -493,6 +495,7 @@ function generateIndexPageHTML(statesData) {
 
     <meta property="og:title" content="${title}">
     <meta property="og:description" content="${description}">
+    <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
     <meta property="og:url" content="${canonicalURL}">
     <meta property="og:type" content="website">
 

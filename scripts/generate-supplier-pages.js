@@ -657,6 +657,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
 
   <meta property="og:title" content="${name} - Heating Oil Delivery">
   <meta property="og:description" content="Heating oil delivery in ${escapeHtml(serviceAreaText)}">
+  <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:type" content="business.business">
   <meta property="og:url" content="https://www.gethomeheat.com/supplier/${supplier.slug}">
 

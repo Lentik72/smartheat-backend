@@ -1494,6 +1494,7 @@ function generatePageHTML(data, FUEL) {
   <!-- OpenGraph -->
   <meta property="og:title" content="${escapeHtml(title)} - ${dateStr}">
   <meta property="og:description" content="${escapeHtml(description)}">
+  <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:url" content="${canonicalUrl}">
   <meta property="og:type" content="website">
 

@@ -652,6 +652,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   <!-- OpenGraph -->
   <meta property="og:title" content="${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
   <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : `Compare local ${FUEL.label.toLowerCase()} prices.`}">
+  <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:url" content="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
   <meta property="og:type" content="website">
 
@@ -1048,6 +1049,7 @@ ${countySuppliers.map(s => {
   <!-- OpenGraph -->
   <meta property="og:title" content="${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
   <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : `Compare local ${FUEL.label.toLowerCase()} prices.`}">
+  <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:url" content="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
   <meta property="og:type" content="website">
 
