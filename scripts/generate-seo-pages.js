@@ -1727,10 +1727,10 @@ async function updatePricesHtml(pricesHtmlPath, states, prices, suppliers, FUEL)
   // Generate new state averages table rows (escape $ as $$ for regex replacement)
   const stateRows = stateData.map(s =>
     `                        <tr>\n` +
-    `                            <td><a href="prices/${s.abbrev}/">${s.name}</a></td>\n` +
+    `                            <td><a href="${FUEL.urlPrefix}/${s.abbrev}/">${s.name}</a></td>\n` +
     `                            <td>$$${s.avg} avg</td>\n` +
     `                            <td>${s.count} suppliers</td>\n` +
-    `                            <td><a href="prices/${s.abbrev}/">See all →</a></td>\n` +
+    `                            <td><a href="${FUEL.urlPrefix}/${s.abbrev}/">See all →</a></td>\n` +
     `                        </tr>`
   ).join('\n');
 
@@ -1902,10 +1902,10 @@ function generateLeaderboardSnippet(states, prices, suppliers, FUEL) {
 
   const stateRows = stateData.map(s => `
         <tr>
-          <td><a href="prices/${s.abbrev}/">${s.name}</a></td>
+          <td><a href="${FUEL.urlPrefix}/${s.abbrev}/">${s.name}</a></td>
           <td>$${s.avg} avg</td>
           <td>${s.count} suppliers</td>
-          <td><a href="prices/${s.abbrev}/">See all →</a></td>
+          <td><a href="${FUEL.urlPrefix}/${s.abbrev}/">See all →</a></td>
         </tr>`).join('\n');
 
   const topDealItems = topDeals.map(d => `
