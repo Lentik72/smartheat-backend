@@ -865,7 +865,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
     <section class="zip-breakdown">
       <h2>Detailed Pricing by ZIP Prefix</h2>
       <div class="zip-grid">
-        ${zipDetails.map(z => `
+        ${zipDetails.filter(z => crossLinkExists(`/prices/zip/${z.zip_prefix}`)).map(z => `
         <a href="/prices/zip/${z.zip_prefix}" class="zip-card">
           <span class="zip-prefix">${z.zip_prefix}xx</span>
           <span class="zip-price">$${parseFloat(z.median_price).toFixed(2)}/gal</span>
@@ -986,7 +986,7 @@ ${countySuppliers.map(s => {
       ${crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slug}`) ? `| <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Price trends</a>` : ''}
     </section>` : ''}
 
-    ${crossLinkSet.has(`${stats.county_name}|${stats.state_code}`) ? `
+    ${crossLinkSet.has(`${stats.county_name}|${stats.state_code}`) && crossLinkExists(`${FUEL.crossLinkUrlPrefix}/${stateCode.toLowerCase()}/${slug}`) ? `
     <!-- V2.12.0: Cross-link to other fuel -->
     <section class="sp-cross-fuel">
       <h3>Also Available in ${escapeHtml(countyName)} County</h3>
@@ -1314,7 +1314,7 @@ ${countySuppliers.map(s => {
     <section class="zip-breakdown">
       <h2>Detailed Pricing by ZIP Prefix</h2>
       <div class="zip-grid">
-        ${zipDetails.map(z => `
+        ${zipDetails.filter(z => crossLinkExists(`/prices/zip/${z.zip_prefix}`)).map(z => `
         <a href="/prices/zip/${z.zip_prefix}" class="zip-card">
           <span class="zip-prefix">${z.zip_prefix}xx</span>
           <span class="zip-price">$${parseFloat(z.median_price).toFixed(2)}/gal</span>
@@ -1388,7 +1388,7 @@ ${countySuppliers.map(s => {
       ${crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slug}`) ? `| <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" style="font-weight: 600;">Price trends</a>` : ''}
     </section>` : ''}
 
-    ${crossLinkSet.has(`${stats.county_name}|${stats.state_code}`) ? `
+    ${crossLinkSet.has(`${stats.county_name}|${stats.state_code}`) && crossLinkExists(`${FUEL.crossLinkUrlPrefix}/${stateCode.toLowerCase()}/${slug}`) ? `
     <!-- V2.12.0: Cross-link to other fuel -->
     <section class="sp-cross-fuel">
       <h3>Also Available in ${escapeHtml(countyName)} County</h3>
