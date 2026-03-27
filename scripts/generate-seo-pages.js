@@ -560,8 +560,8 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
       maxPrice: c.max_price ? parseFloat(c.max_price) : null,
       supplierCount: c.supplier_count,
       trend: c.percent_change_6w ? parseFloat(c.percent_change_6w) : null,
-      hasElite: true  // These counties have Elite pages
-    }));
+      hasElite: true
+    })).filter(c => crossLinkExists(`${FUEL.urlPrefix}/county/${stateCode.toLowerCase()}/${c.slug}`));
   } catch (e) {
     // If county stats not available, fall back to supplier-only data
     console.log(`   ⚠️  Could not fetch county stats for ${stateCode}: ${e.message}`);
