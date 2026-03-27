@@ -740,9 +740,8 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
       <div class="chart-container">
         <canvas id="priceChart"></canvas>
       </div>
-      <p class="chart-caption">County aggregate from ${supplierCount} suppliers ·
-        <a href="/price-trend/${stateCode.toLowerCase()}/${slugify(countyName)}">See full trend analysis →</a>
-      </p>
+      <p class="chart-caption">County aggregate from ${supplierCount} suppliers${crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slugify(countyName)}`) ? ` ·
+        <a href="/price-trend/${stateCode.toLowerCase()}/${slugify(countyName)}">See full trend analysis →</a>` : ''}</p>
     </section>
 
     <script>
@@ -821,7 +820,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
           <div class="insight-label">Monthly Heating Bill</div>
           <div class="insight-detail">2,000 sq ft home · Oil heat</div>
         </a>
-        <a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-fuel" data-referrer="insights_block">
+        ${crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) ? `<a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-fuel" data-referrer="insights_block">` : '<div class="insight-card">'}
           ${fuelCosts.cheapest === 'heating-oil' ?
             `<div class="insight-value insight-value-good">Oil is cheapest</div>
              <div class="insight-label">Fuel Comparison</div>
@@ -830,12 +829,12 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
              <div class="insight-label">${{'natural-gas':'Natural Gas','heat-pump':'Heat Pump','electric-baseboard':'Electric'}[fuelCosts.cheapest] || fuelCosts.cheapest}</div>
              <div class="insight-detail">${fuelCosts.fuels['heating-oil'] && fuelCosts.fuels[fuelCosts.cheapest] ? '$' + (fuelCosts.fuels['heating-oil'].annualCost - fuelCosts.fuels[fuelCosts.cheapest].annualCost).toLocaleString() + ' less than oil' : 'See comparison'}</div>`
           }
-        </a>
-        <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-trend" data-referrer="insights_block">
+        ${crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) ? '</a>' : '</div>'}
+        ${crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slug}`) ? `<a href="/price-trend/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-trend" data-referrer="insights_block">` : '<div class="insight-card">'}
           <div class="insight-value">${percentChange6w !== null ? (percentChange6w > 0 ? '↑' : percentChange6w < 0 ? '↓' : '→') + ' ' + Math.abs(percentChange6w).toFixed(0) + '%' : '—'}</div>
           <div class="insight-label">Price Trend</div>
           <div class="insight-detail">${percentChange6w !== null ? 'in ' + (weeksAvailable >= 6 ? '6' : weeksAvailable) + ' weeks' : 'View trend analysis'}</div>
-        </a>
+        ${crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slug}`) ? '</a>' : '</div>'}
       </div>
     </section>
     ` : ''}
@@ -1204,9 +1203,8 @@ ${countySuppliers.map(s => {
       <div class="chart-container">
         <canvas id="priceChart"></canvas>
       </div>
-      <p class="chart-caption">County aggregate from ${supplierCount} suppliers ·
-        <a href="/price-trend/${stateCode.toLowerCase()}/${slugify(countyName)}">See full trend analysis →</a>
-      </p>
+      <p class="chart-caption">County aggregate from ${supplierCount} suppliers${crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slugify(countyName)}`) ? ` ·
+        <a href="/price-trend/${stateCode.toLowerCase()}/${slugify(countyName)}">See full trend analysis →</a>` : ''}</p>
     </section>
 
     <script>
@@ -1270,7 +1268,7 @@ ${countySuppliers.map(s => {
           <div class="insight-label">Monthly Heating Bill</div>
           <div class="insight-detail">2,000 sq ft home · Oil heat</div>
         </a>
-        <a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-fuel" data-referrer="insights_block">
+        ${crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) ? `<a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-fuel" data-referrer="insights_block">` : '<div class="insight-card">'}
           ${fuelCosts.cheapest === 'heating-oil' ?
             `<div class="insight-value insight-value-good">Oil is cheapest</div>
              <div class="insight-label">Fuel Comparison</div>
@@ -1279,12 +1277,12 @@ ${countySuppliers.map(s => {
              <div class="insight-label">${{'natural-gas':'Natural Gas','heat-pump':'Heat Pump','electric-baseboard':'Electric'}[fuelCosts.cheapest] || fuelCosts.cheapest}</div>
              <div class="insight-detail">${fuelCosts.fuels['heating-oil'] && fuelCosts.fuels[fuelCosts.cheapest] ? '$' + (fuelCosts.fuels['heating-oil'].annualCost - fuelCosts.fuels[fuelCosts.cheapest].annualCost).toLocaleString() + ' less than oil' : 'See comparison'}</div>`
           }
-        </a>
-        <a href="/price-trend/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-trend" data-referrer="insights_block">
+        ${crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) ? '</a>' : '</div>'}
+        ${crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slug}`) ? `<a href="/price-trend/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-trend" data-referrer="insights_block">` : '<div class="insight-card">'}
           <div class="insight-value">${percentChange6w !== null ? (percentChange6w > 0 ? '↑' : percentChange6w < 0 ? '↓' : '→') + ' ' + Math.abs(percentChange6w).toFixed(0) + '%' : '—'}</div>
           <div class="insight-label">Price Trend</div>
           <div class="insight-detail">${percentChange6w !== null ? 'in ' + (weeksAvailable >= 6 ? '6' : weeksAvailable) + ' weeks' : 'View trend analysis'}</div>
-        </a>
+        ${crossLinkExists(`/price-trend/${stateCode.toLowerCase()}/${slug}`) ? '</a>' : '</div>'}
       </div>
     </section>
     ` : ''}
