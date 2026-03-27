@@ -319,13 +319,19 @@
     checkBtn.textContent = 'Loading...';
 
     try {
-      const response = await fetch(`${API_BASE}${API_ENDPOINT}?zip=${zip}`);
+      // Fire supplier search and quote availability in parallel
+      const supplierPromise = fetch(`${API_BASE}${API_ENDPOINT}?zip=${zip}`);
+      const availPromise = (typeof window.initGetQuotesForm === 'function')
+        ? fetch('/api/quote-request/availability?zip=' + zip).then(r => r.ok ? r.json() : null).catch(() => null)
+        : Promise.resolve(null);
+
+      const response = await supplierPromise;
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const [data, availData] = await Promise.all([response.json(), availPromise]);
 
       if (data.data && data.data.length > 0) {
         // Separate priced and unpriced suppliers
@@ -334,7 +340,7 @@
 
         if (suppliersWithPrices.length > 0) {
           currentSuppliers = suppliersWithPrices;
-          renderResults(zip, suppliersWithPrices, suppliersWithoutPrices);
+          renderResults(zip, suppliersWithPrices, suppliersWithoutPrices, availData);
           showState('results');
 
           // Log empty ZIPs for analytics (without prices)
@@ -366,7 +372,7 @@
   }
 
   // Render results
-  function renderResults(zip, suppliers, unpricedSuppliers = []) {
+  function renderResults(zip, suppliers, unpricedSuppliers = [], availData = null) {
     // Sort by price
     suppliers.sort((a, b) => a.currentPrice.pricePerGallon - b.currentPrice.pricePerGallon);
 
@@ -433,28 +439,19 @@
       });
     }
 
-    // Initialize Get Quotes form (trial ZIPs with opted-in suppliers only)
-    // Insert quote form after 3rd supplier card (not above the list)
-    if (typeof window.initGetQuotesForm === 'function') {
-      fetch('/api/quote-request/availability?zip=' + zip)
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (data) {
-          if (data && data.available) {
-            // Move the container after the 3rd supplier card
-            var cards = document.querySelectorAll('#supplier-cards > .supplier-card');
-            var container = document.getElementById('get-quotes-container');
-            if (cards.length >= 3 && container) {
-              cards[2].after(container);
-            }
-            window.initGetQuotesForm('#get-quotes-container', {
-              zip: zip,
-              supplierCount: data.supplier_count,
-              mode: data.mode || 'routed',
-              fallback_phones: data.fallback_phones || null
-            });
-          }
-        })
-        .catch(function () { /* silently fail — form just won't show */ });
+    // Initialize Get Quotes form using pre-fetched availability data (parallel with supplier search)
+    if (typeof window.initGetQuotesForm === 'function' && availData && availData.available) {
+      var cards = document.querySelectorAll('#supplier-cards > .supplier-card');
+      var container = document.getElementById('get-quotes-container');
+      if (cards.length >= 3 && container) {
+        cards[2].after(container);
+      }
+      window.initGetQuotesForm('#get-quotes-container', {
+        zip: zip,
+        supplierCount: availData.supplier_count,
+        mode: availData.mode || 'routed',
+        fallback_phones: availData.fallback_phones || null
+      });
     }
 
     // Show PWA install banner after user has seen value (Android only)
