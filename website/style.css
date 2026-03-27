@@ -5139,6 +5139,71 @@ body {
     color: var(--primary-orange);
 }
 
+/* ── Supplier Stats Bar ─────────────────────────────────────────────────── */
+.supplier-stats-bar {
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    padding: 16px 20px 20px;
+    text-align: center;
+}
+
+.supplier-stats-heading {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted, #6b7280);
+    margin: 0 0 12px;
+}
+
+.supplier-stats-grid {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.supplier-stat {
+    flex: 1;
+    text-align: center;
+}
+
+.supplier-stat-number {
+    display: block;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text-dark, #1a1a1a);
+    line-height: 1.2;
+}
+
+.supplier-stat-label {
+    display: block;
+    font-size: 10px;
+    color: var(--text-muted, #6b7280);
+    margin-top: 2px;
+    line-height: 1.4;
+}
+
+.supplier-stat-divider {
+    width: 1px;
+    background: #e5e7eb;
+    align-self: stretch;
+    margin: 0 4px;
+}
+
+@media (max-width: 480px) {
+    .supplier-stats-grid {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .supplier-stat-divider {
+        width: 60px;
+        height: 1px;
+        margin: 0 auto;
+        align-self: auto;
+    }
+}
+
 @media (max-width: 768px) {
     .supplier-hero h1 {
         font-size: 1.8rem;
