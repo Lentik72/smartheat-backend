@@ -1149,7 +1149,7 @@ function generatePageHTML(data, FUEL) {
   // Links to /prices/county/{state}/{county} if county Elite page exists
   // Anchor text includes target keywords for SEO intent signaling
   const countySlugForElite = county ? slugify(county) : null;
-  const eliteBannerHtml = (type === 'county' && county && stateCode) ? `
+  const eliteBannerHtml = (type === 'county' && county && stateCode && crossLinkExists(`${FUEL.urlPrefix}/county/${stateCode.toLowerCase()}/${countySlugForElite}`)) ? `
     <section class="elite-banner">
       <div class="elite-banner-content">
         <span class="elite-icon">📊</span>
