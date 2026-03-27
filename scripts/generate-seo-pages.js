@@ -1680,6 +1680,7 @@ ${supplierRows}
  * Replaces the hardcoded state averages and top deals sections
  */
 async function updatePricesHtml(pricesHtmlPath, states, prices, suppliers, FUEL) {
+  FUEL = FUEL && FUEL.label ? FUEL : FUEL_CONFIGS.heating_oil;
   let html = await fs.readFile(pricesHtmlPath, 'utf-8');
 
   // Calculate state averages (same logic as generateLeaderboardSnippet)
