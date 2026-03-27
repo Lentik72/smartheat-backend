@@ -4925,8 +4925,8 @@ body {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .supplier-hero {
-    background: linear-gradient(135deg, var(--background-secondary) 0%, var(--background-light) 100%);
-    padding: 4rem 2rem;
+    background: #ffffff;
+    padding: 4rem 2rem 2.5rem;
     text-align: center;
 }
 
@@ -4943,86 +4943,106 @@ body {
     margin: 0 auto 2rem;
 }
 
-.trust-headline {
-    background: var(--primary-orange);
-    color: white;
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
-    font-weight: 500;
+/* ── Trust Headline (redesigned) ─────────────────────────────────────── */
+.trust-headline-section {
+    background: #1a1a1a;
+    padding: 2.5rem 2rem;
     text-align: center;
-    max-width: 900px;
-    margin: 0 auto;
-    border-radius: 8px;
 }
 
+.trust-headline-inner {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.trust-headline-text {
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.01em;
+}
+
+.trust-headline-sub {
+    color: #9ca3af;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* ── Guarantees (tighter, 5 cards) ──────────────────────────────────── */
 .guarantees-section {
-    padding: 4rem 2rem;
+    padding: 3.5rem 2rem 3rem;
     max-width: 900px;
     margin: 0 auto;
 }
 
 .guarantees-section h2 {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
     color: var(--text-dark);
+    font-size: 1.6rem;
+    font-weight: 700;
 }
 
 .guarantee-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
 }
 
 .guarantee-card {
     background: var(--background-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1.5rem;
-}
-
-.guarantee-card .icon {
-    font-size: 2rem;
-    margin-bottom: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.25rem 1.25rem 1rem;
 }
 
 .guarantee-card h3 {
     color: var(--text-dark);
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 700;
 }
 
 .guarantee-card p {
-    color: var(--text-gray);
-    font-size: 0.95rem;
-    line-height: 1.6;
+    color: var(--text-muted, #6b7280);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
 }
 
+/* ── How It Works (contrast section) ────────────────────────────────── */
 .how-it-works {
-    background: var(--background-card);
-    padding: 4rem 2rem;
+    background: #f3f4f6;
+    padding: 3.5rem 2rem;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .how-it-works h2 {
     text-align: center;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
     color: var(--text-dark);
+    font-size: 1.6rem;
+    font-weight: 700;
 }
 
 .steps-container {
-    max-width: 700px;
+    max-width: 600px;
     margin: 0 auto;
 }
 
 .step {
     display: flex;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
     align-items: flex-start;
 }
 
 .step-number {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     background: var(--primary-orange);
     color: white;
     border-radius: 50%;
@@ -5030,33 +5050,107 @@ body {
     align-items: center;
     justify-content: center;
     font-weight: 700;
+    font-size: 0.9rem;
     flex-shrink: 0;
 }
 
 .step-content h3 {
     color: var(--text-dark);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.2rem;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 .step-content p {
-    color: var(--text-gray);
+    color: var(--text-muted, #6b7280);
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
 
-.advisory-section {
-    background: var(--background-secondary);
+/* ── SMS Update Section (emphasized) ────────────────────────────────── */
+.sms-update-section {
+    background: #1a1a1a;
     padding: 3rem 2rem;
     text-align: center;
 }
 
+.sms-update-inner {
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+.sms-update-section h2 {
+    color: #ffffff;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+}
+
+.sms-update-desc {
+    color: #9ca3af;
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem;
+}
+
+.sms-phone-block {
+    margin: 0 0 1.25rem;
+}
+
+.sms-phone-number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--primary-orange);
+    text-decoration: none;
+    letter-spacing: 1px;
+}
+
+.sms-phone-number:hover {
+    color: var(--primary-orange-hover);
+}
+
+.sms-update-example {
+    color: #d1d5db;
+    font-size: 0.9rem;
+    margin: 0 0 1rem;
+    line-height: 1.5;
+}
+
+.sms-update-example strong {
+    color: #ffffff;
+}
+
+.sms-update-legal {
+    color: #6b7280;
+    font-size: 0.75rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.sms-update-legal a {
+    color: #9ca3af;
+}
+
+/* ── Advisory Section ───────────────────────────────────────────────── */
+.advisory-section {
+    background: var(--background-card);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    border-top: 1px solid #e5e7eb;
+}
+
 .advisory-section h2 {
     color: var(--text-dark);
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+    font-weight: 700;
 }
 
 .advisory-section p {
-    color: var(--text-gray);
-    max-width: 600px;
-    margin: 0 auto 1.5rem;
+    color: var(--text-muted, #6b7280);
+    max-width: 560px;
+    margin: 0 auto 1.25rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
 
 .advisory-note {
@@ -5106,33 +5200,38 @@ body {
 
 .supplier-faq-section {
     background: var(--background-card);
-    padding: 4rem 2rem;
+    padding: 3rem 2rem;
+    border-top: 1px solid #e5e7eb;
 }
 
 .supplier-faq-section h2 {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     color: var(--text-dark);
+    font-size: 1.3rem;
+    font-weight: 700;
 }
 
 .supplier-faq-container {
-    max-width: 700px;
+    max-width: 640px;
     margin: 0 auto;
 }
 
 .supplier-faq-item {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 .supplier-faq-item h3 {
     color: var(--text-dark);
-    margin-bottom: 0.5rem;
-    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
 }
 
 .supplier-faq-item p {
-    color: var(--text-gray);
-    font-size: 0.95rem;
+    color: var(--text-muted, #6b7280);
+    font-size: 0.85rem;
+    line-height: 1.5;
 }
 
 .supplier-faq-item a {
