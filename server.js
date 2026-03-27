@@ -1125,10 +1125,20 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       return result;
     }, { retry: false });
   }, { timezone: 'America/New_York' });
+  // Update for-suppliers page stats (after all page generators)
+  cron.schedule('35 23 * * *', async () => {
+    await cronMonitor.run('supplier-page-stats', async () => {
+      const { main: updateSupplierStats } = require('./scripts/update-supplier-page-stats');
+      await updateSupplierStats();
+      logger.info('✅ Supplier page stats updated');
+      return { success: true };
+    }, { retry: false });
+  }, { timezone: 'America/New_York' });
 
   logger.info('📄 SEO + Supplier + ZIP/County Elite page generator scheduled: daily at 11:00 PM EST');
   logger.info('📄 Heating cost + Avg Bill + Price Trend page generators scheduled: daily at 11:15/11:20/11:25 PM EST');
   logger.info('📄 Sitemap regeneration scheduled: daily at 11:30 PM EST');
+  logger.info('📊 Supplier page stats scheduled: daily at 11:35 PM EST');
 
   // Regenerate all pages on startup. Pages are in git (tracked before .gitignore),
   // so deploys start with the last-committed versions. Generators overwrite with fresh data.
