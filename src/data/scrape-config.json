@@ -10802,7 +10802,7 @@
     ]
   },
   "phillipsoilllc.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": {
@@ -11926,7 +11926,7 @@
     ]
   },
   "ondemandfueloil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": {
@@ -12035,7 +12035,7 @@
     ]
   },
   "maydayoil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": {
@@ -20717,7 +20717,7 @@
     ]
   },
   "librafuels.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": {
@@ -34878,7 +34878,7 @@
     ]
   },
   "tmfuelllc.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": {
@@ -35003,7 +35003,7 @@
     ]
   },
   "robergeenergy.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": {
@@ -35038,7 +35038,7 @@
     ]
   },
   "myexpressoil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": {
@@ -35079,7 +35079,7 @@
     ]
   },
   "affordablefueldelivery.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": {
@@ -35123,7 +35123,7 @@
     ]
   },
   "oppureoil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": {
