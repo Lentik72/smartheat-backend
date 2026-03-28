@@ -129,8 +129,8 @@ function extractPrice(html, config) {
 
 // V2.12.0: Fuel-specific validation ranges
 const FUEL_PRICE_RANGES = {
-  heating_oil: [2.00, 5.50],
-  kerosene: [2.50, 6.50],
+  heating_oil: [2.00, 6.00],
+  kerosene: [2.50, 7.00],
 };
 
 /**

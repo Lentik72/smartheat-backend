@@ -5143,9 +5143,10 @@
     ]
   },
   "servallfuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: CAPTCHA protected. NY Dutchess/Putnam/Ulster/Northern Westchester.",
+    "gotScraping": true,
+    "notes": "NY Dutchess/Putnam/Ulster/Northern Westchester. Was CAPTCHA-flagged, gotScraping bypasses. $5.299 verified 2026-03-28.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "10506",
@@ -6552,7 +6553,8 @@
   "fossilfueloil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NJ Wharton/Morris County - Will Call COD price shown",
+    "gotScraping": true,
+    "notes": "NJ Wharton/Morris County - Will Call COD price shown. XPRS platform, needs gotScraping.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "07435",
@@ -19673,7 +19675,9 @@
   "aweoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "DE - AWE Oil Newark. New Castle DE + Chester/Delaware PA + Cecil MD. COD, next-day delivery.",
+    "gotScraping": true,
+    "ignoreSSL": true,
+    "notes": "DE - AWE Oil Newark. New Castle DE + Chester/Delaware PA + Cecil MD. COD, next-day delivery. SSL cert mismatch (bizland.com), needs ignoreSSL.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "19014",
@@ -23024,10 +23028,11 @@
   "coastlineenergyllc.com": {
     "enabled": true,
     "pattern": "direct",
+    "gotScraping": true,
     "pricePath": "/products",
     "name": "Coastline Energy",
     "phone": "(207) 888-3233",
-    "notes": "ME Richmond/Mid-Coast - Wix site. Prices on /products page.",
+    "notes": "ME Richmond/Mid-Coast - Wix site. Prices on /products page. Needs gotScraping for Wix JS.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "04008",
