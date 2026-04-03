@@ -619,6 +619,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/134-create-quote-requests', label: 'Quote requests + supplier junction tables (heatingoil-h1fy)' },
           { path: './src/migrations/135-add-supplier-lead-columns', label: 'Supplier lead opt-in columns (heatingoil-h1fy)' },
           { path: './src/migrations/136-add-scrape-runs-rejections', label: 'Scrape runs rejections column (outlier detection)' },
+          { path: './src/migrations/137-add-atlas-oil-new-berlinville', label: 'Atlas Oil (New Berlinville PA) + activate Clayton Discount Fuel (Langhorne PA)' },
         ];
 
         let migrationErrors = 0;
