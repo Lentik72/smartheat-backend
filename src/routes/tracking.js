@@ -312,7 +312,10 @@ router.post('/app-event', async (req, res) => {
     // Engagement
     'notification_received', 'notification_opened', 'share_initiated',
     // Propane-specific
-    'propane_directory_notice_viewed', 'propane_supplier_added'
+    'propane_directory_notice_viewed', 'propane_supplier_added',
+    // Summer mode (V1.7)
+    'summer_mode_activated', 'summer_mode_preference_set', 'summer_mode_manual_resume',
+    'consent_migration_ran'
   ];
 
   if (!validEvents.includes(event)) {
