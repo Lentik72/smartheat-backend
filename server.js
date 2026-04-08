@@ -621,6 +621,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/136-add-scrape-runs-rejections', label: 'Scrape runs rejections column (outlier detection)' },
           { path: './src/migrations/137-add-atlas-oil-new-berlinville', label: 'Atlas Oil (New Berlinville PA) + activate Clayton Discount Fuel (Langhorne PA)' },
           { path: './src/migrations/138-add-l-and-son-heat-yonkers', label: 'L & Son Heat/AC Tech (Yonkers NY)' },
+          { path: './src/migrations/139-add-thomson-fuels-bradford-vt', label: 'Thomson Fuels (Bradford VT)' },
         ];
 
         let migrationErrors = 0;
