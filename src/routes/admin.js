@@ -972,6 +972,7 @@ router.put('/community/reports/:id/resolve', [
 });
 
 // POST /api/admin/trigger-daily-report — manually re-send the daily report
+// Replicates full data gathering from the scheduled job in server.js
 // Protected by DASHBOARD_PASSWORD (same pattern as price-alerts/trigger)
 router.post('/trigger-daily-report', async (req, res) => {
   const password = req.headers.authorization?.replace('Bearer ', '') || req.body?.password;
@@ -983,6 +984,7 @@ router.post('/trigger-daily-report', async (req, res) => {
   const logger = req.app.locals.logger || console;
 
   try {
+    const crypto = require('crypto');
     const CoverageIntelligenceService = require('../services/CoverageIntelligenceService');
     const CoverageReportMailer = require('../services/CoverageReportMailer');
     const ActivityAnalyticsService = require('../services/ActivityAnalyticsService');
@@ -991,15 +993,147 @@ router.post('/trigger-daily-report', async (req, res) => {
     const intelligence = new CoverageIntelligenceService(sequelize, mailer);
     const activityAnalytics = new ActivityAnalyticsService(sequelize);
 
-    logger.info('[DailyReports] Manual trigger: generating report...');
+    logger.info('[DailyReports] Manual trigger: generating full report...');
 
+    // 1. Coverage + Activity (same as scheduled)
     const coverageReport = await intelligence.runDailyAnalysis();
     const activityReport = await activityAnalytics.generateDailyReport();
 
-    const sent = await mailer.sendCombinedDailyReport(coverageReport, activityReport);
+    // 2. Price review magic link
+    let priceReviewLink = null;
+    try {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      await sequelize.query(
+        `INSERT INTO magic_link_tokens (token, purpose, expires_at) VALUES (:token, 'price_review', :expiresAt)`,
+        { replacements: { token, expiresAt } }
+      );
+      const baseUrl = process.env.BACKEND_URL || 'https://www.gethomeheat.com';
+      let reviewCount = 0;
+      try {
+        const [countResult] = await sequelize.query(`
+          SELECT COUNT(DISTINCT s.id) as cnt FROM suppliers s
+          WHERE s.active = true AND s.website IS NOT NULL AND s.allow_price_display = true
+            AND NOT EXISTS (SELECT 1 FROM price_review_dismissals d WHERE d.supplier_id = s.id AND d.dismiss_until > NOW())
+            AND (
+              EXISTS (SELECT 1 FROM supplier_prices sp WHERE sp.supplier_id = s.id AND sp.is_valid = true
+                AND (sp.price_per_gallon < 2.00 OR sp.price_per_gallon > 5.50))
+              OR s.scrape_status IN ('cooldown', 'phone_only')
+              OR NOT EXISTS (SELECT 1 FROM supplier_prices sp2 WHERE sp2.supplier_id = s.id AND sp2.is_valid = true)
+            )
+        `);
+        reviewCount = parseInt(countResult[0]?.cnt || 0);
+      } catch (e) { /* price_review_dismissals may not exist */ }
+      priceReviewLink = { url: `${baseUrl}/price-review.html?mltoken=${token}`, count: reviewCount };
+    } catch (err) {
+      logger.warn('[DailyReports] Manual trigger: failed to generate price review link:', err.message);
+    }
+
+    // 3. Click stats
+    let clickStats = null;
+    try {
+      const [stats] = await sequelize.query(`
+        SELECT COUNT(*) as total_clicks, COUNT(DISTINCT supplier_id) as unique_suppliers,
+          COUNT(*) FILTER (WHERE action_type = 'call') as call_clicks,
+          COUNT(*) FILTER (WHERE action_type = 'website') as website_clicks,
+          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') as last_24h,
+          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_7d,
+          COUNT(*) FILTER (WHERE processed_for_email = TRUE) as emails_sent,
+          COUNT(*) FILTER (WHERE processed_for_email = FALSE) as pending_outreach
+        FROM supplier_clicks
+      `);
+      clickStats = stats[0];
+      const [topSuppliers] = await sequelize.query(`
+        SELECT s.name, s.city, s.state, COUNT(*) as clicks FROM supplier_clicks sc
+        JOIN suppliers s ON sc.supplier_id = s.id WHERE sc.created_at > NOW() - INTERVAL '7 days'
+        GROUP BY s.id, s.name, s.city, s.state ORDER BY clicks DESC LIMIT 5
+      `);
+      clickStats.topSuppliers = topSuppliers;
+      const [hitList] = await sequelize.query(`
+        SELECT s.name, s.phone, s.email, s.city, s.state, COUNT(sc.id) as click_count,
+          STRING_AGG(DISTINCT sc.zip_code, ', ') as zips,
+          (SELECT sp.price_per_gallon FROM supplier_prices sp WHERE sp.supplier_id = s.id ORDER BY sp.scraped_at DESC LIMIT 1) as current_price
+        FROM supplier_clicks sc JOIN suppliers s ON sc.supplier_id = s.id
+        WHERE sc.created_at > NOW() - INTERVAL '24 hours'
+        GROUP BY s.id, s.name, s.phone, s.email, s.city, s.state ORDER BY click_count DESC LIMIT 10
+      `);
+      clickStats.hitList = hitList;
+    } catch (err) {
+      logger.warn('[DailyReports] Manual trigger: failed to gather click stats:', err.message);
+    }
+
+    // 4. Claim funnel
+    let claimFunnel = null;
+    try {
+      const [funnelCounts] = await sequelize.query(`
+        SELECT action, COUNT(*) as count FROM audit_logs
+        WHERE action IN ('outreach_email_sent', 'claim_page_view', 'claim_submitted', 'claim_verified')
+          AND created_at > NOW() - INTERVAL '7 days' GROUP BY action
+      `);
+      const fc = {};
+      funnelCounts.forEach(r => { fc[r.action] = parseInt(r.count); });
+      const [pendingRows] = await sequelize.query("SELECT COUNT(*) as count FROM supplier_claims WHERE status = 'pending'");
+      const [seqStatus] = await sequelize.query(`
+        SELECT
+          COUNT(*) FILTER (WHERE action = 'outreach_email_sent'
+            AND NOT EXISTS (SELECT 1 FROM audit_logs a2 WHERE a2.action = 'outreach_email_2_sent'
+              AND COALESCE(a2.details::jsonb->>'supplier_slug', a2.details::jsonb->>'slug') =
+                  COALESCE(audit_logs.details::jsonb->>'supplier_slug', audit_logs.details::jsonb->>'slug'))
+          ) as awaiting_e2,
+          COUNT(*) FILTER (WHERE action = 'outreach_email_2_sent'
+            AND NOT EXISTS (SELECT 1 FROM audit_logs a2 WHERE a2.action = 'outreach_email_3_sent'
+              AND COALESCE(a2.details::jsonb->>'supplier_slug', a2.details::jsonb->>'slug') =
+                  COALESCE(audit_logs.details::jsonb->>'supplier_slug', audit_logs.details::jsonb->>'slug'))
+          ) as awaiting_e3,
+          COUNT(*) FILTER (WHERE action = 'outreach_sequence_complete') as complete
+        FROM audit_logs
+        WHERE action IN ('outreach_email_sent', 'outreach_email_2_sent', 'outreach_sequence_complete')
+          AND created_at > NOW() - INTERVAL '60 days'
+      `);
+      claimFunnel = {
+        outreach_sent: fc.outreach_email_sent || 0, pages_viewed: fc.claim_page_view || 0,
+        claims_submitted: fc.claim_submitted || 0, pending_review: parseInt(pendingRows[0]?.count || 0),
+        sequence_status: seqStatus[0] ? {
+          awaiting_e2: parseInt(seqStatus[0].awaiting_e2 || 0),
+          awaiting_e3: parseInt(seqStatus[0].awaiting_e3 || 0),
+          complete: parseInt(seqStatus[0].complete || 0)
+        } : null
+      };
+    } catch (err) {
+      logger.warn('[DailyReports] Manual trigger: failed to gather claim funnel:', err.message);
+    }
+
+    // 5. Supplier diagnostics
+    let supplierDiagnostics = null;
+    try {
+      const { SupplierDiagnosticsService } = require('../services/SupplierDiagnosticsService');
+      const diagService = new SupplierDiagnosticsService(sequelize);
+      supplierDiagnostics = await diagService.generateDiagnostics();
+    } catch (err) {
+      logger.warn('[DailyReports] Manual trigger: failed to generate diagnostics:', err.message);
+    }
+
+    // 6. Price rejections
+    let priceRejections = null;
+    try {
+      const [rejectRows] = await sequelize.query(`
+        SELECT rejections FROM scrape_runs WHERE run_at > NOW() - INTERVAL '24 hours'
+          AND rejections != '[]'::jsonb ORDER BY run_at DESC LIMIT 1
+      `);
+      if (rejectRows.length > 0 && rejectRows[0].rejections?.length > 0) {
+        priceRejections = rejectRows[0].rejections;
+      }
+    } catch (err) {
+      logger.warn('[DailyReports] Manual trigger: failed to gather price rejections:', err.message);
+    }
+
+    const sent = await mailer.sendCombinedDailyReport(
+      coverageReport, activityReport, priceReviewLink, clickStats,
+      claimFunnel, supplierDiagnostics, null, priceRejections
+    );
     if (sent) {
-      logger.info('[DailyReports] Manual trigger: report sent');
-      res.json({ success: true, message: 'Daily report sent' });
+      logger.info('[DailyReports] Manual trigger: full report sent');
+      res.json({ success: true, message: 'Daily report sent (full)' });
     } else {
       logger.error('[DailyReports] Manual trigger: send failed');
       res.status(500).json({ error: 'Email send failed — check Resend configuration' });
