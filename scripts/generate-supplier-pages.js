@@ -636,6 +636,39 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
     }
   }
 
+  // BreadcrumbList — separate schema for SERP breadcrumb rich results.
+  // MUST mirror the visible breadcrumb at line 374-379:
+  //   Home > [State] > Supplier Name   (3 levels)
+  //   Home > Supplier Name              (2 levels, when no state)
+  // No "Prices" intermediate — visible nav doesn't include it, and Google
+  // expects structured data to match the visible breadcrumb.
+  // Uses supplier.name (RAW) — JSON.stringify handles JSON escaping.
+  // Do NOT use the local `name` variable (line 239) — it's already
+  // escapeHtml-prepared and would double-encode in SERPs.
+  // The final crumb (supplier name) intentionally omits 'item' per Google's
+  // recommendation for the current page.
+  const breadcrumbItems = [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.gethomeheat.com/" }
+  ];
+  if (state && stateName) {
+    breadcrumbItems.push({
+      "@type": "ListItem",
+      "position": 2,
+      "name": stateName,
+      "item": `https://www.gethomeheat.com/prices/${stateSlug}/`
+    });
+  }
+  breadcrumbItems.push({
+    "@type": "ListItem",
+    "position": breadcrumbItems.length + 1,
+    "name": supplier.name
+  });
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": breadcrumbItems
+  };
+
   // ─── Full Page ─────
 
   return `<!DOCTYPE html>
@@ -670,6 +703,7 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
   <link rel="stylesheet" href="/supplier/supplier.css?v=${getFileHash('supplier/supplier.css')}">
 
   <script type="application/ld+json">${JSON.stringify(schemaData)}</script>
+  <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
 </head>
 <body>
   <nav class="nav">
