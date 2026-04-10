@@ -425,6 +425,8 @@ async function executeScrape(supplierId, supplierName, sequelize, logger) {
       }
     }
 
+    const { recordSuccess, recordFailure } = require('./scrapeBackoff');
+
     if (result.success) {
       // Save to database
       await sequelize.query(`
@@ -449,8 +451,12 @@ async function executeScrape(supplierId, supplierName, sequelize, logger) {
         ]
       });
 
+      // Reset backoff status so cooldown suppliers return to active
+      await recordSuccess(sequelize, supplierId);
+
       logger.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal`);
     } else {
+      await recordFailure(sequelize, supplierId, supplierName, result.error, logger);
       logger.info(`   ❌ ${result.error}`);
     }
 
