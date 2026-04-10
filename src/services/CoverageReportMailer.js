@@ -34,40 +34,51 @@ class CoverageReportMailer {
   /**
    * Send email via Resend API
    */
-  async sendEmail(to, subject, html) {
+  async sendEmail(to, subject, html, { maxRetries = 3, retryDelayMs = 30000 } = {}) {
     if (!this.initialized) {
       console.log('[CoverageReportMailer] Not initialized - skipping email');
       return false;
     }
 
-    try {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: this.fromEmail,
-          to: [to],
-          subject,
-          html
-        })
-      });
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: this.fromEmail,
+            to: [to],
+            subject,
+            html
+          })
+        });
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (response.ok) {
-        console.log(`[CoverageReportMailer] Email sent: ${result.id}`);
-        return true;
-      } else {
-        console.error('[CoverageReportMailer] Resend API error:', result);
-        return false;
+        if (response.ok) {
+          console.log(`[CoverageReportMailer] Email sent: ${result.id}${attempt > 1 ? ` (attempt ${attempt})` : ''}`);
+          return true;
+        } else {
+          console.error(`[CoverageReportMailer] Resend API error (attempt ${attempt}/${maxRetries}):`, result);
+          if (attempt < maxRetries && response.status >= 400 && response.status !== 422) {
+            console.log(`[CoverageReportMailer] Retrying in ${retryDelayMs / 1000}s...`);
+            await new Promise(r => setTimeout(r, retryDelayMs));
+          }
+        }
+      } catch (error) {
+        console.error(`[CoverageReportMailer] Failed to send email (attempt ${attempt}/${maxRetries}):`, error.message);
+        if (attempt < maxRetries) {
+          console.log(`[CoverageReportMailer] Retrying in ${retryDelayMs / 1000}s...`);
+          await new Promise(r => setTimeout(r, retryDelayMs));
+        }
       }
-    } catch (error) {
-      console.error('[CoverageReportMailer] Failed to send email:', error.message);
-      return false;
     }
+
+    console.error('[CoverageReportMailer] All retry attempts exhausted');
+    return false;
   }
 
   /**

@@ -1363,18 +1363,31 @@ function scheduleCoverageIntelligence(cronMonitor) {
   const intelligence = new CoverageIntelligenceService(sequelize, mailer);
   const activityAnalytics = new ActivityAnalyticsService(sequelize);
 
-  // Calculate time until 6 AM EST (11 AM UTC)
-  const TARGET_HOUR_UTC = 11; // 6 AM EST = 11 AM UTC
+  // Calculate time until 6 AM Eastern (DST-aware)
+  const getNext6amEastern = () => {
+    const now = new Date();
+    // Round-trip through toLocaleString to get Eastern wall-clock time
+    const etStr = now.toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    });
+    const etNow = new Date(etStr); // Eastern wall-clock interpreted as UTC
+    const offsetMs = now - etNow; // UTC-to-Eastern offset (4h EDT, 5h EST)
+
+    // Build 6 AM target in Eastern wall-clock space, then convert to real UTC
+    const etTarget = new Date(etNow);
+    etTarget.setHours(6, 0, 0, 0);
+    if (etNow >= etTarget) {
+      etTarget.setDate(etTarget.getDate() + 1);
+    }
+    return new Date(etTarget.getTime() + offsetMs);
+  };
 
   const scheduleNextRun = () => {
     const now = new Date();
-    const target = new Date(now);
-    target.setUTCHours(TARGET_HOUR_UTC, 0, 0, 0);
-
-    // If past today's target time, schedule for tomorrow
-    if (now >= target) {
-      target.setDate(target.getDate() + 1);
-    }
+    const target = getNext6amEastern();
 
     const msUntilTarget = target - now;
     const hoursUntil = Math.round(msUntilTarget / (1000 * 60 * 60) * 10) / 10;
@@ -1637,8 +1650,12 @@ function scheduleCoverageIntelligence(cronMonitor) {
             logger.warn('[DailyReports] Failed to gather cron health:', err.message);
           }
 
-          await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics, cronHealth, priceRejections);
-          logger.info('[DailyReports] Combined report sent');
+          const emailSent = await mailer.sendCombinedDailyReport(coverageReport, activityReport, priceReviewLink, clickStats, claimFunnel, supplierDiagnostics, cronHealth, priceRejections);
+          if (emailSent) {
+            logger.info('[DailyReports] Combined report sent');
+          } else {
+            logger.error('[DailyReports] Combined report FAILED to send');
+          }
         } else {
           logger.info('[DailyReports] No actionable items or activity - skipping email');
         }

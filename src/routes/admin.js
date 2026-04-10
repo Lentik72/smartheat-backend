@@ -971,4 +971,43 @@ router.put('/community/reports/:id/resolve', [
   }
 });
 
+// POST /api/admin/trigger-daily-report — manually re-send the daily report
+// Protected by DASHBOARD_PASSWORD (same pattern as price-alerts/trigger)
+router.post('/trigger-daily-report', async (req, res) => {
+  const password = req.headers.authorization?.replace('Bearer ', '') || req.body?.password;
+  if (password !== process.env.DASHBOARD_PASSWORD) {
+    return res.status(401).json({ error: 'Invalid password' });
+  }
+
+  const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
+
+  try {
+    const CoverageIntelligenceService = require('../services/CoverageIntelligenceService');
+    const CoverageReportMailer = require('../services/CoverageReportMailer');
+    const ActivityAnalyticsService = require('../services/ActivityAnalyticsService');
+
+    const mailer = new CoverageReportMailer();
+    const intelligence = new CoverageIntelligenceService(sequelize, mailer);
+    const activityAnalytics = new ActivityAnalyticsService(sequelize);
+
+    logger.info('[DailyReports] Manual trigger: generating report...');
+
+    const coverageReport = await intelligence.runDailyAnalysis();
+    const activityReport = await activityAnalytics.generateDailyReport();
+
+    const sent = await mailer.sendCombinedDailyReport(coverageReport, activityReport);
+    if (sent) {
+      logger.info('[DailyReports] Manual trigger: report sent');
+      res.json({ success: true, message: 'Daily report sent' });
+    } else {
+      logger.error('[DailyReports] Manual trigger: send failed');
+      res.status(500).json({ error: 'Email send failed — check Resend configuration' });
+    }
+  } catch (error) {
+    logger.error('[DailyReports] Manual trigger failed:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
