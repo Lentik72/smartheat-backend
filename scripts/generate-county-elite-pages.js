@@ -507,7 +507,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.gethomeheat.com/" },
       { "@type": "ListItem", "position": 2, "name": "Prices", "item": "https://www.gethomeheat.com/prices" },
-      { "@type": "ListItem", "position": 3, "name": stateName, "item": `https://www.gethomeheat.com/prices/${stateCode.toLowerCase()}` },
+      { "@type": "ListItem", "position": 3, "name": stateName, "item": `https://www.gethomeheat.com/prices/${stateCode.toLowerCase()}/` },
       { "@type": "ListItem", "position": 4, "name": `${countyName} County` }
     ]
   };
