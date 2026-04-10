@@ -101,6 +101,17 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, costs
     ],
   });
 
+  const schemaBreadcrumb = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Heating Cost', item: `${BASE_URL}/heating-cost/` },
+      { '@type': 'ListItem', position: 3, name: stateName, item: `${BASE_URL}/heating-cost/${stateAbbrev}/` },
+      { '@type': 'ListItem', position: 4, name: `${county} County`, item: canonicalURL },
+    ],
+  });
+
   // Payback section
   let paybackHTML = '';
   if (costs.payback) {
@@ -161,6 +172,7 @@ function generateCountyPageHTML(stateCode, stateInfo, county, countyStats, costs
 
     <script type="application/ld+json">${schemaArticle}</script>
     <script type="application/ld+json">${schemaFAQ}</script>
+    <script type="application/ld+json">${schemaBreadcrumb}</script>
 </head>
 <body>
     ${getNavHTML(depth)}
@@ -282,6 +294,16 @@ function generateStatePageHTML(stateCode, stateInfo, stateStats, countyData, cos
     ],
   });
 
+  const schemaBreadcrumb = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Heating Cost', item: `${BASE_URL}/heating-cost/` },
+      { '@type': 'ListItem', position: 3, name: stateName, item: canonicalURL },
+    ],
+  });
+
   // County comparison table
   let countyRows = '';
   const sortedCounties = [...countyData].sort((a, b) => a.costs.fuels['heating-oil']?.annualCost - b.costs.fuels['heating-oil']?.annualCost);
@@ -332,6 +354,7 @@ function generateStatePageHTML(stateCode, stateInfo, stateStats, countyData, cos
 
     <script type="application/ld+json">${schemaArticle}</script>
     <script type="application/ld+json">${schemaFAQ}</script>
+    <script type="application/ld+json">${schemaBreadcrumb}</script>
 </head>
 <body>
     ${getNavHTML(depth)}
