@@ -1979,6 +1979,40 @@ router.get('/missing-suppliers', async (req, res) => {
 
     // Find suppliers mentioned by users that aren't in our database
     // Also find near-matches to identify name variations
+    //
+    // Name normalization strips common noise so "ASÍ Oil" matches "ASI Oil",
+    // "FJB (CASHOIL)" matches "FJB Oil", "Dragon Fuel" matches "Dragon Fuel LLC":
+    //   1. Lowercase + trim
+    //   2. Map accented chars to ASCII (á→a, í→i, ñ→n, …)
+    //   3. Replace & with "and"
+    //   4. Strip parenthetical content: "FJB (CASHOIL)" → "FJB"
+    //   5. Strip trailing corp suffix: LLC, Inc, Corp, Ltd, Co.
+    //   6. Collapse punctuation + whitespace → single space
+    //
+    // Prefix matching in the join catches stripped-oil cases: "fjb" ~ "fjb oil".
+    const NORMALIZE_SQL = `
+      TRIM(REGEXP_REPLACE(
+        REGEXP_REPLACE(
+          REGEXP_REPLACE(
+            REPLACE(
+              TRANSLATE(
+                LOWER(TRIM($name$)),
+                'áàâäãåéèêëíìîïóòôöõúùûüñçÿ',
+                'aaaaaaeeeeiiiiooooouuuuncy'
+              ),
+              '&', 'and'
+            ),
+            '\\s*\\([^)]*\\)\\s*', ' ', 'g'
+          ),
+          '\\s+(llc|inc|corp|corporation|ltd|limited|co\\.?)\\s*$', '', 'gi'
+        ),
+        '[[:punct:]]+', ' ', 'g'
+      ))
+    `;
+    const normUser = NORMALIZE_SQL.replace('$name$', 'a.supplier_name');
+    const normDb = NORMALIZE_SQL.replace('$name$', 's.name');
+    const normDb2 = NORMALIZE_SQL.replace('$name$', 's2.name');
+
     const [missingSuppliers] = await sequelize.query(`
       WITH user_suppliers AS (
         -- From app_events (deliveries, saves, views)
@@ -2024,12 +2058,17 @@ router.get('/missing-suppliers', async (req, res) => {
           WHEN s.id IS NOT NULL THEN 'exact_match'
           WHEN EXISTS (
             SELECT 1 FROM suppliers s2
-            WHERE LOWER(s2.name) LIKE '%' || LOWER(SUBSTRING(a.supplier_name, 1, 10)) || '%'
+            WHERE ${normDb2} LIKE ${normUser} || '%'
+               OR ${normUser} LIKE ${normDb2} || '%'
           ) THEN 'near_match'
           ELSE 'not_found'
         END as match_status
       FROM aggregated a
-      LEFT JOIN suppliers s ON LOWER(TRIM(a.supplier_name)) = LOWER(TRIM(s.name))
+      LEFT JOIN suppliers s ON
+        ${normUser} = ${normDb}
+        -- Prefix match catches "FJB" ~ "FJB Oil", "Cozy" ~ "Cozy Oil":
+        OR (LENGTH(${normUser}) >= 3 AND ${normDb} LIKE ${normUser} || ' %')
+        OR (LENGTH(${normDb}) >= 3 AND ${normUser} LIKE ${normDb} || ' %')
       ORDER BY
         CASE WHEN s.id IS NULL THEN 0 ELSE 1 END,  -- Missing first
         a.mentions DESC
