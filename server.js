@@ -623,6 +623,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/138-add-l-and-son-heat-yonkers', label: 'L & Son Heat/AC Tech (Yonkers NY)' },
           { path: './src/migrations/139-add-thomson-fuels-bradford-vt', label: 'Thomson Fuels (Bradford VT)' },
           { path: './src/migrations/140-add-asi-oil-norwich-ct', label: 'ASI Oil (Norwich CT — New London County)' },
+          { path: './src/migrations/141-add-user-mention-suppliers', label: 'User-mention batch: Castle Fuel NY, Costello PA, F.C. Haab PA, Victory PA, Fortified Fuels CT + L&Son aliases' },
         ];
 
         let migrationErrors = 0;
