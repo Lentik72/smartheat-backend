@@ -622,6 +622,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/137-add-atlas-oil-new-berlinville', label: 'Atlas Oil (New Berlinville PA) + activate Clayton Discount Fuel (Langhorne PA)' },
           { path: './src/migrations/138-add-l-and-son-heat-yonkers', label: 'L & Son Heat/AC Tech (Yonkers NY)' },
           { path: './src/migrations/139-add-thomson-fuels-bradford-vt', label: 'Thomson Fuels (Bradford VT)' },
+          { path: './src/migrations/140-add-asi-oil-norwich-ct', label: 'ASI Oil (Norwich CT — New London County)' },
         ];
 
         let migrationErrors = 0;

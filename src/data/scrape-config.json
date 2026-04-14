@@ -21335,6 +21335,39 @@
       "05086"
     ]
   },
+  "asi-oil.com": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED: CT Norwich/New London County - No public pricing on website (Hibu/Duda template, call for pricing). On-demand delivery confirmed on /oil-delivery-service; FAQ confirms automatic delivery is opt-in. Cash accepted. Same-day + 24hr emergency. Family-owned since 1989. Slug: asi-oil",
+    "postalCodesServed": [
+      "06249",
+      "06254",
+      "06320",
+      "06330",
+      "06333",
+      "06334",
+      "06335",
+      "06339",
+      "06340",
+      "06351",
+      "06353",
+      "06355",
+      "06357",
+      "06359",
+      "06360",
+      "06365",
+      "06370",
+      "06375",
+      "06378",
+      "06379",
+      "06380",
+      "06382",
+      "06383",
+      "06389",
+      "06415",
+      "06420"
+    ]
+  },
   "presbyenergy.com": {
     "enabled": true,
     "pattern": "direct",
