@@ -1,14 +1,17 @@
 /**
- * Migration 141: Add 5 suppliers surfaced by the "Missing Suppliers" dashboard.
+ * Migration 141: Add 4 suppliers surfaced by the "Missing Suppliers" dashboard,
+ * and backfill missing fields on existing `castle-fuel` record (previously
+ * created by ScrapeConfigSync with minimal data).
  *
- * All 5 verified COD/will-call with explicit proof on their own websites.
+ * All verified COD/will-call with explicit proof on their own websites.
  * Coverage managed by scrape-config.json (postalCodesServed NOT written here).
  *
- *  1. Castle Fuel (Ossining NY) — "will-call delivery", posts $X.XX/gal on homepage. Scrapable.
- *  2. Costello Fuel (Levittown PA) — "Customer 'will call' to place order". Tiered table on homepage. Scrapable (150-gal row).
- *  3. F.C. Haab (Bala Cynwyd PA) — page title "Automatic & Will-Call Heating Oil". No public pricing.
- *  4. Victory Fuel (Lehighton PA) — "COD- Cash/Check" on order form + 4-tier pricing on homepage. Scrapable.
- *  5. Fortified Fuels (Westport CT) — Droplet POST widget on /get-price/, returns tier pricing per ZIP. Scrapable.
+ *  - Castle Fuel (Ossining NY) — EXISTING slug=castle-fuel, backfill fields only. Deletes
+ *    any accidental castle-fuel-ny dupe.
+ *  - Costello Fuel (Levittown PA) — "Customer 'will call' to place order". Tiered table on homepage. Scrapable (150-gal row).
+ *  - F.C. Haab (Bala Cynwyd PA) — page title "Automatic & Will-Call Heating Oil". No public pricing.
+ *  - Victory Fuel (Lehighton PA) — "COD- Cash/Check" on order form + 4-tier pricing on homepage. Scrapable.
+ *  - Fortified Fuels (Westport CT) — Droplet POST widget on /get-price/, returns tier pricing per ZIP. Scrapable.
  *
  * Also seeds supplier_aliases for L & Son Heat/AC Tech (Yonkers NY) so
  * user-entered "L and Sons" / "L And Sons" dedup against the existing record.
@@ -16,38 +19,35 @@
 
 const { v4: uuidv4 } = require('uuid');
 
+// Backfill the existing castle-fuel record (created originally by ScrapeConfigSync)
+// with the full set of fields the page generator and detail view expect.
+const CASTLE_FUEL_BACKFILL = {
+  slug: 'castle-fuel',
+  email: 'Castlefuel1@gmail.com',
+  addressLine1: '81 Charter Circle',
+  serviceCities: [
+    'Ossining', 'Briarcliff Manor', 'Croton-on-Hudson', 'Peekskill',
+    'Yorktown Heights', 'Cortlandt Manor', 'Mohegan Lake', 'Buchanan',
+    'Montrose', 'Verplanck', 'Mount Kisco', 'Chappaqua', 'Pleasantville',
+    'Millwood', 'Somers', 'Katonah', 'Bedford', 'Mahopac', 'Carmel',
+    'Brewster', 'Putnam Valley', 'Cold Spring', 'Garrison'
+  ],
+  serviceCounties: ['Westchester', 'Putnam'],
+  serviceAreaRadius: 20,
+  lat: 41.1669,
+  lng: -73.8487,
+  hoursWeekday: '8:00 AM - 4:30 PM',
+  hoursSaturday: '8:00 AM - 12:00 PM',
+  hoursSunday: null,
+  emergencyDelivery: true,
+  weekendDelivery: false,
+  paymentMethods: ['cash', 'credit_card', 'check'],
+  fuelTypes: ['heating_oil', 'diesel'],
+  minimumGallons: 150,
+  allowPriceDisplay: true,
+};
+
 const SUPPLIERS = [
-  {
-    name: 'Castle Fuel',
-    slug: 'castle-fuel-ny',
-    phone: '(914) 531-7100',
-    email: 'Castlefuel1@gmail.com',
-    website: 'https://castlefuel.com',
-    addressLine1: '81 Charter Circle',
-    city: 'Ossining',
-    state: 'NY',
-    serviceCities: [
-      'Ossining', 'Briarcliff Manor', 'Croton-on-Hudson', 'Peekskill',
-      'Yorktown Heights', 'Cortlandt Manor', 'Mohegan Lake', 'Buchanan',
-      'Montrose', 'Verplanck', 'Mount Kisco', 'Chappaqua', 'Pleasantville',
-      'Millwood', 'Somers', 'Katonah', 'Bedford', 'Mahopac', 'Carmel',
-      'Brewster', 'Putnam Valley', 'Cold Spring', 'Garrison'
-    ],
-    serviceCounties: ['Westchester', 'Putnam'],
-    serviceAreaRadius: 20,
-    lat: 41.1669,
-    lng: -73.8487,
-    hoursWeekday: '8:00 AM - 4:30 PM',
-    hoursSaturday: '8:00 AM - 12:00 PM',
-    hoursSunday: null,
-    emergencyDelivery: true,
-    weekendDelivery: false,
-    paymentMethods: ['cash', 'credit_card', 'check'],
-    fuelTypes: ['heating_oil', 'diesel'],
-    minimumGallons: 150,
-    seniorDiscount: false,
-    allowPriceDisplay: true,
-  },
   {
     name: 'Costello Fuel',
     slug: 'costello-fuel-pa',
@@ -188,6 +188,53 @@ module.exports = {
   name: '141-add-user-mention-suppliers',
 
   async up(sequelize) {
+    // 1. Clean up accidental dupe if prior deploy of this migration ran with
+    //    the old slug before we noticed castle-fuel already existed.
+    await sequelize.query(`DELETE FROM suppliers WHERE slug = 'castle-fuel-ny'`);
+
+    // 2. Backfill the existing castle-fuel record (ScrapeConfigSync-created,
+    //    minimal fields). Only updates columns that are null/empty.
+    await sequelize.query(`
+      UPDATE suppliers SET
+        email = COALESCE(email, :email),
+        address_line1 = :addressLine1,
+        service_cities = :serviceCities,
+        service_counties = :serviceCounties,
+        service_area_radius = :serviceAreaRadius,
+        lat = :lat,
+        lng = :lng,
+        hours_weekday = COALESCE(hours_weekday, :hoursWeekday),
+        hours_saturday = COALESCE(hours_saturday, :hoursSaturday),
+        hours_sunday = hours_sunday,
+        emergency_delivery = :emergencyDelivery,
+        weekend_delivery = :weekendDelivery,
+        payment_methods = :paymentMethods,
+        fuel_types = :fuelTypes,
+        minimum_gallons = COALESCE(minimum_gallons, :minimumGallons),
+        allow_price_display = :allowPriceDisplay,
+        updated_at = NOW()
+      WHERE slug = 'castle-fuel'
+    `, {
+      replacements: {
+        email: CASTLE_FUEL_BACKFILL.email,
+        addressLine1: CASTLE_FUEL_BACKFILL.addressLine1,
+        serviceCities: JSON.stringify(CASTLE_FUEL_BACKFILL.serviceCities),
+        serviceCounties: JSON.stringify(CASTLE_FUEL_BACKFILL.serviceCounties),
+        serviceAreaRadius: CASTLE_FUEL_BACKFILL.serviceAreaRadius,
+        lat: CASTLE_FUEL_BACKFILL.lat,
+        lng: CASTLE_FUEL_BACKFILL.lng,
+        hoursWeekday: CASTLE_FUEL_BACKFILL.hoursWeekday,
+        hoursSaturday: CASTLE_FUEL_BACKFILL.hoursSaturday,
+        emergencyDelivery: CASTLE_FUEL_BACKFILL.emergencyDelivery === true,
+        weekendDelivery: CASTLE_FUEL_BACKFILL.weekendDelivery === true,
+        paymentMethods: JSON.stringify(CASTLE_FUEL_BACKFILL.paymentMethods),
+        fuelTypes: JSON.stringify(CASTLE_FUEL_BACKFILL.fuelTypes),
+        minimumGallons: CASTLE_FUEL_BACKFILL.minimumGallons,
+        allowPriceDisplay: CASTLE_FUEL_BACKFILL.allowPriceDisplay === true,
+      }
+    });
+    console.log('[Migration 141] ✅ Backfilled castle-fuel (removed castle-fuel-ny dupe)');
+
     for (const s of SUPPLIERS) {
       const supplier = {
         id: uuidv4(),
