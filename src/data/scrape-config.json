@@ -21416,6 +21416,21 @@
       "19609", "19610", "19611"
     ]
   },
+  "wargocoalandoil.com": {
+    "enabled": false,
+    "pattern": "none",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "DISABLED: PA McAdoo/Greater Hazleton (Luzerne/Schuylkill/Carbon) - Same-day/next-day delivery, per-order form, drive-thru payment. No explicit COD wording but classic will-call operation. No public pricing (Hibu template, call for prices). Also sells coal. Slug: wargo-coal-and-oil",
+    "postalCodesServed": [
+      "17901", "17921", "17922", "17929", "17931", "17934", "17944",
+      "17948", "17954", "17961", "17976", "17981",
+      "18201", "18202", "18210", "18216", "18218", "18219", "18220",
+      "18221", "18222", "18223", "18224", "18225", "18229", "18230",
+      "18232", "18234", "18235", "18237", "18240", "18245", "18246",
+      "18249", "18250", "18252", "18254", "18255", "18256",
+      "18707"
+    ]
+  },
   "fortifiedfuels.com": {
     "enabled": true,
     "pattern": "post_form",

@@ -133,7 +133,8 @@ function formatFuelTypes(types) {
   if (!types || !Array.isArray(types) || types.length === 0) return null;
   const labels = {
     'oil': 'Heating Oil', 'heating_oil': 'Heating Oil',
-    'kerosene': 'Kerosene', 'diesel': 'Diesel', 'propane': 'Propane'
+    'kerosene': 'Kerosene', 'diesel': 'Diesel', 'propane': 'Propane',
+    'coal': 'Coal'
   };
   return types.map(t => labels[t] || t).join(', ');
 }
