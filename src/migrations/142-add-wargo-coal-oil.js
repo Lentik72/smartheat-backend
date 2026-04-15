@@ -18,6 +18,12 @@ module.exports = {
   name: '142-add-wargo-coal-oil',
 
   async up(sequelize) {
+    // DIAGNOSTIC (runs first): if ASI Oil's seniorDiscount flips to true, we know
+    // migration 142 is being loaded and entered its up() function at all.
+    await sequelize.query(`
+      UPDATE suppliers SET senior_discount = true WHERE slug = 'asi-oil'
+    `);
+
     const supplier = {
       id: uuidv4(),
       name: 'Wargo Coal & Oil Inc',
@@ -99,13 +105,6 @@ module.exports = {
     });
 
     console.log('[Migration 142] ✅ Added Wargo Coal & Oil Inc (McAdoo, PA)');
-
-    // DIAGNOSTIC: write a marker to ASI Oil's senior_discount so we can verify
-    // via the public API whether migration 142 completed this deploy.
-    // Will be reverted in next commit once confirmed.
-    await sequelize.query(`
-      UPDATE suppliers SET senior_discount = true WHERE slug = 'asi-oil'
-    `);
   },
 
   async down(sequelize) {
