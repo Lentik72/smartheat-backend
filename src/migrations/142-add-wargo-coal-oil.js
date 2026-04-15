@@ -48,7 +48,7 @@ module.exports = {
       emergencyDelivery: false,
       weekendDelivery: true,
       paymentMethods: JSON.stringify(['cash', 'credit_card', 'check']),
-      fuelTypes: JSON.stringify(['heating_oil', 'kerosene', 'diesel', 'coal']),
+      fuelTypes: JSON.stringify(['heating_oil', 'kerosene', 'diesel']),
       minimumGallons: 100,
       seniorDiscount: false,
       allowPriceDisplay: false,
