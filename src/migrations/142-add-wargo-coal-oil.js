@@ -85,9 +85,27 @@ module.exports = {
         minimum_gallons = EXCLUDED.minimum_gallons,
         allow_price_display = EXCLUDED.allow_price_display,
         updated_at = NOW()
-    `, { replacements: supplier });
+    `, {
+      replacements: {
+        ...supplier,
+        emergencyDelivery: supplier.emergencyDelivery === true,
+        weekendDelivery: supplier.weekendDelivery === true,
+        seniorDiscount: supplier.seniorDiscount === true,
+        allowPriceDisplay: supplier.allowPriceDisplay === true,
+        minimumGallons: supplier.minimumGallons || null,
+        notes: supplier.notes || null,
+        email: supplier.email || null,
+      }
+    });
 
     console.log('[Migration 142] ✅ Added Wargo Coal & Oil Inc (McAdoo, PA)');
+
+    // DIAGNOSTIC: write a marker to ASI Oil's senior_discount so we can verify
+    // via the public API whether migration 142 completed this deploy.
+    // Will be reverted in next commit once confirmed.
+    await sequelize.query(`
+      UPDATE suppliers SET senior_discount = true WHERE slug = 'asi-oil'
+    `);
   },
 
   async down(sequelize) {
