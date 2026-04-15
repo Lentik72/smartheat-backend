@@ -2009,9 +2009,11 @@ router.get('/missing-suppliers', async (req, res) => {
         '[[:punct:]]+', ' ', 'g'
       ))
     `;
-    const normUser = NORMALIZE_SQL.replace('$name$', 'a.supplier_name');
+    const normUser = NORMALIZE_SQL.replace('$name$', 'a.normalized_name');
     const normDb = NORMALIZE_SQL.replace('$name$', 's.name');
     const normDb2 = NORMALIZE_SQL.replace('$name$', 's2.name');
+    const normAlias = NORMALIZE_SQL.replace('$name$', 'sa.alias_name');
+    const normRawName = NORMALIZE_SQL.replace('$name$', 'supplier_name');
 
     const [missingSuppliers] = await sequelize.query(`
       WITH user_suppliers AS (
@@ -2036,14 +2038,17 @@ router.get('/missing-suppliers', async (req, res) => {
           AND created_at > NOW() - INTERVAL '${days} days'
       ),
       aggregated AS (
+        -- Group by NORMALIZED name so "L and Sons" and "L And Sons" collapse.
+        -- Keep the most-mentioned raw variant as the display name.
         SELECT
-          supplier_name,
+          ${normRawName} as normalized_name,
+          (ARRAY_AGG(supplier_name ORDER BY supplier_name))[1] as supplier_name,
           COUNT(*) as mentions,
           COUNT(DISTINCT user_id) as unique_users,
           MAX(created_at) as last_mentioned,
           BOOL_OR(from_directory = 'true') as was_from_directory
         FROM user_suppliers
-        GROUP BY supplier_name
+        GROUP BY ${normRawName}
       )
       SELECT
         a.supplier_name,
@@ -2051,11 +2056,11 @@ router.get('/missing-suppliers', async (req, res) => {
         a.unique_users,
         a.last_mentioned,
         a.was_from_directory,
-        s.name as matched_supplier,
-        s.city as matched_city,
-        s.state as matched_state,
+        COALESCE(s.name, sa_match.canonical_name) as matched_supplier,
+        COALESCE(s.city, sa_match.canonical_city) as matched_city,
+        COALESCE(s.state, sa_match.canonical_state) as matched_state,
         CASE
-          WHEN s.id IS NOT NULL THEN 'exact_match'
+          WHEN s.id IS NOT NULL OR sa_match.supplier_id IS NOT NULL THEN 'exact_match'
           WHEN EXISTS (
             SELECT 1 FROM suppliers s2
             WHERE ${normDb2} LIKE ${normUser} || '%'
@@ -2069,8 +2074,21 @@ router.get('/missing-suppliers', async (req, res) => {
         -- Prefix match catches "FJB" ~ "FJB Oil", "Cozy" ~ "Cozy Oil":
         OR (LENGTH(${normUser}) >= 3 AND ${normDb} LIKE ${normUser} || ' %')
         OR (LENGTH(${normDb}) >= 3 AND ${normUser} LIKE ${normDb} || ' %')
+      -- Also consult supplier_aliases table (seeded variants like
+      -- "L and Sons" → l-and-son-heat-ac-tech that prefix-match can't reach).
+      LEFT JOIN LATERAL (
+        SELECT
+          sa.supplier_id,
+          canon.name as canonical_name,
+          canon.city as canonical_city,
+          canon.state as canonical_state
+        FROM supplier_aliases sa
+        JOIN suppliers canon ON canon.id = sa.supplier_id
+        WHERE ${normAlias} = ${normUser}
+        LIMIT 1
+      ) sa_match ON s.id IS NULL
       ORDER BY
-        CASE WHEN s.id IS NULL THEN 0 ELSE 1 END,  -- Missing first
+        CASE WHEN s.id IS NULL AND sa_match.supplier_id IS NULL THEN 0 ELSE 1 END,  -- Missing first
         a.mentions DESC
     `);
 
