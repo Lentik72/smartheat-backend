@@ -18,10 +18,9 @@ module.exports = {
   name: '142-add-wargo-coal-oil',
 
   async up(sequelize) {
-    // DIAGNOSTIC (runs first): if ASI Oil's seniorDiscount flips to true, we know
-    // migration 142 is being loaded and entered its up() function at all.
+    // Revert diagnostic marker from earlier debug commits (ASI doesn't offer senior discount).
     await sequelize.query(`
-      UPDATE suppliers SET senior_discount = true WHERE slug = 'asi-oil'
+      UPDATE suppliers SET senior_discount = false WHERE slug = 'asi-oil'
     `);
 
     const supplier = {
@@ -48,13 +47,13 @@ module.exports = {
       serviceAreaRadius: 25,
       lat: 40.90696,
       lng: -75.99137,
-      hoursWeekday: '7:30 AM - 5:30 PM (Winter) / 8:00 AM - 4:00 PM (Summer)',
-      hoursSaturday: '8:00 AM - 2:00 PM (Winter) / Closed (Summer)',
+      hoursWeekday: '7:30 AM - 5:30 PM',
+      hoursSaturday: '8:00 AM - 2:00 PM',
       hoursSunday: null,
       emergencyDelivery: false,
       weekendDelivery: true,
       paymentMethods: JSON.stringify(['cash', 'credit_card', 'check']),
-      fuelTypes: JSON.stringify(['heating_oil', 'kerosene', 'diesel']),
+      fuelTypes: JSON.stringify(['heating_oil', 'kerosene', 'diesel', 'coal']),
       minimumGallons: 100,
       seniorDiscount: false,
       allowPriceDisplay: false,

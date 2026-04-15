@@ -1,6 +1,6 @@
 {
   "name": "smartheat-backend-api",
-  "version": "2.1.4-wargo",
+  "version": "2.1.4",
   "description": "SmartHeat Backend API - Community & Market Intelligence Platform",
   "main": "server.js",
   "scripts": {
