@@ -74,6 +74,23 @@ function extractPrice(html, config) {
   // Strip the tag, keep the digit, so standard regexes match the full price.
   html = html.replace(/<sup[^>]*>(\d)<\/sup>/gi, '$1');
 
+  // V2.14.0: Section-based extraction for multi-fuel pages.
+  // When sectionStart is set, discard everything before that marker so the
+  // price regex only runs against the target fuel section.
+  // Optional sectionEnd truncates after the section (defaults to end of HTML).
+  if (config.sectionStart) {
+    const startIdx = html.indexOf(config.sectionStart);
+    if (startIdx !== -1) {
+      html = html.substring(startIdx);
+      if (config.sectionEnd) {
+        const endIdx = html.indexOf(config.sectionEnd, config.sectionStart.length);
+        if (endIdx !== -1) {
+          html = html.substring(0, endIdx);
+        }
+      }
+    }
+  }
+
   // V2.8.0: Handle "split" pattern where price is split across elements (e.g., "$ 3" + "199" = $3.199)
   if (config.pattern === 'split' && config.priceRegex) {
     const splitRegex = new RegExp(config.priceRegex, 'gi');
