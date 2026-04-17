@@ -17783,6 +17783,38 @@
       "17113"
     ]
   },
+  "fegleyoil.com": {
+    "enabled": true,
+    "pattern": "json_api",
+    "apiUrl": "https://porpontvjivnnhergrrv.supabase.co/rest/v1/fuel_prices?select=price_per_gallon&is_active=eq.true&fuel_type_id=eq.4ca9aaa3-e66b-4d86-a480-0c48637c9bf5&min_gallons=eq.150",
+    "apiMethod": "GET",
+    "apiHeaders": {
+      "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvcnBvbnR2aml2bm5oZXJncnJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NjE5NjYsImV4cCI6MjA3NzIzNzk2Nn0.8Izn-1juJTa4G5jE-DG7jnYsBWMmwo8EydOFweoBOr4",
+      "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvcnBvbnR2aml2bm5oZXJncnJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NjE5NjYsImV4cCI6MjA3NzIzNzk2Nn0.8Izn-1juJTa4G5jE-DG7jnYsBWMmwo8EydOFweoBOr4"
+    },
+    "jsonPath": "0.price_per_gallon",
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "apiUrl": "https://porpontvjivnnhergrrv.supabase.co/rest/v1/fuel_prices?select=price_per_gallon&is_active=eq.true&fuel_type_id=eq.9ac1aebc-e3b8-4f32-b6d5-8c2ac0db6924&min_gallons=eq.150",
+        "jsonPath": "0.price_per_gallon"
+      }
+    },
+    "notes": "PA Tamaqua/Schuylkill-Carbon-Luzerne County - COD + will-call explicit on Terms page. Prices from public Supabase REST API. 150-gal tier for both heating oil and kerosene. Anon key embedded in their public JS bundle (rotation would need config refresh).",
+    "postalCodesServed": [
+      "17901", "17921", "17925", "17929", "17930", "17931", "17934", "17935",
+      "17944", "17946", "17948", "17949", "17951", "17952", "17953", "17954",
+      "17960", "17961", "17965", "17967", "17970", "17972", "17974", "17976",
+      "17982",
+      "18012", "18030", "18051", "18053", "18066", "18071", "18079", "18080",
+      "18088",
+      "18201", "18210", "18211", "18214", "18216", "18218", "18219", "18220",
+      "18221", "18222", "18224", "18225", "18229", "18230", "18231", "18232",
+      "18234", "18235", "18237", "18239", "18240", "18241", "18242", "18244",
+      "18245", "18246", "18247", "18248", "18249", "18250", "18251", "18252",
+      "18254", "18255", "18256"
+    ]
+  },
   "fuelcellpetrol.com": {
     "enabled": true,
     "pattern": "json_api",
