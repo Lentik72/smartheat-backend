@@ -626,6 +626,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/141-add-user-mention-suppliers', label: 'User-mention batch: Castle Fuel NY, Costello PA, F.C. Haab PA, Victory PA, Fortified Fuels CT + L&Son aliases' },
           { path: './src/migrations/142-add-wargo-coal-oil', label: 'Wargo Coal & Oil Inc (McAdoo PA — Greater Hazleton, Luzerne/Schuylkill/Carbon)' },
           { path: './src/migrations/143-add-incorporation-fields', label: 'Incorporation fields + NY/CT filing dates for 30 suppliers (outreach correlation)' },
+          { path: './src/migrations/144-add-fegley-oil', label: 'Fegley Oil Company (Tamaqua PA — Schuylkill/Carbon/Luzerne counties)' },
         ];
 
         let migrationErrors = 0;
