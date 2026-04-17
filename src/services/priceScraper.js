@@ -702,6 +702,7 @@ module.exports = {
   extractFuelPrices, // V2.12.0: Multi-fuel extraction
   FUEL_PRICE_RANGES, // V2.12.0: Per-fuel validation ranges
   scrapeSupplierPrice,
+  scrapeSupplierPriceOnce, // V2.15.0: exposed for single-attempt test harness (bypasses retry loop)
   loadScrapeConfig,
   getConfigForSupplier,
   sleep,
