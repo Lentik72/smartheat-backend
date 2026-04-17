@@ -42,7 +42,7 @@ Four pattern types in scrape-config.json:
 - **direct**: First regex match on page
 - **table**: Tiered pricing — sorts ascending, takes lowest (highest-volume tier). `targetTier` overrides selection
 - **split**: Price split across HTML elements (e.g., "$3" + "199" = $3.199)
-- **json_api**: Fetch JSON endpoint, extract via dot-notation `pricePath`
+- **json_api**: Fetch JSON endpoint, extract via dot-notation `jsonPath`. **V2.15.0** — secondary fuels (e.g. kerosene) can define their own `fuels.<fuel>.apiUrl` + `jsonPath` for a separate call; the regex-based `fuels.<fuel>.priceRegex` path still applies when the primary value is a text blob. Per-fuel failures log to console and are omitted from `fuelPrices` but do not fail the primary scrape. Note: `SupplierPrice.fuelType` is an ENUM of `('heating_oil', 'kerosene')` — adding a fuel beyond this list requires coordinated ENUM + FUEL_PRICE_RANGES + model change.
 
 ### lookupUrl (V2.14.0)
 

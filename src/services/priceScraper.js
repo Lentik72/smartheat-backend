@@ -3,6 +3,7 @@
  * V1.5.0: Scrapes published prices from supplier websites
  * V2.1.0: Added displayable flag support for aggregator signals
  * V2.12.0: Multi-fuel extraction — scrape kerosene (and future fuels) from same HTML
+ * V2.15.0: json_api multi-fuel — secondary fuels via config.fuels.<fuel>.apiUrl + jsonPath
  *
  * Architecture:
  * - Honest User-Agent (HomeHeatBot)
@@ -294,8 +295,47 @@ async function scrapeSupplierPriceOnce(supplier, config) {
             error: `API price ${val} invalid`, duration: Date.now() - startTime, retryable: false };
         }
         const sourceType = config.displayable === false ? 'aggregator_signal' : 'scraped';
-        // Extract additional fuel prices from text-based API responses
-        const fuelPrices = typeof val === 'string' ? extractFuelPrices(val, config) : [];
+        // V2.12.0: Text-based multi-fuel extraction (single-blob APIs like PHD banner).
+        let fuelPrices = typeof val === 'string' ? extractFuelPrices(val, config) : [];
+        // V2.15.0: JSON-API multi-fuel extraction (secondary fuels on separate endpoints).
+        // Activates only when config.fuels.<fuel> has BOTH apiUrl and jsonPath — never affects
+        // existing regex-based fuels configs. One HTTP call per secondary fuel.
+        if (config.fuels) {
+          for (const [fuelType, fuelConfig] of Object.entries(config.fuels)) {
+            if (!fuelConfig.enabled || !fuelConfig.apiUrl || !fuelConfig.jsonPath) continue;
+            // Don't double-push if regex path already captured this fuel from a string val.
+            if (fuelPrices.some((fp) => fp.fuelType === fuelType)) continue;
+            const fCtrl = new AbortController();
+            const fTimer = setTimeout(() => fCtrl.abort(), 10000);
+            try {
+              const fResp = await fetch(fuelConfig.apiUrl, {
+                method: fuelConfig.apiMethod || config.apiMethod || 'GET',
+                headers: { 'Content-Type': 'application/json', ...config.apiHeaders, ...fuelConfig.apiHeaders },
+                body: (fuelConfig.apiMethod || config.apiMethod) === 'GET' ? undefined
+                  : JSON.stringify(fuelConfig.apiBody || {}),
+                signal: fCtrl.signal,
+              });
+              clearTimeout(fTimer);
+              if (!fResp.ok) { console.warn(`[json_api fuels.${fuelType}] HTTP ${fResp.status}`); continue; }
+              const fJson = await fResp.json();
+              let fVal = fJson;
+              for (const p of fuelConfig.jsonPath.split('.')) {
+                if (fVal == null) break;
+                fVal = fVal[p];
+              }
+              const fPrice = parseFloat(fVal);
+              const fRange = FUEL_PRICE_RANGES[fuelType] || [2.00, 8.00];
+              if (!isNaN(fPrice) && fPrice >= fRange[0] && fPrice <= fRange[1]) {
+                fuelPrices.push({ fuelType, price: fPrice });
+              } else {
+                console.warn(`[json_api fuels.${fuelType}] invalid price ${fVal}`);
+              }
+            } catch (e) {
+              clearTimeout(fTimer);
+              console.warn(`[json_api fuels.${fuelType}] fetch error: ${e.message}`);
+            }
+          }
+        }
         return {
           supplierId: supplier.id, supplierName: supplier.name, success: true,
           pricePerGallon: price, minGallons: 100, fuelType: 'heating_oil', sourceType,
@@ -702,6 +742,7 @@ module.exports = {
   extractFuelPrices, // V2.12.0: Multi-fuel extraction
   FUEL_PRICE_RANGES, // V2.12.0: Per-fuel validation ranges
   scrapeSupplierPrice,
+  scrapeSupplierPriceOnce, // V2.15.0: exposed for single-attempt test harness (bypasses retry loop)
   loadScrapeConfig,
   getConfigForSupplier,
   sleep,
