@@ -150,7 +150,36 @@ async function run() {
     console.log(`\n${failures} FAILURE(S)\n`);
     process.exit(1);
   }
+  runStaticGuard();
   console.log('\nAll tests pass.\n');
+}
+
+// Static guard: ensure no legacy json_api config accidentally sets fuels.*.apiUrl
+// without also keeping priceRegex for backward compat. New configs must define both
+// apiUrl AND jsonPath — the scraper requires it. A config with only one is a bug.
+// TODO (bead heatingoil-zhpo): when SupplierPrice.fuelType ENUM is extended beyond
+// heating_oil+kerosene, tighten this guard to also reject fuelType values not in
+// SupplierPrice.rawAttributes.fuelType.values — today, an unknown fuelType would
+// pass the guard and fail silently at the DB write.
+function runStaticGuard() {
+  const cfg = require('../src/data/scrape-config.json');
+  const bad = [];
+  for (const [domain, entry] of Object.entries(cfg)) {
+    if (!entry || typeof entry !== 'object' || entry.pattern !== 'json_api') continue;
+    if (!entry.fuels) continue;
+    for (const [fuelType, f] of Object.entries(entry.fuels)) {
+      const hasUrl = !!f.apiUrl;
+      const hasPath = !!f.jsonPath;
+      if (hasUrl !== hasPath) {
+        bad.push(`${domain} fuels.${fuelType}: apiUrl=${hasUrl} jsonPath=${hasPath} (both or neither)`);
+      }
+    }
+  }
+  if (bad.length) {
+    console.log('\nSTATIC GUARD FAIL:\n  ' + bad.join('\n  ') + '\n');
+    process.exit(1);
+  }
+  console.log('  PASS  static guard: no partial fuels.*.apiUrl configs');
 }
 
 run().catch((e) => { console.error(e); process.exit(1); });
