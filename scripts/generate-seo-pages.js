@@ -136,6 +136,18 @@ const FUEL_CONFIGS = {
     crossLinkFuel: 'heating_oil',
     crossLinkLabel: 'Heating Oil',
     crossLinkUrl: '/prices',
+  },
+  propane: {
+    fuelType: 'propane',
+    label: 'Propane',
+    slug: 'propane',
+    minPrice: 1.50,
+    maxPrice: 5.00,
+    urlPrefix: '/prices/propane',
+    dirSuffix: '/propane',       // output to prices/propane/{state}/
+    crossLinkFuel: 'heating_oil',
+    crossLinkLabel: 'Heating Oil',
+    crossLinkUrl: '/prices',
   }
 };
 /**

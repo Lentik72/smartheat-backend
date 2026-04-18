@@ -89,6 +89,20 @@ const FUEL_CONFIGS = {
     crossLinkFuel: 'heating_oil',
     crossLinkLabel: 'Heating Oil',
     crossLinkUrlPrefix: '/prices/county',
+  },
+  propane: {
+    fuelType: 'propane',
+    label: 'Propane',
+    slug: 'propane',
+    priceLabel: 'Propane',
+    h1Prefix: 'Propane ',        // "Propane Prices in {County}"
+    minPrice: 1.50,
+    maxPrice: 5.00,
+    urlPrefix: '/prices/propane/county',
+    dirPrefix: 'prices/propane/county',
+    crossLinkFuel: 'heating_oil',
+    crossLinkLabel: 'Heating Oil',
+    crossLinkUrlPrefix: '/prices/county',
   }
 };
 /**
