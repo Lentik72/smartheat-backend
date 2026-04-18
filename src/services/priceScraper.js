@@ -149,6 +149,7 @@ function extractPrice(html, config) {
 const FUEL_PRICE_RANGES = {
   heating_oil: [2.00, 6.00],
   kerosene: [2.50, 7.00],
+  propane: [1.50, 5.00],
 };
 
 /**
@@ -176,6 +177,8 @@ function extractFuelPrices(html, config) {
         if (price >= range[0] && price <= range[1]) {
           results.push({ fuelType, price });
         }
+      } else {
+        console.warn(`[Scraper] ⚠️ ${fuelType} price not found for ${config.name || config.slug || 'unknown'} (regex did not match)`);
       }
     } catch (err) {
       // Bad regex in config — log but don't crash

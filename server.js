@@ -627,6 +627,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/142-add-wargo-coal-oil', label: 'Wargo Coal & Oil Inc (McAdoo PA — Greater Hazleton, Luzerne/Schuylkill/Carbon)' },
           { path: './src/migrations/143-add-incorporation-fields', label: 'Incorporation fields + NY/CT filing dates for 30 suppliers (outreach correlation)' },
           { path: './src/migrations/144-add-fegley-oil', label: 'Fegley Oil Company (Tamaqua PA — Schuylkill/Carbon/Luzerne counties)' },
+          { path: './src/migrations/145-add-propane-fuel-type', label: 'Add propane to fuel_type ENUMs (supplier_prices + community_deliveries)' },
         ];
 
         let migrationErrors = 0;
@@ -1088,9 +1089,26 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       const countyResult = await generateCountyKerosene({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
       if (countyResult.success) logger.info(`✅ Kerosene county: ${countyResult.generated} pages`);
 
-      const { generateKeroseneHub } = require('./scripts/generate-kerosene-hub');
-      const hubResult = await generateKeroseneHub({ sequelize, logger, dryRun: false });
+      const { generateFuelHub } = require('./scripts/generate-fuel-hub');
+      const hubResult = await generateFuelHub({ sequelize, logger, dryRun: false, fuel: 'kerosene' });
       if (hubResult.success) logger.info(`✅ Kerosene hub: ${hubResult.states} states`);
+
+      return { seo: result, county: countyResult, hub: hubResult };
+    }, { retry: false });
+
+    // Propane pages (V1.8)
+    await cronMonitor.run('propane-pages', async () => {
+      const { generateSEOPages: generateSEOPropane } = require('./scripts/generate-seo-pages');
+      const result = await generateSEOPropane({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'propane' });
+      if (result.success) logger.info(`✅ Propane SEO: ${result.statePages} states`);
+
+      const { generateCountyElitePages: generateCountyPropane } = require('./scripts/generate-county-elite-pages');
+      const countyResult = await generateCountyPropane({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'propane' });
+      if (countyResult.success) logger.info(`✅ Propane county: ${countyResult.generated} pages`);
+
+      const { generateFuelHub: generateFuelHubPropane } = require('./scripts/generate-fuel-hub');
+      const hubResult = await generateFuelHubPropane({ sequelize, logger, dryRun: false, fuel: 'propane' });
+      if (hubResult.success) logger.info(`✅ Propane hub: ${hubResult.states} states`);
 
       return { seo: result, county: countyResult, hub: hubResult };
     }, { retry: false });
@@ -1234,11 +1252,23 @@ const server = app.listen(PORT, '0.0.0.0', () => {
               return genCountyKero({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
             })(),
             (async () => {
-              const { generateKeroseneHub } = require('./scripts/generate-kerosene-hub');
-              return generateKeroseneHub({ sequelize, logger, dryRun: false });
+              const { generateFuelHub } = require('./scripts/generate-fuel-hub');
+              return generateFuelHub({ sequelize, logger, dryRun: false, fuel: 'kerosene' });
+            })(),
+            (async () => {
+              const { generateSEOPages: genSEOPropane } = require('./scripts/generate-seo-pages');
+              return genSEOPropane({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'propane' });
+            })(),
+            (async () => {
+              const { generateCountyElitePages: genCountyPropane } = require('./scripts/generate-county-elite-pages');
+              return genCountyPropane({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'propane' });
+            })(),
+            (async () => {
+              const { generateFuelHub: generateFuelHubPropane } = require('./scripts/generate-fuel-hub');
+              return generateFuelHubPropane({ sequelize, logger, dryRun: false, fuel: 'propane' });
             })()
           ]);
-          const keroNames = ['Kerosene SEO', 'Kerosene County', 'Kerosene Hub'];
+          const keroNames = ['Kerosene SEO', 'Kerosene County', 'Kerosene Hub', 'Propane SEO', 'Propane County', 'Propane Hub'];
           keroResults.forEach((r, i) => {
             if (r.status === 'fulfilled' && r.value.success) {
               logger.info(`✅ [Startup] ${keroNames[i]} pages generated`);
