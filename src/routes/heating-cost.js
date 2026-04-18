@@ -82,7 +82,20 @@ router.get('/', async (req, res) => {
     // Build price map for all fuels we have data for
     const prices = {};
     if (oilPrice) prices['heating-oil'] = oilPrice;
-    prices['propane'] = null; // Future: from scraped data
+
+    // V1.8: Propane price from pre-computed stats (same pattern as oil at line 63)
+    let propanePrice = null;
+    if (sequelize) {
+      const [propaneStats] = await sequelize.query(`
+        SELECT median_price FROM zip_current_stats
+        WHERE zip_prefix = :prefix AND fuel_type = 'propane'
+      `, { replacements: { prefix }, type: sequelize.QueryTypes.SELECT });
+      if (propaneStats && propaneStats.median_price) {
+        propanePrice = parseFloat(propaneStats.median_price);
+      }
+    }
+    prices['propane'] = propanePrice;
+
     prices['heat-pump'] = electric.rate;
     prices['natural-gas'] = gas.rate;
     prices['electric-baseboard'] = electric.rate;
