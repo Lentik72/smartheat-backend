@@ -1,0 +1,1341 @@
+/* County Elite Page Styles - V1.0.0 */
+/* Extends base styles from style.min.css */
+
+.county-elite-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.breadcrumb {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.breadcrumb a {
+  color: #FF6B35;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.county-meta {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.geographic-context {
+  color: #888;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  font-style: italic;
+}
+
+/* Confidence Badges - Never show numeric */
+.confidence-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.confidence-high {
+  background: #d4edda;
+  color: #155724;
+}
+
+.confidence-good {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.confidence-moderate {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.confidence-limited {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Price Summary */
+.price-summary {
+  background: linear-gradient(135deg, #fff5f0 0%, #fff 100%);
+  border: 1px solid #ffe5d9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.price-main {
+  margin-bottom: 1rem;
+}
+
+.price-value {
+  display: block;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #FF6B35;
+  line-height: 1;
+}
+
+.price-unit {
+  display: block;
+  font-size: 1rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.price-label {
+  display: block;
+  font-size: 0.875rem;
+  color: #999;
+  margin-top: 0.25rem;
+}
+
+.price-range {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.range-item {
+  text-align: center;
+}
+
+.range-value {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.range-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+}
+
+/* State Comparison */
+.state-comparison {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ffe5d9;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.comparison-above {
+  color: #b45309;
+}
+
+.comparison-below {
+  color: #047857;
+}
+
+.comparison-neutral {
+  color: #666;
+}
+
+/* Trend Alert */
+.trend-alert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.trend-up {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.trend-down {
+  background: #d4edda;
+  color: #155724;
+}
+
+.trend-stable {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.trend-icon {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Price Status Banner */
+.price-status-banner {
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid;
+}
+
+.price-status-down {
+  background: #dcfce7;
+  border-left-color: #166534;
+  color: #166534;
+}
+
+.price-status-up {
+  background: #fef3c7;
+  border-left-color: #92400e;
+  color: #92400e;
+}
+
+.psb-status {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.psb-range {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.psb-timestamp {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  margin-bottom: 0.75rem;
+}
+
+.psb-cta {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid currentColor;
+}
+
+.psb-cta:hover {
+  opacity: 0.8;
+}
+
+.psb-app-hook {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.7;
+}
+
+.psb-app-hook:hover {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .psb-timestamp {
+    display: none;
+  }
+}
+
+/* Heating Cost Insights */
+.insight-section {
+  margin-bottom: 2rem;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.insight-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.25rem 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.insight-card:hover {
+  border-color: #FF6B35;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.12);
+}
+
+.insight-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.insight-value-good {
+  color: #166534;
+}
+
+.insight-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.25rem;
+}
+
+.insight-detail {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+@media (max-width: 600px) {
+  .insight-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Chart Section */
+.chart-section {
+  margin-bottom: 2rem;
+}
+
+.chart-section h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.chart-container {
+  height: 250px;
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.chart-caption {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+/* Market Snapshot */
+.market-snapshot {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.market-snapshot h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  text-align: center;
+}
+
+.snapshot-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.snapshot-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.coverage-depth {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+/* ZIP Breakdown */
+.zip-breakdown {
+  margin-bottom: 2rem;
+}
+
+.zip-breakdown h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.zip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.zip-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.zip-card:hover {
+  border-color: #FF6B35;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.15);
+}
+
+.zip-prefix {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.zip-price {
+  font-size: 1rem;
+  color: #FF6B35;
+  font-weight: 500;
+  margin: 0.25rem 0;
+}
+
+.zip-suppliers {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* FAQ Section */
+.faq-section {
+  margin-bottom: 2rem;
+}
+
+.faq-section h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.faq-item {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.faq-item summary {
+  padding: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  background: #f8f9fa;
+}
+
+.faq-item summary:hover {
+  background: #e9ecef;
+}
+
+.faq-item p {
+  padding: 1rem;
+  margin: 0;
+  background: #fff;
+  line-height: 1.6;
+}
+
+/* App CTA */
+.app-cta {
+  background: linear-gradient(135deg, #FF6B35 0%, #e55a28 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.app-cta h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.app-cta p {
+  margin-bottom: 1rem;
+  opacity: 0.95;
+}
+
+.cta-button {
+  display: inline-block;
+  background: white;
+  color: #FF6B35;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform 0.2s;
+}
+
+.cta-button:hover {
+  transform: translateY(-2px);
+}
+
+.cta-micro {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+/* App Hooks - Contextual, lightweight */
+.app-hook {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666;
+  margin: 1rem 0 1.5rem;
+}
+
+.hook-link {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.hook-link:hover {
+  text-decoration: underline;
+}
+
+/* Social Proof */
+.social-proof {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+  margin: 1.5rem 0;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.social-proof a {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.social-proof a:hover {
+  text-decoration: underline;
+}
+
+/* V2.12.0: Cross-fuel link banner */
+.sp-cross-fuel {
+  background: #f0f7ff;
+  border: 1px solid #d0e3f7;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 24px 0;
+  text-align: center;
+}
+.sp-cross-fuel h3 {
+  font-size: 1rem;
+  margin: 0 0 4px;
+  color: #1a365d;
+}
+.sp-cross-fuel p {
+  font-size: 0.875rem;
+  color: #4a5568;
+  margin: 0 0 8px;
+}
+.sp-cross-fuel-link {
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #FF6B35;
+  text-decoration: none;
+}
+.sp-cross-fuel-link:hover {
+  text-decoration: underline;
+}
+
+/* Trust Footer */
+.trust-footer {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #999;
+  padding: 1rem 0;
+}
+
+.trust-footer a {
+  color: #FF6B35;
+}
+
+/* Price Alert Section */
+.county-alert-section {
+  max-width: 640px;
+  margin: 1.5rem auto;
+  padding: 24px 20px;
+  background: linear-gradient(135deg, #fff5f0 0%, #fff 100%);
+  border-top: 2px solid #ffe0d0;
+  border-radius: 0 0 12px 12px;
+  text-align: center;
+  overflow: hidden;
+}
+.county-alert-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 4px;
+}
+.county-alert-hook { font-size: 13px; color: #666; margin: 0 0 12px; }
+.county-alert-trust { font-size: 12px; color: #999; margin: 8px 0 0; }
+
+/* Alert form layout — self-contained, does not depend on style.css */
+.county-alert-section .price-alert-card {
+  max-width: 600px;
+  margin: 1rem auto;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid #E5D8D0;
+  border-radius: 12px;
+  text-align: center;
+}
+.county-alert-section .price-alert-inner {
+  font-size: 0.9rem;
+  color: #1a1a1a;
+}
+.county-alert-section .price-alert-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+.county-alert-section .price-alert-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.county-alert-section .price-alert-fields {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: flex-end;
+}
+.county-alert-section .price-alert-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.county-alert-section .price-alert-field-email {
+  flex: 1;
+  min-width: 180px;
+}
+.county-alert-section .price-alert-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.county-alert-section .price-alert-input-wrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  height: 40px;
+  box-sizing: border-box;
+}
+.county-alert-section .price-alert-dollar {
+  padding: 0 0 0 10px;
+  color: #666;
+  font-weight: 600;
+  line-height: 40px;
+}
+.county-alert-section .price-alert-threshold {
+  width: 80px;
+  padding: 0 10px 0 4px;
+  border: none;
+  font-size: 0.9rem;
+  outline: none;
+  background: transparent;
+  height: 100%;
+  -moz-appearance: textfield;
+}
+.county-alert-section .price-alert-threshold::-webkit-inner-spin-button,
+.county-alert-section .price-alert-threshold::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.county-alert-section .price-alert-email {
+  padding: 0 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  width: 100%;
+  min-width: 180px;
+  height: 40px;
+  box-sizing: border-box;
+  outline: none;
+}
+.county-alert-section .price-alert-zip {
+  padding: 0 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  width: 90px;
+  height: 40px;
+  box-sizing: border-box;
+  outline: none;
+}
+.county-alert-section .price-alert-btn {
+  padding: 0 24px;
+  height: 40px;
+  background: #2E7D32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.county-alert-section .price-alert-btn:hover {
+  background: #1B5E20;
+}
+.county-alert-section .price-alert-btn:disabled {
+  background: #a5d6a7;
+  cursor: not-allowed;
+}
+.county-alert-section .price-alert-meta {
+  font-size: 0.78rem;
+  color: #888;
+  margin-top: 6px;
+}
+.county-alert-section .price-alert-error {
+  color: #dc2626;
+  font-size: 0.82rem;
+  margin-top: 8px;
+}
+.county-alert-section .price-alert-warning {
+  color: #b45309;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  font-style: italic;
+}
+.county-alert-section .price-alert-check {
+  color: #16a34a;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.county-alert-section .price-alert-success {
+  padding: 8px 0;
+}
+.county-alert-section .price-alert-email:focus,
+.county-alert-section .price-alert-input-wrap:focus-within {
+  border-color: #2E7D32;
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.15);
+}
+
+/* SEO Text Section */
+.county-seo-text {
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #444;
+}
+.county-seo-text p { margin-bottom: 1rem; }
+
+/* Trust Line */
+.price-trust-line {
+  text-align: center;
+  font-size: 0.82rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+/* Supplier Table Section */
+.county-elite-page .supplier-table-section {
+  margin: 2rem 0;
+}
+
+.county-elite-page .supplier-table-section h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.county-elite-page .supplier-table td {
+  vertical-align: top;
+}
+
+.supplier-table-intro {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.supplier-directory-link {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.supplier-directory-link a {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.supplier-directory-link a:hover {
+  text-decoration: underline;
+}
+
+.supplier-empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.supplier-empty-state p {
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.supplier-empty-state a {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.supplier-empty-state a:hover {
+  text-decoration: underline;
+}
+
+/* Desktop Typography */
+@media (min-width: 960px) {
+  .page-header h1 { font-size: 2rem; }
+  .price-value { font-size: 3.5rem; }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .page-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .price-value {
+    font-size: 2.5rem;
+  }
+
+  .price-range {
+    gap: 1rem;
+  }
+
+  .snapshot-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  /* Supplier table: override base display:block + overflow-x:auto from style.css */
+  .county-elite-page .supplier-table {
+    display: table !important;
+    table-layout: fixed !important;
+    width: 100% !important;
+    overflow-x: visible !important;
+  }
+
+  .county-elite-page .supplier-table th,
+  .county-elite-page .supplier-table td {
+    padding: 0.6rem 0.3rem;
+    font-size: 0.78rem;
+  }
+
+  /* Col 1: Supplier name (visible) */
+  .county-elite-page .supplier-table th:nth-child(1),
+  .county-elite-page .supplier-table td:nth-child(1) {
+    width: 40% !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Col 2: Location — hidden by base style.css */
+  /* Col 3: Price/Gal (visible) */
+  .county-elite-page .supplier-table th:nth-child(3),
+  .county-elite-page .supplier-table td:nth-child(3) {
+    width: 22% !important;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Col 4: Phone (visible) */
+  .county-elite-page .supplier-table th:nth-child(4),
+  .county-elite-page .supplier-table td:nth-child(4) {
+    width: 38% !important;
+    white-space: nowrap;
+    font-size: 0.75rem;
+  }
+
+  /* Col 5: Website — hidden by base style.css */
+
+  .snapshot-value {
+    font-size: 1.25rem;
+  }
+
+  .zip-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .county-alert-section {
+    margin: 1rem 0;
+    border-radius: 0;
+    padding: 1rem;
+  }
+  .county-alert-section .price-alert-fields {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .county-alert-section .price-alert-field {
+    width: 100%;
+  }
+  .county-alert-section .price-alert-field-email {
+    min-width: unset;
+  }
+  .county-alert-section .price-alert-email {
+    min-width: unset;
+  }
+  .county-alert-section .price-alert-input-wrap,
+  .county-alert-section .price-alert-email,
+  .county-alert-section .price-alert-zip {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .county-alert-section .price-alert-btn {
+    width: 100%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* Action-First Layout — New Components                       */
+/* ═══════════════════════════════════════════════════════════ */
+
+/* Price Summary Bar */
+.county-elite-page .price-summary-bar {
+  text-align: center;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.county-elite-page .summary-line-1 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+  color: #333;
+}
+
+.county-elite-page .summary-price {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #FF6B35;
+}
+
+.county-elite-page .summary-line-2 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.county-elite-page .summary-line-2 strong {
+  color: #166534;
+  font-weight: 700;
+}
+
+.county-elite-page .summary-sep {
+  color: #ccc;
+  margin: 0 0.2rem;
+}
+
+.county-elite-page .savings-badge {
+  color: #166534;
+  font-weight: 600;
+}
+
+.county-elite-page .near-best {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.county-elite-page .call-prompt {
+  margin: 0.4rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.county-elite-page .call-prompt a {
+  color: #166534;
+  text-decoration: none;
+}
+
+.county-elite-page .call-prompt a:hover {
+  text-decoration: underline;
+}
+
+/* ZIP Filter */
+.county-elite-page .zip-filter-section {
+  max-width: 480px;
+  margin: 0 auto 1.75rem;
+  text-align: center;
+}
+
+.county-elite-page .zip-filter-label {
+  display: block;
+  font-size: 0.88rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.county-elite-page .zip-filter-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.county-elite-page .zip-filter-input {
+  width: 130px;
+  padding: 0.65rem 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.county-elite-page .zip-filter-input:focus {
+  border-color: #FF6B35;
+  box-shadow: 0 0 0 3px rgba(255,107,53,0.12);
+}
+
+.county-elite-page .zip-filter-btn {
+  padding: 0.65rem 1.25rem;
+  background: #FF6B35;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.county-elite-page .zip-filter-btn:hover {
+  background: #e55a28;
+}
+
+.county-elite-page .zip-filter-btn:active {
+  transform: scale(0.98);
+}
+
+.county-elite-page .zip-filter-clear {
+  padding: 0.65rem 0.75rem;
+  background: #f3f4f6;
+  color: #666;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.county-elite-page .zip-filter-clear:hover {
+  background: #e5e7eb;
+}
+
+.county-elite-page .zip-filter-result {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.county-elite-page .zip-filter-no-match {
+  color: #92400e;
+}
+
+/* Enhanced Supplier Table Sub-lines */
+.county-elite-page .supplier-table-section h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+}
+
+.county-elite-page .supplier-name .supplier-profile-link,
+.county-elite-page .supplier-name .best-price-badge,
+.county-elite-page .supplier-name .supplier-updated {
+  display: block;
+}
+
+.county-elite-page .best-price-badge {
+  display: inline-block;
+  background: #166534;
+  color: #fff;
+  padding: 0.1rem 0.45rem;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.county-elite-page .supplier-updated {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.county-elite-page .freshness-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.county-elite-page .freshness-green { background: #22c55e; }
+.county-elite-page .freshness-yellow { background: #eab308; }
+.county-elite-page .freshness-gray { background: #9ca3af; }
+
+.county-elite-page .price-amount {
+  display: block;
+  font-weight: 600;
+}
+
+.county-elite-page .price-delivery {
+  display: block;
+  font-size: 0.7rem;
+  color: #999;
+  white-space: nowrap;
+}
+
+.county-elite-page .best-price-row {
+  background: #f0fdf4;
+  border-left: 4px solid #22c55e;
+}
+
+.county-elite-page .price-delta {
+  display: block;
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.county-elite-page .price-delta.best {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.county-elite-page .supplier-call-btn {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.county-elite-page .supplier-call-btn:hover {
+  text-decoration: underline;
+}
+
+/* Trust Line + Claim Link */
+.county-elite-page .supplier-trust-line {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 1rem;
+}
+
+.county-elite-page .supplier-claim-link {
+  text-align: center;
+  font-size: 0.88rem;
+  color: #555;
+  margin-top: 0.75rem;
+}
+
+.county-elite-page .supplier-claim-link a {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.county-elite-page .supplier-claim-link a:hover {
+  text-decoration: underline;
+}
+
+/* Traffic proof */
+.county-elite-page .county-traffic-proof {
+  font-size: 0.9rem;
+  color: #555;
+  margin: -0.25rem 0 1rem;
+}
+
+.county-elite-page .county-traffic-proof strong {
+  color: #1a1a1a;
+}
+
+/* Inline claim link in table rows */
+.county-elite-page .supplier-claim-link-inline {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 6px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.county-elite-page .supplier-claim-link-inline:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* How to Order */
+.county-elite-page .how-to-order {
+  max-width: 520px;
+  margin: 1rem auto 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.county-elite-page .how-to-order summary {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  background: #f8f9fa;
+  color: #555;
+}
+
+.county-elite-page .how-to-order summary:hover {
+  background: #f0f1f3;
+}
+
+.county-elite-page .how-to-order ol {
+  padding: 0.75rem 1rem 0.75rem 2rem;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #444;
+}
+
+/* Nearby Counties */
+.county-elite-page .nearby-counties {
+  text-align: center;
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  font-size: 0.88rem;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  line-height: 1.8;
+}
+
+.county-elite-page .nearby-counties strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.county-elite-page .nearby-counties a {
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.county-elite-page .nearby-counties a:hover {
+  text-decoration: underline;
+}
+
+/* Mobile overrides */
+@media (max-width: 600px) {
+  .county-elite-page .price-delivery {
+    display: none;
+  }
+
+  .county-elite-page .summary-line-1 {
+    font-size: 0.92rem;
+  }
+
+  .county-elite-page .summary-price {
+    font-size: 1.2rem;
+  }
+
+  .county-elite-page .near-best {
+    display: none;
+  }
+
+  .county-elite-page .zip-filter-row {
+    flex-direction: column;
+  }
+
+  .county-elite-page .zip-filter-input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .county-elite-page .zip-filter-btn {
+    width: 100%;
+  }
+}
