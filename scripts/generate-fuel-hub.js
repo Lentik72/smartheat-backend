@@ -98,7 +98,7 @@ const FUEL_HUB_CONFIGS = {
   <div style="background: #f8f9fa; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
     <h3 style="margin-top: 0;">Delivered vs. Retail Propane</h3>
     <p>Buying propane at retail stores costs $3.50\u2013$5.00 per gallon equivalent. Delivered propane from local suppliers typically runs $1.80\u2013$3.00 per gallon \u2014 saving you 30\u201350% on every fill.</p>
-    <p><a href="/learn/propane-delivered-vs-retail/" style="color: #FF6B35; font-weight: 600;">Use our break-even calculator \u2192</a></p>
+    <p><a href="/learn/propane-delivered-vs-retail" style="color: #FF6B35; font-weight: 600;">Use our break-even calculator \u2192</a></p>
   </div>
 `,
     toolLinks: [
