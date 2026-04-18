@@ -39,7 +39,7 @@ const initSupplierPriceModel = (sequelize) => {
         comment: 'Minimum order gallons for this price tier'
       },
       fuelType: {
-        type: DataTypes.ENUM('heating_oil', 'kerosene'),
+        type: DataTypes.ENUM('heating_oil', 'kerosene', 'propane'),
         defaultValue: 'heating_oil',
         comment: 'Fuel type — defaults to heating_oil if not specified'
       },

@@ -42,7 +42,7 @@ class CountyStatsComputer {
   }
 
   // V2.12.0: Fuel types to compute stats for
-  static FUEL_TYPES = ['heating_oil', 'kerosene'];
+  static FUEL_TYPES = ['heating_oil', 'kerosene', 'propane'];
   // V2.12.0: Minimum suppliers required to compute stats (avoid meaningless single-supplier medians)
   static MIN_SUPPLIERS_FOR_STATS = 2;
 

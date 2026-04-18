@@ -627,6 +627,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/142-add-wargo-coal-oil', label: 'Wargo Coal & Oil Inc (McAdoo PA — Greater Hazleton, Luzerne/Schuylkill/Carbon)' },
           { path: './src/migrations/143-add-incorporation-fields', label: 'Incorporation fields + NY/CT filing dates for 30 suppliers (outreach correlation)' },
           { path: './src/migrations/144-add-fegley-oil', label: 'Fegley Oil Company (Tamaqua PA — Schuylkill/Carbon/Luzerne counties)' },
+          { path: './src/migrations/145-add-propane-fuel-type', label: 'Add propane to fuel_type ENUMs (supplier_prices + community_deliveries)' },
         ];
 
         let migrationErrors = 0;
