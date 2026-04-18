@@ -28,6 +28,8 @@ const PRIORITY_RULES = [
   { pattern: /^\/prices\/kerosene\/[a-z]{2}\/$/, priority: 0.7, changefreq: 'daily' },
   { pattern: /^\/prices\/county\//,           priority: 0.7, changefreq: 'daily' },   // county elite
   { pattern: /^\/prices\/kerosene\/county\//, priority: 0.65, changefreq: 'daily' },
+  { pattern: /^\/prices\/propane\/$/,          priority: 0.8, changefreq: 'daily' },
+  { pattern: /^\/prices\/propane\/[a-z]{2}\/$/, priority: 0.7, changefreq: 'daily' },
   { pattern: /^\/prices\//,                   priority: 0.7, changefreq: 'daily' },   // other price pages
   { pattern: /^\/supplier\//,                 priority: 0.5, changefreq: 'weekly' },
   { pattern: /^\/heating-cost\//,             priority: 0.6, changefreq: 'weekly' },
