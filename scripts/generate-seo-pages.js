@@ -650,7 +650,7 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
-      { name: 'Prices', url: '/prices' },
+      { name: FUEL.label + ' Prices', url: FUEL.urlPrefix || '/prices' },
       { name: stateInfo.name, url: null }
     ],
     stats,
@@ -726,7 +726,7 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/${countySlug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
-      { name: 'Prices', url: '/prices' },
+      { name: FUEL.label + ' Prices', url: FUEL.urlPrefix || '/prices' },
       { name: stateInfo.name, url: `/prices/${stateInfo.abbrev}/` },
       { name: `${countyName} County`, url: null }
     ],
@@ -792,7 +792,7 @@ async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, 
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/${region.slug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
-      { name: 'Prices', url: '/prices' },
+      { name: FUEL.label + ' Prices', url: FUEL.urlPrefix || '/prices' },
       { name: stateInfo.name, url: `/prices/${stateInfo.abbrev}/` },
       { name: region.name, url: null }
     ],
@@ -878,7 +878,7 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/${citySlug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
-      { name: 'Prices', url: '/prices' },
+      { name: FUEL.label + ' Prices', url: FUEL.urlPrefix || '/prices' },
       { name: stateInfo.name, url: `/prices/${stateInfo.abbrev}/` },
       ...(countyNameFormatted ? [{ name: `${countyNameFormatted} County`, url: `/prices/${stateInfo.abbrev}/${slugify(countyName)}-county` }] : []),
       { name: cityName, url: null }
