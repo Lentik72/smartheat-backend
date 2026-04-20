@@ -5,7 +5,11 @@ constants:
   rate_limit_window: "15 minutes"
   rate_limit_max_prod: "100 requests/IP"
   html_cache: "1 hour"
-  db_pool_max: "10"
+  db_pool_max: "25"
+  db_statement_timeout_ms: "60000"
+  db_idle_tx_timeout_ms: "60000"
+  db_connect_timeout_ms: "15000"
+  db_health_race_ms: "2000"
   healthcheck_timeout: "120 seconds"
   generator_timeout: "90 seconds"
 ---
@@ -39,16 +43,21 @@ Order matters — changing it can break the app. Listed by registration order in
 
 ## Health Endpoint
 
-GET `/health` returns 503 `{ "status": "starting" }` while pages are generating, then 200 once ready:
+GET `/health` returns 200 `{ "status": "healthy", ... }` as soon as the server accepts connections. Page generation runs in the background and does NOT gate health (API must be available immediately).
+
 ```json
 {
   "status": "healthy",
-  "services": { "database": true, "weather": true, ... },
+  "services": {
+    "database": true,           // boolean — true only when DB auth succeeds
+    "databaseState": "up",      // tri-state: "up" | "timeout" | "down"
+    "weather": true, ...
+  },
   "system": { "uptime": 1234, "memory": { "used": "128MB" }, "cache": { "hitRate": 0.85 } }
 }
 ```
 
-Health is gated on page generation: all 4 generators (SEO, supplier, ZIP elite, county elite) must complete successfully before `/health` returns 200. Each generator has a 90s timeout. If any fails, health stays 503 and Railway keeps the old deploy.
+The DB check runs `sequelize.authenticate()` against a `Promise.race` with `DB_HEALTH_RACE_MS` (default 2s). If it loses the race, `databaseState: "timeout"` is reported, a warn is logged, and HTTP stays 200. This prevents UptimeRobot from false-alerting on transient Postgres blips while still surfacing the signal via logs and the tri-state field. An actual `authenticate()` rejection (not timeout) reports `databaseState: "down"`.
 
 Railway's internal healthcheck uses `*.railway.app` URL. The redirect middleware at step 1 MUST `return next()` for `/health` — otherwise it redirects to `www.gethomeheat.com` and the healthcheck fails.
 
@@ -65,12 +74,14 @@ Railway's internal healthcheck uses `*.railway.app` URL. The redirect middleware
 
 ## Startup Sequence
 
-1. Server starts listening, health returns 503 ("starting")
-2. All 4 page generators run in parallel (SEO, supplier, ZIP Elite, County Elite) with 90s per-generator timeout
-3. When all generators succeed, `pagesReady = true` → health returns 200 → Railway routes traffic
-4. Distributed scheduler begins (scrapes spread across 8AM–6PM EST)
+1. Server starts listening. `/health` returns 200 immediately (does NOT gate on page generation — API must be available right away).
+2. In parallel with the server accepting traffic, all 4 page generators run (SEO, supplier, ZIP Elite, County Elite) with 90s per-generator timeout.
+3. Each generator uses generate-then-swap: if one fails for a state, the previous generated pages on disk survive.
+4. Distributed scheduler begins (scrapes spread across 8AM–6PM EST).
 
-Generated pages (`website/prices/`, `website/supplier/`, `website/sitemap.xml`) are gitignored. Each deploy starts with no pages — generation typically takes 40–80s.
+Generated pages (`website/prices/`, `website/supplier/`, `website/sitemap.xml`) are tracked in git (seed pages from last commit). Generators overwrite with fresh data in the background. Typical generation: 40–80s.
+
+**Environment variable changes** (via Railway dashboard) trigger an automatic container restart (~45s) — not a redeploy, but not zero-downtime either. Timeout env vars (`DB_STATEMENT_TIMEOUT_MS` et al.) are hot-swappable within that restart window.
 
 ## Route Mounting Order
 
@@ -86,13 +97,18 @@ Missing required vars → server runs in "degraded mode" (starts but logs warnin
 
 ## Deploy Verification
 
-After pushing, run `npm run verify-deploy` (waits 75s, checks health + spot-checks pages). Page generation adds ~60s to startup, so the first healthcheck may take up to 90s.
+After pushing, run `npm run verify-deploy` (waits 75s, checks health + spot-checks pages). `/health` is available immediately on server start, but page generation takes 40–80s in the background — spot-checks of generated pages may 404 during that window.
 
 ## Key Rules
 
-- Database pool: max 10, acquire timeout 30s, idle timeout 10s, SSL required
+- Database pool: max 25, min 2, acquire timeout 30s, idle timeout 10s, SSL required
+- Database timeouts (env-tunable, hot-swappable in Railway dashboard):
+  - `DB_STATEMENT_TIMEOUT_MS` (default 60000) — Postgres `statement_timeout`, kills any single query exceeding budget
+  - `DB_IDLE_TX_TIMEOUT_MS` (default 60000) — Postgres `idle_in_transaction_session_timeout`
+  - `DB_CONNECT_TIMEOUT_MS` (default 15000) — pg client `connectionTimeoutMillis`
+  - `DB_HEALTH_RACE_MS` (default 2000) — `/health` `authenticate()` race budget
 - SIGTERM/SIGINT handlers close Sequelize connection before exit
 - `npm run build` minifies CSS/JS but does NOT touch server.js
 - Start command: `node server.js`
 
-Last audited: 2026-03-02
+Last audited: 2026-04-20

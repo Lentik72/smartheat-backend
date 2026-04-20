@@ -371,6 +371,18 @@ if (missingKeys.length > 0) {
 }
 
 // Database connection (PostgreSQL)
+// Timeouts are env-tunable without redeploy. Defaults bound failure without killing
+// legitimate long-running cron queries (County/ZIP stats CTEs, page generators).
+// 0 is a valid Postgres value meaning "no timeout" and is respected as a kill switch.
+const parseMsEnv = (value, fallback) => {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+};
+const DB_STATEMENT_TIMEOUT_MS = parseMsEnv(process.env.DB_STATEMENT_TIMEOUT_MS, 60000);
+const DB_IDLE_TX_TIMEOUT_MS = parseMsEnv(process.env.DB_IDLE_TX_TIMEOUT_MS, 60000);
+const DB_CONNECT_TIMEOUT_MS = parseMsEnv(process.env.DB_CONNECT_TIMEOUT_MS, 15000);
+const DB_HEALTH_RACE_MS = parseMsEnv(process.env.DB_HEALTH_RACE_MS, 2000);
+
 let sequelize;
 if (API_KEYS.DATABASE_URL) {
   try {
@@ -382,7 +394,11 @@ if (API_KEYS.DATABASE_URL) {
         ssl: {
           require: true,
           rejectUnauthorized: false
-        }
+        },
+        // pg driver options — snake_case are Postgres SET params, camelCase are pg client options
+        statement_timeout: DB_STATEMENT_TIMEOUT_MS,
+        idle_in_transaction_session_timeout: DB_IDLE_TX_TIMEOUT_MS,
+        connectionTimeoutMillis: DB_CONNECT_TIMEOUT_MS
       },
       pool: {
         max: 25,
@@ -706,15 +722,31 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
-  let databaseStatus = false;
+  // Tri-state so operators can distinguish a Postgres blip (timeout) from an outage (down).
+  // Race bounds /health latency so UptimeRobot doesn't false-alert on transient DB slowness.
+  let dbState = 'down';
   if (sequelize) {
+    let raceTimer;
     try {
-      await sequelize.authenticate();
-      databaseStatus = true;
+      await Promise.race([
+        sequelize.authenticate(),
+        new Promise((_, reject) => {
+          raceTimer = setTimeout(() => reject(new Error('health-db-timeout')), DB_HEALTH_RACE_MS);
+        })
+      ]);
+      dbState = 'up';
     } catch (error) {
-      databaseStatus = false;
+      if (error && error.message === 'health-db-timeout') {
+        dbState = 'timeout';
+        logger.warn(`[health] DB authenticate exceeded ${DB_HEALTH_RACE_MS}ms — reporting database:timeout`);
+      } else {
+        dbState = 'down';
+      }
+    } finally {
+      clearTimeout(raceTimer);
     }
   }
+  const databaseStatus = dbState === 'up';
 
   // V21.0: Check model availability
   const { getCommunityDeliveryModel } = require('./src/models/CommunityDelivery');
@@ -730,6 +762,7 @@ app.get('/health', async (req, res) => {
       weather: !!API_KEYS.OPENWEATHER,
       marketData: !!(API_KEYS.FRED || API_KEYS.ALPHA_VANTAGE),
       database: databaseStatus,
+      databaseState: dbState,
       authentication: !!API_KEYS.JWT_SECRET,
       email: !!process.env.RESEND_API_KEY,
       communityModel: communityModelReady,
