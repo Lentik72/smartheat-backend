@@ -68,6 +68,7 @@ Railway's internal healthcheck uses `*.railway.app` URL. The redirect middleware
 | 4:00 PM | Afternoon price scrape + ZIP/county stats | UTC (`0 21 * * *`) |
 | 11:00 PM | SEO + supplier + ZIP/county elite page generation | America/New_York |
 | 2:15 AM | Platform metrics computation | America/New_York |
+| 3:30 AM (18th of month) | EIA energy rates refresh (electricity + gas) | America/New_York |
 | 6:00 AM (1st of month) | Monthly phone_only supplier reset | UTC (`0 11 1 * *`) |
 | 6:00 AM daily | Coverage analysis + daily report + staleness check | setTimeout-based |
 | 8:00 AM Monday | Weekly summary email | setTimeout-based |

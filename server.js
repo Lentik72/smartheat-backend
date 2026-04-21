@@ -1418,6 +1418,19 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   }, { timezone: 'America/New_York' });
   logger.info('📊 Platform metrics scheduled: daily at 2:15 AM ET');
 
+  // Monthly EIA energy rates refresh (18th at 3:30 AM ET — after EIA's mid-month publish window)
+  // Updates electricity-rates.json + gas-rates.json from EIA API v2 (residential by state).
+  // EIA publishes monthly with ~2-month lag; running on the 18th catches the latest period.
+  cron.schedule('30 3 18 * *', async () => {
+    await cronMonitor.run('eia-energy-rates', async () => {
+      const { refreshEnergyRates } = require('./scripts/refresh-energy-rates');
+      const result = await refreshEnergyRates();
+      logger.info(`[EIA] Refresh complete: electric=${result.electric.period} gas=${result.gas.period}`);
+      return { success: true, ...result };
+    });
+  }, { timezone: 'America/New_York' });
+  logger.info('⚡ EIA energy rates refresh scheduled: monthly on 18th at 3:30 AM ET');
+
   // Price alert daily check (8:00 AM ET)
   cron.schedule('0 8 * * *', async () => {
     await cronMonitor.run('price-alerts', async () => {

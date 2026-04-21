@@ -155,6 +155,7 @@ class CronMonitor {
         { name: 'price-trend-pages', label: 'Price Trend Pages (11:25 PM)', window: 26 },
         { name: 'sitemap', label: 'Sitemap (11:30 PM)', window: 26 },
         { name: 'platform-metrics', label: 'Platform Metrics (2:15 AM)', window: 26 },
+        { name: 'eia-energy-rates', label: 'EIA Energy Rates (3:30 AM, 18th of month)', window: 24 * 32 }, // monthly + buffer
         // price-alerts (8 AM) intentionally excluded — runs after the 6 AM email
       ];
 

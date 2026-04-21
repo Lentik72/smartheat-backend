@@ -15,24 +15,53 @@ const hddData = require('./hdd-by-county.json');
 
 const STALENESS_DAYS = 90;
 
+// EIA publishes residential rates monthly with a ~2-month lag. Allow up to ~5 months
+// of data-period age before warning — beyond that, the cron is healthy but EIA itself
+// has a publish gap, OR the cron keeps re-fetching the same period.
+const DATA_PERIOD_MAX_DAYS = 150;
+
 /**
- * Check if a dataset is stale (>90 days since lastUpdated).
+ * Check if a dataset is stale.
+ * Measures from `releaseDate` (when EIA published) — EIA publishes with a ~2-month lag,
+ * so measuring from data-period `lastUpdated` would overstate staleness by ~60 days.
+ * Also flags when `lastUpdated` (data period) hasn't advanced in ~5 months — protects
+ * against a healthy cron silently masking an EIA publish gap.
  * Logs a warning — does not fail.
  */
-function checkStaleness(datasetName, lastUpdated) {
-  const updated = new Date(lastUpdated);
-  const age = (Date.now() - updated.getTime()) / (1000 * 60 * 60 * 24);
+function checkStaleness(datasetName, dataset) {
+  const reference = dataset.releaseDate || dataset.lastUpdated;
+  const referenceLabel = dataset.releaseDate ? 'released' : 'last updated';
+  const refDate = new Date(reference);
+  if (!Number.isFinite(refDate.getTime())) {
+    console.warn(
+      `[energy-rates] ${datasetName} has unparseable date (releaseDate=${dataset.releaseDate}, lastUpdated=${dataset.lastUpdated})`
+    );
+    return;
+  }
+  const age = (Date.now() - refDate.getTime()) / (1000 * 60 * 60 * 24);
   if (age > STALENESS_DAYS) {
     console.warn(
-      `[energy-rates] ${datasetName} data is ${Math.round(age)} days old (last updated: ${lastUpdated}). ` +
+      `[energy-rates] ${datasetName} data is ${Math.round(age)} days old (${referenceLabel}: ${reference}). ` +
       `Run scripts/refresh-energy-rates.js to update.`
     );
+    return;
+  }
+  if (dataset.lastUpdated) {
+    const periodDate = new Date(dataset.lastUpdated);
+    if (Number.isFinite(periodDate.getTime())) {
+      const periodAge = (Date.now() - periodDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (periodAge > DATA_PERIOD_MAX_DAYS) {
+        console.warn(
+          `[energy-rates] ${datasetName} refresh is healthy (released ${reference}) but EIA data period (${dataset.lastUpdated}) is ${Math.round(periodAge)} days old — possible EIA publish gap or cron is fetching the same period repeatedly.`
+        );
+      }
+    }
   }
 }
 
 // Check staleness on module load (logged during page generation)
-checkStaleness('Electricity', electricityData.lastUpdated);
-checkStaleness('Natural gas', gasData.lastUpdated);
+checkStaleness('Electricity', electricityData);
+checkStaleness('Natural gas', gasData);
 
 /**
  * Get electricity rate for a location.

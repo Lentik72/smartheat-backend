@@ -13,8 +13,9 @@
  * EIA API key: free at https://www.eia.gov/opendata/register.php
  * Falls back to DEMO_KEY (rate-limited to 30 req/hr).
  *
- * Run quarterly to keep cost calculations current. Staleness warning
- * triggers in energy-rates.js if data >90 days old.
+ * Scheduled monthly via cron in server.js (18th at 3:30 AM ET — after EIA's
+ * mid-month publish window). Staleness warnings in energy-rates.js fire if
+ * either: release date >90 days old, or data period hasn't advanced in 150 days.
  */
 
 const fs = require('fs');
@@ -206,32 +207,39 @@ function writeJSON(filePath, data) {
   console.log(`  → Wrote ${filePath} (${Object.keys(data.rates).length} states)`);
 }
 
-async function main() {
+async function refreshEnergyRates({ dryRun = DRY_RUN } = {}) {
   console.log(`\nRefreshing energy rates from EIA API v2`);
   console.log(`API key: ${API_KEY === 'DEMO_KEY' ? 'DEMO_KEY (rate-limited)' : '***' + API_KEY.slice(-4)}`);
-  if (DRY_RUN) console.log('DRY RUN — files will not be written\n');
+  if (dryRun) console.log('DRY RUN — files will not be written\n');
 
-  try {
-    const [electric, gas] = await Promise.all([
-      fetchElectricityRates(),
-      fetchGasRates(),
-    ]);
+  const [electric, gas] = await Promise.all([
+    fetchElectricityRates(),
+    fetchGasRates(),
+  ]);
 
-    console.log(`\nElectricity: ${electric.period}, ${Object.keys(electric.rates).length} states, US avg $${electric.nationalAverage}/kWh`);
-    console.log(`Natural gas: ${gas.period}, ${Object.keys(gas.rates).length} states, US avg $${gas.nationalAverage}/therm`);
+  console.log(`\nElectricity: ${electric.period}, ${Object.keys(electric.rates).length} states, US avg $${electric.nationalAverage}/kWh`);
+  console.log(`Natural gas: ${gas.period}, ${Object.keys(gas.rates).length} states, US avg $${gas.nationalAverage}/therm`);
 
-    if (!DRY_RUN) {
-      console.log('\nWriting files:');
-      writeJSON(ELECTRIC_FILE, electric);
-      writeJSON(GAS_FILE, gas);
-      console.log('\nDone. Run fuel-config tests to verify: node src/data/fuel-config.test.js');
-    } else {
-      console.log('\nDry run complete. Use without --dry-run to write files.');
-    }
-  } catch (err) {
-    console.error(`\nERROR: ${err.message}`);
-    process.exit(1);
+  if (!dryRun) {
+    console.log('\nWriting files:');
+    writeJSON(ELECTRIC_FILE, electric);
+    writeJSON(GAS_FILE, gas);
+    console.log('\nDone. Run fuel-config tests to verify: node src/data/fuel-config.test.js');
+  } else {
+    console.log('\nDry run complete. Use without --dry-run to write files.');
   }
+
+  return {
+    electric: { period: electric.period, states: Object.keys(electric.rates).length, nationalAverage: electric.nationalAverage },
+    gas: { period: gas.period, states: Object.keys(gas.rates).length, nationalAverage: gas.nationalAverage }
+  };
 }
 
-main();
+module.exports = { refreshEnergyRates };
+
+if (require.main === module) {
+  refreshEnergyRates().catch(err => {
+    console.error(`\nERROR: ${err.message}`);
+    process.exit(1);
+  });
+}
