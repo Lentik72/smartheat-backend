@@ -57,10 +57,17 @@ build/
 # Dev sandbox (local preview, never deployed)
 dev/
 
-# Auto-generated pages (regenerated on startup + nightly from DB)
+# Auto-generated pages (regenerated on Railway container startup via
+# server.js startup IIFE, and nightly at 23:00 EST via cron at
+# server.js ~line 1082). DB is the source of truth — git does not track.
+# Failures surface in the 6AM email via cronMonitor.run wrapping.
+# If a file here is hand-edited, it will be clobbered by the next regen.
 website/prices/
 website/supplier/
 website/sitemap.xml
+website/heating-cost/
+website/average-heating-bill/
+website/price-trend/
 
 # Railway
 .railway/.DS_Store

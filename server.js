@@ -1217,41 +1217,69 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 
     try {
       const results = await Promise.allSettled([
-        withTimeout((async () => {
-          const { generateSEOPages } = require('./scripts/generate-seo-pages');
-          return generateSEOPages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
-        })(), 'SEO pages'),
+        (async () => {
+          const monitored = await cronMonitor.run('startup-seo-pages', () => withTimeout((async () => {
+            const { generateSEOPages } = require('./scripts/generate-seo-pages');
+            return generateSEOPages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+          })(), 'SEO pages'), { retry: false, lock: false });
+          if (!monitored.success) throw new Error(monitored.error || 'SEO pages failed');
+          return monitored.result;
+        })(),
 
-        withTimeout((async () => {
-          const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
-          const supplierLogger = { log: (...args) => logger.info(args.join(' ')), error: (...args) => logger.error(args.join(' ')) };
-          return generateSupplierPages({ sequelize, logger: supplierLogger, websiteDir });
-        })(), 'Supplier pages'),
+        (async () => {
+          const monitored = await cronMonitor.run('startup-supplier-pages', () => withTimeout((async () => {
+            const { generateSupplierPages } = require('./scripts/generate-supplier-pages');
+            const supplierLogger = { log: (...args) => logger.info(args.join(' ')), error: (...args) => logger.error(args.join(' ')) };
+            return generateSupplierPages({ sequelize, logger: supplierLogger, websiteDir });
+          })(), 'Supplier pages'), { retry: false, lock: false });
+          if (!monitored.success) throw new Error(monitored.error || 'Supplier pages failed');
+          return monitored.result;
+        })(),
 
-        withTimeout((async () => {
-          const { generateZipElitePages } = require('./scripts/generate-zip-elite-pages');
-          return generateZipElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
-        })(), 'ZIP Elite pages'),
+        (async () => {
+          const monitored = await cronMonitor.run('startup-zip-elite-pages', () => withTimeout((async () => {
+            const { generateZipElitePages } = require('./scripts/generate-zip-elite-pages');
+            return generateZipElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+          })(), 'ZIP Elite pages'), { retry: false, lock: false });
+          if (!monitored.success) throw new Error(monitored.error || 'ZIP Elite pages failed');
+          return monitored.result;
+        })(),
 
-        withTimeout((async () => {
-          const { generateCountyElitePages } = require('./scripts/generate-county-elite-pages');
-          return generateCountyElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
-        })(), 'County Elite pages'),
+        (async () => {
+          const monitored = await cronMonitor.run('startup-county-elite-pages', () => withTimeout((async () => {
+            const { generateCountyElitePages } = require('./scripts/generate-county-elite-pages');
+            return generateCountyElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
+          })(), 'County Elite pages'), { retry: false, lock: false });
+          if (!monitored.success) throw new Error(monitored.error || 'County Elite pages failed');
+          return monitored.result;
+        })(),
 
-        withTimeout((async () => {
-          const { generateHeatingCostPages } = require('./scripts/generate-heating-cost-pages');
-          return generateHeatingCostPages({ sequelize, dryRun: false });
-        })(), 'Heating Cost pages'),
+        (async () => {
+          const monitored = await cronMonitor.run('startup-heating-cost-pages', () => withTimeout((async () => {
+            const { generateHeatingCostPages } = require('./scripts/generate-heating-cost-pages');
+            return generateHeatingCostPages({ sequelize, dryRun: false });
+          })(), 'Heating Cost pages'), { retry: false, lock: false });
+          if (!monitored.success) throw new Error(monitored.error || 'Heating Cost pages failed');
+          return monitored.result;
+        })(),
 
-        withTimeout((async () => {
-          const { generateAvgBillPages } = require('./scripts/generate-avg-bill-pages');
-          return generateAvgBillPages({ sequelize, dryRun: false });
-        })(), 'Avg Bill pages'),
+        (async () => {
+          const monitored = await cronMonitor.run('startup-avg-bill-pages', () => withTimeout((async () => {
+            const { generateAvgBillPages } = require('./scripts/generate-avg-bill-pages');
+            return generateAvgBillPages({ sequelize, dryRun: false });
+          })(), 'Avg Bill pages'), { retry: false, lock: false });
+          if (!monitored.success) throw new Error(monitored.error || 'Avg Bill pages failed');
+          return monitored.result;
+        })(),
 
-        withTimeout((async () => {
-          const { generatePriceTrendPages } = require('./scripts/generate-price-trend-pages');
-          return generatePriceTrendPages({ sequelize, dryRun: false });
-        })(), 'Price Trend pages')
+        (async () => {
+          const monitored = await cronMonitor.run('startup-price-trend-pages', () => withTimeout((async () => {
+            const { generatePriceTrendPages } = require('./scripts/generate-price-trend-pages');
+            return generatePriceTrendPages({ sequelize, dryRun: false });
+          })(), 'Price Trend pages'), { retry: false, lock: false });
+          if (!monitored.success) throw new Error(monitored.error || 'Price Trend pages failed');
+          return monitored.result;
+        })()
       ]);
 
       const names = ['SEO', 'Supplier', 'ZIP Elite', 'County Elite', 'Heating Cost', 'Avg Bill', 'Price Trend'];
@@ -1277,28 +1305,52 @@ const server = app.listen(PORT, '0.0.0.0', () => {
         try {
           const keroResults = await Promise.allSettled([
             (async () => {
-              const { generateSEOPages: genSEOKero } = require('./scripts/generate-seo-pages');
-              return genSEOKero({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
+              const monitored = await cronMonitor.run('startup-kerosene-seo', async () => {
+                const { generateSEOPages: genSEOKero } = require('./scripts/generate-seo-pages');
+                return genSEOKero({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
+              }, { retry: false, lock: false });
+              if (!monitored.success) throw new Error(monitored.error || 'Kerosene SEO failed');
+              return monitored.result;
             })(),
             (async () => {
-              const { generateCountyElitePages: genCountyKero } = require('./scripts/generate-county-elite-pages');
-              return genCountyKero({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
+              const monitored = await cronMonitor.run('startup-kerosene-county', async () => {
+                const { generateCountyElitePages: genCountyKero } = require('./scripts/generate-county-elite-pages');
+                return genCountyKero({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'kerosene' });
+              }, { retry: false, lock: false });
+              if (!monitored.success) throw new Error(monitored.error || 'Kerosene County failed');
+              return monitored.result;
             })(),
             (async () => {
-              const { generateFuelHub } = require('./scripts/generate-fuel-hub');
-              return generateFuelHub({ sequelize, logger, dryRun: false, fuel: 'kerosene' });
+              const monitored = await cronMonitor.run('startup-kerosene-hub', async () => {
+                const { generateFuelHub } = require('./scripts/generate-fuel-hub');
+                return generateFuelHub({ sequelize, logger, dryRun: false, fuel: 'kerosene' });
+              }, { retry: false, lock: false });
+              if (!monitored.success) throw new Error(monitored.error || 'Kerosene Hub failed');
+              return monitored.result;
             })(),
             (async () => {
-              const { generateSEOPages: genSEOPropane } = require('./scripts/generate-seo-pages');
-              return genSEOPropane({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'propane' });
+              const monitored = await cronMonitor.run('startup-propane-seo', async () => {
+                const { generateSEOPages: genSEOPropane } = require('./scripts/generate-seo-pages');
+                return genSEOPropane({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'propane' });
+              }, { retry: false, lock: false });
+              if (!monitored.success) throw new Error(monitored.error || 'Propane SEO failed');
+              return monitored.result;
             })(),
             (async () => {
-              const { generateCountyElitePages: genCountyPropane } = require('./scripts/generate-county-elite-pages');
-              return genCountyPropane({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'propane' });
+              const monitored = await cronMonitor.run('startup-propane-county', async () => {
+                const { generateCountyElitePages: genCountyPropane } = require('./scripts/generate-county-elite-pages');
+                return genCountyPropane({ sequelize, logger, outputDir: websiteDir, dryRun: false, fuelType: 'propane' });
+              }, { retry: false, lock: false });
+              if (!monitored.success) throw new Error(monitored.error || 'Propane County failed');
+              return monitored.result;
             })(),
             (async () => {
-              const { generateFuelHub: generateFuelHubPropane } = require('./scripts/generate-fuel-hub');
-              return generateFuelHubPropane({ sequelize, logger, dryRun: false, fuel: 'propane' });
+              const monitored = await cronMonitor.run('startup-propane-hub', async () => {
+                const { generateFuelHub: generateFuelHubPropane } = require('./scripts/generate-fuel-hub');
+                return generateFuelHubPropane({ sequelize, logger, dryRun: false, fuel: 'propane' });
+              }, { retry: false, lock: false });
+              if (!monitored.success) throw new Error(monitored.error || 'Propane Hub failed');
+              return monitored.result;
             })()
           ]);
           const keroNames = ['Kerosene SEO', 'Kerosene County', 'Kerosene Hub', 'Propane SEO', 'Propane County', 'Propane Hub'];
@@ -1316,9 +1368,15 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 
         // Regenerate sitemap after ALL generators have completed (replaces legacy fragment-based approach)
         try {
-          const { regenerateSitemap } = require('./scripts/generate-sitemap');
-          const result = regenerateSitemap({ logger, dryRun: false });
-          logger.info(`✅ [Startup] Sitemap regenerated: ${result.urlCount} URLs`);
+          const monitored = await cronMonitor.run('startup-sitemap', async () => {
+            const { regenerateSitemap } = require('./scripts/generate-sitemap');
+            return regenerateSitemap({ logger, dryRun: false });
+          }, { retry: false, lock: false });
+          if (monitored.success && monitored.result) {
+            logger.info(`✅ [Startup] Sitemap regenerated: ${monitored.result.urlCount} URLs`);
+          } else if (!monitored.success) {
+            logger.warn('⚠️ [Startup] Sitemap regeneration failed:', monitored.error);
+          }
         } catch (error) {
           logger.warn('⚠️ [Startup] Sitemap regeneration failed (non-blocking):', error.message);
         }
