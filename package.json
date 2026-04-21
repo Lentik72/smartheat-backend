@@ -10,7 +10,8 @@
     "sync-nav": "node scripts/sync-static-nav.js",
     "deploy": "npm run build && railway up",
     "verify-deploy": "bash scripts/verify-deploy.sh",
-    "audit-docs": "bash scripts/audit-docs.sh"
+    "audit-docs": "bash scripts/audit-docs.sh",
+    "regen": "node scripts/regen-all.js"
   },
   "engines": {
     "node": ">=18.0.0",
