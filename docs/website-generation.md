@@ -12,7 +12,9 @@ constants:
 
 ## Overview
 
-Four generators produce static HTML served by Express. Pages regenerate daily at 11PM EST and on every deploy (Railway containers start fresh). The build pipeline minifies CSS/JS with esbuild and auto-versions CSS via content hash.
+Seven generators produce static HTML served by Express, orchestrated from server.js. Pages regenerate daily at 11:00-11:35 PM EST (staggered cron) and on every deploy (Railway containers start fresh; startup regen IIFE at server.js startup). All output folders are gitignored — the DB is the source of truth. All 14 startup regen call sites are wrapped in `cronMonitor.run`; failures show up in the 6AM daily email via `getDailyHealth()`.
+
+Local dev: run `npm run regen` (requires `DATABASE_URL`; `ALLOW_PROD=1` for Railway URL) to populate `website/prices/`, `website/supplier/`, `website/heating-cost/`, `website/average-heating-bill/`, `website/price-trend/`, and `website/sitemap.xml` from the DB. Run once after a fresh clone before `node server.js` for local preview. The build pipeline minifies CSS/JS with esbuild and auto-versions CSS via content hash.
 
 ## Hub & Spoke Architecture
 

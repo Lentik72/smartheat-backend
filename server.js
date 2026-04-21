@@ -1199,9 +1199,13 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info('📄 Sitemap regeneration scheduled: daily at 11:30 PM EST');
   logger.info('📊 Supplier page stats scheduled: daily at 11:35 PM EST');
 
-  // Regenerate all pages on startup. Pages are in git (tracked before .gitignore),
-  // so deploys start with the last-committed versions. Generators overwrite with fresh data.
-  // Each generator uses generate-then-swap — if generation fails for a state, old pages survive.
+  // Regenerate all pages on startup. Generated pages are gitignored — fresh
+  // containers start with empty regen folders and populate them from the DB here.
+  // Each generator uses generate-then-swap — if generation fails for a state and
+  // an earlier run on this container left pages in place, old pages survive;
+  // on a truly fresh Railway container, a state-level failure results in missing
+  // pages (acceptable — 404 is better than stale/wrong data; cronMonitor.run
+  // wraps each generator so failures surface in the 6AM email).
   // Health endpoint does NOT gate on pagesReady (API must be available immediately).
   (async () => {
     const websiteDir = path.join(__dirname, 'website');

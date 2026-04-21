@@ -18,7 +18,7 @@ constants:
 
 ## Overview
 
-Railway deploys from `Lentik72/smartheat-backend` main branch. Build takes ~25s. Healthcheck has a 120s retry window at `/health`. Failed deploys keep the last healthy version active. Generated pages (supplier profiles, SEO city/county/state pages, ZIP/county elite) are gitignored — they're regenerated on every startup from the database.
+Railway deploys from `Lentik72/smartheat-backend` main branch. Build takes ~25s. Healthcheck has a 120s retry window at `/health`. Failed deploys keep the last healthy version active. Generated pages (supplier profiles, SEO city/county/state pages, ZIP/county elite, heating-cost estimates, average-bill pages, price trends, sitemap.xml) are gitignored — they're regenerated on every startup from the database. A pre-commit hook at `.git/hooks/pre-commit` blocks accidental re-tracking. The hook is local to the clone; see `docs/website-generation.md` for the list of blocked paths if you need to reinstall on a new machine.
 
 ## Middleware Order
 
@@ -79,7 +79,7 @@ Railway's internal healthcheck uses `*.railway.app` URL. The redirect middleware
 3. Each generator uses generate-then-swap: if one fails for a state, the previous generated pages on disk survive.
 4. Distributed scheduler begins (scrapes spread across 8AM–6PM EST).
 
-Generated pages (`website/prices/`, `website/supplier/`, `website/sitemap.xml`) are tracked in git (seed pages from last commit). Generators overwrite with fresh data in the background. Typical generation: 40–80s.
+Generated pages (`website/prices/`, `website/supplier/`, `website/heating-cost/`, `website/average-heating-bill/`, `website/price-trend/`, `website/sitemap.xml`) are gitignored. Each deploy starts with no pages — generation typically takes 40–80s via `Promise.allSettled` across 7 pre-health-gate generators (plus 6 kero/propane + sitemap post-gate), each wrapped in `cronMonitor.run` for failure alerting.
 
 **Environment variable changes** (via Railway dashboard) trigger an automatic container restart (~45s) — not a redeploy, but not zero-downtime either. Timeout env vars (`DB_STATEMENT_TIMEOUT_MS` et al.) are hot-swappable within that restart window.
 
