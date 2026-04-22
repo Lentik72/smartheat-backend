@@ -69,6 +69,10 @@ website/heating-cost/
 website/average-heating-bill/
 website/price-trend/
 
+# Plans and specs live in the outer monorepo: HeatingOil/docs/superpowers/
+# Backend repo's docs/ is for operational/architectural docs only.
+docs/superpowers/
+
 # Railway
 .railway/.DS_Store
 coverage_export.csv
