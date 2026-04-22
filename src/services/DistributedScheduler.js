@@ -456,7 +456,7 @@ async function executeScrape(supplierId, supplierName, sequelize, logger) {
 
       logger.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal`);
     } else {
-      await recordFailure(sequelize, supplierId, supplierName, result.error, logger);
+      await recordFailure(sequelize, supplierId, supplierName, logger, result.error);
       logger.info(`   ❌ ${result.error}`);
     }
 
