@@ -22,7 +22,8 @@
     "cashheatingoil.com": "Aggregator — NY/NJ/PA/CT. Not a direct supplier.",
     "heatingoilprices.com": "Aggregator — regional pricing trends. Not a direct supplier.",
     "heatfleet.com": "Aggregator — national dealer price comparison. Not a direct supplier.",
-    "cheapestoil.com": "Aggregator — Northeast price lists. Not a direct supplier."
+    "cheapestoil.com": "Aggregator — Northeast price lists. Not a direct supplier.",
+    "codcashfuel.com": "Aggregator/reseller — subcontracts delivery to area carriers (per OilMonster listing: \"Deliveries are often sub-contracted to other area carriers\"). Phone 207.620.7555, Manchester ME. Not a direct fleet operator. 2026-04-22."
   },
   "_future_contract_oil": {
     "_comment": "Quality suppliers that are contract-only. Revisit if they add COD/will-call.",
@@ -37,7 +38,10 @@
     "villageoilco.com": "Village Oil Co (Santa Energy) - Ridgefield, CT. On-demand but prepay by card only (no COD). Fairfield County CT. Phone: (203) 431-6560.",
     "maincareexpress.com": "Main-Care Express - Upstate NY. Full-service automatic delivery with tank monitors. 11 NY counties incl. Ulster + western VT. Phone: 1-800-542-5552.",
     "sosxtremecomfort.com": "SOS Xtreme Comfort - Tuxedo, NY. Full-service automatic delivery + price protection. Orange/Rockland/Sullivan/Ulster NY, Bergen/Passaic/Sussex NJ, Pike PA. Phone: (845) 351-4700.",
-    "bottinifuel.com": "Bottini Fuel - Wappingers Falls, NY. Full-service contract/automatic delivery. 7 Hudson Valley locations incl. Kerhonkson. Heating oil, propane, kerosene. Phone: (845) 297-5580."
+    "bottinifuel.com": "Bottini Fuel - Wappingers Falls, NY. Full-service contract/automatic delivery. 7 Hudson Valley locations incl. Kerhonkson. Heating oil, propane, kerosene. Phone: (845) 297-5580.",
+    "rjenergy.com": "RJ Energy Services - Augusta, ME. Full-service HVAC + heating oil/propane/K1. Budget plans, online payment portal, no COD language on site. 24hr emergency. Phone: (207) 622-7720.",
+    "deadriver.com": "Dead River Company - New England regional (ME/NH/VT/MA). Acquired Augusta Fuel Co (AFC) August 2025. Full-service automatic delivery + MyAccount. Historically contract-only. Phone: (207) 622-3851.",
+    "fabianoil.com": "Fabian Oil - Oakland, ME. Full-service automatic delivery, budget plans, price protection. Kennebec/Somerset/Franklin/Waldo counties. Phone: (207) 465-2000."
   },
   "_section_NY": "=== NEW YORK ===",
   "acsoilservice.com": {
@@ -35658,6 +35662,102 @@
       "08887",
       "08888",
       "08889"
+    ]
+  },
+  "litchfieldfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/price/price.txt",
+    "notes": "ME Litchfield/Kennebec - Will-call explicit + senior discount + 24h emergency. Prices in /price/price.txt (iframe src on homepage). Requires Accept header (mod_security 406 without). Scraper default headers work. Est. 1988. Phone: (207) 268-4438.",
+    "priceRegex": "#2\\s*\\$([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "K-?1\\s*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
+    "postalCodesServed": [
+      "04259",
+      "04280",
+      "04287",
+      "04330",
+      "04344",
+      "04345",
+      "04346",
+      "04347",
+      "04350",
+      "04351",
+      "04357",
+      "04364"
+    ]
+  },
+  "mahaskellfuel.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "ME Palermo/Kennebec - DAILY CASH PRICE displayed on homepage. #2 heating oil + K-1 scrapable; propane listed 'Call for Pricing' (not scrapable). Family-owned est. 2009. Phone: (207) 993-2265.",
+    "priceRegex": "#2 Heating Oil\\s*-\\s*\\$([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "K-?1\\s*(?:&nbsp;)+\\s*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
+    "postalCodesServed": [
+      "04330",
+      "04341",
+      "04344",
+      "04345",
+      "04346",
+      "04347",
+      "04348",
+      "04351",
+      "04353",
+      "04354",
+      "04358",
+      "04359",
+      "04363",
+      "04364",
+      "04574",
+      "04847",
+      "04862",
+      "04901",
+      "04910",
+      "04917",
+      "04922",
+      "04926",
+      "04927",
+      "04935",
+      "04937",
+      "04941",
+      "04949",
+      "04952",
+      "04962",
+      "04973",
+      "04986",
+      "04988",
+      "04989"
+    ]
+  },
+  "cnbrownenergy.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "lookupUrl": "https://cnbrownenergy.com/locations/?location-zip-code={zip}",
+    "lookupZip": "04330",
+    "notes": "ME Augusta branch only - 362 Riverside Dr. Family-owned 75+ yrs, 23 ME/NH/VT/MA offices. Cash price is per-ZIP via ?location-zip-code lookup (location-specific per disclaimer). This entry scoped to 12 ZIPs confirmed served by Augusta Energy Office via lookup probes; other branches have distinct pricing. Phone: (207) 622-6262.",
+    "priceRegex": "post-info__item--type-custom\">\\s*\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "04330",
+      "04344",
+      "04345",
+      "04346",
+      "04347",
+      "04351",
+      "04353",
+      "04355",
+      "04358",
+      "04363",
+      "04364",
+      "04989"
     ]
   }
 }
