@@ -427,7 +427,7 @@ class CoverageReportMailer {
     const criticalGaps = coverageReport?.coverageGaps?.filter(g => g.supplierCount === 0).length || 0;
 
     // V3.1.0: Flag cron failures in subject line
-    const cronFails = cronHealth?.jobs?.filter(j => j.status === 'failed' || j.status === 'missing').length || 0;
+    const cronFails = cronHealth?.jobs?.filter(j => j.status === 'failed' || j.status === 'missing').length || 0; // 'scheduled' (monthly job not yet due) is NOT a failure
     if (cronFails > 0) {
       return `[CRON ALERT] SmartHeat: ${cronFails} job(s) failed, ${users} users - ${date}`;
     }
@@ -507,7 +507,7 @@ class CoverageReportMailer {
 
   <!-- V3.1.0: Traffic light summary -->
   ${(() => {
-    const cronFails = cronHealth?.jobs?.filter(j => j.status === 'failed' || j.status === 'missing').length || 0;
+    const cronFails = cronHealth?.jobs?.filter(j => j.status === 'failed' || j.status === 'missing').length || 0; // 'scheduled' (monthly job not yet due) is NOT a failure
     const cronRetries = cronHealth?.jobs?.filter(j => j.status === 'retried').length || 0;
     const scraperIssues = cronHealth?.scraperAlerts?.length || 0;
     const errors = activity.summary.errors || 0;
@@ -916,7 +916,7 @@ class CoverageReportMailer {
         <tr style="border-bottom: 1px solid #eee;">
           <td style="padding: 4px 8px;">${j.label}</td>
           <td style="text-align: center; padding: 4px 8px;">
-            ${j.status === 'success' ? '✅' : j.status === 'retried' ? '🔄' : j.status === 'missing' ? '⏳' : '❌'}
+            ${j.status === 'success' ? '✅' : j.status === 'retried' ? '🔄' : j.status === 'scheduled' ? '📅' : j.status === 'missing' ? '⏳' : '❌'}
           </td>
           <td style="text-align: right; padding: 4px 8px; color: #666;">
             ${j.durationMs ? (j.durationMs / 1000).toFixed(1) + 's' : j.message || '—'}

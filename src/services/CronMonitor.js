@@ -145,39 +145,70 @@ class CronMonitor {
    */
   async getDailyHealth() {
     try {
-      // Expected cron jobs and their approximate schedule
+      // Expected cron jobs and their schedule. `windowHours` is how stale a
+      // heartbeat can be before we flag 'missing'. Monthly jobs add
+      // `dayOfMonth` so we don't false-flag them on days they aren't due.
       const expectedJobs = [
-        { name: 'afternoon-scrape', label: 'Price Scrape (4 PM)', window: 26 },
-        { name: 'seo-pages', label: 'SEO Pages (11 PM)', window: 26 },
-        { name: 'supplier-pages', label: 'Supplier Pages (11 PM)', window: 26 },
-        { name: 'heating-cost-pages', label: 'Heating Cost Pages (11:15 PM)', window: 26 },
-        { name: 'avg-bill-pages', label: 'Avg Bill Pages (11:20 PM)', window: 26 },
-        { name: 'price-trend-pages', label: 'Price Trend Pages (11:25 PM)', window: 26 },
-        { name: 'sitemap', label: 'Sitemap (11:30 PM)', window: 26 },
-        { name: 'platform-metrics', label: 'Platform Metrics (2:15 AM)', window: 26 },
-        { name: 'eia-energy-rates', label: 'EIA Energy Rates (3:30 AM, 18th of month)', window: 24 * 32 }, // monthly + buffer
+        { name: 'afternoon-scrape', label: 'Price Scrape (4 PM)', schedule: 'daily', windowHours: 26 },
+        { name: 'seo-pages', label: 'SEO Pages (11 PM)', schedule: 'daily', windowHours: 26 },
+        { name: 'supplier-pages', label: 'Supplier Pages (11 PM)', schedule: 'daily', windowHours: 26 },
+        { name: 'heating-cost-pages', label: 'Heating Cost Pages (11:15 PM)', schedule: 'daily', windowHours: 26 },
+        { name: 'avg-bill-pages', label: 'Avg Bill Pages (11:20 PM)', schedule: 'daily', windowHours: 26 },
+        { name: 'price-trend-pages', label: 'Price Trend Pages (11:25 PM)', schedule: 'daily', windowHours: 26 },
+        { name: 'sitemap', label: 'Sitemap (11:30 PM)', schedule: 'daily', windowHours: 26 },
+        { name: 'platform-metrics', label: 'Platform Metrics (2:15 AM)', schedule: 'daily', windowHours: 26 },
+        { name: 'eia-energy-rates', label: 'EIA Energy Rates (3:30 AM, 18th of month)',
+          schedule: 'monthly', dayOfMonth: 18, windowHours: 24 * 32 },
         // price-alerts (8 AM) intentionally excluded — runs after the 6 AM email
       ];
 
-      // Get latest heartbeat per job in the last 26 hours
+      // Get latest heartbeat per job regardless of age; per-job window check
+      // happens below. This makes monthly jobs visible even 3+ weeks out.
       const [heartbeats] = await this.sequelize.query(`
         SELECT DISTINCT ON (job_name)
           job_name, status, started_at, completed_at, duration_ms, error_message,
           details
         FROM cron_heartbeats
-        WHERE started_at > NOW() - INTERVAL '26 hours'
-          AND job_name NOT LIKE '%:retry'
+        WHERE job_name NOT LIKE '%:retry'
         ORDER BY job_name, started_at DESC
       `);
 
       const heartbeatMap = new Map();
       heartbeats.forEach(h => heartbeatMap.set(h.job_name, h));
 
+      const now = new Date();
+      const todayDayOfMonth = now.getDate();
+
       const jobStatuses = expectedJobs.map(job => {
         const hb = heartbeatMap.get(job.name);
+
+        // Monthly jobs: suppress 'missing' when today hasn't reached the scheduled day.
+        // Show last-known status from prior months instead.
+        if (job.schedule === 'monthly' && todayDayOfMonth < job.dayOfMonth) {
+          if (hb && hb.status === 'success') {
+            const daysAgo = Math.floor((now - new Date(hb.started_at)) / (1000 * 60 * 60 * 24));
+            return {
+              ...job, status: 'scheduled',
+              message: `Last run ${daysAgo}d ago; next run day ${job.dayOfMonth}`,
+              durationMs: hb.duration_ms
+            };
+          }
+          return { ...job, status: 'scheduled', message: `Next run day ${job.dayOfMonth}` };
+        }
+
         if (!hb) {
           return { ...job, status: 'missing', message: 'Did not run' };
         }
+
+        // Stale heartbeat (outside job's window) — treat as missing
+        const ageHours = (now - new Date(hb.started_at)) / (1000 * 60 * 60);
+        if (ageHours > job.windowHours) {
+          return {
+            ...job, status: 'missing',
+            message: `Last run ${Math.round(ageHours)}h ago (expected within ${job.windowHours}h)`
+          };
+        }
+
         if (hb.status === 'success') {
           return { ...job, status: 'success', durationMs: hb.duration_ms, details: hb.details };
         }
@@ -219,7 +250,7 @@ class CronMonitor {
         jobs: jobStatuses,
         errors,
         scraperAlerts,
-        allHealthy: jobStatuses.every(j => j.status === 'success' || j.status === 'retried') && scraperAlerts.length === 0
+        allHealthy: jobStatuses.every(j => j.status === 'success' || j.status === 'retried' || j.status === 'scheduled') && scraperAlerts.length === 0
       };
     } catch (error) {
       this.logger.error(`[CronMonitor] getDailyHealth failed: ${error.message}`);
