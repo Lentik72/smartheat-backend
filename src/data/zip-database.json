@@ -4535,6 +4535,13 @@
     "lat": 42.565736,
     "lng": -73.629023
   },
+  "12124": {
+    "city": "New Baltimore",
+    "county": "Greene",
+    "state": "NY",
+    "lat": 42.4442,
+    "lng": -73.7882
+  },
   "12125": {
     "city": "New lebanon",
     "county": "Columbia",
@@ -7384,6 +7391,13 @@
     "lat": 42.894381,
     "lng": -76.565683
   },
+  "13024": {
+    "city": "Auburn",
+    "county": "Cayuga",
+    "state": "NY",
+    "lat": 43.1634,
+    "lng": -76.5096
+  },
   "13026": {
     "city": "Aurora",
     "county": "Cayuga",
@@ -7566,6 +7580,13 @@
     "lat": 42.855631,
     "lng": -75.976158
   },
+  "13065": {
+    "city": "Fayette",
+    "county": "Seneca",
+    "state": "NY",
+    "lat": 42.8227,
+    "lng": -76.802
+  },
   "13066": {
     "city": "Fayetteville",
     "county": "Onondaga",
@@ -7699,6 +7720,13 @@
     "lat": 42.597468,
     "lng": -76.072949
   },
+  "13103": {
+    "city": "Mallory",
+    "county": "Oswego",
+    "state": "NY",
+    "lat": 43.3399,
+    "lng": -76.0964
+  },
   "13104": {
     "city": "Manlius",
     "county": "Onondaga",
@@ -7734,12 +7762,26 @@
     "lat": 43.098983,
     "lng": -76.413216
   },
+  "13113": {
+    "city": "Meridian",
+    "county": "Cayuga",
+    "state": "NY",
+    "lat": 43.0891,
+    "lng": -76.6217
+  },
   "13114": {
     "city": "Mexico",
     "county": "Oswego",
     "state": "NY",
     "lat": 43.398473,
     "lng": -76.204997
+  },
+  "13115": {
+    "city": "Minetto",
+    "county": "Oswego",
+    "state": "NY",
+    "lat": 43.3977,
+    "lng": -76.4824
   },
   "13116": {
     "city": "Minoa",
@@ -7748,12 +7790,26 @@
     "lat": 43.076828,
     "lng": -76.006001
   },
+  "13117": {
+    "city": "Montezuma",
+    "county": "Cayuga",
+    "state": "NY",
+    "lat": 43.0023,
+    "lng": -76.7047
+  },
   "13118": {
     "city": "Moravia",
     "county": "Cayuga",
     "state": "NY",
     "lat": 42.737724,
     "lng": -76.407811
+  },
+  "13119": {
+    "city": "Mottville",
+    "county": "Onondaga",
+    "state": "NY",
+    "lat": 42.9745,
+    "lng": -76.4408
   },
   "13120": {
     "city": "Nedrow",
@@ -7762,12 +7818,26 @@
     "lat": 42.951126,
     "lng": -76.179845
   },
+  "13121": {
+    "city": "New Haven",
+    "county": "Oswego",
+    "state": "NY",
+    "lat": 43.4834,
+    "lng": -76.315
+  },
   "13122": {
     "city": "New woodstock",
     "county": "Madison",
     "state": "NY",
     "lat": 42.825164,
     "lng": -75.85266
+  },
+  "13123": {
+    "city": "North Bay",
+    "county": "Oneida",
+    "state": "NY",
+    "lat": 43.2364,
+    "lng": -75.7769
   },
   "13124": {
     "city": "North pitcher",
@@ -7797,6 +7867,13 @@
     "lat": 43.296808,
     "lng": -76.229091
   },
+  "13134": {
+    "city": "Peterboro",
+    "county": "Madison",
+    "state": "NY",
+    "lat": 42.9686,
+    "lng": -75.6794
+  },
   "13135": {
     "city": "Phoenix",
     "county": "Oswego",
@@ -7810,6 +7887,13 @@
     "state": "NY",
     "lat": 42.619466,
     "lng": -75.845544
+  },
+  "13138": {
+    "city": "Pompey",
+    "county": "Onondaga",
+    "state": "NY",
+    "lat": 42.8927,
+    "lng": -76.0265
   },
   "13140": {
     "city": "Port byron",
@@ -7881,6 +7965,20 @@
     "lat": 42.884394,
     "lng": -76.285202
   },
+  "13153": {
+    "city": "Skaneateles Falls",
+    "county": "Onondaga",
+    "state": "NY",
+    "lat": 42.9911,
+    "lng": -76.4511
+  },
+  "13154": {
+    "city": "South Butler",
+    "county": "Wayne",
+    "state": "NY",
+    "lat": 43.1344,
+    "lng": -76.7656
+  },
   "13155": {
     "city": "South otselic",
     "county": "Chenango",
@@ -7894,6 +7992,13 @@
     "state": "NY",
     "lat": 43.341948,
     "lng": -76.665228
+  },
+  "13157": {
+    "city": "Sylvan Beach",
+    "county": "Oneida",
+    "state": "NY",
+    "lat": 43.2091,
+    "lng": -75.7231
   },
   "13158": {
     "city": "Truxton",
@@ -7915,6 +8020,20 @@
     "state": "NY",
     "lat": 42.847447,
     "lng": -76.649164
+  },
+  "13162": {
+    "city": "Verona Beach",
+    "county": "Oneida",
+    "state": "NY",
+    "lat": 43.1885,
+    "lng": -75.7126
+  },
+  "13163": {
+    "city": "Wampsville",
+    "county": "Madison",
+    "state": "NY",
+    "lat": 43.0785,
+    "lng": -75.7016
   },
   "13164": {
     "city": "Warners",
@@ -8168,6 +8287,13 @@
     "lat": 42.768195,
     "lng": -74.759734
   },
+  "13321": {
+    "city": "Clark Mills",
+    "county": "Oneida",
+    "state": "NY",
+    "lat": 43.09,
+    "lng": -75.3871
+  },
   "13322": {
     "city": "Clayville",
     "county": "Oneida",
@@ -8329,6 +8455,13 @@
     "lat": 43.026867,
     "lng": -74.933404
   },
+  "13352": {
+    "city": "Hinckley",
+    "county": "Oneida",
+    "state": "NY",
+    "lat": 43.3126,
+    "lng": -75.1169
+  },
   "13353": {
     "city": "Hoffmeister",
     "county": "Hamilton",
@@ -8462,6 +8595,13 @@
     "lat": 43.067369,
     "lng": -75.290911
   },
+  "13415": {
+    "city": "New Lisbon",
+    "county": "Otsego",
+    "state": "NY",
+    "lat": 42.5904,
+    "lng": -75.1957
+  },
   "13416": {
     "city": "Newport",
     "county": "Herkimer",
@@ -8588,6 +8728,13 @@
     "lat": 43.460951,
     "lng": -74.957099
   },
+  "13455": {
+    "city": "Sangerfield",
+    "county": "Oneida",
+    "state": "NY",
+    "lat": 42.9162,
+    "lng": -75.3545
+  },
   "13456": {
     "city": "Sauquoit",
     "county": "Oneida",
@@ -8700,12 +8847,26 @@
     "lat": 42.926167,
     "lng": -75.360922
   },
+  "13482": {
+    "city": "West Burlington",
+    "county": "Otsego",
+    "state": "NY",
+    "lat": 42.7043,
+    "lng": -75.1849
+  },
   "13483": {
     "city": "Westdale",
     "county": "Oneida",
     "state": "NY",
     "lat": 43.403751,
     "lng": -75.825528
+  },
+  "13484": {
+    "city": "West Eaton",
+    "county": "Madison",
+    "state": "NY",
+    "lat": 42.8546,
+    "lng": -75.6605
   },
   "13485": {
     "city": "West edmeston",
@@ -8720,6 +8881,13 @@
     "state": "NY",
     "lat": 43.339068,
     "lng": -75.341898
+  },
+  "13488": {
+    "city": "Westford",
+    "county": "Otsego",
+    "state": "NY",
+    "lat": 42.6809,
+    "lng": -74.7653
   },
   "13489": {
     "city": "West leyden",
@@ -9267,6 +9435,13 @@
     "lat": 42.294616,
     "lng": -76.198223
   },
+  "13738": {
+    "city": "Blodgett Mills",
+    "county": "Cortland",
+    "state": "NY",
+    "lat": 42.5673,
+    "lng": -76.1238
+  },
   "13739": {
     "city": "Bloomville",
     "county": "Delaware",
@@ -9302,6 +9477,13 @@
     "lat": 42.277777,
     "lng": -75.846246
   },
+  "13747": {
+    "city": "Colliersville",
+    "county": "Otsego",
+    "state": "NY",
+    "lat": 42.5051,
+    "lng": -74.9821
+  },
   "13748": {
     "city": "Conklin",
     "county": "Broome",
@@ -9315,6 +9497,13 @@
     "state": "NY",
     "lat": 42.444889,
     "lng": -74.840217
+  },
+  "13751": {
+    "city": "Davenport Center",
+    "county": "Delaware",
+    "state": "NY",
+    "lat": 42.4508,
+    "lng": -74.9013
   },
   "13752": {
     "city": "De lancey",
@@ -9421,6 +9610,13 @@
     "lat": 42.115853,
     "lng": -75.028814
   },
+  "13784": {
+    "city": "Harford",
+    "county": "Cortland",
+    "state": "NY",
+    "lat": 42.4311,
+    "lng": -76.1593
+  },
   "13786": {
     "city": "Harpersfield",
     "county": "Delaware",
@@ -9498,6 +9694,13 @@
     "lat": 42.183045,
     "lng": -74.925617
   },
+  "13806": {
+    "city": "Meridale",
+    "county": "Delaware",
+    "state": "NY",
+    "lat": 42.3734,
+    "lng": -74.965
+  },
   "13807": {
     "city": "Milford",
     "county": "Otsego",
@@ -9567,6 +9770,13 @@
     "state": "NY",
     "lat": 42.441165,
     "lng": -75.148268
+  },
+  "13826": {
+    "city": "Ouaquaga",
+    "county": "Broome",
+    "state": "NY",
+    "lat": 42.1121,
+    "lng": -75.6396
   },
   "13827": {
     "city": "Owego",
@@ -9659,6 +9869,13 @@
     "lat": 42.380509,
     "lng": -75.059702
   },
+  "13847": {
+    "city": "Trout Creek",
+    "county": "Delaware",
+    "state": "NY",
+    "lat": 42.183,
+    "lng": -74.9256
+  },
   "13849": {
     "city": "Unadilla",
     "county": "Otsego",
@@ -9686,6 +9903,13 @@
     "state": "NY",
     "lat": 42.379383,
     "lng": -75.264556
+  },
+  "13860": {
+    "city": "West Davenport",
+    "county": "Delaware",
+    "state": "NY",
+    "lat": 42.183,
+    "lng": -74.9256
   },
   "13861": {
     "city": "West oneonta",
@@ -9848,6 +10072,13 @@
     "lat": 43.313814,
     "lng": -78.736907
   },
+  "14029": {
+    "city": "Centerville",
+    "county": "Allegany",
+    "state": "NY",
+    "lat": 42.4743,
+    "lng": -78.2474
+  },
   "14030": {
     "city": "Chaffee",
     "county": "Erie",
@@ -9911,6 +10142,13 @@
     "lat": 42.895989,
     "lng": -78.385667
   },
+  "14041": {
+    "city": "Dayton",
+    "county": "Cattaraugus",
+    "state": "NY",
+    "lat": 42.4086,
+    "lng": -78.9844
+  },
   "14042": {
     "city": "Delevan",
     "county": "Cattaraugus",
@@ -9966,6 +10204,13 @@
     "state": "NY",
     "lat": 42.559423,
     "lng": -78.621851
+  },
+  "14056": {
+    "city": "East Pembroke",
+    "county": "Genesee",
+    "state": "NY",
+    "lat": 42.9912,
+    "lng": -78.3122
   },
   "14057": {
     "city": "Eden",
@@ -10212,6 +10457,13 @@
     "lat": 42.472671,
     "lng": -79.007621
   },
+  "14130": {
+    "city": "Pike",
+    "county": "Wyoming",
+    "state": "NY",
+    "lat": 42.5431,
+    "lng": -78.1538
+  },
   "14131": {
     "city": "Ransomville",
     "county": "Niagara",
@@ -10289,6 +10541,20 @@
     "lat": 42.738977,
     "lng": -78.312478
   },
+  "14168": {
+    "city": "Versailles",
+    "county": "Cattaraugus",
+    "state": "NY",
+    "lat": 42.5093,
+    "lng": -78.9995
+  },
+  "14169": {
+    "city": "Wales Center",
+    "county": "Erie",
+    "state": "NY",
+    "lat": 42.7673,
+    "lng": -78.5856
+  },
   "14170": {
     "city": "West falls",
     "county": "Erie",
@@ -10309,6 +10575,13 @@
     "state": "NY",
     "lat": 43.272729,
     "lng": -78.83101
+  },
+  "14173": {
+    "city": "Yorkshire",
+    "county": "Cattaraugus",
+    "state": "NY",
+    "lat": 42.5247,
+    "lng": -78.4755
   },
   "14174": {
     "city": "Youngstown",
@@ -10541,6 +10814,13 @@
     "lat": 43.235143,
     "lng": -78.194251
   },
+  "14413": {
+    "city": "Alton",
+    "county": "Wayne",
+    "state": "NY",
+    "lat": 43.2227,
+    "lng": -76.9821
+  },
   "14414": {
     "city": "Avon",
     "county": "Livingston",
@@ -10667,6 +10947,13 @@
     "lat": 43.104287,
     "lng": -77.428964
   },
+  "14453": {
+    "city": "Fishers",
+    "county": "Ontario",
+    "state": "NY",
+    "lat": 43.0109,
+    "lng": -77.4705
+  },
   "14454": {
     "city": "Geneseo",
     "county": "Livingston",
@@ -10687,6 +10974,13 @@
     "state": "NY",
     "lat": 42.694819,
     "lng": -77.754628
+  },
+  "14463": {
+    "city": "Hall",
+    "county": "Ontario",
+    "state": "NY",
+    "lat": 42.7966,
+    "lng": -77.0639
   },
   "14464": {
     "city": "Hamlin",
@@ -10807,6 +11101,13 @@
     "lat": 42.889864,
     "lng": -77.608688
   },
+  "14486": {
+    "city": "Linwood",
+    "county": "Livingston",
+    "state": "NY",
+    "lat": 42.8943,
+    "lng": -77.9216
+  },
   "14487": {
     "city": "Livonia",
     "county": "Livingston",
@@ -10862,6 +11163,13 @@
     "state": "NY",
     "lat": 42.683466,
     "lng": -77.866402
+  },
+  "14511": {
+    "city": "Mumford",
+    "county": "Monroe",
+    "state": "NY",
+    "lat": 43.0026,
+    "lng": -77.8646
   },
   "14512": {
     "city": "Naples",
@@ -10940,6 +11248,13 @@
     "lat": 42.637423,
     "lng": -77.069925
   },
+  "14529": {
+    "city": "Perkinsville",
+    "county": "Steuben",
+    "state": "NY",
+    "lat": 42.5354,
+    "lng": -77.6289
+  },
   "14530": {
     "city": "Perry",
     "county": "Wyoming",
@@ -10975,12 +11290,33 @@
     "lat": 42.555988,
     "lng": -78.098906
   },
+  "14537": {
+    "city": "Port Gibson",
+    "county": "Ontario",
+    "state": "NY",
+    "lat": 43.033,
+    "lng": -77.1575
+  },
+  "14539": {
+    "city": "Retsof",
+    "county": "Livingston",
+    "state": "NY",
+    "lat": 42.8343,
+    "lng": -77.8779
+  },
   "14541": {
     "city": "Mac dougall",
     "county": "Seneca",
     "state": "NY",
     "lat": 42.749713,
     "lng": -76.844921
+  },
+  "14542": {
+    "city": "Rose",
+    "county": "Wayne",
+    "state": "NY",
+    "lat": 43.1448,
+    "lng": -76.8608
   },
   "14543": {
     "city": "West rush",
@@ -11017,6 +11353,13 @@
     "lat": 42.978834,
     "lng": -77.252696
   },
+  "14549": {
+    "city": "Silver Lake",
+    "county": "Wyoming",
+    "state": "NY",
+    "lat": 42.6929,
+    "lng": -78.0224
+  },
   "14550": {
     "city": "Rock glen",
     "county": "Wyoming",
@@ -11037,6 +11380,20 @@
     "state": "NY",
     "lat": 43.254644,
     "lng": -76.983518
+  },
+  "14556": {
+    "city": "Sonyea",
+    "county": "Livingston",
+    "state": "NY",
+    "lat": 42.7298,
+    "lng": -77.7739
+  },
+  "14557": {
+    "city": "South Byron",
+    "county": "Genesee",
+    "state": "NY",
+    "lat": 43.0416,
+    "lng": -78.0573
   },
   "14559": {
     "city": "Spencerport",
@@ -11115,6 +11472,13 @@
     "lat": 43.041553,
     "lng": -77.683575
   },
+  "14588": {
+    "city": "Willard",
+    "county": "Seneca",
+    "state": "NY",
+    "lat": 42.6835,
+    "lng": -76.8724
+  },
   "14589": {
     "city": "Williamson",
     "county": "Wayne",
@@ -11135,6 +11499,13 @@
     "state": "NY",
     "lat": 42.818578,
     "lng": -78.102549
+  },
+  "14592": {
+    "city": "York",
+    "county": "Livingston",
+    "state": "NY",
+    "lat": 42.8757,
+    "lng": -77.8835
   },
   "14602": {
     "city": "Rochester",
@@ -11331,6 +11702,13 @@
     "state": "NY",
     "lat": 42.116168,
     "lng": -78.516218
+  },
+  "14707": {
+    "city": "Allentown",
+    "county": "Allegany",
+    "state": "NY",
+    "lat": 42.0737,
+    "lng": -78.0594
   },
   "14708": {
     "city": "Alma",
@@ -11619,6 +11997,13 @@
     "lat": 42.156841,
     "lng": -78.844412
   },
+  "14774": {
+    "city": "Richburg",
+    "county": "Allegany",
+    "state": "NY",
+    "lat": 42.1144,
+    "lng": -78.1681
+  },
   "14775": {
     "city": "Ripley",
     "county": "Chautauqua",
@@ -11632,6 +12017,13 @@
     "state": "NY",
     "lat": 42.397363,
     "lng": -78.23233
+  },
+  "14778": {
+    "city": "Saint Bonaventure",
+    "county": "Cattaraugus",
+    "state": "NY",
+    "lat": 42.2701,
+    "lng": -78.6847
   },
   "14779": {
     "city": "Salamanca",
@@ -11674,6 +12066,13 @@
     "state": "NY",
     "lat": 42.253734,
     "lng": -79.484286
+  },
+  "14788": {
+    "city": "Westons Mills",
+    "county": "Cattaraugus",
+    "state": "NY",
+    "lat": 42.0621,
+    "lng": -78.378
   },
   "14801": {
     "city": "Addison",
@@ -11850,6 +12249,13 @@
     "lat": 42.470356,
     "lng": -77.391286
   },
+  "14827": {
+    "city": "Coopers Plains",
+    "county": "Steuben",
+    "state": "NY",
+    "lat": 42.1785,
+    "lng": -77.1414
+  },
   "14830": {
     "city": "Corning",
     "county": "Steuben",
@@ -11947,6 +12353,13 @@
     "state": "NY",
     "lat": 42.142197,
     "lng": -77.497908
+  },
+  "14856": {
+    "city": "Kanona",
+    "county": "Steuben",
+    "state": "NY",
+    "lat": 42.3742,
+    "lng": -77.3648
   },
   "14857": {
     "city": "Lakemont",
@@ -12136,6 +12549,13 @@
     "state": "NY",
     "lat": 42.107825,
     "lng": -76.502218
+  },
+  "14893": {
+    "city": "Wayne",
+    "county": "Steuben",
+    "state": "NY",
+    "lat": 42.4741,
+    "lng": -77.0977
   },
   "14894": {
     "city": "Wellsburg",
@@ -19137,6 +19557,13 @@
     "lat": 39.844726,
     "lng": -76.576556
   },
+  "17323": {
+    "city": "Franklintown",
+    "county": "York",
+    "state": "PA",
+    "lat": 40.075,
+    "lng": -77.0279
+  },
   "17324": {
     "city": "Gardners",
     "county": "Cumberland",
@@ -21412,12 +21839,26 @@
     "lat": 40.693376,
     "lng": -75.471156
   },
+  "18195": {
+    "city": "Allentown",
+    "county": "Lehigh",
+    "state": "PA",
+    "lat": 40.5843,
+    "lng": -75.6248
+  },
   "18201": {
     "city": "West hazleton",
     "county": "Luzerne",
     "state": "PA",
     "lat": 40.964584,
     "lng": -76.008333
+  },
+  "18202": {
+    "city": "Hazleton",
+    "county": "Luzerne",
+    "state": "PA",
+    "lat": 40.9506,
+    "lng": -76.0487
   },
   "18210": {
     "city": "Albrightsville",
@@ -21481,6 +21922,13 @@
     "state": "PA",
     "lat": 41.034017,
     "lng": -76.003059
+  },
+  "18223": {
+    "city": "Ebervale",
+    "county": "Luzerne",
+    "state": "PA",
+    "lat": 41.2722,
+    "lng": -75.8801
   },
   "18224": {
     "city": "Freeland",
@@ -22189,6 +22637,13 @@
     "lat": 41.615989,
     "lng": -75.274708
   },
+  "18454": {
+    "city": "Poyntelle",
+    "county": "Wayne",
+    "state": "PA",
+    "lat": 41.616,
+    "lng": -75.2747
+  },
   "18455": {
     "city": "Preston park",
     "county": "Wayne",
@@ -22888,6 +23343,13 @@
     "state": "PA",
     "lat": 41.820346,
     "lng": -75.80463
+  },
+  "18843": {
+    "city": "South Montrose",
+    "county": "Susquehanna",
+    "state": "PA",
+    "lat": 41.8237,
+    "lng": -75.8831
   },
   "18844": {
     "city": "Springville",
@@ -24590,6 +25052,13 @@
     "lat": 40.220106,
     "lng": -75.237877
   },
+  "19456": {
+    "city": "Oaks",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 40.1334,
+    "lng": -75.4536
+  },
   "19457": {
     "city": "Parker ford",
     "county": "Chester",
@@ -24660,12 +25129,26 @@
     "lat": 40.146989,
     "lng": -75.605398
   },
+  "19477": {
+    "city": "Spring House",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 40.1839,
+    "lng": -75.2327
+  },
   "19478": {
     "city": "Spring mount",
     "county": "Montgomery",
     "state": "PA",
     "lat": 40.275914,
     "lng": -75.461756
+  },
+  "19490": {
+    "city": "Worcester",
+    "county": "Montgomery",
+    "state": "PA",
+    "lat": 40.1929,
+    "lng": -75.3576
   },
   "19492": {
     "city": "Zieglersville",
@@ -25871,6 +26354,13 @@
     "lat": 39.160291,
     "lng": -77.60967
   },
+  "20130": {
+    "city": "Paris",
+    "county": "Clarke",
+    "state": "VA",
+    "lat": 39.0048,
+    "lng": -77.9546
+  },
   "20132": {
     "city": "Purcellville",
     "county": "Loudoun",
@@ -26031,6 +26521,13 @@
     "state": "VA",
     "lat": 39.119727,
     "lng": -77.603458
+  },
+  "20180": {
+    "city": "Lovettsville",
+    "county": "Loudoun",
+    "state": "VA",
+    "lat": 39.2204,
+    "lng": -77.6596
   },
   "20181": {
     "city": "Nokesville",
@@ -28699,6 +29196,13 @@
     "lat": 39.4203,
     "lng": -77.505098
   },
+  "21715": {
+    "city": "Brownsville",
+    "county": "Washington",
+    "state": "MD",
+    "lat": 39.3869,
+    "lng": -77.658
+  },
   "21716": {
     "city": "Brunswick",
     "county": "Frederick",
@@ -28789,6 +29293,13 @@
     "state": "MD",
     "lat": 39.642995,
     "lng": -77.652779
+  },
+  "21746": {
+    "city": "Hagerstown",
+    "county": "Washington",
+    "state": "MD",
+    "lat": 39.5638,
+    "lng": -77.7206
   },
   "21750": {
     "city": "Hancock",
@@ -30302,12 +30813,40 @@
     "lat": 38.918791,
     "lng": -78.512429
   },
+  "22701": {
+    "city": "Culpeper",
+    "county": "Culpeper",
+    "state": "VA",
+    "lat": 38.5117,
+    "lng": -77.9928
+  },
   "22712": {
     "city": "Bealeton",
     "county": "Fauquier",
     "state": "VA",
     "lat": 38.545289,
     "lng": -77.756064
+  },
+  "22713": {
+    "city": "Boston",
+    "county": "Culpeper",
+    "state": "VA",
+    "lat": 38.5382,
+    "lng": -78.1423
+  },
+  "22714": {
+    "city": "Brandy Station",
+    "county": "Culpeper",
+    "state": "VA",
+    "lat": 38.511,
+    "lng": -77.9037
+  },
+  "22718": {
+    "city": "Elkwood",
+    "county": "Culpeper",
+    "state": "VA",
+    "lat": 38.4652,
+    "lng": -77.817
   },
   "22720": {
     "city": "Goldvein",
@@ -30316,12 +30855,26 @@
     "lat": 38.472457,
     "lng": -77.642308
   },
+  "22726": {
+    "city": "Lignum",
+    "county": "Culpeper",
+    "state": "VA",
+    "lat": 38.3956,
+    "lng": -77.83
+  },
   "22728": {
     "city": "Midland",
     "county": "Fauquier",
     "state": "VA",
     "lat": 38.602592,
     "lng": -77.681065
+  },
+  "22729": {
+    "city": "Mitchells",
+    "county": "Culpeper",
+    "state": "VA",
+    "lat": 38.3744,
+    "lng": -78.0105
   },
   "22734": {
     "city": "Remington",
@@ -30330,12 +30883,54 @@
     "lat": 38.530877,
     "lng": -77.803719
   },
+  "22737": {
+    "city": "Rixeyville",
+    "county": "Culpeper",
+    "state": "VA",
+    "lat": 38.5852,
+    "lng": -78.0282
+  },
+  "22738": {
+    "city": "Rochelle",
+    "county": "Madison",
+    "state": "VA",
+    "lat": 38.3215,
+    "lng": -78.3042
+  },
+  "22740": {
+    "city": "Sperryville",
+    "county": "Rappahannock",
+    "state": "VA",
+    "lat": 38.6203,
+    "lng": -78.2466
+  },
+  "22741": {
+    "city": "Stevensburg",
+    "county": "Culpeper",
+    "state": "VA",
+    "lat": 38.4441,
+    "lng": -77.8842
+  },
   "22742": {
     "city": "Sumerduck",
     "county": "Fauquier",
     "state": "VA",
     "lat": 38.462651,
     "lng": -77.706223
+  },
+  "22747": {
+    "city": "Washington",
+    "county": "Rappahannock",
+    "state": "VA",
+    "lat": 38.7078,
+    "lng": -78.1566
+  },
+  "22749": {
+    "city": "Woodville",
+    "county": "Rappahannock",
+    "state": "VA",
+    "lat": 38.6482,
+    "lng": -78.1739
   },
   "22801": {
     "city": "Harrisonburg",
@@ -37160,6 +37755,13 @@
     "city": "021hh",
     "county": "Norfolk",
     "state": "MA"
+  },
+  "02203": {
+    "city": "Boston",
+    "county": "Suffolk",
+    "state": "MA",
+    "lat": 42.3615,
+    "lng": -71.0604
   },
   "02210": {
     "city": "Boston",
@@ -47420,6 +48022,13 @@
     "lat": 41.222222,
     "lng": -73.05706
   },
+  "06467": {
+    "city": "Milldale",
+    "county": "Hartford",
+    "state": "CT",
+    "lat": 41.5657,
+    "lng": -72.9037
+  },
   "06468": {
     "city": "Monroe",
     "county": "Fairfield",
@@ -52087,6 +52696,13 @@
     "state": "NJ",
     "lat": 39.376144,
     "lng": -74.805412
+  },
+  "08320": {
+    "city": "Fairton",
+    "county": "Cumberland",
+    "state": "NJ",
+    "lat": 39.3799,
+    "lng": -75.2217
   },
   "08321": {
     "city": "Fortescue",
