@@ -95,6 +95,7 @@ const { initSupplierModel } = require('./src/models/Supplier');
 const { initCommunityDeliveryModel } = require('./src/models/CommunityDelivery');
 const { initCommunityDeliveryRawModel } = require('./src/models/CommunityDeliveryRaw');  // V2.3.1: Raw telemetry
 const { initSupplierPriceModel } = require('./src/models/SupplierPrice');
+const { retryModelInit } = require('./src/services/retryModelInit');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -103,6 +104,19 @@ const PORT = process.env.PORT || 8080;
 // but generation can take longer and shouldn't block API/webhook availability).
 // Generator uses safe generate-then-swap: old pages survive if generation fails.
 let pagesReady = false;
+
+// V2.36.0 (heatingoil-36uz): model init retry bookkeeping.
+// initialStartupComplete gates /health 503→200. Flips true when:
+//   (a) all 5 models call markReady(), OR
+//   (b) STARTUP_HARD_TIMEOUT_MS elapses — prevents permanent 503 deploy-loop
+//       if any model has a non-DB bug (bad migration, code error).
+// The markReady function + hard-timeout setTimeout + retryModelInit calls
+// live inside the app.listen() callback AFTER cronMonitor is instantiated (see Task 5).
+let initialStartupComplete = false;
+const modelsReady = new Set();
+const EXPECTED_MODELS = ['Supplier', 'CommunityDelivery', 'CommunityDeliveryRaw',
+                         'SupplierPrice', 'UserLocation'];
+const STARTUP_HARD_TIMEOUT_MS = 60000;
 
 // Trust Railway's proxy for accurate IP detection in rate limiting
 app.set('trust proxy', 1);
@@ -430,74 +444,9 @@ if (API_KEYS.DATABASE_URL) {
           logger.warn('⚠️ Migration warning:', migrationError.message);
         }
 
-        // V2.35.17: Each model wrapped in try/catch to prevent cascading failures
-
-        // V1.3.0: Initialize Supplier model and sync table
-        try {
-          const Supplier = initSupplierModel(sequelize);
-          if (Supplier) {
-            await Supplier.sync({ alter: false });
-            logger.info('✅ Supplier model synced');
-          } else {
-            logger.error('❌ Supplier model failed to initialize');
-          }
-        } catch (err) {
-          logger.error('❌ Supplier model sync failed:', err.message || err);
-        }
-
-        // V18.0: Initialize CommunityDelivery model for benchmarking
-        try {
-          const CommunityDelivery = initCommunityDeliveryModel(sequelize);
-          if (CommunityDelivery) {
-            await CommunityDelivery.sync({ alter: true });
-            logger.info('✅ CommunityDelivery model synced');
-
-            // V2.3.1: Initialize CommunityDeliveryRaw model for exact telemetry data
-            try {
-              const CommunityDeliveryRaw = initCommunityDeliveryRawModel(sequelize, CommunityDelivery);
-              if (CommunityDeliveryRaw) {
-                await CommunityDeliveryRaw.sync({ alter: true });
-                logger.info('✅ CommunityDeliveryRaw model synced');
-              } else {
-                logger.warn('⚠️  CommunityDeliveryRaw model failed to initialize - raw telemetry disabled');
-              }
-            } catch (err) {
-              logger.error('❌ CommunityDeliveryRaw model sync failed:', err.message);
-            }
-          } else {
-            logger.error('❌ CommunityDelivery model failed to initialize');
-          }
-        } catch (err) {
-          logger.error('❌ CommunityDelivery model sync failed:', err.message);
-        }
-
-        // V2.0.2: Initialize SupplierPrice model for price tracking
-        try {
-          const SupplierPrice = initSupplierPriceModel(sequelize);
-          if (SupplierPrice) {
-            await SupplierPrice.sync({ alter: false });
-            logger.info('✅ SupplierPrice model synced');
-            app.locals.SupplierPrice = SupplierPrice;  // Store for route access
-          } else {
-            logger.error('❌ SupplierPrice model failed to initialize');
-          }
-        } catch (err) {
-          logger.error('❌ SupplierPrice model sync failed:', err.message);
-        }
-
-        // V2.3.0: Initialize UserLocation model for Coverage Intelligence
-        try {
-          const { initUserLocationModel } = require('./src/models/UserLocation');
-          const UserLocation = initUserLocationModel(sequelize);
-          if (UserLocation) {
-            await UserLocation.sync({ alter: false });
-            logger.info('✅ UserLocation model synced');
-          } else {
-            logger.warn('⚠️  UserLocation model failed to initialize');
-          }
-        } catch (err) {
-          logger.error('❌ UserLocation model error:', err.message);
-        }
+        // V2.36.0 (heatingoil-36uz): model init moved to after cronMonitor instantiation
+        // (see block after `const cronMonitor = new CronMonitor(...)` in the app.listen callback below).
+        // Old try/catch blocks deleted here — retry helper handles init + sync + logging.
 
         // V2.4.0: Initialize Activity Analytics Service
         logger.info('🔧 Initializing Activity Analytics Service...');
@@ -751,11 +700,14 @@ app.get('/health', async (req, res) => {
   // V21.0: Check model availability
   const { getCommunityDeliveryModel } = require('./src/models/CommunityDelivery');
   const { getSupplierModel } = require('./src/models/Supplier');
-  const communityModelReady = !!getCommunityDeliveryModel();
-  const supplierModelReady = !!getSupplierModel();
+  const { getCommunityDeliveryRawModel } = require('./src/models/CommunityDeliveryRaw');
+  const { getSupplierPriceModel } = require('./src/models/SupplierPrice');
+  const { getUserLocationModel } = require('./src/models/UserLocation');
 
-  res.json({
-    status: 'healthy',
+  const statusCode = initialStartupComplete ? 200 : 503;
+
+  res.status(statusCode).json({
+    status: initialStartupComplete ? 'healthy' : 'initializing',
     timestamp: new Date().toISOString(),
     version: pkg.version,
     services: {
@@ -765,8 +717,17 @@ app.get('/health', async (req, res) => {
       databaseState: dbState,
       authentication: !!API_KEYS.JWT_SECRET,
       email: !!process.env.RESEND_API_KEY,
-      communityModel: communityModelReady,
-      supplierModel: supplierModelReady
+      communityModel: !!getCommunityDeliveryModel(),
+      supplierModel: !!getSupplierModel(),
+      communityDeliveryRawModel: !!getCommunityDeliveryRawModel(),
+      supplierPriceModel: !!getSupplierPriceModel(),
+      userLocationModel: !!getUserLocationModel()
+    },
+    startup: {
+      initialStartupComplete,
+      modelsReady: Array.from(modelsReady),
+      modelsPending: EXPECTED_MODELS.filter(n => !modelsReady.has(n)),
+      retryDisabled: process.env.DISABLE_MODEL_RETRY === 'true',
     },
     system: {
       nodeVersion: process.version,
@@ -1024,6 +985,95 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 
   // V3.1.0: Initialize CronMonitor for heartbeat tracking, auto-retry, and drift detection
   const cronMonitor = new CronMonitor(sequelize, logger);
+
+  // V2.36.0 (heatingoil-36uz): model init retry scaffolding.
+  // cronMonitor is now in scope; define markReady + hard-timeout here
+  // before firing off the 5 retryModelInit calls.
+  function markReady(name) {
+    modelsReady.add(name);
+    if (modelsReady.size === EXPECTED_MODELS.length && !initialStartupComplete) {
+      initialStartupComplete = true;
+      logger.info(`✅ [Startup] All ${EXPECTED_MODELS.length} models ready — /health returning 200`);
+    }
+  }
+
+  // Hard-timeout escape hatch: flips initialStartupComplete true regardless
+  // of model state after 60s. Without this, a single broken model would
+  // keep /health at 503 forever, causing Railway to reject every deploy.
+  const hardTimeoutHandle = setTimeout(() => {
+    if (!initialStartupComplete) {
+      initialStartupComplete = true;
+      const missing = EXPECTED_MODELS.filter(n => !modelsReady.has(n));
+      logger.error(`❌ [Startup] HARD TIMEOUT after ${STARTUP_HARD_TIMEOUT_MS}ms — ${missing.length}/${EXPECTED_MODELS.length} models still initializing: ${missing.join(', ')}. /health forced to 200 but site may be degraded.`);
+      cronMonitor.logError('startup-hard-timeout', new Error(`Missing models: ${missing.join(', ')}`))
+        .catch(() => {});
+    }
+  }, STARTUP_HARD_TIMEOUT_MS);
+  if (hardTimeoutHandle.unref) hardTimeoutHandle.unref();
+
+  // V2.36.0 (heatingoil-36uz): Supplier model — retries via retryModelInit
+  retryModelInit({
+    name: 'Supplier',
+    initFn: () => initSupplierModel(sequelize),
+    syncFn: (m) => m.sync({ alter: false }),
+    cronMonitor, logger,
+    onReady: () => markReady('Supplier'),
+  });
+
+  // V2.36.0 (heatingoil-36uz): CommunityDelivery model — retries via retryModelInit
+  retryModelInit({
+    name: 'CommunityDelivery',
+    initFn: () => initCommunityDeliveryModel(sequelize),
+    syncFn: (m) => m.sync({ alter: true }),
+    cronMonitor, logger,
+    onReady: () => markReady('CommunityDelivery'),
+  });
+
+  // V2.36.0 (heatingoil-36uz): CommunityDeliveryRaw model.
+  // Depends on CommunityDelivery being ready — the `if (!CD) return null`
+  // guard forces retry until Delivery's getter returns a non-null model.
+  // Without this guard, initCommunityDeliveryRawModel(sequelize, null)
+  // returns a non-null-but-associationless model (CommunityDeliveryRaw.js:100
+  // skips the associations block when arg is null), which would silently
+  // poison include:[{ as:'rawData' }] queries at runtime.
+  retryModelInit({
+    name: 'CommunityDeliveryRaw',
+    initFn: () => {
+      const { getCommunityDeliveryModel } = require('./src/models/CommunityDelivery');
+      const CD = getCommunityDeliveryModel();
+      if (!CD) return null;
+      return initCommunityDeliveryRawModel(sequelize, CD);
+    },
+    syncFn: (m) => m.sync({ alter: true }),
+    cronMonitor, logger,
+    onReady: () => markReady('CommunityDeliveryRaw'),
+  });
+
+  // V2.36.0 (heatingoil-36uz): SupplierPrice model — retries via retryModelInit
+  retryModelInit({
+    name: 'SupplierPrice',
+    initFn: () => initSupplierPriceModel(sequelize),
+    syncFn: (m) => m.sync({ alter: false }),
+    cronMonitor, logger,
+    onReady: (model) => {
+      app.locals.SupplierPrice = model;  // preserve existing side effect from old L480
+      markReady('SupplierPrice');
+    },
+  });
+
+  // V2.36.0 (heatingoil-36uz): UserLocation model — retries via retryModelInit.
+  // Preserves the inline require pattern of the original code.
+  retryModelInit({
+    name: 'UserLocation',
+    initFn: () => {
+      const { initUserLocationModel } = require('./src/models/UserLocation');
+      return initUserLocationModel(sequelize);
+    },
+    syncFn: (m) => m.sync({ alter: false }),
+    cronMonitor, logger,
+    onReady: () => markReady('UserLocation'),
+  });
+
   cronMonitor.cleanup(); // Clean old heartbeats/errors on startup (non-blocking)
 
   // V2.6.0: DISABLED fixed 10 AM scrape - now using distributed scheduler (8AM-6PM)

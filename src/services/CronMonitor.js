@@ -278,6 +278,15 @@ class CronMonitor {
     }
   }
 
+  /**
+   * Public: persist an error to cron_error_log for surfacing in 6AM email.
+   * Safe to call during DB outage — _logError has internal try/catch
+   * (see CronMonitor.js:325-341).
+   */
+  async logError(service, error) {
+    return this._logError(service, error);
+  }
+
   // ── Internal methods ──────────────────────────────────
 
   async _recordStart(jobName) {

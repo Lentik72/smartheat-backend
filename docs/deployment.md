@@ -113,3 +113,7 @@ After pushing, run `npm run verify-deploy` (waits 75s, checks health + spot-chec
 - Start command: `node server.js`
 
 Last audited: 2026-04-20
+
+## Model Init Retry Kill Switch
+
+If the auto-retry model init (added 2026-04-22, bead `heatingoil-36uz`) misbehaves in production — e.g., retry hammering the DB, `/health` stuck at 503, or unexpected container behavior — set `DISABLE_MODEL_RETRY=true` in the Railway service variables (Railway → smartheat-backend → Variables). Backend auto-restarts (~45s). This falls back to the pre-36uz single-shot init behavior: fire-and-forget with `try/catch` logging, no retries. No code deploy required. To restore: delete the variable and restart the service. The `/health` endpoint exposes current state at `startup.retryDisabled`.
