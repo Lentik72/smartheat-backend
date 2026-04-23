@@ -597,6 +597,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/147-add-jc-heating-cooling', label: 'JC Heating & Cooling (Levittown/Yardley PA — Bucks/Montgomery 40 towns)' },
           { path: './src/migrations/148-add-leroux-fuels-ny', label: 'Leroux Fuels (Plattsburgh NY — Clinton + N. Essex counties)' },
           { path: './src/migrations/149-add-energy-coop-vermont', label: 'Energy Co-op of Vermont (Colchester VT — Chittenden+4 counties)' },
+          { path: './src/migrations/150-add-hudson-fuel-oil-oh', label: 'Hudson Fuel Oil (New Richmond OH — Cincinnati metro, 3rd in-state OH supplier)' },
         ];
 
         let migrationErrors = 0;
@@ -968,7 +969,13 @@ app.use((err, req, res, next) => {
 });
 
 // V2.35.0: 404 handler — HTML for website visitors, JSON for API consumers
+// V2.36.0 (heatingoil-03yc): Disable long-lived caching of 404 responses.
+// Without this, Cloudflare cached 404s for 24hr (max-age=86400 inherited from
+// express.static's HTML cache policy), so any newly-generated page that had
+// a prior 404 continued to serve stale 404 from CF for a full day after the
+// origin file appeared. Forcing no-cache makes CF revalidate every time.
 app.use((req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, must-revalidate');
   if (req.path.startsWith('/api')) {
     return res.status(404).json({
       error: 'Endpoint not found',
