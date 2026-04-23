@@ -596,6 +596,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/146-add-augusta-me-suppliers', label: 'Augusta ME (04330) gap: Litchfield Fuel + M.A. Haskell + CN Brown Augusta' },
           { path: './src/migrations/147-add-jc-heating-cooling', label: 'JC Heating & Cooling (Levittown/Yardley PA — Bucks/Montgomery 40 towns)' },
           { path: './src/migrations/148-add-leroux-fuels-ny', label: 'Leroux Fuels (Plattsburgh NY — Clinton + N. Essex counties)' },
+          { path: './src/migrations/149-add-energy-coop-vermont', label: 'Energy Co-op of Vermont (Colchester VT — Chittenden+4 counties)' },
         ];
 
         let migrationErrors = 0;

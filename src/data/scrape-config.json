@@ -22384,6 +22384,43 @@
       "05680"
     ]
   },
+  "ecvt.net": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED: VT Chittenden+Grand Isle+Franklin+Lamoille+Washington counties - Will-Call + 'Today's Member Cash Price' confirmed on /service/heating-oil. Non-members welcome. Prices not in static HTML (/todays-cash-price 404s, homepage doesn't display $X.XX). Caveats: 7-10 business day lead time, $100 restart fee + $250 special-delivery fee for emergencies. Est. 1998, (802) 860-4090.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "05401",
+      "05403",
+      "05404",
+      "05440",
+      "05445",
+      "05446",
+      "05452",
+      "05454",
+      "05458",
+      "05461",
+      "05462",
+      "05463",
+      "05465",
+      "05468",
+      "05474",
+      "05476",
+      "05477",
+      "05478",
+      "05482",
+      "05486",
+      "05488",
+      "05489",
+      "05494",
+      "05495",
+      "05602",
+      "05641",
+      "05651",
+      "05676",
+      "05677"
+    ]
+  },
   "packardfuels.com": {
     "enabled": false,
     "pattern": "direct",
@@ -32067,7 +32104,7 @@
   "rjwrightandsons.com": {
     "enabled": false,
     "pattern": "none",
-    "notes": "DISABLED: Added by coverage export — not yet in scrape config. Slug: rj-wright-and-sons",
+    "notes": "DISABLED: OH Newcomerstown/Tuscarawas + SE Ohio - COD confirmed verbatim on /heating-oil ('Cash or Money Order on delivery, or credit/debit card payment at the time we schedule'). Not scrapable: Wix-based site, no $X.XX in static HTML. Est. 1969, family-owned 3-gen, BP/SOHIO brand, (740) 498-6236. Reclassified 2026-04-23.",
     "postalCodesServed": [
       "43006",
       "43711",
