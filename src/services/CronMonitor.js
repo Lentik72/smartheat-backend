@@ -164,12 +164,13 @@ class CronMonitor {
 
       // Get latest heartbeat per job regardless of age; per-job window check
       // happens below. This makes monthly jobs visible even 3+ weeks out.
+      // Retry rows (`jobName:retry`) are included so the "retried OK" branch
+      // below can find them — filtering them out here would dead-code that path.
       const [heartbeats] = await this.sequelize.query(`
         SELECT DISTINCT ON (job_name)
           job_name, status, started_at, completed_at, duration_ms, error_message,
           details
         FROM cron_heartbeats
-        WHERE job_name NOT LIKE '%:retry'
         ORDER BY job_name, started_at DESC
       `);
 
@@ -212,9 +213,12 @@ class CronMonitor {
         if (hb.status === 'success') {
           return { ...job, status: 'success', durationMs: hb.duration_ms, details: hb.details };
         }
-        // Check if retry succeeded
+        // Check if retry succeeded. Require retry to be newer than the failed
+        // main so a stale retry from a prior cycle can't mark today's failure
+        // as "retried OK" — a retry always fires ~2 min after its paired main.
         const retryHb = heartbeatMap.get(`${job.name}:retry`);
-        if (retryHb && retryHb.status === 'success') {
+        if (retryHb && retryHb.status === 'success' &&
+            new Date(retryHb.started_at) > new Date(hb.started_at)) {
           return { ...job, status: 'retried', message: `Failed then retried OK`, durationMs: retryHb.duration_ms };
         }
         return { ...job, status: 'failed', message: hb.error_message };
