@@ -217,8 +217,32 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   console.log(`\n=== Summary ===`);
   console.log(`Resolved: ${Object.keys(additions).length}`);
-  console.log(`Failures: ${failures.length}${failures.length ? ' → ' + failures.join(', ') : ''}`);
+  console.log(`Failures: ${failures.length}${failures.length ? ' → ' + failures.slice(0, 20).join(', ') + (failures.length > 20 ? `, ...(${failures.length - 20} more)` : '') : ''}`);
   console.log(`Skipped (no ZCTA): ${skipped.length}`);
+
+  // Threshold warning — loud stdout so a --write pass can't silently ship
+  // a partially-filled state. 5% is a judgment call; tune if noisy.
+  if (targets.length > 0 && failures.length / targets.length > 0.05) {
+    const pct = ((failures.length / targets.length) * 100).toFixed(1);
+    console.log(`\n⚠️  HIGH FAILURE RATE: ${failures.length}/${targets.length} (${pct}%). Investigate before --write.`);
+  }
+
+  // Persist failures to a sidecar JSON if any occurred. Audit trail beyond
+  // stdout — a stale terminal won't hide a partial run.
+  if (failures.length > 0) {
+    const yyyymmdd = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const tag = STATE || 'scrapeconfig';
+    const failPath = path.join(DATA_DIR, `zip-database.failures-${tag}-${yyyymmdd}.json`);
+    fs.writeFileSync(failPath, JSON.stringify({
+      mode: STATE ? `state:${STATE}` : 'scrape-config',
+      timestamp: new Date().toISOString(),
+      targetCount: targets.length,
+      resolvedCount: Object.keys(additions).length,
+      failureCount: failures.length,
+      failures,
+    }, null, 2) + '\n', 'utf8');
+    console.log(`📝 Failures written to ${failPath}`);
+  }
 
   // Spot-check sample
   const sampleZips = Object.keys(additions).slice(0, 5);
