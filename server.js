@@ -970,12 +970,18 @@ app.use((err, req, res, next) => {
 
 // V2.35.0: 404 handler — HTML for website visitors, JSON for API consumers
 // V2.36.0 (heatingoil-03yc): Disable long-lived caching of 404 responses.
-// Without this, Cloudflare cached 404s for 24hr (max-age=86400 inherited from
-// express.static's HTML cache policy), so any newly-generated page that had
-// a prior 404 continued to serve stale 404 from CF for a full day after the
-// origin file appeared. Forcing no-cache makes CF revalidate every time.
+// Without this, Cloudflare cached 404s for 24hr (max-age=86400) so any
+// newly-generated page that had a prior 404 served stale 404 from CF for
+// a full day after origin was fixed. Two headers are needed:
+//   - Cache-Control: no-cache, must-revalidate → for browsers + CDNs that
+//     don't have an override rule active
+//   - CDN-Cache-Control: no-store, max-age=0   → for Cloudflare specifically;
+//     overrides any CF Cache Rule that would otherwise force caching of
+//     4xx responses for /prices/* and /supplier/* (CF respects this header
+//     ahead of its own rules per CF docs).
 app.use((req, res) => {
   res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+  res.setHeader('CDN-Cache-Control', 'no-store, max-age=0');
   if (req.path.startsWith('/api')) {
     return res.status(404).json({
       error: 'Endpoint not found',
