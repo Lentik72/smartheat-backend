@@ -87,11 +87,16 @@ async function fetchZippopotam(zip) {
     const json = JSON.parse(body);
     if (!json.places || !json.places.length) return null;
     const p = json.places[0];
+    const lat = parseFloat(p.latitude);
+    const lng = parseFloat(p.longitude);
+    // Guard against malformed coords — prevents silent null injection
+    // that would violate the non-null lat/lng invariant
+    if (isNaN(lat) || isNaN(lng)) return null;
     return {
       city: p['place name'],
       state: p['state abbreviation'],
-      lat: parseFloat(p.latitude),
-      lng: parseFloat(p.longitude)
+      lat,
+      lng
     };
   } catch { return null; }
 }
