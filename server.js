@@ -594,6 +594,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/144-add-fegley-oil', label: 'Fegley Oil Company (Tamaqua PA — Schuylkill/Carbon/Luzerne counties)' },
           { path: './src/migrations/145-add-propane-fuel-type', label: 'Add propane to fuel_type ENUMs (supplier_prices + community_deliveries)' },
           { path: './src/migrations/146-add-augusta-me-suppliers', label: 'Augusta ME (04330) gap: Litchfield Fuel + M.A. Haskell + CN Brown Augusta' },
+          { path: './src/migrations/147-add-jc-heating-cooling', label: 'JC Heating & Cooling (Levittown/Yardley PA — Bucks/Montgomery 40 towns)' },
         ];
 
         let migrationErrors = 0;
