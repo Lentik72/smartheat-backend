@@ -138,23 +138,65 @@ function unresolvedZips(zipDb, scrapeConfig) {
   return [...unresolved].sort();
 }
 
+/**
+ * Enumerate ZIPs for a state from the Census ZCTA file, minus those already
+ * in zip-database.json. Filters by the first 2 chars of GEOID_COUNTY_20.
+ *
+ * NOTE: parts[9] is a net-new read; the existing code only reads parts[10]
+ * (county name) and parts[16] (area). No existing line to mimic.
+ *
+ * @param {string} stateFips - 2-char FIPS code (e.g., '39' for Ohio)
+ * @param {object} zipDb - current zip-database.json
+ * @returns {string[]} Sorted array of ZIPs in that state not yet in zipDb.
+ *
+ * We re-read the ZCTA file rather than scanning zctaMap keys because zctaMap
+ * stores only {county, areaPart} per ZIP — state FIPS was discarded during
+ * the map build. Reading the file a second time costs ~60ms (~40k lines).
+ */
+function stateZips(stateFips, zipDb) {
+  const lines = fs.readFileSync(ZCTA_FILE, 'utf8').split('\n');
+  const known = new Set(Object.keys(zipDb));
+  const result = new Set();
+  for (const line of lines.slice(1)) {
+    const parts = line.split('|');
+    if (!parts[1] || !parts[1].match(/^[0-9]{5}$/)) continue;
+    const geoidCounty = parts[9] || '';
+    if (!geoidCounty.startsWith(stateFips)) continue;
+    const zip = parts[1];
+    if (!known.has(zip)) result.add(zip);
+  }
+  return [...result].sort();
+}
+
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 (async () => {
   console.log(`Loading current data...`);
   const zipDb = JSON.parse(fs.readFileSync(ZIP_DB_FILE, 'utf8'));
-  const scrapeConfig = JSON.parse(fs.readFileSync(SCRAPE_CONFIG, 'utf8'));
   const zctaMap = await loadZctaToCounty();
 
-  const allUnresolved = unresolvedZips(zipDb, scrapeConfig);
-  const fixable = allUnresolved.filter(z => zctaMap[z]);
-  const skipped = allUnresolved.filter(z => !zctaMap[z]);
+  let targets;
+  let skipped = [];
+  if (STATE) {
+    // --state XX mode: enumerate all ZCTAs for the state
+    const stateFips = STATE_FIPS[STATE];
+    const allTargets = stateZips(stateFips, zipDb);
+    console.log(`\nState ${STATE} (FIPS ${stateFips}): ${allTargets.length} new ZIPs from Census ZCTA`);
+    targets = allTargets.slice(0, LIMIT);
+  } else {
+    // Existing scrape-config mode
+    const scrapeConfig = JSON.parse(fs.readFileSync(SCRAPE_CONFIG, 'utf8'));
+    const allUnresolved = unresolvedZips(zipDb, scrapeConfig);
+    const fixable = allUnresolved.filter(z => zctaMap[z]);
+    skipped = allUnresolved.filter(z => !zctaMap[z]);
 
-  console.log(`\nUnresolved total: ${allUnresolved.length}`);
-  console.log(`  fixable (has ZCTA, will fetch): ${fixable.length}`);
-  console.log(`  skipped (no ZCTA, PO-box/stale): ${skipped.length}`);
+    console.log(`\nUnresolved total: ${allUnresolved.length}`);
+    console.log(`  fixable (has ZCTA, will fetch): ${fixable.length}`);
+    console.log(`  skipped (no ZCTA, PO-box/stale): ${skipped.length}`);
 
-  const targets = fixable.slice(0, LIMIT);
+    targets = fixable.slice(0, LIMIT);
+  }
+
   console.log(`\nFetching Zippopotamus for ${targets.length} ZIPs (~${Math.ceil(targets.length * 0.15)}s)...\n`);
 
   const additions = {};
