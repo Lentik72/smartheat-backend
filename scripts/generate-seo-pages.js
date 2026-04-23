@@ -68,7 +68,9 @@ const STATES = {
   'VA': { name: 'Virginia', abbrev: 'va' },
   'MD': { name: 'Maryland', abbrev: 'md' },
   'DE': { name: 'Delaware', abbrev: 'de' },
-  'AK': { name: 'Alaska', abbrev: 'ak' }
+  'AK': { name: 'Alaska', abbrev: 'ak' },
+  'VT': { name: 'Vermont', abbrev: 'vt' },
+  'OH': { name: 'Ohio', abbrev: 'oh' }
 };
 
 // Regional configuration - aggregates multiple counties for SEO
