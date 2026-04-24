@@ -599,6 +599,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/149-add-energy-coop-vermont', label: 'Energy Co-op of Vermont (Colchester VT — Chittenden+4 counties)' },
           { path: './src/migrations/150-add-hudson-fuel-oil-oh', label: 'Hudson Fuel Oil (New Richmond OH — Cincinnati metro, 3rd in-state OH supplier)' },
           { path: './src/migrations/151-add-jackman-fuels-vt', label: 'Jackman Fuels Inc (Vergennes VT — Addison+Chittenden counties, will-call)' },
+          { path: './src/migrations/152-add-cn-brown-lancaster', label: 'CN Brown Energy (Lancaster NH — NEK VT + Coos NH, 3rd CN Brown branch via multi-branch config)' },
         ];
 
         let migrationErrors = 0;
