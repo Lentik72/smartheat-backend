@@ -16,10 +16,14 @@
  * scrape-config.json `branches` map keyed by supplier slug, priceScraper
  * `getConfigForSupplier` merges branch fields over shared top-level.
  *
- * Unblocks the two real VT coverage gaps surfaced during the 2026-04-24
- * audit: 05653 Eden Mills (via city/county matching to Caledonia) and
- * 05871 West Burke (direct ZIP match). Ship together with the scrape-config
- * branch entry to avoid orphan-branch warnings.
+ * **IMPORTANT — slug-based upsert, NOT website-based.**
+ * Does NOT use shared lib/upsert-supplier.js because that utility matches by
+ * website LIKE, which for multi-branch chains would UPDATE the sister Augusta
+ * row (same website `cnbrownenergy.com`) and overwrite its identity. Instead
+ * this migration does a direct INSERT ... ON CONFLICT (slug) DO UPDATE so the
+ * Augusta row is never touched. See commit history 2026-04-24 for the bug
+ * this guards against. Long-term fix: lib/upsert-supplier.js should gain an
+ * optional matchBy='slug' argument — tracked separately.
  *
  * Phone verified on https://cnbrownenergy.com/locations/?location-zip-code=03584:
  *   "Lancaster Energy Office / 202 Main Street, Suite C, Lancaster, NH 03584
@@ -32,45 +36,72 @@
  * here per post-migration-100 rule).
  */
 
-const { upsertSupplier } = require('./lib/upsert-supplier');
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = {
   name: '152-add-cn-brown-lancaster',
 
   async up(sequelize) {
-    await upsertSupplier(sequelize, {
-      name: 'CN Brown Energy (Lancaster)',
-      slug: 'cn-brown-lancaster',
-      phone: '(603) 788-2012',
-      email: 'ho3061Group@cnbrown.com',
-      website: 'https://cnbrownenergy.com',
-      addressLine1: '202 Main Street, Suite C',
-      city: 'Lancaster',
-      state: 'NH',
-      serviceCities: JSON.stringify([
-        'Lancaster', 'Whitefield', 'Jefferson', 'Dalton', 'Groveton',
-        'Littleton', 'Bethlehem', 'Twin Mountain', 'Gorham', 'Berlin',
-        'St. Johnsbury', 'Lyndonville', 'West Burke', 'Barton',
-      ]),
-      serviceCounties: JSON.stringify(['Coos', 'Grafton', 'Caledonia', 'Essex']),
-      serviceAreaRadius: 40,
-      lat: 44.4878,
-      lng: -71.5707,
-      hoursWeekday: null,
-      hoursSaturday: null,
-      hoursSunday: null,
-      emergencyDelivery: false,
-      weekendDelivery: false,
-      paymentMethods: JSON.stringify(['credit_card', 'cash', 'check']),
-      fuelTypes: JSON.stringify(['heating_oil', 'kerosene', 'propane']),
-      minimumGallons: null,
-      seniorDiscount: false,
-      allowPriceDisplay: true,
-      notes: null,
-      active: true,
+    await sequelize.query(`
+      INSERT INTO suppliers (
+        id, name, slug, phone, email, website, address_line1, city, state,
+        service_cities, service_counties, service_area_radius, lat, lng,
+        hours_weekday, hours_saturday, hours_sunday,
+        emergency_delivery, weekend_delivery,
+        payment_methods, fuel_types, minimum_gallons, senior_discount,
+        allow_price_display, notes, active, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9,
+        $10::jsonb, $11::jsonb, $12, $13, $14,
+        NULL, NULL, NULL,
+        false, false,
+        $15::jsonb, $16::jsonb, NULL, false,
+        true, NULL, true, NOW(), NOW()
+      )
+      ON CONFLICT (slug) DO UPDATE SET
+        name = EXCLUDED.name,
+        phone = EXCLUDED.phone,
+        email = EXCLUDED.email,
+        website = EXCLUDED.website,
+        address_line1 = EXCLUDED.address_line1,
+        city = EXCLUDED.city,
+        state = EXCLUDED.state,
+        service_cities = EXCLUDED.service_cities,
+        service_counties = EXCLUDED.service_counties,
+        service_area_radius = EXCLUDED.service_area_radius,
+        lat = EXCLUDED.lat,
+        lng = EXCLUDED.lng,
+        payment_methods = EXCLUDED.payment_methods,
+        fuel_types = EXCLUDED.fuel_types,
+        allow_price_display = EXCLUDED.allow_price_display,
+        active = EXCLUDED.active,
+        updated_at = NOW()
+    `, {
+      bind: [
+        uuidv4(),
+        'CN Brown Energy (Lancaster)',
+        'cn-brown-lancaster',
+        '(603) 788-2012',
+        'ho3061Group@cnbrown.com',
+        'https://cnbrownenergy.com',
+        '202 Main Street, Suite C',
+        'Lancaster',
+        'NH',
+        JSON.stringify([
+          'Lancaster', 'Whitefield', 'Jefferson', 'Dalton', 'Groveton',
+          'Littleton', 'Bethlehem', 'Twin Mountain', 'Gorham', 'Berlin',
+          'St. Johnsbury', 'Lyndonville', 'West Burke', 'Barton',
+        ]),
+        JSON.stringify(['Coos', 'Grafton', 'Caledonia', 'Essex']),
+        40,
+        44.4878,
+        -71.5707,
+        JSON.stringify(['credit_card', 'cash', 'check']),
+        JSON.stringify(['heating_oil', 'kerosene', 'propane']),
+      ],
     });
 
-    console.log('[Migration 152] ✅ Added CN Brown Energy (Lancaster) — Coos NH + Caledonia/Essex VT');
+    console.log('[Migration 152] ✅ Added CN Brown Energy (Lancaster) — Coos NH + Caledonia/Essex VT (slug-based upsert)');
   },
 
   async down(sequelize) {
