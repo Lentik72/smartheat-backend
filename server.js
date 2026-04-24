@@ -598,6 +598,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/148-add-leroux-fuels-ny', label: 'Leroux Fuels (Plattsburgh NY — Clinton + N. Essex counties)' },
           { path: './src/migrations/149-add-energy-coop-vermont', label: 'Energy Co-op of Vermont (Colchester VT — Chittenden+4 counties)' },
           { path: './src/migrations/150-add-hudson-fuel-oil-oh', label: 'Hudson Fuel Oil (New Richmond OH — Cincinnati metro, 3rd in-state OH supplier)' },
+          { path: './src/migrations/151-add-jackman-fuels-vt', label: 'Jackman Fuels Inc (Vergennes VT — Addison+Chittenden counties, will-call)' },
         ];
 
         let migrationErrors = 0;

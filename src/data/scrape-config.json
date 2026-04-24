@@ -20694,6 +20694,7 @@
       "05341",
       "05346",
       "05354",
+      "05357",
       "05363"
     ]
   },
@@ -35944,6 +35945,24 @@
       "04363",
       "04364",
       "04989"
+    ]
+  },
+  "jackmanfuels.com": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED: VT Addison + Chittenden counties — family-owned since 1945 (Vergennes). Will-call confirmed on /home-heating-oil-propane-delivery/delivery-plans/ ('Will Call Delivery... monitor your own usage and call us when you need it'). Not scrapable: no public price page, account-oriented site. Phone: 802-877-2661. Fuels: heating oil, propane, kerosene, off-road diesel.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "05443",
+      "05445",
+      "05456",
+      "05461",
+      "05472",
+      "05473",
+      "05482",
+      "05491",
+      "05734",
+      "05753"
     ]
   }
 }
