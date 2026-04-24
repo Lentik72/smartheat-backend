@@ -29,6 +29,7 @@ const UnifiedAnalytics = require('../services/UnifiedAnalytics');
 const RecommendationsEngine = require('../services/RecommendationsEngine');
 const SupplierHealthService = require('../services/SupplierHealthService');
 const CommandCenterService = require('../services/CommandCenterService');
+const { findSuppliersForZip } = require('../services/supplierMatcher');
 
 // Apply protection to all dashboard routes
 router.use(dashboardProtection);
@@ -608,19 +609,29 @@ router.get('/geographic', async (req, res) => {
       logger.warn('[Dashboard] Could not load zip-database.json');
     }
 
-    // Get supplier count per ZIP (how many suppliers serve each ZIP)
-    const supplierCoverage = await sequelize.query(`
-      SELECT zip_code, COUNT(*) as supplier_count
-      FROM (
-        SELECT jsonb_array_elements_text(postal_codes_served) as zip_code
-        FROM suppliers
-        WHERE active = true AND postal_codes_served IS NOT NULL AND jsonb_array_length(postal_codes_served) > 0
-      ) zips
-      GROUP BY zip_code
+    // Load all active suppliers once; we then use the same 4-tier matcher the
+    // public API uses (ZIP → city → county → radius) to count who actually serves
+    // each demand ZIP. The prior single-tier jsonb_array_elements_text query on
+    // postal_codes_served massively undercounted: ZIPs with 0 postal-code matches
+    // frequently had 10-22 suppliers served via serviceCities/Counties/radius,
+    // so the "coverage gap" table misfired and sent us chasing non-gaps
+    // (see heatingoil-jx8r re-audit 2026-04-24).
+    const activeSuppliers = await sequelize.query(`
+      SELECT id, name, city, state, lat, lng,
+             postal_codes_served AS "postalCodesServed",
+             service_cities AS "serviceCities",
+             service_counties AS "serviceCounties",
+             service_area_radius AS "serviceAreaRadius",
+             verified
+      FROM suppliers
+      WHERE active = true
     `, { type: sequelize.QueryTypes.SELECT });
 
-    // Build map of ZIP -> supplier count
-    const zipSupplierCount = new Map(supplierCoverage.map(r => [r.zip_code, parseInt(r.supplier_count)]));
+    // Count matching suppliers per demand ZIP using the unified matcher.
+    const countSuppliersForZip = (zip) => {
+      const { suppliers: matched } = findSuppliersForZip(zip, activeSuppliers, { includeRadius: true });
+      return matched.length;
+    };
 
     // Get user search demand by ZIP (from user_locations)
     const demand = await sequelize.query(`
@@ -643,7 +654,7 @@ router.get('/geographic', async (req, res) => {
     demand.forEach(d => {
       const zipData = zipCoords[d.zip_code];
       const hasCoords = zipData?.lat && zipData?.lng;
-      const supplierCount = zipSupplierCount.get(d.zip_code) || 0;
+      const supplierCount = countSuppliersForZip(d.zip_code);
 
       const entry = {
         zip: d.zip_code,
@@ -714,7 +725,11 @@ router.get('/geographic', async (req, res) => {
         totalGapZips: coverageGaps.length,  // Keep original count for stats
         totalGapZipsWithCoords: coverageGapsWithCoords.length,
         totalLimitedZips: limitedCoverage.length,
-        coveredZips: zipSupplierCount.size
+        coveredZips: new Set(
+          activeSuppliers.flatMap(s =>
+            Array.isArray(s.postalCodesServed) ? s.postalCodesServed : []
+          )
+        ).size
       }
     });
   } catch (error) {
