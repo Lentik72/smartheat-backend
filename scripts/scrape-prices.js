@@ -128,7 +128,19 @@ async function runScraper(options = {}) {
 
     // Filter to configured suppliers
     const scrapableSuppliers = suppliers.filter(s => {
-      const config = getConfigForSupplier(s.website, scrapeConfig);
+      const config = getConfigForSupplier(s.website, scrapeConfig, s.slug);
+      // Only warn on TRUE multi-branch orphans (domain has branches, but this
+      // supplier's slug isn't one of them). Suppliers with no matching config
+      // entry at all are normal — most suppliers we research aren't scrapable
+      // and have no scrape-config row.
+      if (!config && s.website && s.slug) {
+        try {
+          const d = new URL(s.website.startsWith('http') ? s.website : 'https://' + s.website).hostname.replace('www.', '');
+          if (scrapeConfig[d] && scrapeConfig[d].branches) {
+            log.warn(`⚠ supplier ${s.name} (${s.slug}) matched multi-branch domain ${d} but has no branch config — check scrape-config.json`);
+          }
+        } catch { /* malformed URL — already null'd by getConfigForSupplier */ }
+      }
       return config && config.enabled;
     });
     log.info(`📋 ${scrapableSuppliers.length} have scrape config`);
@@ -188,7 +200,7 @@ async function runScraper(options = {}) {
 
     for (let i = 0; i < scrapableSuppliers.length; i++) {
       const supplier = scrapableSuppliers[i];
-      const config = getConfigForSupplier(supplier.website, scrapeConfig);
+      const config = getConfigForSupplier(supplier.website, scrapeConfig, supplier.slug);
 
       // V2.6.0: Check backoff status before scraping
       const backoffCheck = shouldScrapeSupplier(supplier);
