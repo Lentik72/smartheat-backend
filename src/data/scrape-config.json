@@ -35929,23 +35929,27 @@
     "enabled": true,
     "pattern": "direct",
     "lookupUrl": "https://cnbrownenergy.com/locations/?location-zip-code={zip}",
-    "lookupZip": "04330",
-    "notes": "ME Augusta branch only - 362 Riverside Dr. Family-owned 75+ yrs, 23 ME/NH/VT/MA offices. Cash price is per-ZIP via ?location-zip-code lookup (location-specific per disclaimer). This entry scoped to 12 ZIPs confirmed served by Augusta Energy Office via lookup probes; other branches have distinct pricing. Phone: (207) 622-6262.",
     "priceRegex": "post-info__item--type-custom\">\\s*\\$([0-9]+\\.[0-9]{2,3})",
-    "postalCodesServed": [
-      "04330",
-      "04344",
-      "04345",
-      "04346",
-      "04347",
-      "04351",
-      "04353",
-      "04355",
-      "04358",
-      "04363",
-      "04364",
-      "04989"
-    ]
+    "notes": "CN Brown Energy multi-branch. Each branch returns distinct per-ZIP cash prices via ?location-zip-code lookup. Shared: lookupUrl, priceRegex. Per branch: lookupZip + postalCodesServed. Augusta: 362 Riverside Dr, (207) 622-6262. Spec: heatingoil-jx8r.",
+    "branches": {
+      "cn-brown-augusta": {
+        "lookupZip": "04330",
+        "postalCodesServed": [
+          "04330",
+          "04344",
+          "04345",
+          "04346",
+          "04347",
+          "04351",
+          "04353",
+          "04355",
+          "04358",
+          "04363",
+          "04364",
+          "04989"
+        ]
+      }
+    }
   },
   "jackmanfuels.com": {
     "enabled": false,
