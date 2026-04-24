@@ -95,7 +95,7 @@ async function runScraper(options = {}) {
     // V2.6.0: Include backoff fields for cooldown/phone_only logic
     // V2.8.0: Also include claimed suppliers with stale prices (7+ days) for backup scraping
     let query = `
-      SELECT s.id, s.name, s.website, s.city, s.state,
+      SELECT s.id, s.name, s.slug, s.website, s.city, s.state,
              s.scrape_status, s.scrape_cooldown_until, s.consecutive_scrape_failures,
              s.claimed_at, s.allow_price_display,
              (SELECT MAX(scraped_at) FROM supplier_prices WHERE supplier_id = s.id AND is_valid = true) as last_price_date
