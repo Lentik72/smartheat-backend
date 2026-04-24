@@ -101,6 +101,9 @@ class ScrapeConfigSync {
       return { success: false, reason: 'config_load_failed' };
     }
 
+    // heatingoil-jx8r: surface multi-branch config errors at startup. Non-fatal.
+    await this._validateMultiBranchConfigs(config);
+
     const skipCoverage = process.env.SCRAPECONFIG_SKIP_COVERAGE === 'true';
     if (skipCoverage) {
       console.log('[ScrapeConfigSync] Coverage writes disabled via SCRAPECONFIG_SKIP_COVERAGE');
@@ -368,6 +371,72 @@ class ScrapeConfigSync {
     });
 
     return { success: true, stats, unresolvableZips: unresolvableZips.size };
+  }
+
+  /**
+   * Validate multi-branch config entries at startup. Non-fatal — warnings only.
+   *
+   * Surfaces problems early (boot time) rather than on each scrape run. Writes
+   * to console.warn, which lands in Railway logs. Warnings:
+   *   1. Domain has both top-level postalCodesServed AND branches — ambiguous;
+   *      top-level ZIPs will be silently ignored.
+   *   2. Domain has both top-level lookupZip AND branches — same ambiguity.
+   *   3. Branch missing postalCodesServed — likely authoring error.
+   *   4. Two branches under the same domain claim the same ZIP — coverage
+   *      conflict; the second branch "wins" in union-merge but attribution
+   *      becomes nondeterministic.
+   *   5. Branch slug has no matching supplier row in the DB — orphan; will
+   *      also be warned at sync time, this just surfaces earlier.
+   *
+   * Test surface (jx8r): 5 assertions cover each warning class with
+   * stubbed sequelize.
+   */
+  async _validateMultiBranchConfigs(config) {
+    for (const [domain, cfg] of Object.entries(config)) {
+      if (domain.startsWith('_')) continue;
+      if (!cfg || !cfg.branches) continue;
+
+      if (cfg.postalCodesServed) {
+        console.warn(`[ScrapeConfigSync][validate] ${domain}: has both top-level postalCodesServed AND branches — top-level ZIPs will be ignored`);
+      }
+      if (cfg.lookupZip) {
+        console.warn(`[ScrapeConfigSync][validate] ${domain}: has both top-level lookupZip AND branches — top-level lookupZip will be ignored`);
+      }
+
+      const seenZips = new Map(); // zip -> first branch slug that claimed it
+      for (const [branchSlug, branchCfg] of Object.entries(cfg.branches)) {
+        if (!Array.isArray(branchCfg.postalCodesServed) || branchCfg.postalCodesServed.length === 0) {
+          console.warn(`[ScrapeConfigSync][validate] ${domain} branch "${branchSlug}": missing or empty postalCodesServed`);
+          continue;
+        }
+        for (const zip of branchCfg.postalCodesServed) {
+          if (seenZips.has(zip)) {
+            console.warn(`[ScrapeConfigSync][validate] ${domain}: ZIP ${zip} appears in both "${seenZips.get(zip)}" and "${branchSlug}" branches`);
+          } else {
+            seenZips.set(zip, branchSlug);
+          }
+        }
+      }
+
+      // Orphan-branch check: branch slug has no matching supplier row.
+      const branchSlugs = Object.keys(cfg.branches);
+      if (branchSlugs.length > 0) {
+        try {
+          const matches = await this.sequelize.query(
+            `SELECT slug FROM suppliers WHERE slug = ANY($1::text[])`,
+            { bind: [branchSlugs], type: this.sequelize.QueryTypes.SELECT }
+          );
+          const found = new Set(matches.map(r => r.slug));
+          for (const slug of branchSlugs) {
+            if (!found.has(slug)) {
+              console.warn(`[ScrapeConfigSync][validate] ${domain} branch "${slug}": no supplier record with this slug`);
+            }
+          }
+        } catch (err) {
+          console.warn(`[ScrapeConfigSync][validate] ${domain}: orphan-slug check failed — ${err.message}`);
+        }
+      }
+    }
   }
 
   /**
