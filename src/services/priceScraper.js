@@ -699,7 +699,7 @@ function loadScrapeConfig() {
  * @param {object} config - Full scrape config
  * @returns {object|null} - Config for this supplier or null
  */
-function getConfigForSupplier(website, config) {
+function getConfigForSupplier(website, config, supplierSlug = null) {
   if (!website || !config) return null;
 
   // Extract domain from URL
@@ -711,7 +711,25 @@ function getConfigForSupplier(website, config) {
     return null;
   }
 
-  return config[domain] || null;
+  const base = config[domain];
+  if (!base) return null;
+
+  // Multi-branch entries: require a slug that matches a branch.
+  // Orphaned suppliers (no matching branch) return null so they're filtered
+  // out by the scrapableSuppliers filter rather than silently scraping with
+  // the wrong branch's lookupZip.
+  // ASSUMPTION: all branches under a domain share pattern/lookupUrl/priceRegex.
+  // If a future chain needs per-branch regex overrides, the merge-over semantic
+  // below still handles it, but the scraper's per-run config fetch does not.
+  if (base.branches) {
+    if (supplierSlug && base.branches[supplierSlug]) {
+      return { ...base, ...base.branches[supplierSlug] };
+    }
+    return null;
+  }
+
+  // Single-branch entries: return base, ignore slug arg (backwards compat).
+  return base;
 }
 
 /**
