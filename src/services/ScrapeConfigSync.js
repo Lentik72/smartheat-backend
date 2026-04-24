@@ -38,6 +38,24 @@ function normalizeZip(z, supplierName) {
   return null;
 }
 
+/**
+ * Decide whether a config entry should enter the sync loop.
+ *
+ * Accepts:
+ * - Single-branch entries with non-empty postalCodesServed (existing behavior)
+ * - Multi-branch entries with non-empty branches map (NEW — heatingoil-jx8r)
+ *
+ * Without this predicate widening, multi-branch entries silently skip the
+ * sync loop because they have no top-level postalCodesServed. Pure function,
+ * exported for unit testing.
+ */
+function _shouldSyncConfigEntry(cfg) {
+  if (!cfg || typeof cfg !== 'object') return false;
+  const hasFlatZips = Array.isArray(cfg.postalCodesServed) && cfg.postalCodesServed.length > 0;
+  const hasBranches = !!(cfg.branches && typeof cfg.branches === 'object' && Object.keys(cfg.branches).length > 0);
+  return hasFlatZips || hasBranches;
+}
+
 class ScrapeConfigSync {
   constructor(sequelize) {
     this.sequelize = sequelize;
@@ -106,21 +124,61 @@ class ScrapeConfigSync {
       console.error('[ScrapeConfigSync] ZIP database failed to load — skipping coverage cross-check');
     }
 
-    // Filter entries that have postalCodesServed (actual supplier configs)
+    // Filter entries that should sync (single-branch with postalCodesServed,
+    // or multi-branch with branches). See _shouldSyncConfigEntry above.
     const supplierEntries = Object.entries(config).filter(([domain, cfg]) => {
-      return typeof cfg === 'object' &&
-             cfg !== null &&
-             Array.isArray(cfg.postalCodesServed) &&
-             cfg.postalCodesServed.length > 0;
+      if (domain.startsWith('_')) return false;
+      return _shouldSyncConfigEntry(cfg);
     });
 
     console.log(`[ScrapeConfigSync] Found ${supplierEntries.length} suppliers with ZIP coverage`);
 
     for (const [domain, cfg] of supplierEntries) {
       try {
+        const normalizedDomain = this.normalizeDomain(domain);
+
+        // ── Multi-branch path (heatingoil-jx8r) ──────────────────────────
+        // Iterate each branch, match supplier by slug (not domain), coverage-
+        // sync per branch. Single-branch path unchanged below.
+        if (cfg.branches) {
+          for (const [branchSlug, branchCfg] of Object.entries(cfg.branches)) {
+            stats.processed++;
+            const branchLabel = `${domain}[${branchSlug}]`;
+
+            const [branchSupplier] = await this.sequelize.query(
+              `SELECT id, name, phone, postal_codes_served, active,
+                      allow_price_display, scrape_status, consecutive_scrape_failures
+               FROM suppliers WHERE slug = $1 LIMIT 1`,
+              { bind: [branchSlug], type: this.sequelize.QueryTypes.SELECT }
+            );
+
+            if (!branchSupplier) {
+              console.warn(`[ScrapeConfigSync] Branch "${branchSlug}" in ${domain} has no matching supplier — skipping`);
+              stats.skipped++;
+              continue;
+            }
+
+            // Merge branch over top-level for coverage sync (same semantic
+            // as priceScraper.getConfigForSupplier).
+            const mergedCfg = { ...cfg, ...branchCfg };
+            try {
+              const result = await this._syncSupplierCoverage(branchSupplier, mergedCfg, branchLabel, {
+                skipCoverage, zipDbLoaded, zipDb, unresolvableZips
+              });
+              if (result.updated) stats.updated++;
+              else stats.skipped++;
+              if (result.driftDetected) driftCount++;
+            } catch (err) {
+              stats.errors.push({ domain: branchLabel, error: err.message });
+              console.error(`[ScrapeConfigSync] Error processing branch ${branchLabel}:`, err.message);
+            }
+          }
+          continue;  // don't fall through to single-branch path
+        }
+
+        // ── Single-branch path (unchanged) ──────────────────────────────
         stats.processed++;
 
-        const normalizedDomain = this.normalizeDomain(domain);
         const websiteUrl = `https://${normalizedDomain}`;
         const supplierLabel = cfg.name || domain;
 
@@ -313,6 +371,88 @@ class ScrapeConfigSync {
   }
 
   /**
+   * Sync one branch's coverage to one supplier row. Factored out so the
+   * multi-branch path can reuse the existing union-merge + drift-log logic
+   * without duplicating the ~70 lines of the single-branch inline path.
+   *
+   * Scope: ONLY coverage (postal_codes_served). Does NOT sync name/phone/
+   * active/scrape_status — the single-branch path handles those inline, and
+   * for multi-branch those fields should come from the per-branch migration
+   * (e.g., migration 152 for cn-brown-lancaster), not from scrape-config.
+   *
+   * @param {object} supplier — { id, name, postal_codes_served, ... } DB row
+   * @param {object} cfg — merged config (branch merged over top-level)
+   * @param {string} supplierLabel — for log lines, e.g. "cnbrownenergy.com[cn-brown-augusta]"
+   * @param {object} ctx — { skipCoverage, zipDbLoaded, zipDb, unresolvableZips }
+   * @returns {Promise<{updated: boolean, driftDetected: boolean}>}
+   */
+  async _syncSupplierCoverage(supplier, cfg, supplierLabel, ctx) {
+    if (ctx.skipCoverage) return { updated: false, driftDetected: false };
+
+    const configZips = (cfg.postalCodesServed || [])
+      .map(z => normalizeZip(z, supplierLabel))
+      .filter(Boolean);
+
+    if (ctx.zipDbLoaded) {
+      configZips.forEach(z => { if (!ctx.zipDb[z]) ctx.unresolvableZips.add(z); });
+    }
+
+    if (configZips.length === 0 && cfg.postalCodesOverride !== true) {
+      console.log(`[ScrapeConfigSync] Skipping empty coverage for ${supplierLabel}`);
+      return { updated: false, driftDetected: false };
+    }
+
+    const rawDbZips = Array.isArray(supplier.postal_codes_served)
+      ? supplier.postal_codes_served
+      : (() => { try { return JSON.parse(supplier.postal_codes_served || '[]'); } catch (e) { return []; } })();
+    const existingZips = rawDbZips.map(z => normalizeZip(z, supplierLabel)).filter(Boolean);
+
+    let finalZips;
+    if (cfg.postalCodesOverride === true) {
+      finalZips = configZips;
+      const configSet = new Set(configZips);
+      const removed = existingZips.filter(z => !configSet.has(z));
+      if (removed.length > 0 && existingZips.length > 0 && (removed.length / existingZips.length > 0.3 || removed.length > 20)) {
+        console.warn(`[ScrapeConfigSync] LARGE SHRINK ${supplierLabel}: removing ${removed.length}/${existingZips.length} ZIPs (${Math.round(removed.length / existingZips.length * 100)}%)`);
+      } else if (removed.length > 0) {
+        console.log(`[ScrapeConfigSync] OVERRIDE ${supplierLabel}: removed ${removed.length} ZIPs`);
+      }
+    } else {
+      finalZips = [...new Set([...existingZips, ...configZips])];
+      if (existingZips.length > 0 && finalZips.length > existingZips.length * 3) {
+        console.warn(`[ScrapeConfigSync] MASSIVE EXPANSION ${supplierLabel}: ${existingZips.length} → ${finalZips.length} ZIPs`);
+      }
+    }
+
+    finalZips.sort((a, b) => Number(a) - Number(b));
+
+    const rawSorted = [...rawDbZips].map(String).sort();
+    const finalForCompare = [...finalZips].sort();
+    const needsUpdate = JSON.stringify(rawSorted) !== JSON.stringify(finalForCompare);
+
+    // Drift logging (always, even when no update needed)
+    const configSet = new Set(configZips);
+    const existingSet = new Set(existingZips);
+    const dbOnly = existingZips.filter(z => !configSet.has(z));
+    const configOnly = configZips.filter(z => !existingSet.has(z));
+    if (dbOnly.length > 0) {
+      console.log(`[ScrapeConfigSync] DRIFT ${supplierLabel}: ${dbOnly.length} ZIPs in DB not in config`);
+    }
+    if (configOnly.length > 0) {
+      console.log(`[ScrapeConfigSync] DRIFT ${supplierLabel}: ${configOnly.length} ZIPs in config not in DB (adding)`);
+    }
+    const driftDetected = dbOnly.length > 0 || configOnly.length > 0;
+
+    if (!needsUpdate) return { updated: false, driftDetected };
+
+    await this.sequelize.query(
+      `UPDATE suppliers SET postal_codes_served = $1, updated_at = NOW() WHERE id = $2`,
+      { bind: [JSON.stringify(finalZips), supplier.id], type: this.sequelize.QueryTypes.UPDATE }
+    );
+    return { updated: true, driftDetected };
+  }
+
+  /**
    * Convert domain to readable company name
    */
   domainToName(domain) {
@@ -327,3 +467,4 @@ class ScrapeConfigSync {
 }
 
 module.exports = ScrapeConfigSync;
+module.exports._shouldSyncConfigEntry = _shouldSyncConfigEntry;
