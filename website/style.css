@@ -181,7 +181,7 @@ body {
 }
 
 .nav-links a:hover {
-    color: var(--primary-orange);
+    color: var(--primary-orange-dark);
     background: var(--primary-orange-light);
 }
 
@@ -209,7 +209,7 @@ body {
 }
 
 .nav-dropdown-toggle:hover {
-    color: var(--primary-orange);
+    color: var(--primary-orange-dark);
     background: var(--primary-orange-light);
 }
 
@@ -239,7 +239,7 @@ body {
 
 .nav-dropdown li a:hover {
     background: var(--primary-orange-light);
-    color: var(--primary-orange);
+    color: var(--primary-orange-dark);
 }
 
 /* Desktop: hover/focus-within opens dropdown */
@@ -1488,7 +1488,8 @@ body {
 }
 
 .supplier-contribution-hint a {
-    color: var(--primary-orange);
+    /* Dark variant required: ancestor .supplier-contribution-hint has --primary-orange-light bg (L1486). */
+    color: var(--primary-orange-dark);
     font-weight: 600;
     text-decoration: none;
 }
@@ -3561,6 +3562,12 @@ body {
     background: var(--primary-orange-light);
 }
 
+/* WCAG AA: row hover bg is --primary-orange-light; darken orange descendants to keep 4.5:1. */
+.supplier-table tbody tr:hover .supplier-price,
+.supplier-table tbody tr:hover .supplier-profile-link:hover {
+    color: var(--primary-orange-dark);
+}
+
 .supplier-name {
     font-weight: 600;
     color: var(--text-dark);
@@ -3839,6 +3846,12 @@ body {
 
 .county-comparison-table tbody tr:hover {
     background: var(--primary-orange-light);
+}
+
+/* WCAG AA: row hover bg is --primary-orange-light; darken orange descendants to keep 4.5:1. */
+.county-comparison-table tbody tr:hover .county-price,
+.county-comparison-table tbody tr:hover td a:hover {
+    color: var(--primary-orange-dark);
 }
 
 /* Chart Section */
