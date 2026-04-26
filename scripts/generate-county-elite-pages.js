@@ -61,6 +61,18 @@ const legacyLayout = args.includes('--legacy-layout');
 const fuelArg = args.find(a => a.startsWith('--fuel='));
 const cliFuelType = fuelArg ? fuelArg.split('=')[1] : 'heating_oil';
 
+// heatingoil-3ixk — parallel-URL rollout for County Page v2 redesign.
+// Default 'v1' = byte-identical existing behavior. 'v2' emits to website/prices/county/v2/...
+const layoutArg = args.find(a => a.startsWith('--layout='));
+const cliLayout = layoutArg ? layoutArg.split('=')[1] : 'v1';
+if (!['v1', 'v2'].includes(cliLayout)) {
+  console.error(`Invalid --layout: ${cliLayout}. Use v1 or v2.`);
+  process.exit(1);
+}
+
+// v2 helpers — only loaded when needed
+const renderV2 = require('./lib/render-county-v2');
+
 const FUEL_CONFIGS = {
   heating_oil: {
     fuelType: 'heating_oil',
@@ -116,11 +128,15 @@ async function generateCountyElitePages(options = {}) {
     logger = console,
     outputDir = WEBSITE_DIR,
     dryRun = cliDryRun,
-    fuelType = cliFuelType
+    fuelType = cliFuelType,
+    layout = cliLayout,
   } = options;
 
   const FUEL = FUEL_CONFIGS[fuelType] || FUEL_CONFIGS.heating_oil;
-  const COUNTY_DIR = path.join(outputDir, FUEL.dirPrefix);
+  // v2 emits to website/prices/county/v2/<state>/ (parallel URL tree until cutover)
+  const COUNTY_DIR = layout === 'v2'
+    ? path.join(outputDir, FUEL.dirPrefix, 'v2')
+    : path.join(outputDir, FUEL.dirPrefix);
 
   const log = (msg) => logger.info ? logger.info(msg) : console.log(msg);
 
@@ -210,12 +226,49 @@ async function generateCountyElitePages(options = {}) {
     const countyCssContent = generateCountyEliteCSS();
     const countyCssHash = crypto.createHash('md5').update(countyCssContent).digest('hex').slice(0, 8);
 
+    // v2 CSS lives at scripts/lib/county-elite-v2.css (tracked source of truth).
+    // website/prices/ is gitignored so the file would not deploy via git push;
+    // we copy it into the output dir here before HTML generation, same way v1
+    // CSS is written above. Hash bumps automatically with content changes.
+    let countyV2CssHash = countyCssHash;
+    let v2CssContent = null;
+    try {
+      const v2CssSrc = path.join(__dirname, 'lib', 'county-elite-v2.css');
+      v2CssContent = fsSync.readFileSync(v2CssSrc, 'utf-8');
+      countyV2CssHash = crypto.createHash('md5').update(v2CssContent).digest('hex').slice(0, 8);
+    } catch (e) {
+      log('⚠️  scripts/lib/county-elite-v2.css missing; v2 pages will be unstyled. ' + e.message);
+    }
+
+    // tokens-r2.css is tracked under website/css/ (NOT gitignored). Compute its
+    // content hash so token edits invalidate the browser cache during the
+    // parallel rollout. Plan Step 5 requirement.
+    let tokensR2Hash = '1';
+    try {
+      const tokensR2Src = path.join(WEBSITE_DIR, 'css', 'tokens-r2.css');
+      const tokensR2Content = fsSync.readFileSync(tokensR2Src, 'utf-8');
+      tokensR2Hash = crypto.createHash('md5').update(tokensR2Content).digest('hex').slice(0, 8);
+    } catch (e) {
+      log('⚠️  website/css/tokens-r2.css missing; falling back to ?v=1. ' + e.message);
+    }
+
     // Write CSS BEFORE HTML pages to prevent CDN race condition:
-    // If HTML is served before CSS is written, CDN caches stale CSS under new hash
+    // If HTML is served before CSS is written, CDN caches stale CSS under new hash.
+    // Both stylesheets live at outputDir/<fuel>/<file>.css regardless of layout.
+    // V2 HTML links them via "../../county-elite{,_v2}.css" (depth 4) so the
+    // file MUST sit one dir above COUNTY_DIR when layout='v2'.
     if (!dryRun) {
-      const cssPath = path.join(COUNTY_DIR, 'county-elite.css');
+      const sharedCssDir = path.join(outputDir, FUEL.dirPrefix);
+      await fs.mkdir(sharedCssDir, { recursive: true });
+      const cssPath = path.join(sharedCssDir, 'county-elite.css');
       await fs.writeFile(cssPath, countyCssContent, 'utf-8');
       log('✅ Generated county-elite.css (hash: ' + countyCssHash + ')');
+
+      if (v2CssContent != null) {
+        const v2CssOutPath = path.join(sharedCssDir, 'county-elite-v2.css');
+        await fs.writeFile(v2CssOutPath, v2CssContent, 'utf-8');
+        log('✅ Wrote county-elite-v2.css (hash: ' + countyV2CssHash + ')');
+      }
     }
 
     // Fetch all suppliers + prices once (shared with SEO generator)
@@ -319,7 +372,7 @@ async function generateCountyElitePages(options = {}) {
 
       const stateMedian = stateMedianMap[stats.state_code] || null;
       const countySearchCount = countySearchMap.get(`${stats.county_name.toLowerCase()}|${stats.state_code}`) || 0;
-      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips, allQualifyingCounties, legacyLayout, countySearchCount, crossLinkSet, crossLinkSupplierCount, FUEL);
+      const html = generateCountyPageHTML(stats, history, zipDetails, stateMedian, countyCssHash, countySuppliers, countyZips, allQualifyingCounties, legacyLayout, countySearchCount, crossLinkSet, crossLinkSupplierCount, FUEL, layout, countyV2CssHash, tokensR2Hash);
 
       // Create state subdirectory
       const stateDir = path.join(COUNTY_DIR, stats.state_code.toLowerCase());
@@ -372,7 +425,7 @@ async function generateCountyElitePages(options = {}) {
 /**
  * Generate HTML for a County Elite page
  */
-function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = [], allCountyStats = [], legacyLayout = false, countySearchCount = 0, crossLinkSet = new Set(), crossLinkSupplierCount = new Map(), FUEL) {
+function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, countyCssHash = '1', countySuppliers = [], countyZips = [], allCountyStats = [], legacyLayout = false, countySearchCount = 0, crossLinkSet = new Set(), crossLinkSupplierCount = new Map(), FUEL, layout = 'v1', countyV2CssHash = countyCssHash, tokensR2Hash = '1') {
   const countyName = stats.county_name;
   const stateCode = stats.state_code;
   const stateName = getStateName(stateCode);
@@ -1047,32 +1100,90 @@ ${countySuppliers.map(s => {
   } // end legacyLayout
 
   // ── New action-first layout ──
+  // heatingoil-3ixk: v2 layout swaps the hero + supplier-table sections and
+  // moves .app-cta to below the market-snapshot. Everything else (head, schemas,
+  // chart, insights, market snapshot, FAQ, footer) is shared with v1.
+  const isV2 = layout === 'v2';
+  // For v2 pages under /v2/, asset paths get one extra "../" because the URL
+  // is /prices/county/v2/<state>/slug.html (depth 4 vs v1's depth 3).
+  const v2AssetPath = isV2 ? '../' + assetPath : assetPath;
+  // v2 loads BOTH stylesheets — county-elite.css carries the v1 content-section
+  // styles (chart, market-snapshot, insight, zip-breakdown, county-alert, FAQ,
+  // nearby-counties, footer, app-cta) that v2 reuses; county-elite-v2.css ADDS
+  // hero + supplier-list styles. Order matters: v1 first, v2 overrides.
+  const v1CountyCssHref = isV2 ? '../../county-elite.css' : '../county-elite.css';
+  const v2OnlyCssLink = isV2 ? `\n  <link rel="stylesheet" href="../../county-elite-v2.css?v=${countyV2CssHash}">` : '';
+  const v2TokensCss = isV2 ? `\n  <link rel="stylesheet" href="${v2AssetPath}css/tokens-r2.css?v=${tokensR2Hash}">` : '';
+  const bodyClass = isV2 ? ' class="county-v2-page"' : '';
+
+  // Compute cheapest supplier (single tiebreak winner) for v2 hero.
+  const cheapestSupplierV2 = isV2 ? renderV2.cheapestTiebreak(allPricedSuppliers) : null;
+
+  // v2 hero markup — replaces v1 <header class="page-header"> + <section class="zip-filter-section">.
+  const breadcrumbV2 = `<nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/prices/">Prices</a></li>
+          <li><a href="${FUEL.fuelType !== 'heating_oil' ? `/prices/${FUEL.slug}/${stateCode.toLowerCase()}` : `/prices/${stateCode.toLowerCase()}`}">${escapeHtml(stateName)}</a></li>
+          <li aria-current="page">${escapeHtml(countyName)}</li>
+        </ol>
+      </nav>`;
+  const heroV2 = isV2 ? renderV2.renderHeroAnswer({
+    countyName, stateCode, stateName,
+    stats,
+    allPricedSuppliers,
+    cheapestSupplier: cheapestSupplierV2,
+    breadcrumbHTML: breadcrumbV2,
+  }) : '';
+
+  // v2 supplier list — replaces v1 <section class="supplier-table-section">.
+  // Pass ALL countySuppliers (priced + directory-only) — directory suppliers
+  // get a "Call for price" treatment in the renderer, matching v1 behavior.
+  // Single tiebreak winner (cheapestSupplierV2.id) gets the cheapest visual
+  // treatment — per spec Section 1, applying it to all tied rows dilutes the
+  // signal. Tied rows still sort to the top via the input ordering.
+  const supplierListV2 = isV2 ? renderV2.renderSupplierList({
+    suppliers: countySuppliers,
+    cheapestId: cheapestSupplierV2 ? cheapestSupplierV2.id : null,
+    visibleCount: 12,
+  }) : '';
+
+  // .app-cta block — extracted so v2 can re-emit it after market-snapshot
+  // (folds heatingoil-4e73 visual-weight concern).
+  const appCtaHTML = `<section class="app-cta">
+      <h3>Never Run Out of Oil</h3>
+      <p>Track your tank level and get price alerts for ${escapeHtml(countyName)} County.</p>
+      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="cta-button hide-on-android">Download Free for iPhone &rarr;</a>
+      <a href="/prices" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Add to Home Screen &rarr;</a>
+      <p class="cta-micro hide-on-android">Free app. No hardware. No ads.</p>
+      <p class="cta-micro android-only" style="display:none">Works like an app — no download needed.</p>
+    </section>`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
-  <script src="${assetPath}js/analytics.js"></script>
+  <script src="${v2AssetPath}js/analytics.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr} | HomeHeat</title>
   <meta name="description" content="${metaDescription}">
-  <link rel="canonical" href="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
+  <link rel="canonical" href="https://www.gethomeheat.com${FUEL.urlPrefix}${isV2 ? '/v2' : ''}/${stateCode.toLowerCase()}/${slug}">
 
   <!-- OpenGraph -->
   <meta property="og:title" content="${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
   <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : `Compare local ${FUEL.label.toLowerCase()} prices.`}">
   <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
-  <meta property="og:url" content="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
+  <meta property="og:url" content="https://www.gethomeheat.com${FUEL.urlPrefix}${isV2 ? '/v2' : ''}/${stateCode.toLowerCase()}/${slug}">
   <meta property="og:type" content="website">
 
   <meta name="color-scheme" content="light only">
-  <link rel="stylesheet" href="${assetPath}style.min.css?v=${cssVersion}">
-  <link rel="stylesheet" href="../county-elite.css?v=${countyCssHash}">
-  <link rel="icon" type="image/png" sizes="32x32" href="${assetPath}favicon-32.png">
+${isV2 ? `  <!-- v2 parallel-rollout: noindex prevents Google from indexing this URL alongside the v1 page during the staging period. Removed at cutover when v2 becomes the canonical layout at /prices/county/<state>/<slug>. -->\n  <meta name="robots" content="noindex,nofollow">\n` : ''}  <link rel="stylesheet" href="${v2AssetPath}style.min.css?v=${cssVersion}">${v2TokensCss}
+  <link rel="stylesheet" href="${v1CountyCssHref}?v=${countyCssHash}">${v2OnlyCssLink}
+  <link rel="icon" type="image/png" sizes="32x32" href="${v2AssetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
   <meta name="theme-color" content="#FF6B35">
-  <link rel="manifest" href="${assetPath}manifest.json">
+  <link rel="manifest" href="${v2AssetPath}manifest.json">
 
   <!-- Chart.js -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -1085,11 +1196,11 @@ ${countySuppliers.map(s => {
   ${itemListSchema ? `<script type="application/ld+json">${JSON.stringify(itemListSchema)}</script>` : ''}
   ${productSchema ? `<script type="application/ld+json">${JSON.stringify(productSchema)}</script>` : ''}
 </head>
-<body data-page-type="county_elite" data-price-signal="${priceSignal}">
-  ${getNavHTML(3, '/prices')}
+<body${bodyClass} data-page-type="county_elite" data-price-signal="${priceSignal}">
+  ${getNavHTML(isV2 ? 4 : 3, '/prices')}
 
-  <main class="county-elite-page" data-county="${escapeHtml(countyName)}">
-    <!-- Breadcrumb -->
+  <main class="county-elite-page${isV2 ? ' county-elite-page-v2' : ''}" data-county="${escapeHtml(countyName)}">
+${isV2 ? heroV2 : `    <!-- Breadcrumb -->
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/">Home</a> › <a href="/prices">Prices</a>${FUEL.fuelType !== 'heating_oil' ? ` › <a href="/prices/${FUEL.slug}/">${FUEL.label}</a>` : ''} › <a href="${FUEL.fuelType !== 'heating_oil' ? `/prices/${FUEL.slug}/${stateCode.toLowerCase()}` : `/prices/${stateCode.toLowerCase()}`}">${stateName}</a> › <span>${escapeHtml(countyName)} County</span>
     </nav>
@@ -1123,10 +1234,18 @@ ${countySuppliers.map(s => {
       <p id="zip-filter-result" class="zip-filter-result" hidden></p>
     </section>
     <script>window.__supplierZips=${JSON.stringify(supplierZipMap)};window.__countyName="${escapeHtml(countyName)}";</script>
-    ` : ''}
+    ` : ''}`}
 
-    <!-- Supplier Table -->
-    ${countySuppliers.length > 0 ? `
+    <!-- Supplier list -->
+    ${countySuppliers.length > 0 ? (isV2 ? `
+    <section class="supplier-table-section" id="suppliers">
+      <h2>${FUEL.label} Suppliers Serving ${escapeHtml(countyName)} County</h2>
+      ${countySearchCount >= 5 ? `<p class="county-traffic-proof"><strong>${countySearchCount.toLocaleString()}</strong> homeowners compared ${FUEL.label.toLowerCase()} prices in ${escapeHtml(countyName)} County this month.</p>` : ''}
+${supplierListV2}
+      <p class="supplier-trust-line">Prices collected from supplier websites and verified daily. Always confirm price and delivery minimum when ordering.</p>
+      <p class="supplier-claim-link">Are you a supplier in ${escapeHtml(countyName)} County? <a href="/for-suppliers">Claim your free listing &rarr;</a></p>
+    </section>
+    ` : `
     <section class="supplier-table-section" id="suppliers">
       <h2>${FUEL.label} Suppliers Serving ${escapeHtml(countyName)} County</h2>
       ${countySearchCount >= 5 ? `<p class="county-traffic-proof"><strong>${countySearchCount.toLocaleString()}</strong> homeowners compared ${FUEL.label.toLowerCase()} prices in ${escapeHtml(countyName)} County this month.</p>` : ''}
@@ -1180,7 +1299,7 @@ ${countySuppliers.map(s => {
         <a href="/prices/${stateCode.toLowerCase()}/${slugify(countyName)}-county">View full ${escapeHtml(countyName)} County supplier directory &rarr;</a>
       </p>
     </section>
-    ` : `
+    `) : `
     <section class="supplier-table-section supplier-empty-state">
       <h2>${FUEL.label} Suppliers Serving ${escapeHtml(countyName)} County</h2>
       <p>No suppliers currently reporting prices in ${escapeHtml(countyName)} County. <a href="/prices">Search ${FUEL.label.toLowerCase()} prices by ZIP code</a> to find suppliers delivering to your area.</p>
@@ -1200,15 +1319,10 @@ ${countySuppliers.map(s => {
 
     ${priceBannerHTML}
 
+    ${isV2 ? '' : `
     <!-- App CTA -->
-    <section class="app-cta">
-      <h3>Never Run Out of Oil</h3>
-      <p>Track your tank level and get price alerts for ${escapeHtml(countyName)} County.</p>
-      <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_elite_${stateCode.toLowerCase()}_${slug}" class="cta-button hide-on-android">Download Free for iPhone &rarr;</a>
-      <a href="/prices" class="cta-button android-only" style="display:none" onclick="if(window.showPwaInstallBanner){window.showPwaInstallBanner();event.preventDefault()}">Add to Home Screen &rarr;</a>
-      <p class="cta-micro hide-on-android">Free app. No hardware. No ads.</p>
-      <p class="cta-micro android-only" style="display:none">Works like an app — no download needed.</p>
-    </section>
+    ${appCtaHTML}
+    `}
 
     <!-- 6-Week Price History Chart -->
     ${history.length > 1 ? `
@@ -1321,6 +1435,11 @@ ${countySuppliers.map(s => {
       <p class="coverage-depth">${coverageDepth}</p>
     </section>
 
+    ${isV2 ? `
+    <!-- App CTA (v2: moved here from above-chart position per heatingoil-4e73) -->
+    ${appCtaHTML}
+    ` : ''}
+
     <!-- ZIP Breakdown Section -->
     ${zipDetails.length > 0 ? `
     <section class="zip-breakdown">
@@ -1418,7 +1537,7 @@ ${countySuppliers.map(s => {
   <div class="floating-app-wrapper ios-only" id="floating-app-wrapper">
     <button class="floating-app-dismiss" aria-label="Dismiss">&times;</button>
     <a href="https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=web_county&utm_medium=website&utm_campaign=county_floating" class="floating-app-icon" id="floating-app-cta">
-      <img src="${assetPath}images/app-icon.png" alt="HomeHeat" width="180" height="180">
+      <img src="${v2AssetPath}images/app-icon.png" alt="HomeHeat" width="180" height="180">
       <div class="float-text">
         <span class="float-title">Get HomeHeat</span>
         <span class="float-subtitle">Free on App Store</span>
@@ -1438,12 +1557,12 @@ ${countySuppliers.map(s => {
     <p class="copyright">© ${new Date().getFullYear()} HomeHeat. All rights reserved.</p>
   </footer>
 
-  <script src="${assetPath}js/nav.js"></script>
-  <script src="${assetPath}js/price-alerts.js?v=${getFileHash('js/price-alerts.js')}"></script>
-  <script src="${assetPath}js/platform-detection.js?v=${getFileHash('js/platform-detection.js')}"></script>
-  <script src="${assetPath}js/widgets.js"></script>
-  ${countyZips.length > 0 ? `<script src="${assetPath}js/county-zip-filter.js?v=${getFileHash('js/county-zip-filter.js')}"></script>` : ''}
-  <script src="${assetPath}js/pwa.js"></script>
+  <script src="${v2AssetPath}js/nav.js"></script>
+  <script src="${v2AssetPath}js/price-alerts.js?v=${getFileHash('js/price-alerts.js')}"></script>
+  <script src="${v2AssetPath}js/platform-detection.js?v=${getFileHash('js/platform-detection.js')}"></script>
+  <script src="${v2AssetPath}js/widgets.js"></script>
+  ${(!isV2 && countyZips.length > 0) ? `<script src="${assetPath}js/county-zip-filter.js?v=${getFileHash('js/county-zip-filter.js')}"></script>` : ''}
+  <script src="${v2AssetPath}js/pwa.js"></script>
 </body>
 </html>`;
 }

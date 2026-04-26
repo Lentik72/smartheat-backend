@@ -1,0 +1,137 @@
+/* ══════════════════════════════════════════════════════════════
+   HomeHeat — Round 2 token additions
+   Drop into website/css/tokens-r2.css and import AFTER style.css.
+   All new tokens match existing --primary-orange / --space-N /
+   --font-N naming. Nothing here replaces existing tokens — additive.
+   ══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Semantic color extensions ───────────────────────────── */
+  /* Green — cheapest supplier, savings. Existing --text-green is
+     reserved for body text; these are surface/border tokens. */
+  --success-green:        #2E7D32;         /* AA vs white: 5.3:1 */
+  --success-green-hover:  #276628;
+  --success-green-dark:   #1F5021;
+  --success-green-light:  rgba(46, 125, 50, 0.10);
+  --success-green-border: rgba(46, 125, 50, 0.22);
+
+  /* Freshness traffic light — pairs color WITH text label */
+  --fresh-color:  var(--success-green);
+  --fresh-bg:     var(--success-green-light);
+  --recent-color: #B45309;                 /* AA vs white: 4.9:1 */
+  --recent-bg:    rgba(180, 83, 9, 0.10);
+  --stale-color:  #6B7280;                 /* = --text-muted */
+  --stale-bg:     rgba(107, 114, 128, 0.10);
+
+  /* Focus ring — keyboard-only. WCAG AA vs white (8.6:1).
+     Blue chosen to never clash with orange CTA state. */
+  --focus-ring-color:  #1D4ED8;
+  --focus-ring-width:  3px;
+  --focus-ring-offset: 2px;
+
+  /* Accent-toned — Tweak #3. Use when A/B testing a less-hot brand
+     read (older rural demo). Maps 1:1 to --primary-orange. */
+  --accent-toned:        var(--primary-orange-dark);   /* #D4552A */
+  --accent-toned-hover:  #B8451F;
+
+  /* ── Spacing additions (fill gaps in existing 8px scale) ── */
+  --space-5:  1.25rem;   /* 20px — hero H padding mobile */
+  --space-7:  1.75rem;   /* 28px — section-heading gap */
+  --space-10: 2.5rem;    /* 40px — desktop hero V pad */
+  --space-14: 3.5rem;    /* 56px — desktop section gap */
+
+  /* ── Type additions ─────────────────────────────────────── */
+  --font-5xl: 3rem;      /* 48px — desktop hero headline */
+  --font-6xl: 3.5rem;    /* 56px — cheapest price desktop */
+
+  /* Line-height & tracking — existing tokens didn't cover these */
+  --lh-tight:   1.04;    /* hero headlines */
+  --lh-snug:    1.2;
+  --lh-normal:  1.5;
+  --track-tight:  -0.04em;   /* hero */
+  --track-snug:   -0.02em;   /* h2 */
+  --track-label:   0.08em;   /* uppercase eyebrow */
+
+  /* ── Radii — named, not numeric ─────────────────────────── */
+  --radius-sm:    6px;   /* chips, small buttons */
+  --radius-md:    8px;   /* buttons, inputs */
+  --radius-card: 12px;   /* supplier row */
+  --radius-lg:   16px;   /* answer card mobile */
+  --radius-xl:   18px;   /* answer card desktop */
+  --radius-pill: 999px;
+
+  /* ── Shadows — named for intent ─────────────────────────── */
+  --shadow-card:      0 4px 14px rgba(0, 0, 0, 0.06);
+  --shadow-card-lift: 0 4px 14px rgba(46, 125, 50, 0.12);    /* cheapest */
+  --shadow-answer:    0 8px 24px rgba(0, 0, 0, 0.12);        /* mobile hero */
+  --shadow-answer-lg: 0 14px 40px rgba(0, 0, 0, 0.14);       /* desktop hero */
+  --shadow-sticky:    0 2px 10px rgba(0, 0, 0, 0.06);
+
+  /* ── Interaction tokens ─────────────────────────────────── */
+  --tap-min:          44px;     /* iOS HIG floor */
+  --tap-min-dense:    40px;     /* compact density ONLY */
+  --transition-fast:  120ms;
+  --transition-base:  200ms;
+
+  /* ── Layout ─────────────────────────────────────────────── */
+  --content-max:       1280px;  /* never wider than this */
+  --content-gutter:    28px;    /* desktop L/R */
+  --content-gutter-m:  16px;    /* mobile */
+
+  /* ── Hero gradient (single token, derived from brand) ──── */
+  --hero-gradient: linear-gradient(
+    180deg,
+    var(--sunset-pink)    0%,
+    #FF8C5A               55%,
+    var(--primary-orange) 100%
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Required selector additions — put these in style.css or a new
+   components-r2.css after style.css.
+   ══════════════════════════════════════════════════════════════ */
+
+/* 1. Global focus — applies everywhere. Replaces scattered
+      outline:none overrides. */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: 4px;
+}
+
+/* 2. Reduce-motion respect */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 3. Enforced tap minimum on all interactive leaves */
+.btn, button, [role="button"], a.cta, input[type="submit"] {
+  min-height: var(--tap-min);
+}
+.density-compact .btn {
+  min-height: var(--tap-min-dense);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Contrast audit — verify before merge
+   Pair                         Ratio   WCAG
+   ───────────────────────────  ──────  ─────
+   #FF6B35 on #FFFFFF            3.40   AA-L ✓  (≥18pt/14pt bold only)
+   #FF6B35 on #FFFBF7            3.35   AA-L ✓
+   #D4552A on #FFFFFF            4.58   AA   ✓  (body text OK)
+   #2E7D32 on #FFFFFF            5.27   AA   ✓
+   #2E7D32 on #F0FAEF            5.10   AA   ✓
+   #B45309 on #FFFFFF            4.92   AA   ✓
+   #6B7280 on #FFFFFF            4.83   AA   ✓
+   #111111 on #FFFFFF           19.07   AAA  ✓
+   #1D4ED8 on #FFFFFF            8.59   AA   ✓  (focus ring)
+
+   FAIL (do not ship):
+   #FF6B35 on #FFB088  body      2.14   AA   ✗  — remove this combo
+   #FF6B35 on #FEF3EB  body      3.18   AA   ✗  — use #D4552A instead
+   ══════════════════════════════════════════════════════════════ */
