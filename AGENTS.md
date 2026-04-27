@@ -2,6 +2,8 @@
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
+**Multi-agent worktree protocol** (Claude + Codex working in parallel, branching from `main`, beads-pre-push hook, cleanup): see `../../docs/WORKTREES.md` in the meta repo.
+
 ## Quick Reference
 
 ```bash

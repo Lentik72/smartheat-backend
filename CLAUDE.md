@@ -17,6 +17,7 @@ After changing key constants, run `npm run audit-docs`.
 | generate-seo-pages, generate-supplier-pages, generate-zip-elite-pages, generate-county-elite-pages, build.js, style.css, any HTML template | `docs/website-generation.md` |
 | Redesigning a generated page (state landing, supplier, ZIP, fuel-hub, county v3, dashboard layout) — parallel-URL rollout, tokens-r2, renderer modules, tiebreak, sticky bar, honesty rules | `docs/page-redesign-patterns.md` |
 | server.js middleware, cron jobs, health endpoint, Railway deploy, env vars, package.json scripts | `docs/deployment.md` |
+| Multi-agent worktree protocol (Claude + Codex working in parallel, branching off `main`, beads-pre-push, cleanup) | `../../docs/WORKTREES.md` (meta repo) |
 
 ## Architecture
 
