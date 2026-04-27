@@ -438,6 +438,14 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   const dataQuality = parseFloat(stats.data_quality_score) || 0;
   const zipPrefixes = stats.zip_prefixes || [];
 
+  // Pre-filter zipDetails to ones that have a generated landing page on disk.
+  // Gate the entire .zip-breakdown section on this filtered list — NOT on the
+  // raw zipDetails — so the section header doesn't render with an empty grid
+  // when (a) the parallel-startup race condition leaves /prices/zip/<prefix>.html
+  // unwritten yet, or (b) the prefix legitimately has no landing page.
+  // Section heals automatically on the next cron pass.
+  const linkableZipDetails = zipDetails.filter(z => crossLinkExists(`/prices/zip/${z.zip_prefix}`));
+
   // Community engagement data (for social proof)
   const userCount = parseInt(stats.user_count) || 0;
   const showUserCount = stats.show_user_count === true;
@@ -925,13 +933,14 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
       <p class="coverage-depth">${coverageDepth}</p>
     </section>
 
-    <!-- ZIP Breakdown Section — anchor city per prefix (was bare "105xx" code; switched 2026-04-26
-         per user feedback: 3-digit prefix codes are data exhaust, city names are user-friendly). -->
-    ${zipDetails.length > 0 ? `
+    <!-- ZIP Breakdown Section — anchor city per prefix. Gated on linkableZipDetails
+         so we never render an empty section header (the inner filter could otherwise
+         exclude every item while the outer .length check passes). -->
+    ${linkableZipDetails.length > 0 ? `
     <section class="zip-breakdown">
       <h2>Pricing by area</h2>
       <div class="zip-grid">
-        ${zipDetails.filter(z => crossLinkExists(`/prices/zip/${z.zip_prefix}`)).map(z => {
+        ${linkableZipDetails.map(z => {
           const anchorCity = locationResolver.getCitiesForPrefix(z.zip_prefix, stateCode, 1)[0] || `${z.zip_prefix} area`;
           return `
         <a href="/prices/zip/${z.zip_prefix}" class="zip-card">
@@ -1442,13 +1451,14 @@ ${countySuppliers.map(s => {
     ${appCtaHTML}
     ` : ''}
 
-    <!-- ZIP Breakdown Section — anchor city per prefix (was bare "105xx" code; switched 2026-04-26
-         per user feedback: 3-digit prefix codes are data exhaust, city names are user-friendly). -->
-    ${zipDetails.length > 0 ? `
+    <!-- ZIP Breakdown Section — anchor city per prefix. Gated on linkableZipDetails
+         so we never render an empty section header (the inner filter could otherwise
+         exclude every item while the outer .length check passes). -->
+    ${linkableZipDetails.length > 0 ? `
     <section class="zip-breakdown">
       <h2>Pricing by area</h2>
       <div class="zip-grid">
-        ${zipDetails.filter(z => crossLinkExists(`/prices/zip/${z.zip_prefix}`)).map(z => {
+        ${linkableZipDetails.map(z => {
           const anchorCity = locationResolver.getCitiesForPrefix(z.zip_prefix, stateCode, 1)[0] || `${z.zip_prefix} area`;
           return `
         <a href="/prices/zip/${z.zip_prefix}" class="zip-card">
