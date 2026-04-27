@@ -148,7 +148,7 @@ try {
 
 // getFuel and fuelKeys
 assert(getFuel('heating-oil').label === 'Heating Oil', 'getFuel returns correct entry', '');
-assert(fuelKeys().length === 5, 'fuelKeys returns 5 fuels', `got ${fuelKeys().length}`);
+assert(fuelKeys().length === 6, 'fuelKeys returns 6 fuels', `got ${fuelKeys().length}`);
 
 // --- Summary ---
 
