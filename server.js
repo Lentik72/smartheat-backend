@@ -1181,17 +1181,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       return result;
     }, { retry: false });
 
-    // v2 county pages emit to /prices/county/v2/<state>/<slug> in parallel.
-    // noindex,nofollow on the pages themselves; not linked from sitemap or
-    // other surfaces. Smoketest URL only until the cutover commit replaces
-    // v1 with v2 sitewide. See spec 2026-04-24-county-page-evolve-redesign.md §5.
-    await cronMonitor.run('county-elite-pages-v2', async () => {
-      const { generateCountyElitePages } = require('./scripts/generate-county-elite-pages');
-      const result = await generateCountyElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false, layout: 'v2' });
-      if (result.success) logger.info(`✅ County Elite pages (v2): ${result.generated} pages`);
-      return result;
-    }, { retry: false });
-
     // Kerosene pages (less critical, no retry)
     await cronMonitor.run('kerosene-pages', async () => {
       const { generateSEOPages: generateSEOKerosene } = require('./scripts/generate-seo-pages');
@@ -1335,17 +1324,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
             return generateCountyElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false });
           })(), 'County Elite pages'), { retry: false, lock: false });
           if (!monitored.success) throw new Error(monitored.error || 'County Elite pages failed');
-          return monitored.result;
-        })(),
-
-        (async () => {
-          // v2 county pages — parallel rollout. Without this, fresh deploys
-          // serve no /prices/county/v2/... pages until the first nightly cron.
-          const monitored = await cronMonitor.run('startup-county-elite-pages-v2', () => withTimeout((async () => {
-            const { generateCountyElitePages } = require('./scripts/generate-county-elite-pages');
-            return generateCountyElitePages({ sequelize, logger, outputDir: websiteDir, dryRun: false, layout: 'v2' });
-          })(), 'County Elite pages (v2)'), { retry: false, lock: false });
-          if (!monitored.success) throw new Error(monitored.error || 'County Elite v2 pages failed');
           return monitored.result;
         })(),
 

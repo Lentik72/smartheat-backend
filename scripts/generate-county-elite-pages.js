@@ -61,10 +61,10 @@ const legacyLayout = args.includes('--legacy-layout');
 const fuelArg = args.find(a => a.startsWith('--fuel='));
 const cliFuelType = fuelArg ? fuelArg.split('=')[1] : 'heating_oil';
 
-// heatingoil-3ixk — parallel-URL rollout for County Page v2 redesign.
-// Default 'v1' = byte-identical existing behavior. 'v2' emits to website/prices/county/v2/...
+// heatingoil-3ixk — v2 IS the canonical layout (cutover 2026-04-26).
+// `--layout=v1` retained as emergency rollback only; not used by cron/startup.
 const layoutArg = args.find(a => a.startsWith('--layout='));
-const cliLayout = layoutArg ? layoutArg.split('=')[1] : 'v1';
+const cliLayout = layoutArg ? layoutArg.split('=')[1] : 'v2';
 if (!['v1', 'v2'].includes(cliLayout)) {
   console.error(`Invalid --layout: ${cliLayout}. Use v1 or v2.`);
   process.exit(1);
@@ -133,10 +133,9 @@ async function generateCountyElitePages(options = {}) {
   } = options;
 
   const FUEL = FUEL_CONFIGS[fuelType] || FUEL_CONFIGS.heating_oil;
-  // v2 emits to website/prices/county/v2/<state>/ (parallel URL tree until cutover)
-  const COUNTY_DIR = layout === 'v2'
-    ? path.join(outputDir, FUEL.dirPrefix, 'v2')
-    : path.join(outputDir, FUEL.dirPrefix);
+  // Both v1 and v2 emit to the canonical path (cutover 2026-04-26).
+  // Pre-cutover, v2 emitted to /v2/<state>/ as a parallel-URL tree; that's gone now.
+  const COUNTY_DIR = path.join(outputDir, FUEL.dirPrefix);
 
   const log = (msg) => logger.info ? logger.info(msg) : console.log(msg);
 
@@ -1104,15 +1103,14 @@ ${countySuppliers.map(s => {
   // moves .app-cta to below the market-snapshot. Everything else (head, schemas,
   // chart, insights, market snapshot, FAQ, footer) is shared with v1.
   const isV2 = layout === 'v2';
-  // For v2 pages under /v2/, asset paths get one extra "../" because the URL
-  // is /prices/county/v2/<state>/slug.html (depth 4 vs v1's depth 3).
-  const v2AssetPath = isV2 ? '../' + assetPath : assetPath;
+  // After cutover 2026-04-26: v2 emits at canonical depth (3), same as v1.
+  const v2AssetPath = assetPath;
   // v2 loads BOTH stylesheets — county-elite.css carries the v1 content-section
   // styles (chart, market-snapshot, insight, zip-breakdown, county-alert, FAQ,
   // nearby-counties, footer, app-cta) that v2 reuses; county-elite-v2.css ADDS
   // hero + supplier-list styles. Order matters: v1 first, v2 overrides.
-  const v1CountyCssHref = isV2 ? '../../county-elite.css' : '../county-elite.css';
-  const v2OnlyCssLink = isV2 ? `\n  <link rel="stylesheet" href="../../county-elite-v2.css?v=${countyV2CssHash}">` : '';
+  const v1CountyCssHref = '../county-elite.css';
+  const v2OnlyCssLink = isV2 ? `\n  <link rel="stylesheet" href="../county-elite-v2.css?v=${countyV2CssHash}">` : '';
   const v2TokensCss = isV2 ? `\n  <link rel="stylesheet" href="${v2AssetPath}css/tokens-r2.css?v=${tokensR2Hash}">` : '';
   const bodyClass = isV2 ? ' class="county-v2-page"' : '';
 
@@ -1168,17 +1166,17 @@ ${countySuppliers.map(s => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr} | HomeHeat</title>
   <meta name="description" content="${metaDescription}">
-  <link rel="canonical" href="https://www.gethomeheat.com${FUEL.urlPrefix}${isV2 ? '/v2' : ''}/${stateCode.toLowerCase()}/${slug}">
+  <link rel="canonical" href="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
 
   <!-- OpenGraph -->
   <meta property="og:title" content="${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
   <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : `Compare local ${FUEL.label.toLowerCase()} prices.`}">
   <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
-  <meta property="og:url" content="https://www.gethomeheat.com${FUEL.urlPrefix}${isV2 ? '/v2' : ''}/${stateCode.toLowerCase()}/${slug}">
+  <meta property="og:url" content="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
   <meta property="og:type" content="website">
 
   <meta name="color-scheme" content="light only">
-${isV2 ? `  <!-- v2 parallel-rollout: noindex prevents Google from indexing this URL alongside the v1 page during the staging period. Removed at cutover when v2 becomes the canonical layout at /prices/county/<state>/<slug>. -->\n  <meta name="robots" content="noindex,nofollow">\n` : ''}  <link rel="stylesheet" href="${v2AssetPath}style.min.css?v=${cssVersion}">${v2TokensCss}
+  <link rel="stylesheet" href="${v2AssetPath}style.min.css?v=${cssVersion}">${v2TokensCss}
   <link rel="stylesheet" href="${v1CountyCssHref}?v=${countyCssHash}">${v2OnlyCssLink}
   <link rel="icon" type="image/png" sizes="32x32" href="${v2AssetPath}favicon-32.png">
   <meta name="apple-itunes-app" content="app-id=6747320571">
@@ -1197,7 +1195,7 @@ ${isV2 ? `  <!-- v2 parallel-rollout: noindex prevents Google from indexing this
   ${productSchema ? `<script type="application/ld+json">${JSON.stringify(productSchema)}</script>` : ''}
 </head>
 <body${bodyClass} data-page-type="county_elite" data-price-signal="${priceSignal}">
-  ${getNavHTML(isV2 ? 4 : 3, '/prices')}
+  ${getNavHTML(3, '/prices')}
 
   <main class="county-elite-page${isV2 ? ' county-elite-page-v2' : ''}" data-county="${escapeHtml(countyName)}">
 ${isV2 ? heroV2 : `    <!-- Breadcrumb -->
