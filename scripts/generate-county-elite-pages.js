@@ -885,7 +885,7 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
           <div class="insight-value">$${fuelCosts.fuels['heating-oil'] ? fuelCosts.fuels['heating-oil'].monthlyCost : '—'}/mo</div>
           <div class="insight-label">Monthly Heating Bill</div>
           <div class="insight-detail">2,000 sq ft home · Oil heat</div>
-        </a>
+        ${crossLinkExists(`/average-heating-bill/${stateCode.toLowerCase()}/${slug}`) ? '</a>' : '</div>'}
         ${crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) ? `<a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-fuel" data-referrer="insights_block">` : '<div class="insight-card">'}
           ${fuelCosts.cheapest === 'heating-oil' ?
             `<div class="insight-value insight-value-good">Oil is cheapest</div>
@@ -925,18 +925,22 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
       <p class="coverage-depth">${coverageDepth}</p>
     </section>
 
-    <!-- ZIP Breakdown Section -->
+    <!-- ZIP Breakdown Section — anchor city per prefix (was bare "105xx" code; switched 2026-04-26
+         per user feedback: 3-digit prefix codes are data exhaust, city names are user-friendly). -->
     ${zipDetails.length > 0 ? `
     <section class="zip-breakdown">
-      <h2>Detailed Pricing by ZIP Prefix</h2>
+      <h2>Pricing by area</h2>
       <div class="zip-grid">
-        ${zipDetails.filter(z => crossLinkExists(`/prices/zip/${z.zip_prefix}`)).map(z => `
+        ${zipDetails.filter(z => crossLinkExists(`/prices/zip/${z.zip_prefix}`)).map(z => {
+          const anchorCity = locationResolver.getCitiesForPrefix(z.zip_prefix, stateCode, 1)[0] || `${z.zip_prefix} area`;
+          return `
         <a href="/prices/zip/${z.zip_prefix}" class="zip-card">
-          <span class="zip-prefix">${z.zip_prefix}xx</span>
+          <span class="zip-city">${escapeHtml(anchorCity)}</span>
           <span class="zip-price">$${parseFloat(z.median_price).toFixed(2)}/gal</span>
-          <span class="zip-suppliers">${z.supplier_count} suppliers</span>
+          <span class="zip-suppliers">${z.supplier_count} suppliers · ${z.zip_prefix} area</span>
         </a>
-        `).join('')}
+        `;
+        }).join('')}
       </div>
     </section>
     ` : ''}
@@ -1393,7 +1397,7 @@ ${countySuppliers.map(s => {
           <div class="insight-value">$${fuelCosts.fuels['heating-oil'] ? fuelCosts.fuels['heating-oil'].monthlyCost : '—'}/mo</div>
           <div class="insight-label">Monthly Heating Bill</div>
           <div class="insight-detail">2,000 sq ft home · Oil heat</div>
-        </a>
+        ${crossLinkExists(`/average-heating-bill/${stateCode.toLowerCase()}/${slug}`) ? '</a>' : '</div>'}
         ${crossLinkExists(`/heating-cost/${stateCode.toLowerCase()}/${slug}`) ? `<a href="/heating-cost/${stateCode.toLowerCase()}/${slug}" class="insight-card" data-track="insight-fuel" data-referrer="insights_block">` : '<div class="insight-card">'}
           ${fuelCosts.cheapest === 'heating-oil' ?
             `<div class="insight-value insight-value-good">Oil is cheapest</div>
@@ -1438,18 +1442,22 @@ ${countySuppliers.map(s => {
     ${appCtaHTML}
     ` : ''}
 
-    <!-- ZIP Breakdown Section -->
+    <!-- ZIP Breakdown Section — anchor city per prefix (was bare "105xx" code; switched 2026-04-26
+         per user feedback: 3-digit prefix codes are data exhaust, city names are user-friendly). -->
     ${zipDetails.length > 0 ? `
     <section class="zip-breakdown">
-      <h2>Detailed Pricing by ZIP Prefix</h2>
+      <h2>Pricing by area</h2>
       <div class="zip-grid">
-        ${zipDetails.filter(z => crossLinkExists(`/prices/zip/${z.zip_prefix}`)).map(z => `
+        ${zipDetails.filter(z => crossLinkExists(`/prices/zip/${z.zip_prefix}`)).map(z => {
+          const anchorCity = locationResolver.getCitiesForPrefix(z.zip_prefix, stateCode, 1)[0] || `${z.zip_prefix} area`;
+          return `
         <a href="/prices/zip/${z.zip_prefix}" class="zip-card">
-          <span class="zip-prefix">${z.zip_prefix}xx</span>
+          <span class="zip-city">${escapeHtml(anchorCity)}</span>
           <span class="zip-price">$${parseFloat(z.median_price).toFixed(2)}/gal</span>
-          <span class="zip-suppliers">${z.supplier_count} suppliers</span>
+          <span class="zip-suppliers">${z.supplier_count} suppliers · ${z.zip_prefix} area</span>
         </a>
-        `).join('')}
+        `;
+        }).join('')}
       </div>
     </section>
     ` : ''}
@@ -2224,10 +2232,11 @@ function generateCountyEliteCSS() {
   box-shadow: 0 2px 8px rgba(255,107,53,0.15);
 }
 
-.zip-prefix {
-  font-size: 1.1rem;
-  font-weight: 600;
+.zip-prefix, .zip-city {
+  font-size: 1.05rem;
+  font-weight: 700;
   color: #333;
+  letter-spacing: -0.01em;
 }
 
 .zip-price {

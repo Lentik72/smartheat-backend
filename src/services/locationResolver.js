@@ -149,9 +149,37 @@ function getCountiesForState(state) {
     .map(key => key.replace(suffix, ''));
 }
 
+/**
+ * Get representative cities for a 3-digit ZIP prefix (e.g., "105" → ["White Plains", "Mount Vernon"]).
+ * Ranks by ZIP-count: cities covering more ZIPs in the prefix rank higher (good proxy for city size).
+ * Filters out placeholder city names (e.g., "106hh") that match `^\d+[a-z]*$`.
+ * @param {string} prefix - 3-digit ZIP prefix (e.g., "105")
+ * @param {string} state - Optional state filter (e.g., "NY"). When provided, only cities in that state count.
+ * @param {number} limit - Max cities to return. Default 1.
+ * @returns {string[]} Top N cities by ZIP count, empty if none found.
+ */
+function getCitiesForPrefix(prefix, state = null, limit = 1) {
+  if (!prefix) return [];
+  const stateLower = state ? state.toLowerCase() : null;
+  const cityZips = {};
+  for (const [zip, info] of Object.entries(zipDatabase)) {
+    if (!zip.startsWith(prefix)) continue;
+    if (!info || !info.city) continue;
+    if (stateLower && info.state && info.state.toLowerCase() !== stateLower) continue;
+    // Skip placeholder names like "105hh", "10501a" — anything that's just digits + optional letters.
+    if (/^\d+[a-z]*$/i.test(info.city.trim())) continue;
+    cityZips[info.city] = (cityZips[info.city] || 0) + 1;
+  }
+  return Object.entries(cityZips)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([city]) => city);
+}
+
 module.exports = {
   getZipsForCity,
   getZipsForCounty,
+  getCitiesForPrefix,
   isValidLocation,
   getLocationType,
   getCitiesForState,
