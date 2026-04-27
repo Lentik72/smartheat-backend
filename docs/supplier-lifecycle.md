@@ -2,7 +2,7 @@
 system: supplier-lifecycle
 tags: [suppliers, claims, magic-links, migrations, upsert]
 constants:
-  magic_link_expiry: "365 days"
+  magic_link_expiry: "30 days"
   claim_confirm_window: "24 hours"
   supplier_direct_price_range: "$1.50–$6.00"
   sweep_threshold: "50 slugs in 10 minutes"
@@ -57,7 +57,7 @@ migrations → supplier identity only (no coverage after migration 100)
 4. **Unique constraint**: partial unique index on `(supplier_id) WHERE status IN ('pending', 'verified')` — prevents simultaneous claims, but rejected claims allow retry
 5. Admin notified via email → verifies via phone call
 6. Admin hits `/api/admin/supplier-claims/:id/verify` → sets `verified=true`, `claimed_at=NOW()`
-7. All existing magic links revoked → new 64-char hex token generated (365-day expiry)
+7. All existing magic links revoked → new 64-char hex token generated (30-day expiry)
 8. Magic link emailed to claimant
 
 ## Magic Link Token System

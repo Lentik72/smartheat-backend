@@ -57,8 +57,8 @@ echo ""
 echo "supplier-lifecycle.md"
 
 LINK_DAYS=$(extract "$SRC/routes/admin-supplier-claims.js" 'MAGIC_LINK_EXPIRY_DAYS[[:space:]]*=')
-echo "  Magic link expiry: ${LINK_DAYS} days (doc: 365)"
-[ "$LINK_DAYS" != "365" ] && [ "$LINK_DAYS" != "?" ] && MISMATCHES=$((MISMATCHES + 1)) && echo "    ^ MISMATCH" || true
+echo "  Magic link expiry: ${LINK_DAYS} days (doc: 30)"
+[ "$LINK_DAYS" != "30" ] && [ "$LINK_DAYS" != "?" ] && MISMATCHES=$((MISMATCHES + 1)) && echo "    ^ MISMATCH" || true
 
 CLAIMS_EMAIL=$(extract "$SRC/routes/supplier-claim.js" 'MAX_CLAIMS_PER_EMAIL')
 echo "  Claims per email/day: ${CLAIMS_EMAIL} (doc: 3)"
