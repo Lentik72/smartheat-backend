@@ -43,21 +43,29 @@ Order matters — changing it can break the app. Listed by registration order in
 
 ## Health Endpoint
 
-GET `/health` returns 200 `{ "status": "healthy", ... }` as soon as the server accepts connections. Page generation runs in the background and does NOT gate health (API must be available immediately).
+GET `/health` returns **503 `{ "status": "initializing", ... }` during startup** and flips to **200 `{ "status": "healthy", ... }` once all 5 models (`Supplier`, `CommunityDelivery`, `CommunityDeliveryRaw`, `SupplierPrice`, `UserLocation`) finish init via `markReady()`. A hard-timeout escape hatch (`STARTUP_HARD_TIMEOUT_MS`, 60s) forces 200 even if a model is still initializing — prevents a permanent 503 deploy-loop on a buggy migration. Page generation runs in the background and does NOT gate health.
 
 ```json
 {
-  "status": "healthy",
+  "status": "healthy",          // "initializing" while HTTP is 503
   "services": {
     "database": true,           // boolean — true only when DB auth succeeds
     "databaseState": "up",      // tri-state: "up" | "timeout" | "down"
     "weather": true, ...
   },
+  "startup": {
+    "initialStartupComplete": true,
+    "modelsReady": ["Supplier", "CommunityDelivery", ...],
+    "modelsPending": [],
+    "retryDisabled": false
+  },
   "system": { "uptime": 1234, "memory": { "used": "128MB" }, "cache": { "hitRate": 0.85 } }
 }
 ```
 
-The DB check runs `sequelize.authenticate()` against a `Promise.race` with `DB_HEALTH_RACE_MS` (default 2s). If it loses the race, `databaseState: "timeout"` is reported, a warn is logged, and HTTP stays 200. This prevents UptimeRobot from false-alerting on transient Postgres blips while still surfacing the signal via logs and the tri-state field. An actual `authenticate()` rejection (not timeout) reports `databaseState: "down"`.
+Railway's healthcheck has a 120s retry window, which covers the 60s startup-hard-timeout with margin. UptimeRobot only sees post-startup state, so it never observes the 503.
+
+The DB check runs `sequelize.authenticate()` against a `Promise.race` with `DB_HEALTH_RACE_MS` (default 2s). If it loses the race, `databaseState: "timeout"` is reported and a warn is logged — but the HTTP status is still governed by `initialStartupComplete` (200 post-startup, 503 during). This prevents UptimeRobot from false-alerting on transient Postgres blips while still surfacing the signal via logs and the tri-state field. An actual `authenticate()` rejection (not timeout) reports `databaseState: "down"`.
 
 Railway's internal healthcheck uses `*.railway.app` URL. The redirect middleware at step 1 MUST `return next()` for `/health` — otherwise it redirects to `www.gethomeheat.com` and the healthcheck fails.
 
@@ -75,7 +83,7 @@ Railway's internal healthcheck uses `*.railway.app` URL. The redirect middleware
 
 ## Startup Sequence
 
-1. Server starts listening. `/health` returns 200 immediately (does NOT gate on page generation — API must be available right away).
+1. Server starts listening. `/health` returns **503 `"initializing"`** until all 5 models are ready (or 60s hard timeout), then flips to 200 `"healthy"`. Page generation does NOT gate health.
 2. In parallel with the server accepting traffic, all 4 page generators run (SEO, supplier, ZIP Elite, County Elite) with 90s per-generator timeout.
 3. Each generator uses generate-then-swap: if one fails for a state, the previous generated pages on disk survive.
 4. Distributed scheduler begins (scrapes spread across 8AM–6PM EST).
@@ -98,7 +106,7 @@ Missing required vars → server runs in "degraded mode" (starts but logs warnin
 
 ## Deploy Verification
 
-After pushing, run `npm run verify-deploy` (waits 75s, checks health + spot-checks pages). `/health` is available immediately on server start, but page generation takes 40–80s in the background — spot-checks of generated pages may 404 during that window.
+After pushing, run `npm run verify-deploy` (waits 75s, checks health + spot-checks pages). The 75s wait covers the 60s startup-hard-timeout, so `/health` should be 200 by the time verification runs. Page generation takes 40–80s in the background — spot-checks of generated pages may 404 during that window.
 
 ## Key Rules
 
@@ -112,7 +120,7 @@ After pushing, run `npm run verify-deploy` (waits 75s, checks health + spot-chec
 - `npm run build` minifies CSS/JS but does NOT touch server.js
 - Start command: `node server.js`
 
-Last audited: 2026-04-20
+Last audited: 2026-04-26
 
 ## Model Init Retry Kill Switch
 
