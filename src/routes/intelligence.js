@@ -23,6 +23,7 @@ const { getCommunityDeliveryModel, FUEL_TYPES, DEFAULT_FUEL_TYPE } = require('..
 const { getSupplierModel } = require('../models/Supplier');
 const { getSupplierPriceModel } = require('../models/SupplierPrice');
 const { findSuppliersForZip } = require('../services/supplierMatcher');
+const { buildScrapedPriceWhere } = require('../utils/supplier-price-query');
 const { Op } = require('sequelize');
 
 // V2.3.0: Visibility thresholds for progressive disclosure
@@ -462,14 +463,15 @@ async function gatherPriceData(zip, fuelType, logger) {
       const supplierIds = matchedSuppliers.map(s => s.id);
 
       if (supplierIds.length > 0) {
-        // Get scraped prices (not aggregator_signal) from last 14 days
+        // Get scraped prices (not aggregator_signal) from last 14 days.
+        // fuelType filter is required — without it, propane/kerosene callers
+        // would receive heating_oil rows from the same suppliers (heatingoil-ryp3).
         const scrapedPrices = await SupplierPrice.findAll({
-          where: {
-            supplierId: { [Op.in]: supplierIds },
-            isValid: true,
-            sourceType: { [Op.ne]: 'aggregator_signal' },
-            scrapedAt: { [Op.gte]: fourteenDaysAgo }
-          },
+          where: buildScrapedPriceWhere({
+            supplierIds,
+            fuelType,
+            since: fourteenDaysAgo
+          }),
           order: [['scrapedAt', 'DESC']]
         });
 
