@@ -6,7 +6,7 @@
 const { DataTypes } = require('sequelize');
 
 // V20.1: Valid fuel types
-const FUEL_TYPES = ['heating_oil', 'propane'];
+const FUEL_TYPES = ['heating_oil', 'propane', 'kerosene'];
 const DEFAULT_FUEL_TYPE = 'heating_oil';
 
 let CommunityDelivery;
@@ -44,7 +44,7 @@ const initCommunityDeliveryModel = (sequelize) => {
       // V20.1: Fuel type for propane/oil isolation
       // Required for new submissions, defaults to heating_oil for existing data
       fuelType: {
-        type: DataTypes.ENUM('heating_oil', 'propane'),
+        type: DataTypes.ENUM('heating_oil', 'propane', 'kerosene'),
         allowNull: false,
         defaultValue: 'heating_oil'
       },
