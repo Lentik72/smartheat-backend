@@ -19344,6 +19344,68 @@
       "19067"
     ]
   },
+  "nittanyenergy.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "Nittany Energy (Lewistown)",
+    "phone": "(717) 248-0189",
+    "pricePath": "/pricing/",
+    "priceRegex": "Heating Oil\\s*\\$([0-9]+\\.[0-9]{2,3})/gal",
+    "notes": "Central PA — Lewistown branch (Mifflin/Juniata/Huntingdon/Perry/Snyder corridor). Multi-branch chain (5 offices: State College HQ, Lewistown, Mifflintown, Belleville, Philipsburg, Williamsport, Lock Haven). Per-gallon prices uniform across branches on /pricing/ ($4.499 with Prompt Pay). pattern:'direct' returns matches[0] = Lewistown row (listed first). COD: 'Heating Oil On Demand' + 'Order Online Now' + 'Prompt Pay discount'. If branch prices ever diverge, split into per-branch records (cn-brown-* slug pattern).",
+    "postalCodesServed": [
+      "17002",
+      "17004",
+      "17009",
+      "17044",
+      "17059",
+      "17066",
+      "17074",
+      "17082",
+      "17841"
+    ]
+  },
+  "snedenergy.com": {
+    "enabled": false,
+    "pattern": "none",
+    "name": "Snedeker Energy",
+    "phone": "(717) 248-2665",
+    "notes": "DISABLED: PA Lewistown / Mifflin County — since 1958. Will-call confirmed on /heating-oil/heating-oil-delivery/ ('Will-Call: Customers manually request deliveries and must monitor tank levels themselves'). No public price page. Service area page has interactive ZIP form, no static list — coverage limited to HQ ZIP only until expanded.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "17044"
+    ]
+  },
+  "jjpowell.com": {
+    "enabled": false,
+    "pattern": "none",
+    "name": "J.J. Powell, Inc. (Lewistown)",
+    "phone": "(717) 248-3717",
+    "notes": "DISABLED: PA Lewistown branch — Mifflin County focus. On-demand confirmed on /heating-oil/heating-oil-delivery/ ('We offer heating oil on a per gallon basis based on the current market. You can order online or give our office a call.'). Multi-branch chain (32 PA counties, founded 1952, HQ Philipsburg PA). No public price (Today's Prices URL 404s). When other JJ Powell branches added, use slug-based upsert pattern.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "17044"
+    ]
+  },
+  "myoaklandfuel.com": {
+    "enabled": true,
+    "pattern": "table",
+    "name": "Oakland Fuel Oil",
+    "phone": "(717) 436-8098",
+    "pricePath": "/product/heating-oil/",
+    "priceRegex": "&#0?36;</span>([0-9]+\\.[0-9]{2,3})",
+    "notes": "PA Juniata County — Mifflintown HQ since 1999. WooCommerce tier table. Default pattern:'table' returns sorted[0] = 150+ gal price ($4.499 vs $4.599 headline). Discount values ($0.000, $0.100) filtered out by [2.00, 6.00] heating-oil range. COD: 'ALL PRICES LISTED AND QUOTED ARE FOR DEBIT CARD, CASH OR CHECK' banner. Propane offered, no scrapable price (info-only page).",
+    "postalCodesServed": [
+      "17021",
+      "17035",
+      "17049",
+      "17058",
+      "17059",
+      "17076",
+      "17082",
+      "17086",
+      "17094"
+    ]
+  },
   "_section_RI": "=== RHODE ISLAND ===",
   "applevalleyoil.net": {
     "enabled": true,
