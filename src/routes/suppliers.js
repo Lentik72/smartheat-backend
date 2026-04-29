@@ -156,7 +156,7 @@ const stripForSignature = (supplier) => {
  *   - county + state: County name and state code (e.g., county=Westchester&state=NY)
  *   - name: Supplier name search (e.g., name=Domino)
  *   - limit (optional): Max results (default 15, max 30)
- *   - fuel (optional): V2.12.0 - Filter by fuel type. Values: 'heating_oil' (default), 'kerosene'.
+ *   - fuel (optional): V2.12.0 - Filter by fuel type. Values: 'heating_oil' (default), 'kerosene', 'propane'.
  *     iOS app sends no fuel param → defaults to heating_oil (backward compatible).
  *
  * Returns signed JSON response with suppliers serving that area
@@ -168,7 +168,7 @@ router.get('/', async (req, res) => {
   const { zip, city, county, state, name, limit, fuel } = req.query;
 
   // V2.12.0: Validate and normalize fuel param — default to heating_oil (safe for iOS app)
-  const VALID_FUELS = ['heating_oil', 'kerosene'];
+  const VALID_FUELS = ['heating_oil', 'kerosene', 'propane'];
   const fuelType = VALID_FUELS.includes(fuel) ? fuel : 'heating_oil';
   const logger = req.app.locals.logger;
   const sequelize = req.app.locals.sequelize;
