@@ -260,7 +260,7 @@ router.get('/health', async (req, res) => {
  * Query params:
  * - zip (required): 5-digit ZIP code
  * - tankLevel (optional): Tank level 0.0 to 1.0
- * - fuelType (optional): 'heating_oil' or 'propane' (default: heating_oil)
+ * - fuelType (optional): 'heating_oil' | 'propane' | 'kerosene' (default: heating_oil)
  *
  * Response structure:
  * {
