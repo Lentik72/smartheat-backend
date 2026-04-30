@@ -234,7 +234,7 @@ router.post('/onboarding-step', async (req, res) => {
   }
 
   // Validate fuel type if provided
-  const validFuelTypes = ['heating_oil', 'propane'];
+  const validFuelTypes = ['heating_oil', 'propane', 'kerosene'];
   if (fuelType && !validFuelTypes.includes(fuelType)) {
     return res.status(400).json({ error: 'Invalid fuel type' });
   }
@@ -285,7 +285,7 @@ router.post('/app-event', async (req, res) => {
     data,            // Event-specific data (optional JSONB)
     deviceId,        // Hashed device ID for session tracking
     zipCode,         // Full ZIP (we'll extract prefix)
-    fuelType,        // heating_oil or propane
+    fuelType,        // heating_oil, propane, or kerosene
     appVersion,
     deviceType,      // iPhone, iPad
     osVersion
@@ -323,7 +323,7 @@ router.post('/app-event', async (req, res) => {
   }
 
   // Validate fuel type if provided
-  if (fuelType && !['heating_oil', 'propane'].includes(fuelType)) {
+  if (fuelType && !['heating_oil', 'propane', 'kerosene'].includes(fuelType)) {
     return res.status(400).json({ error: 'Invalid fuel type' });
   }
 
