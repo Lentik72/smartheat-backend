@@ -28,7 +28,7 @@ require('dotenv').config();
 const locationResolver = require('../src/services/locationResolver');
 
 // Shared supplier data queries
-const { getAllSuppliers, getCurrentPrices, getSuppliersForZips } = require('./lib/supplier-data');
+const { getAllSuppliers, getCurrentPrices, getSuppliersForZips, getRecentPricedSupplierIds } = require('./lib/supplier-data');
 
 // Shared nav/CSS helpers
 const { getNavHTML, init: initCountyData, crossLinkExists } = require('./lib/county-data');
@@ -233,6 +233,19 @@ async function generateSEOPages(options = {}) {
     for (const p of prices) {
       priceMap.set(p.supplier_id, p);
     }
+
+    // V2.40.0: Indexability gate uses a wider window than display freshness.
+    // If the query throws (transient DB error, schema drift), let it bubble
+    // up to cronMonitor.run — that path retries once and logs to cron_error_log
+    // so the failure surfaces in the 6 AM email. A try/catch here would
+    // silently violate feedback_silent_degradation. See spec "Failure handling".
+    const recentPriceSet = await getRecentPricedSupplierIds(
+      sequelize,
+      FUEL.fuelType,
+      INDEX_PRICE_WINDOW_DAYS,
+      { minPrice: FUEL.minPrice, maxPrice: FUEL.maxPrice }
+    );
+    log(`📋 ${recentPriceSet.size} ${FUEL.label.toLowerCase()} suppliers had a price in the last ${INDEX_PRICE_WINDOW_DAYS} days (used for indexability)`);
 
     // V2.12.0: Pre-fetch cross-link fuel state data for banner display
     const [crossLinkStates] = await sequelize.query(`
