@@ -36,7 +36,22 @@ const { getNavHTML, init: initCountyData, crossLinkExists } = require('./lib/cou
 // Configuration
 const WEBSITE_DIR = path.join(__dirname, '../website');
 const PRICES_DIR = path.join(WEBSITE_DIR, 'prices');
-const MIN_SUPPLIERS_FOR_PAGE = 3;  // Threshold for generating a page
+// Two thresholds:
+//   - MIN_SUPPLIERS_TO_GENERATE: durable. Counts suppliers SERVING the location
+//     (postal_codes_served overlap). Decides whether to generate the page at all.
+//   - MIN_PRICED_TO_INDEX: volatile. Counts suppliers with a PRICE in the last
+//     INDEX_PRICE_WINDOW_DAYS days. Decides indexability (meta robots + sitemap).
+//   See docs/website-generation.md and
+//   docs/superpowers/specs/2026-05-01-thin-town-page-noindex-design.md
+const MIN_SUPPLIERS_TO_GENERATE = 3;
+const MIN_PRICED_TO_INDEX = 2;
+const INDEX_PRICE_WINDOW_DAYS = 14;
+
+// Kill switch: set DISABLE_NOINDEX_THIN_PAGES=true on Railway to force every
+// page indexable, no redeploy needed. Use only if Google starts depublishing
+// strong pages or some other regression appears.
+const DISABLE_NOINDEX_THIN_PAGES = process.env.DISABLE_NOINDEX_THIN_PAGES === 'true';
+
 const MIN_VALID_PRICE = 2.00;       // Filter out data errors
 const MAX_VALID_PRICE = 6.00;       // Filter out data errors
 
