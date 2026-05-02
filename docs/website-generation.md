@@ -2,7 +2,9 @@
 system: website-generation
 tags: [generators, seo, build, css, static-pages]
 constants:
-  min_suppliers_for_page: "3"
+  min_suppliers_to_generate: "3"
+  min_priced_to_index: "2"
+  index_price_window_days: "14"
   seo_price_range: "$2.00–$6.00"
   zip_quality_threshold: "0.3"
   county_quality_threshold: "0.45"
@@ -35,10 +37,34 @@ All pages require minimum 3 suppliers after price validation ($2.00–$6.00). Be
 
 | Generator | Threshold | Notes |
 |---|---|---|
-| SEO pages | 3 suppliers | State, region, county, city |
+| SEO pages (generate) | 3 suppliers serving | State, region, county, city. `MIN_SUPPLIERS_TO_GENERATE` |
+| SEO pages (index) | ≥2 priced suppliers in last 14d | Pages below threshold are still generated but emit `<meta robots noindex,follow>`. `MIN_PRICED_TO_INDEX` × `INDEX_PRICE_WINDOW_DAYS` |
 | ZIP Elite | quality score ≥ 0.3 | Based on supplier count + data depth |
 | County Elite | quality score ≥ 0.45 | Tier 1+2 counties only |
 | Supplier profiles | All active suppliers | No threshold — one page per supplier |
+
+## Index gating (two-threshold model)
+
+The SEO generator (`scripts/generate-seo-pages.js`) uses two separate thresholds:
+
+| Constant | Counts | Decides |
+|---|---|---|
+| `MIN_SUPPLIERS_TO_GENERATE = 3` | Suppliers serving the location's ZIPs (current state) | Whether the HTML file exists at all |
+| `MIN_PRICED_TO_INDEX = 2` over `INDEX_PRICE_WINDOW_DAYS = 14` | Distinct suppliers with a fresh price in the window, restricted to displayable suppliers and the valid price range, excluding `source_type = 'aggregator_signal'` | Whether the page is indexable (`<meta robots>` + sitemap) |
+
+Pages that pass the first gate but fail the second are still written to disk (so direct visitors, claim-funnel traffic, and iOS app deep links work) but emit `<meta name="robots" content="noindex, follow">` in their head. `generate-sitemap.js` reads each generated file's head and excludes any that declare noindex.
+
+Why two thresholds: serving-supplier count is *durable* (changes when dealers go bankrupt, claim listings, or expand coverage), while priced-supplier count is *volatile* (changes daily with scraper success/failure). The 14-day window absorbs single-day or multi-day scraper outages so noindex doesn't flap.
+
+**Failure handling:** the `getRecentPricedSupplierIds` helper is **not** wrapped in try/catch. If it throws, the throw bubbles up to `cronMonitor.run`, which retries (heating_oil only — `seo-pages` uses `retry: true`; kerosene/propane wrappers use `retry: false`) and logs to `cron_error_log` so the failure surfaces in the 6 AM email via `getDailyHealth()`. The throw happens before the per-state cleanup-and-swap, so existing pages on disk stay served.
+
+**Visibility:** each fuel run logs a summary line like `✅ heating_oil: generated 1503 pages, 156 noindexed (10.4%)` to Railway stdout. The same count is threaded into `cron_heartbeats.details` for ad-hoc DB queries; surfacing in the daily email body is a follow-up edit to `CoverageReportMailer.js` (not in v1 scope).
+
+**Kill switch:** set `DISABLE_NOINDEX_THIN_PAGES=true` on Railway to force every page indexable. Railway restarts the service automatically on env-var change; the next nightly regen drops the meta tags. Use only if Google starts depublishing strong pages or some other regression appears.
+
+**Cloudflare cache caveat:** the CF "Cache HTML pages" rule on `/prices/*` paths has a ~4h Edge TTL and ignores origin Cache-Control. After the first nightly regen ships new noindex tags, CF may serve old cached pages for up to 4h. Practical timing: 11 PM regen → CF revalidation up to 4h → Googlebot recrawl → GSC reclassification. First-deploy reclassification may take 48-72h.
+
+See `docs/superpowers/specs/2026-05-01-thin-town-page-noindex-design.md` (in the meta repo) for the full design rationale.
 
 ## Stale Page Cleanup
 
