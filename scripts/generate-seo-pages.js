@@ -312,7 +312,7 @@ async function generateSEOPages(options = {}) {
 
         // A. Generate State Hub Page
         const statePageData = await generateStateHubPage(
-          stateCode, stateInfo, suppliers, priceMap, sequelize, crossLinkStateMap, FUEL
+          stateCode, stateInfo, suppliers, priceMap, sequelize, crossLinkStateMap, FUEL, recentPriceSet
         );
 
         if (statePageData) {
@@ -323,7 +323,8 @@ async function generateSEOPages(options = {}) {
           stateGenerated.states.push({
             abbrev: stateInfo.abbrev,
             name: stateInfo.name,
-            supplierCount: statePageData.supplierCount
+            supplierCount: statePageData.supplierCount,
+            noindexed: statePageData.noindex
           });
         }
 
@@ -331,7 +332,7 @@ async function generateSEOPages(options = {}) {
         const stateRegions = REGIONS[stateCode] || [];
         for (const region of stateRegions) {
           const regionData = await generateRegionalPage(
-            stateCode, stateInfo, region, suppliers, priceMap, sequelize, FUEL
+            stateCode, stateInfo, region, suppliers, priceMap, sequelize, FUEL, recentPriceSet
           );
 
           if (regionData && regionData.supplierCount >= MIN_SUPPLIERS_TO_GENERATE) {
@@ -344,7 +345,8 @@ async function generateSEOPages(options = {}) {
               stateName: stateInfo.name,
               region: region.name,
               slug: region.slug,
-              supplierCount: regionData.supplierCount
+              supplierCount: regionData.supplierCount,
+              noindexed: regionData.noindex
             });
           }
         }
@@ -353,7 +355,7 @@ async function generateSEOPages(options = {}) {
         const counties = locationResolver.getCountiesForState(stateCode);
         for (const county of counties) {
           const countyData = await generateCountyPage(
-            stateCode, stateInfo, county, suppliers, priceMap, sequelize, FUEL
+            stateCode, stateInfo, county, suppliers, priceMap, sequelize, FUEL, recentPriceSet
           );
 
           if (countyData && countyData.supplierCount >= MIN_SUPPLIERS_TO_GENERATE) {
@@ -367,7 +369,8 @@ async function generateSEOPages(options = {}) {
               stateName: stateInfo.name,
               county: county,
               slug: countySlug,
-              supplierCount: countyData.supplierCount
+              supplierCount: countyData.supplierCount,
+              noindexed: countyData.noindex
             });
           }
         }
@@ -376,7 +379,7 @@ async function generateSEOPages(options = {}) {
         const cities = locationResolver.getCitiesForState(stateCode);
         for (const city of cities) {
           const cityData = await generateCityPage(
-            stateCode, stateInfo, city, suppliers, priceMap, sequelize, FUEL
+            stateCode, stateInfo, city, suppliers, priceMap, sequelize, FUEL, recentPriceSet
           );
 
           if (cityData && cityData.supplierCount >= MIN_SUPPLIERS_TO_GENERATE) {
@@ -391,7 +394,8 @@ async function generateSEOPages(options = {}) {
               city: city,
               county: cityData.county,
               slug: citySlug,
-              supplierCount: cityData.supplierCount
+              supplierCount: cityData.supplierCount,
+              noindexed: cityData.noindex
             });
           }
         }
@@ -474,13 +478,31 @@ async function generateSEOPages(options = {}) {
     log(`  City pages: ${generatedPages.cities.length}`);
     log(`  Total pages: ${generatedPages.states.length + generatedPages.regions.length + generatedPages.counties.length + generatedPages.cities.length}`);
 
+    // Per-fuel noindex summary — daily operator visibility (Railway stdout).
+    // Same count is also threaded into the return below so it lands in
+    // cron_heartbeats.details for ad-hoc DB queries (CoverageReportMailer
+    // does not currently render this field; surfacing in 6 AM email is a
+    // one-line follow-up edit, not in v1 scope).
+    const noindexedTotal =
+      generatedPages.states.filter(s => s.noindexed).length +
+      generatedPages.regions.filter(r => r.noindexed).length +
+      generatedPages.counties.filter(c => c.noindexed).length +
+      generatedPages.cities.filter(c => c.noindexed).length;
+    const generatedTotal =
+      generatedPages.states.length + generatedPages.regions.length +
+      generatedPages.counties.length + generatedPages.cities.length;
+    const noindexPct = generatedTotal > 0 ? ((noindexedTotal / generatedTotal) * 100).toFixed(1) : '0.0';
+    log(`✅ ${FUEL.fuelType}: generated ${generatedTotal} pages, ${noindexedTotal} noindexed (${noindexPct}%)`);
+
     if (shouldCloseConnection) await sequelize.close();
     return {
       success: true,
       states: generatedPages.states.length,
       regions: generatedPages.regions.length,
       counties: generatedPages.counties.length,
-      cities: generatedPages.cities.length
+      cities: generatedPages.cities.length,
+      noindexed: noindexedTotal,
+      noindexPct: parseFloat(noindexPct)
     };
 
   } catch (error) {
@@ -532,7 +554,7 @@ function calculateMarketStats(suppliers) {
  * Generate State Hub Page
  * V2.34.0: Intelligence-first architecture - leads with price data, not supplier directory
  */
-async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap, sequelize, crossLinkStateMap = new Map(), FUEL) {
+async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap, sequelize, crossLinkStateMap = new Map(), FUEL, recentPriceSet) {
   // Get all ZIPs for this state's counties
   const counties = locationResolver.getCountiesForState(stateCode);
   const allZips = new Set();
@@ -547,6 +569,9 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
   if (suppliers.length < MIN_SUPPLIERS_TO_GENERATE) {
     return null;
   }
+
+  const indexableCount = suppliers.filter(s => recentPriceSet.has(s.id)).length;
+  const noindex = !DISABLE_NOINDEX_THIN_PAGES && indexableCount < MIN_PRICED_TO_INDEX;
 
   const stats = calculateMarketStats(suppliers);
   const dateStr = formatDate();
@@ -674,6 +699,7 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
 
   const html = generatePageHTML({
     type: 'state',
+    noindex,
     title: `${FUEL.label} Prices in ${stateInfo.name}`,
     h1: `${FUEL.label} Prices in ${stateInfo.name}`,
     description,
@@ -702,13 +728,13 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
       .map(([code, info]) => ({ name: info.name, abbrev: info.abbrev }))
   }, FUEL);
 
-  return { html, supplierCount: suppliers.length };
+  return { html, supplierCount: suppliers.length, noindex };
 }
 
 /**
  * Generate County Page
  */
-async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, priceMap, sequelize, FUEL) {
+async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, priceMap, sequelize, FUEL, recentPriceSet) {
   const zips = locationResolver.getZipsForCounty(county, stateCode);
 
   if (zips.length === 0) {
@@ -720,6 +746,9 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
   if (suppliers.length < MIN_SUPPLIERS_TO_GENERATE) {
     return null;
   }
+
+  const indexableCount = suppliers.filter(s => recentPriceSet.has(s.id)).length;
+  const noindex = !DISABLE_NOINDEX_THIN_PAGES && indexableCount < MIN_PRICED_TO_INDEX;
 
   const stats = calculateMarketStats(suppliers);
   const dateStr = formatDate();
@@ -750,6 +779,7 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
   const countyName = toTitleCase(county);
   const html = generatePageHTML({
     type: 'county',
+    noindex,
     title: `${FUEL.label} Prices in ${countyName} County, ${stateInfo.name}`,
     h1: `${countyName} County ${FUEL.label} Prices`,
     description: `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${countyName} County, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Compare ${suppliers.length} suppliers.`,
@@ -770,14 +800,14 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
     cityLinks
   }, FUEL);
 
-  return { html, supplierCount: suppliers.length, county };
+  return { html, supplierCount: suppliers.length, county, noindex };
 }
 
 /**
  * Generate Regional Page (e.g., Long Island, Hudson Valley)
  * Aggregates multiple counties into a single regional landing page
  */
-async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, priceMap, sequelize, FUEL) {
+async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, priceMap, sequelize, FUEL, recentPriceSet) {
   // Collect all ZIPs from the region's counties
   const allZips = new Set();
   for (const county of region.counties) {
@@ -794,6 +824,9 @@ async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, 
   if (suppliers.length < MIN_SUPPLIERS_TO_GENERATE) {
     return null;
   }
+
+  const indexableCount = suppliers.filter(s => recentPriceSet.has(s.id)).length;
+  const noindex = !DISABLE_NOINDEX_THIN_PAGES && indexableCount < MIN_PRICED_TO_INDEX;
 
   const stats = calculateMarketStats(suppliers);
   const dateStr = formatDate();
@@ -816,6 +849,7 @@ async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, 
 
   const html = generatePageHTML({
     type: 'region',
+    noindex,
     title: `${FUEL.label} Prices in ${region.name}, ${stateInfo.name}`,
     h1: `${region.name} ${FUEL.label} Prices`,
     description: `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${region.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Covers ${region.counties.join(', ')} counties.`,
@@ -837,13 +871,13 @@ async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, 
     countyLinks
   }, FUEL);
 
-  return { html, supplierCount: suppliers.length };
+  return { html, supplierCount: suppliers.length, noindex };
 }
 
 /**
  * Generate City Page
  */
-async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceMap, sequelize, FUEL) {
+async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceMap, sequelize, FUEL, recentPriceSet) {
   const zips = locationResolver.getZipsForCity(city, stateCode);
 
   if (zips.length === 0) {
@@ -855,6 +889,9 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
   if (suppliers.length < MIN_SUPPLIERS_TO_GENERATE) {
     return null;
   }
+
+  const indexableCount = suppliers.filter(s => recentPriceSet.has(s.id)).length;
+  const noindex = !DISABLE_NOINDEX_THIN_PAGES && indexableCount < MIN_PRICED_TO_INDEX;
 
   const stats = calculateMarketStats(suppliers);
   const dateStr = formatDate();
@@ -902,6 +939,7 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
   const countyNameFormatted = countyName ? toTitleCase(countyName) : null;
   const html = generatePageHTML({
     type: 'city',
+    noindex,
     title: `${FUEL.label} Prices in ${cityName}, ${stateCode}`,
     h1: `${cityName} ${FUEL.label} Prices`,
     description: `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${cityName}, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Compare ${suppliers.length} suppliers.`,
@@ -925,7 +963,7 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
     zips
   }, FUEL);
 
-  return { html, supplierCount: suppliers.length, county: countyName };
+  return { html, supplierCount: suppliers.length, county: countyName, noindex };
 }
 
 /**
