@@ -67,10 +67,15 @@ function fileToUrl(filePath) {
   if (SKIP_PREFIXES.some(p => basename.startsWith(p))) return null;
   if (SKIP_FILES.has(basename)) return null;
 
-  // Skip redirect files (contain meta http-equiv="refresh")
+  // Skip redirect files (contain meta http-equiv="refresh") and noindex'd
+  // pages (contain meta name="robots" with noindex). Reading 2KB is enough
+  // to capture both — they live in <head>. Both checks must remain inside
+  // the try block: a transient fs error must return null (skip this file)
+  // not crash the whole sitemap regen.
   try {
-    const content = fs.readFileSync(filePath, 'utf-8').substring(0, 500);
+    const content = fs.readFileSync(filePath, 'utf-8').substring(0, 2048);
     if (content.includes('http-equiv="refresh"')) return null;
+    if (/<meta\s+name="robots"\s+content="[^"]*noindex/i.test(content)) return null;
   } catch (e) {
     return null;
   }
