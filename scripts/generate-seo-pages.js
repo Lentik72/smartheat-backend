@@ -989,6 +989,7 @@ function computeFreshness(scrapedAt) {
 function generatePageHTML(data, FUEL) {
   const {
     type,
+    noindex = false,
     title,
     h1,
     description,
@@ -1567,7 +1568,7 @@ function generatePageHTML(data, FUEL) {
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCNTVGNVJ9"></script>
   <script src="${assetPath}js/analytics.js"></script>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">${noindex ? '\n  <meta name="robots" content="noindex, follow">' : ''}
   <title>${escapeHtml(title)} - Updated ${dateStr} | HomeHeat</title>
   <meta name="description" content="${escapeHtml(description)}">
   <link rel="canonical" href="${canonicalUrl}">
@@ -2108,7 +2109,10 @@ function generateSitemap(pages, suppliers = []) {
     <priority>0.5</priority>
   </url>`).join('');
 
-  const stateUrls = pages.states.map(s => `
+  // Filter out noindexed pages so the legacy in-file sitemap doesn't advertise
+  // them during the 30-min window before scripts/generate-sitemap.js (the
+  // standalone, authoritative sitemap) overwrites at 11:30 PM EST.
+  const stateUrls = pages.states.filter(s => !s.noindexed).map(s => `
   <url>
     <loc>https://www.gethomeheat.com/prices/${s.abbrev}/</loc>
     <lastmod>${today}</lastmod>
@@ -2116,7 +2120,7 @@ function generateSitemap(pages, suppliers = []) {
     <priority>0.8</priority>
   </url>`).join('');
 
-  const regionUrls = pages.regions.map(r => `
+  const regionUrls = pages.regions.filter(r => !r.noindexed).map(r => `
   <url>
     <loc>https://www.gethomeheat.com/prices/${r.state}/${r.slug}</loc>
     <lastmod>${today}</lastmod>
@@ -2124,7 +2128,7 @@ function generateSitemap(pages, suppliers = []) {
     <priority>0.75</priority>
   </url>`).join('');
 
-  const countyUrls = pages.counties.map(c => `
+  const countyUrls = pages.counties.filter(c => !c.noindexed).map(c => `
   <url>
     <loc>https://www.gethomeheat.com/prices/${c.state}/${c.slug}</loc>
     <lastmod>${today}</lastmod>
@@ -2132,7 +2136,7 @@ function generateSitemap(pages, suppliers = []) {
     <priority>0.7</priority>
   </url>`).join('');
 
-  const cityUrls = pages.cities.map(c => `
+  const cityUrls = pages.cities.filter(c => !c.noindexed).map(c => `
   <url>
     <loc>https://www.gethomeheat.com/prices/${c.state}/${c.slug}</loc>
     <lastmod>${today}</lastmod>
