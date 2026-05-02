@@ -52,6 +52,7 @@ async function getCurrentPrices(sequelize, minPrice, maxPrice, fuelType = 'heati
     FROM supplier_prices sp
     JOIN suppliers s ON sp.supplier_id = s.id
     WHERE sp.is_valid = true
+      AND sp.source_type != 'aggregator_signal'
       AND sp.expires_at > NOW()
       AND sp.scraped_at > NOW() - INTERVAL '36 hours'
       AND sp.price_per_gallon BETWEEN $1 AND $2
