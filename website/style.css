@@ -387,11 +387,9 @@ body {
     max-width: 440px;
 }
 
-/* Emotional hook — tighter to tagline, more space before form */
+/* Trust line — defends against signup/contract/opacity objections, full weight */
 .hero-emotional {
     font-size: 0.95rem;
-    font-style: italic;
-    opacity: 0.7;
     margin: 0 0 1.25rem;
     color: var(--text-dark);
 }
