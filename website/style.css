@@ -626,6 +626,32 @@ body {
     margin-top: 0.5rem;
 }
 
+/* Android-only acknowledgment — sits in the iOS app card's slot, parallel role.
+   Uses --text-dark to stay readable on the warm hero gradient (orange);
+   link uses --primary-orange-dark + underline so the affordance pops above
+   the surrounding orange background. */
+.hero .hero-android-note {
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    margin: 1.5rem 0 0.5rem;
+    line-height: 1.5;
+    max-width: 380px;
+    opacity: 0.85;
+}
+
+.hero .hero-android-note a {
+    color: var(--primary-orange-dark);
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+@media (max-width: 767px) {
+    .hero .hero-android-note {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
 /* Hero proof line */
 .hero-proof-line {
     display: flex;
@@ -4592,6 +4618,7 @@ body {
 
 .platform-ios .android-only,
 .platform-desktop .android-only { display: none !important; }
+.platform-android .android-only { display: revert !important; }
 
 .non-ios-only { display: none; }
 .platform-desktop .non-ios-only,
