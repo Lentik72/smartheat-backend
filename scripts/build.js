@@ -11,7 +11,6 @@ const esbuild = require('esbuild');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 const WEBSITE_DIR = path.join(__dirname, '../website');
 
@@ -141,23 +140,46 @@ async function build() {
 }
 
 /**
- * Enumerate source HTML files under website/ — tracked + untracked-non-ignored.
+ * Generator-output paths under website/. These are produced by cron-driven
+ * generators using the generate-then-swap _tmp pattern; build.js must not
+ * walk into them or readFileSync races the atomic rename and crashes ENOENT.
  *
- * Uses git as the discriminator: .gitignore lists generator output dirs
- * (website/prices/, website/supplier/, website/heating-cost/, etc.), which
- * are populated by cron-driven generators using the generate-then-swap _tmp
- * pattern. Walking those dirs from build.js races the atomic rename window
- * and is redundant anyway — generators inline the current style.min.css
- * hash via getFileHash() at gen time. On Railway, gitignored dirs don't
- * exist at build time, so this matches production behavior exactly.
+ * Mirrors website/-relative entries in .gitignore + the pre-commit hook's
+ * REGEN_PATHS. Keep these three in sync if a new generator is added:
+ *   - .gitignore (root)
+ *   - .git/hooks/pre-commit (REGEN_PATHS)
+ *   - this regex
+ *
+ * Note: prices.html is tracked in git but rewritten in-place by
+ * generate-seo-pages.js, so it's treated as generator output here too —
+ * generators inline the current style.min.css hash via getFileHash() at
+ * gen time, so build.js bumping it would just create churn.
+ */
+const GENERATED_PATHS_RE = /^website\/(prices|supplier|heating-cost|average-heating-bill|price-trend)\/|^website\/sitemap\.xml$|^website\/prices\.html$/;
+
+/**
+ * Enumerate source HTML files under website/ — recursive walk that excludes
+ * generator output. Pure filesystem (no git binary or .git/ dependency)
+ * so it works identically in local dev, Railway/Nixpacks build, and CI.
  */
 function findSourceHtmlFiles() {
-  const out = execSync('git ls-files --cached --others --exclude-standard', {
-    cwd: WEBSITE_DIR, encoding: 'utf-8'
-  });
-  return out.split('\n')
-    .filter(f => f.endsWith('.html'))
-    .map(f => path.join(WEBSITE_DIR, f));
+  const repoRoot = path.dirname(WEBSITE_DIR);
+  const results = [];
+  walk(WEBSITE_DIR);
+  return results;
+
+  function walk(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      const rel = path.relative(repoRoot, fullPath);
+      if (entry.isDirectory()) {
+        if (GENERATED_PATHS_RE.test(rel + '/')) continue;
+        walk(fullPath);
+      } else if (entry.name.endsWith('.html') && !GENERATED_PATHS_RE.test(rel)) {
+        results.push(fullPath);
+      }
+    }
+  }
 }
 
 function formatSize(bytes) {
