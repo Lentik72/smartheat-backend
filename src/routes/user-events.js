@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.post('/track', async (req, res) => {
   const sequelize = req.app.locals.sequelize;
+  const logger = req.app.locals.logger || console;
 
   // Reject oversized payloads (1KB max)
   const contentLength = parseInt(req.headers['content-length'] || '0', 10);
@@ -39,8 +40,11 @@ router.post('/track', async (req, res) => {
     );
     res.json({ ok: true });
   } catch (err) {
-    // Don't fail the page — log and return success
-    console.log(`[UserEvent] ${safeEvent} (not persisted: ${err.message})`);
+    // sendBeacon is fire-and-forget; don't 500 the user. But surface the failure
+    // at warn level so persistent INSERT errors (e.g. missing table, schema drift)
+    // are visible in Railway's warn filter — info-level console.log hid a missing
+    // user_events table for weeks (heatingoil-wjdy 2026-05-03; this bead heatingoil-ydmb).
+    logger.warn(`[UserEvent] ${safeEvent} not persisted: ${err.message}`);
     res.json({ ok: true });
   }
 });
