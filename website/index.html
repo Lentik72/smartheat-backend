@@ -28,7 +28,7 @@
 
     <script>(function(){var u=navigator.userAgent;document.documentElement.className+=(/Android/i.test(u)?' platform-android':/iPhone|iPad|iPod/i.test(u)||('MacIntel'===navigator.platform&&navigator.maxTouchPoints>1)?' platform-ios':' platform-desktop');})();</script>
     <link rel="preload" as="image" type="image/webp" href="images/screenshot-1-home.webp">
-    <link rel="stylesheet" href="style.min.css?v=53f107da">
+    <link rel="stylesheet" href="style.min.css?v=f0b54ab9">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
@@ -503,9 +503,11 @@
                 <p class="hero-tagline">Most homeowners pay $300–$800 more per year than they need to. Compare live prices from local suppliers and stop overpaying.</p>
                 <p class="hero-emotional">No signup. No contracts. Just the truth about what heating oil costs near you.</p>
 
-                <form class="hero-zip-form" id="hero-zip-form">
+                <form class="hero-zip-form" id="hero-zip-form" action="/prices" method="get">
+                    <label for="hero-zip-input" class="sr-only">ZIP code</label>
                     <input type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5"
-                           placeholder="Enter your ZIP code" id="hero-zip-input" required>
+                           placeholder="Enter your ZIP code" id="hero-zip-input" name="zip"
+                           autocomplete="postal-code" required>
                     <button type="submit"><span class="btn-full">See What You Should Pay</span><span class="btn-short">Check Prices</span></button>
                 </form>
                 <p class="hero-zip-helper">See real supplier prices near your ZIP. No signup needed.</p>
@@ -513,7 +515,9 @@
                 <div class="hero-zip-expand" id="hero-zip-expand" style="display:none;">
                     <p class="expand-msg" id="expand-msg"></p>
                     <form class="hero-expand-form" id="hero-expand-form">
-                        <input type="email" placeholder="Your email" id="hero-expand-email" required>
+                        <label for="hero-expand-email" class="sr-only">Email address</label>
+                        <input type="email" placeholder="Your email" id="hero-expand-email" name="email"
+                               autocomplete="email" required>
                         <button type="submit">Notify Me</button>
                     </form>
                     <p class="expand-success" id="expand-success" style="display:none;"></p>
@@ -706,6 +710,10 @@
                 <div class="home-faq-item">
                     <h3>Is it really free?</h3>
                     <p>Yes. No subscriptions, no ads, no hidden costs. Just download and use.</p>
+                </div>
+                <div class="home-faq-item">
+                    <h3>Is my data private?</h3>
+                    <p>Yes. No account required. Tank data stays on your device unless you opt into anonymous community sharing. We don't sell or share your information.</p>
                 </div>
             </div>
         </div>

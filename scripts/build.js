@@ -11,6 +11,7 @@ const esbuild = require('esbuild');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const WEBSITE_DIR = path.join(__dirname, '../website');
 
@@ -74,7 +75,7 @@ async function build() {
 
   // Auto-version CSS: replace ?v=N with content hash of style.min.css
   const minCssPath = path.join(WEBSITE_DIR, 'style.min.css');
-  const htmlFiles = findHtmlFiles(WEBSITE_DIR);
+  const htmlFiles = findSourceHtmlFiles();
 
   if (fs.existsSync(minCssPath)) {
     const cssContent = fs.readFileSync(minCssPath);
@@ -139,18 +140,24 @@ async function build() {
   console.log(`  Total: ${formatSize(totalOriginal)} → ${formatSize(totalMinified)} (${savings}% smaller)`);
 }
 
-/** Recursively find all .html files under a directory */
-function findHtmlFiles(dir) {
-  const results = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...findHtmlFiles(fullPath));
-    } else if (entry.name.endsWith('.html')) {
-      results.push(fullPath);
-    }
-  }
-  return results;
+/**
+ * Enumerate source HTML files under website/ — tracked + untracked-non-ignored.
+ *
+ * Uses git as the discriminator: .gitignore lists generator output dirs
+ * (website/prices/, website/supplier/, website/heating-cost/, etc.), which
+ * are populated by cron-driven generators using the generate-then-swap _tmp
+ * pattern. Walking those dirs from build.js races the atomic rename window
+ * and is redundant anyway — generators inline the current style.min.css
+ * hash via getFileHash() at gen time. On Railway, gitignored dirs don't
+ * exist at build time, so this matches production behavior exactly.
+ */
+function findSourceHtmlFiles() {
+  const out = execSync('git ls-files --cached --others --exclude-standard', {
+    cwd: WEBSITE_DIR, encoding: 'utf-8'
+  });
+  return out.split('\n')
+    .filter(f => f.endsWith('.html'))
+    .map(f => path.join(WEBSITE_DIR, f));
 }
 
 function formatSize(bytes) {
