@@ -40,6 +40,21 @@ async function up(sequelize) {
   `);
   console.log(`[Migration 086] Set contact_source='migration' for ${updated.length} suppliers`);
 
+  // 2b. Pre-clean malformed audit_logs.details rows before building jsonb-cast index.
+  // Legacy rows may contain empty strings or non-JSON text from before JSON.stringify
+  // became universal, which would cause "invalid input syntax for type json" when the
+  // index expression evaluates details::jsonb on every row.
+  const [cleaned] = await sequelize.query(`
+    UPDATE audit_logs
+    SET details = NULL
+    WHERE details IS NOT NULL
+      AND (TRIM(details) = '' OR TRIM(details) !~ '^[\\[\\{]')
+    RETURNING id
+  `);
+  if (cleaned.length > 0) {
+    console.log(`[Migration 086] Nulled ${cleaned.length} audit_logs rows with non-JSON details`);
+  }
+
   // 3. Create COALESCE audit_logs indexes for slug bridge
   const indexes = [
     {
