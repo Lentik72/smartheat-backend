@@ -482,13 +482,6 @@ body {
     }
 }
 
-/* ZIP button: full text on desktop, short on mobile */
-.hero-zip-form .btn-short { display: none; }
-@media (max-width: 767px) {
-    .hero-zip-form .btn-full { display: none; }
-    .hero-zip-form .btn-short { display: inline; }
-}
-
 /* ZIP code form */
 .hero-zip-form {
     display: flex;
