@@ -129,6 +129,17 @@
 
     // Initialize personalization
     async function init() {
+        // If the URL carries an explicit ?zip=, the user has already told us what
+        // they want to see — the search results below answer "what's near my ZIP."
+        // Skipping personalization here prevents the IP-geo bar from contradicting
+        // the search (e.g., ?zip=10001 with the visitor IP geolocating to
+        // Westchester would render "Prices near Westchester · 91 suppliers" above
+        // 18 actual results from the NYC metro). heatingoil-rzmk.
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('zip')) {
+            return;
+        }
+
         // Priority 1: Check for returning user
         if (checkLastSearch()) {
             return;

@@ -140,22 +140,22 @@ async function build() {
 }
 
 /**
- * Generator-output paths under website/. These are produced by cron-driven
- * generators using the generate-then-swap _tmp pattern; build.js must not
- * walk into them or readFileSync races the atomic rename and crashes ENOENT.
+ * Generator-output directories under website/. These are produced by
+ * cron-driven generators using the generate-then-swap _tmp pattern;
+ * build.js must not walk into them or readFileSync races the atomic
+ * rename and crashes ENOENT. Mirrors the website/-relative directory
+ * entries in .gitignore + the pre-commit hook's REGEN_PATHS — keep these
+ * three in sync if a new generator directory is added.
  *
- * Mirrors website/-relative entries in .gitignore + the pre-commit hook's
- * REGEN_PATHS. Keep these three in sync if a new generator is added:
- *   - .gitignore (root)
- *   - .git/hooks/pre-commit (REGEN_PATHS)
- *   - this regex
- *
- * Note: prices.html is tracked in git but rewritten in-place by
- * generate-seo-pages.js, so it's treated as generator output here too —
- * generators inline the current style.min.css hash via getFileHash() at
- * gen time, so build.js bumping it would just create churn.
+ * Note: prices.html (the file at website/ root) is intentionally NOT
+ * excluded. It's hand-edited but also rewritten in-place by
+ * generate-seo-pages.js#updatePricesHtml, which only touches data
+ * sections (leaderboard table, schema, top deals) — it does not refresh
+ * <script src="...?v=...">. If build.js skipped it, JS cache-bust hashes
+ * in prices.html would stay stale and prod browsers would keep getting
+ * old JS. There's no _tmp race for the root file.
  */
-const GENERATED_PATHS_RE = /^website\/(prices|supplier|heating-cost|average-heating-bill|price-trend)\/|^website\/sitemap\.xml$|^website\/prices\.html$/;
+const GENERATED_PATHS_RE = /^website\/(prices|supplier|heating-cost|average-heating-bill|price-trend)\/|^website\/sitemap\.xml$/;
 
 /**
  * Enumerate source HTML files under website/ — recursive walk that excludes
