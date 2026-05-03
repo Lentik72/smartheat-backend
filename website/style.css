@@ -6341,11 +6341,12 @@ body {
 }
 
 .decision-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: var(--space-6) var(--space-4);
+    padding: var(--space-6) var(--space-4) 2.5rem;
     background: var(--background-card);
     border: 1px solid var(--border-color);
     border-radius: 12px;
@@ -6354,9 +6355,24 @@ body {
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
+.decision-card::after {
+    content: '→';
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-orange);
+    transition: transform 0.2s;
+}
+
 .decision-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-md);
+}
+
+.decision-card:hover::after {
+    transform: translateX(4px);
 }
 
 .decision-card-icon {
