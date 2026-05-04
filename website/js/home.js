@@ -153,6 +153,9 @@
         setDynamic('stat-suppliers', count);
         setDynamic('stat-states', states);
         setDynamic('stat-avg-price', avg);
+        // FAQ Q4 ("Is HomeHeat free to use?") — same dynamic source as hero,
+        // avoids the static-then-drift problem the App Store ratingCount hit.
+        setDynamic('faq-supplier-count', count);
         // As-of date
         if (data.asOf) {
             var asOfDate = new Date(data.asOf);

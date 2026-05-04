@@ -28,7 +28,7 @@
 
     <script>(function(){var u=navigator.userAgent;document.documentElement.className+=(/Android/i.test(u)?' platform-android':/iPhone|iPad|iPod/i.test(u)||('MacIntel'===navigator.platform&&navigator.maxTouchPoints>1)?' platform-ios':' platform-desktop');})();</script>
     <link rel="preload" as="image" type="image/webp" href="images/screenshot-1-home.webp">
-    <link rel="stylesheet" href="style.min.css?v=17926b27">
+    <link rel="stylesheet" href="style.min.css?v=905692bd">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
     <link rel="icon" type="image/png" sizes="180x180" href="favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
@@ -52,18 +52,34 @@
         "mainEntity": [
             {
                 "@type": "Question",
-                "name": "Do I need a smart tank sensor?",
+                "name": "Are these real supplier prices?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "No. HomeHeat works with manual gauge readings and does not require any hardware or sensors."
+                    "text": "Yes. We pull each price directly from the supplier's published listing — not estimates, averages, or lead-gen quotes. The exact price you're quoted may vary by delivery size and your address, but the listing reflects what each supplier is publicly advertising right now."
                 }
             },
             {
                 "@type": "Question",
-                "name": "Is HomeHeat free?",
+                "name": "How often are prices updated?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Yes. HomeHeat is completely free to download and use on iOS. No subscriptions, no ads, no hidden costs."
+                    "text": "We check each supplier's listing daily. The timestamp on each listing shows when we last verified the price."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Are these prices for cash/COD customers?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. We only list cash, credit-card, and COD/will-call prices — what you'd pay for a single delivery without signing a contract. Contract pricing varies by supplier and isn't included."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is HomeHeat free to use?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. No subscriptions, no ads, no hidden costs. We track hundreds of local suppliers and add no fees of our own. No signup required to compare prices."
                 }
             },
             {
@@ -71,7 +87,15 @@
                 "name": "Is my data private?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Yes. No account required. Tank data stays on your device unless you opt into anonymous community sharing. We do not sell or share your information."
+                    "text": "Yes. No account required. Tank data in the iOS app stays on your device unless you opt into anonymous community sharing. We do not sell or share your information."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What does the iOS app do?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "It's free, takes about 30 seconds to set up (no sensors required), and adds tank tracking, run-out predictions based on weather and your usage, and alerts when local prices drop in your area. Most users download it for the price-drop alerts."
                 }
             }
         ]
@@ -709,18 +733,36 @@
         <div class="home-faq-content">
             <h2>Frequently Asked Questions</h2>
             <div class="home-faq-list">
-                <div class="home-faq-item">
-                    <h3>Do I need a smart tank sensor?</h3>
-                    <p>No. HomeHeat works with manual gauge readings. No hardware required.</p>
-                </div>
-                <div class="home-faq-item">
-                    <h3>Is it really free?</h3>
-                    <p>Yes. No subscriptions, no ads, no hidden costs. Just download and use.</p>
-                </div>
-                <div class="home-faq-item">
-                    <h3>Is my data private?</h3>
-                    <p>Yes. No account required. Tank data stays on your device unless you opt into anonymous community sharing. We don't sell or share your information.</p>
-                </div>
+                <details class="home-faq-item">
+                    <summary><h3>Are these real supplier prices?</h3></summary>
+                    <p>Yes. We pull each price directly from the supplier's published listing — not estimates, averages, or lead-gen quotes. The exact price you're quoted may vary by delivery size and your address, but the listing reflects what each supplier is publicly advertising right now.</p>
+                </details>
+                <details class="home-faq-item">
+                    <summary><h3>How often are prices updated?</h3></summary>
+                    <p>We check each supplier's listing daily. The timestamp on each listing shows when we last verified the price.</p>
+                </details>
+                <details class="home-faq-item">
+                    <summary><h3>Are these prices for cash/COD customers?</h3></summary>
+                    <p>Yes. We only list cash, credit-card, and COD/will-call prices — what you'd pay for a single delivery without signing a contract. Contract pricing varies by supplier and isn't included.</p>
+                </details>
+                <details class="home-faq-item">
+                    <summary><h3>Is HomeHeat free to use?</h3></summary>
+                    <p>Yes. No subscriptions, no ads, no hidden costs. We track <strong id="faq-supplier-count" class="loading-pulse">---</strong> suppliers and add no fees of our own. No signup required to compare prices.</p>
+                </details>
+                <details class="home-faq-item">
+                    <summary><h3>Is my data private?</h3></summary>
+                    <p>Yes. No account required. Tank data in the iOS app stays on your device unless you opt into anonymous community sharing. We don't sell or share your information.</p>
+                </details>
+                <details class="home-faq-item">
+                    <summary><h3>What does the iOS app do?</h3></summary>
+                    <p>It's free, takes about 30 seconds to set up (no sensors required), and adds:</p>
+                    <ul class="home-faq-bullets">
+                        <li>Tank tracking</li>
+                        <li>Run-out predictions based on weather and your usage</li>
+                        <li>Alerts when local prices drop in your area</li>
+                    </ul>
+                    <p>Most users download it for the price-drop alerts. <a href="https://apps.apple.com/us/app/homeheat/id6747320571" class="home-faq-cta ios-only" data-track="faq-app-cta" data-referrer="homepage-faq">Download free on iPhone →</a></p>
+                </details>
             </div>
         </div>
     </section>
@@ -762,6 +804,6 @@
     <script src="js/nav.js?v=0dd6767d"></script>
     <script src="js/widgets.js?v=567bef31"></script>
     <script src="js/pwa.js?v=e90c4348"></script>
-    <script src="js/home.js?v=86423ba2"></script>
+    <script src="js/home.js?v=d012cdf5"></script>
 </body>
 </html>

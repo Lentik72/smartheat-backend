@@ -4929,19 +4929,89 @@ body {
     text-align: left;
 }
 
+/* FAQ accordion using native <details>/<summary>.
+   Multi-open, all-collapsed default, custom CSS chevron. */
 .home-faq-item {
-    margin-bottom: 2rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--background-card);
+    overflow: hidden;
 }
 
-.home-faq-item h3 {
+.home-faq-item summary {
+    list-style: none;          /* Firefox: hide native triangle */
+    cursor: pointer;
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    user-select: none;
+}
+
+.home-faq-item summary::-webkit-details-marker {
+    display: none;             /* Safari/Chrome: hide native triangle */
+}
+
+.home-faq-item summary::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid var(--primary-orange);
+    border-bottom: 2px solid var(--primary-orange);
+    transform: rotate(45deg);  /* points down (collapsed) */
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.home-faq-item[open] summary::after {
+    transform: rotate(-135deg); /* points up (expanded) */
+}
+
+.home-faq-item summary h3 {
     color: var(--text-dark);
-    margin-bottom: 0.5rem;
+    margin: 0;
     font-size: 1rem;
+    font-weight: 600;
+    display: inline;
 }
 
-.home-faq-item p {
+.home-faq-item summary:hover h3 {
+    color: var(--primary-orange-dark);
+}
+
+.home-faq-item p,
+.home-faq-item ul {
     color: var(--text-gray);
     margin: 0;
+    padding: 0 1.25rem 1rem;
+}
+
+.home-faq-item p + p,
+.home-faq-item ul + p {
+    padding-top: 0.5rem;
+}
+
+.home-faq-bullets {
+    list-style: disc;
+    padding-left: 2.5rem !important;
+}
+
+.home-faq-bullets li {
+    margin-bottom: 0.25rem;
+}
+
+.home-faq-cta {
+    display: inline-block;
+    margin-top: 0.25rem;
+    color: var(--primary-orange-dark);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.home-faq-cta:hover {
+    text-decoration: none;
 }
 
 /* SEO Keyword Section */
