@@ -10875,8 +10875,15 @@
       "zip_code": "06712"
     },
     "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "propane": {
+        "enabled": true,
+        "formBody": { "wcp_id": "1" },
+        "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})"
+      }
+    },
     "hostGroup": "droplet",
-    "notes": "CT Prospect/New Haven-Fairfield-Litchfield - COD. Droplet embedded POST. HOD #983. Min 50 gal.",
+    "notes": "CT Prospect/New Haven-Fairfield-Litchfield - COD. Droplet embedded POST. HOD #983. Min 50 gal. wcp_id=2 oil, wcp_id=1 propane (heatingoil-qt3c).",
     "postalCodesServed": [
       "06401",
       "06403",
@@ -22384,8 +22391,15 @@
       "zip_code": "12168"
     },
     "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "formBody": { "wcp_id": "3" },
+        "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})"
+      }
+    },
     "hostGroup": "droplet",
-    "notes": "NY Stephentown/serves VT Bennington County - COD. Droplet embedded POST.",
+    "notes": "NY Stephentown/serves VT Bennington County - COD. Droplet embedded POST. wcp_id=2 oil, wcp_id=3 kerosene (heatingoil-qt3c).",
     "postalCodesServed": [
       "05201",
       "05254",

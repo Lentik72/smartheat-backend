@@ -4,6 +4,7 @@
  * V2.1.0: Added displayable flag support for aggregator signals
  * V2.12.0: Multi-fuel extraction — scrape kerosene (and future fuels) from same HTML
  * V2.15.0: json_api multi-fuel — secondary fuels via config.fuels.<fuel>.apiUrl + jsonPath
+ * V3.0.1: post_form multi-fuel (heatingoil-qt3c) — Droplet secondary fuels via fuels.<fuel>.formBody (separate POST per product)
  *
  * Architecture:
  * - Honest User-Agent (HomeHeatBot)
@@ -166,6 +167,13 @@ function extractFuelPrices(html, config) {
 
   for (const [fuelType, fuelConfig] of Object.entries(config.fuels)) {
     if (!fuelConfig.enabled || !fuelConfig.priceRegex) continue;
+    // heatingoil-qt3c: post_form (Droplet) secondary fuels declare their own
+    // formBody override and are fetched via separate POST. Their priceRegex
+    // is identical to the primary's (Droplet returns the same HTML structure
+    // for every product), so running it against the primary HTML would match
+    // and mislabel oil prices as propane/kerosene. Skip them here — the
+    // post_form branch handles them in a dedicated loop.
+    if (fuelConfig.formBody) continue;
 
     const range = FUEL_PRICE_RANGES[fuelType] || [2.00, 8.00];
 
@@ -440,6 +448,78 @@ async function scrapeSupplierPriceOnce(supplier, config) {
             fuelPrices: postFuelPrices,
             dropletFailureType: 'parse',
           };
+        }
+
+        // heatingoil-qt3c: per-fuel POST for Droplet multi-fuel suppliers.
+        // Droplet returns identical HTML structure for every product (wcp_id),
+        // so secondary fuels need their own POST. Each fuel.formBody overrides
+        // the primary formBody (e.g. wcp_id=1 for propane vs wcp_id=2 for oil).
+        // Failures NEVER affect primary success or feed the circuit breaker —
+        // they're logged with `[multi-fuel-post]` prefix and silently dropped.
+        if (config.fuels) {
+          for (const [fuelType, fuelConfig] of Object.entries(config.fuels)) {
+            if (!fuelConfig.enabled || !fuelConfig.formBody || !fuelConfig.priceRegex) continue;
+            if (postFuelPrices.some((fp) => fp.fuelType === fuelType)) continue;
+
+            await sleep(1500); // Droplet rate limit between POSTs
+
+            const fuelFormParams = new URLSearchParams({
+              ...config.formBody,
+              ...fuelConfig.formBody,
+              zip_code: zip, // share primary's rotated ZIP
+            });
+            const fCtrl = new AbortController();
+            const fTimer = setTimeout(() => fCtrl.abort(), 10000);
+            try {
+              const fResp = await fetch(postUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'User-Agent': browserUA,
+                  'Accept': 'text/html,application/xhtml+xml',
+                  'Accept-Language': 'en-US,en;q=0.9',
+                  'Referer': referer || '',
+                },
+                body: fuelFormParams.toString(),
+                signal: fCtrl.signal,
+              });
+              clearTimeout(fTimer);
+              if (!fResp.ok) {
+                console.warn(`[multi-fuel-post] supplier=${supplier.name} fuel=${fuelType} reason=HTTP_${fResp.status}`);
+                continue;
+              }
+              const fHtml = await fResp.text();
+              if (/captcha|blocked|rate.limit/i.test(fHtml)) {
+                console.warn(`[multi-fuel-post] supplier=${supplier.name} fuel=${fuelType} reason=block_text`);
+                continue;
+              }
+              // Tier extraction with fuel-correct range. extractPrice() can't
+              // be reused here because it hardcodes FUEL_PRICE_RANGES.heating_oil
+              // for the range filter — so propane's $1.99 (500-gal tier) would
+              // be dropped before the lowest-tier sort. Inline the post_form
+              // sort+lowest logic with the right per-fuel range.
+              const fRange = FUEL_PRICE_RANGES[fuelType] || [2.00, 8.00];
+              const fRegex = new RegExp(fuelConfig.priceRegex, 'gi');
+              const fMatches = [];
+              let fm;
+              while ((fm = fRegex.exec(fHtml)) !== null) {
+                const p = parseFloat(fm[1]);
+                if (!isNaN(p) && p >= fRange[0] && p <= fRange[1]) fMatches.push(p);
+              }
+              if (fMatches.length === 0) {
+                console.warn(`[multi-fuel-post] supplier=${supplier.name} fuel=${fuelType} reason=no_match`);
+                continue;
+              }
+              const fSorted = [...fMatches].sort((a, b) => a - b);
+              const fPrice = fuelConfig.targetTier && fuelConfig.targetTier <= fSorted.length
+                ? fSorted[fuelConfig.targetTier - 1]
+                : fSorted[0];
+              postFuelPrices.push({ fuelType, price: fPrice });
+            } catch (e) {
+              clearTimeout(fTimer);
+              console.warn(`[multi-fuel-post] supplier=${supplier.name} fuel=${fuelType} reason=fetch_error err=${e.message}`);
+            }
+          }
         }
 
         const postSourceType = config.displayable === false ? 'aggregator_signal' : 'scraped';

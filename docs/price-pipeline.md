@@ -38,11 +38,12 @@ Constant: `LEADERBOARD_STALE_THRESHOLD_MS = 4 hours` (in `src/routes/market.js`)
 
 ## Scraper Extraction Patterns
 
-Four pattern types in scrape-config.json:
+Five pattern types in scrape-config.json:
 - **direct**: First regex match on page
 - **table**: Tiered pricing — sorts ascending, takes lowest (highest-volume tier). `targetTier` overrides selection
 - **split**: Price split across HTML elements (e.g., "$3" + "199" = $3.199)
 - **json_api**: Fetch JSON endpoint, extract via dot-notation `jsonPath`. **V2.15.0** — secondary fuels (e.g. kerosene) can define their own `fuels.<fuel>.apiUrl` + `jsonPath` for a separate call; the regex-based `fuels.<fuel>.priceRegex` path still applies when the primary value is a text blob. Per-fuel failures log to console and are omitted from `fuelPrices` but do not fail the primary scrape. Note: `SupplierPrice.fuelType` is an ENUM of `('heating_oil', 'kerosene')` — adding a fuel beyond this list requires coordinated ENUM + FUEL_PRICE_RANGES + model change.
+- **post_form** (V3.0.0): POST form-encoded body (e.g. `wcp_id=2&zip_code=06712`) to a price endpoint, then extract from the returned HTML using the same tier-sort logic as `table`. Used for Droplet-hosted suppliers (`hostGroup: "droplet"`). Browser-class User-Agent + supplier-homepage Referer required — bot UAs are rejected. Kill switch: `SCRAPE_SKIP_DROPLET=true`. **Multi-fuel (heatingoil-qt3c)**: Droplet returns identical HTML structure for every product, so secondary fuels need a per-fuel `formBody` override (e.g. `fuels.propane.formBody.wcp_id="1"`). The scraper does a separate POST per fuel, throttled 1500ms apart, after the primary POST succeeds. Secondary failures log with `[multi-fuel-post]` prefix and never affect primary success or the Droplet circuit breaker. `extractFuelPrices()` skips any fuel that declares `formBody` to prevent same-HTML-bleed (running propane regex against oil HTML would match because the markup is identical).
 
 ### lookupUrl (V2.14.0)
 
