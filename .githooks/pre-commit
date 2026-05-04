@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# Pre-commit checks:
+# 1. Secret scan — blocks commits containing known secret patterns
+# 2. Build artifact sync — blocks if minified files staged but HTML hashes not
+
+set -uo pipefail
+
+# Only scan staged files (what's actually being committed)
+STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+FOUND=0
+
+while IFS= read -r file; do
+  # Skip binary files
+  if file "$file" 2>/dev/null | grep -q "binary"; then
+    continue
+  fi
+
+  # Check staged content (not working tree)
+  CONTENT=$(git show ":$file" 2>/dev/null || true)
+  if [ -z "$CONTENT" ]; then
+    continue
+  fi
+
+  # GitHub PAT (use -E for macOS compatibility instead of -P)
+  if echo "$CONTENT" | grep -qE 'github_pat_[A-Za-z0-9_]{30,}'; then
+    echo "SECRET DETECTED in $file: GitHub Personal Access Token"
+    FOUND=1
+  fi
+
+  # OpenAI / Anthropic API key
+  if echo "$CONTENT" | grep -qE 'sk-[A-Za-z0-9]{40,}'; then
+    echo "SECRET DETECTED in $file: API key (sk-...)"
+    FOUND=1
+  fi
+
+  # AWS Access Key
+  if echo "$CONTENT" | grep -qE 'AKIA[A-Z0-9]{16}'; then
+    echo "SECRET DETECTED in $file: AWS Access Key"
+    FOUND=1
+  fi
+
+done <<< "$STAGED"
+
+# Regen-output guard: block staging of auto-generated pages.
+# These are regenerated on every Railway deploy + nightly 11PM cron.
+# Tracking them creates diff noise (~4,895 files/day) and lets regen
+# output drift into the hand-edited baseline (especially prices.html,
+# which is a hybrid — patched in-place by generate-seo-pages.js).
+# Bypass (not recommended):
+#   ALLOW_PRICES_HTML=1 git commit ...      # allow prices.html only
+#   git commit --no-verify ...              # bypass entire hook
+# All regen-output paths in one regex (single source of truth, used by Rules 1 + 2 below).
+# Tracked-but-cron-rewritten "hybrid" files included:
+#   - prices.html (rewritten by generate-seo-pages.js#updatePricesHtml)
+#   - for-suppliers.html (rewritten by scripts/update-supplier-page-stats.js)
+# ALLOW_PRICES_HTML=1 carves both hybrid files out of Rule 1 for legitimate shell
+# edits + cache-bust hash bumps. Name kept for muscle memory; semantics now cover
+# both hybrid files.
+REGEN_PATHS='^website/(prices|supplier|heating-cost|average-heating-bill|price-trend)/|^website/sitemap\.xml$|^website/(prices|for-suppliers)\.html$'
+BLOCKED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E "$REGEN_PATHS" || true)
+if [ "${ALLOW_PRICES_HTML:-0}" = "1" ]; then
+  BLOCKED=$(echo "$BLOCKED" | grep -vE '^website/(prices|for-suppliers)\.html$' | grep -v '^$' || true)
+fi
+if [ -n "$BLOCKED" ]; then
+  echo ""
+  echo "❌ BLOCKED: attempting to commit auto-generated pages:"
+  echo "$BLOCKED" | head -10
+  BLOCKED_COUNT=$(echo "$BLOCKED" | wc -l | tr -d ' ')
+  if [ "$BLOCKED_COUNT" -gt 10 ]; then
+    echo "  ... and $((BLOCKED_COUNT - 10)) more"
+  fi
+  echo ""
+  echo "These files are regenerated on every deploy + nightly from the DB."
+  echo "See .gitignore and docs/website-generation.md. Unstage with:"
+  echo "  git reset HEAD -- <file>"
+  echo ""
+  echo "If you really mean to commit prices.html (e.g., editing the shell):"
+  echo "  ALLOW_PRICES_HTML=1 git commit ..."
+  echo ""
+  FOUND=1
+fi
+
+if [ "$FOUND" -eq 1 ]; then
+  echo ""
+  echo "Commit blocked. Remove secrets before committing."
+  echo "If this is a false positive, use: git commit --no-verify"
+  exit 1
+fi
+
+# Build artifact sync check — if minified JS/CSS is staged, ensure
+# HTML files with updated hashes are also staged.
+STAGED_JS=$(echo "$STAGED" | grep -E '\.min\.(js|css)$' || true)
+if [ -n "$STAGED_JS" ]; then
+  # Check for unstaged HTML files (likely cache-bust hash bumps from build).
+  # When NOTHING in regen paths is being committed (cron's normal state), exclude regen
+  # paths from this scan — they can't be staged anyway under Rule 1, so flagging them
+  # would create an impossible-to-satisfy state.
+  # When regen paths ARE being staged (ALLOW_PRICES_HTML=1 shell-edit workflow), keep
+  # the full scan so a forgotten prices.html hash bump is still flagged.
+  STAGED_REGEN=$(echo "$STAGED" | grep -E "$REGEN_PATHS" || true)
+  if [ -z "$STAGED_REGEN" ]; then
+    UNSTAGED_HTML=$(git diff --name-only -- '*.html' 2>/dev/null | grep -vE "$REGEN_PATHS" || true)
+  else
+    UNSTAGED_HTML=$(git diff --name-only -- '*.html' 2>/dev/null || true)
+  fi
+  if [ -n "$UNSTAGED_HTML" ]; then
+    HTML_COUNT=$(echo "$UNSTAGED_HTML" | wc -l | tr -d ' ')
+    echo ""
+    echo "WARNING: $HTML_COUNT HTML file(s) have unstaged changes."
+    echo "You're committing minified JS/CSS — did you forget to stage the HTML files"
+    echo "with updated cache-bust hashes?"
+    echo ""
+    echo "  git add website/*.html website/**/*.html"
+    echo ""
+    echo "Commit blocked. Stage the HTML files or use --no-verify to skip."
+    exit 1
+  fi
+fi
+
+exit 0

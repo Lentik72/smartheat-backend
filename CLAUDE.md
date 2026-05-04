@@ -27,6 +27,23 @@ After changing key constants, run `npm run audit-docs`.
 - Frontend JS uses **relative URLs** for API calls (same-origin), never the Railway URL
 - Build script (`scripts/build.js`) minifies CSS/JS but does NOT touch server.js
 
+## Setup (fresh clone)
+
+The pre-commit hook lives at `.githooks/pre-commit` (version-controlled). It enforces:
+secret scanning, regen-output staging guard with `ALLOW_PRICES_HTML=1` bypass, and a
+build-artifact-sync warning when minified CSS/JS is staged without matching HTML hash bumps.
+
+`npm install` auto-configures the hook path via `postinstall`. If you skip `npm install`
+for any reason, run the one-time setup manually:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Verify with `git config core.hooksPath` (should print `.githooks`). On Railway/Nixpacks
+deploy environments the postinstall step no-ops silently (no `.git/` available, command
+falls through). No action needed for production.
+
 ## Deploy & Rollback
 
 - **Deploy**: `npm run build && git push` (Railway auto-deploys from main). Verify with `npm run verify-deploy` (75s wait) or `npm run verify-deploy -- --skip-wait`. Use `--full` for API shape checks + sitemap + 404 handling.
