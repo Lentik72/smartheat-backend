@@ -332,6 +332,7 @@
       }
 
       const [data, availData] = await Promise.all([response.json(), availPromise]);
+      const meta = data.meta || {};
 
       if (data.data && data.data.length > 0) {
         // Separate priced and unpriced suppliers
@@ -342,6 +343,7 @@
           currentSuppliers = suppliersWithPrices;
           renderResults(zip, suppliersWithPrices, suppliersWithoutPrices, availData);
           showState('results');
+          dispatchZipSearchedEvent(zip, meta, true);
 
           // Log empty ZIPs for analytics (without prices)
           logAnalytics('price_lookup', { zip, count: suppliersWithPrices.length, unpricedCount: suppliersWithoutPrices.length });
@@ -350,15 +352,18 @@
           currentSuppliers = [];
           renderResultsUnpricedOnly(zip, suppliersWithoutPrices);
           showState('results');
+          dispatchZipSearchedEvent(zip, meta, true);
           logAnalytics('price_lookup_unpriced_only', { zip, count: suppliersWithoutPrices.length });
         } else {
           // Suppliers found but no prices
           showEmpty(zip);
+          dispatchZipSearchedEvent(zip, meta, false);
           logAnalytics('price_lookup_empty', { zip, reason: 'no_prices' });
         }
       } else {
         // No suppliers found
         showEmpty(zip);
+        dispatchZipSearchedEvent(zip, meta, false);
         logAnalytics('price_lookup_empty', { zip, reason: 'no_suppliers' });
       }
     } catch (error) {
@@ -369,6 +374,22 @@
       checkBtn.disabled = false;
       checkBtn.textContent = 'Check Prices';
     }
+  }
+
+  // Inform other scripts (currently personalization.js's bar) that a ZIP search
+  // completed, so they can reflect the user's explicit action instead of stale
+  // IP-geo guesses. heatingoil-nb3h.
+  function dispatchZipSearchedEvent(zip, meta, covered) {
+    const detail = {
+      zip: zip,
+      city: meta && meta.userCity ? meta.userCity : null,
+      county: meta && meta.userCounty ? meta.userCounty : null,
+      state: null,  // personalization.js derives state from ZIP prefix when needed
+      count: meta && typeof meta.count === 'number' ? meta.count : 0,
+      pricedCount: meta && typeof meta.pricedCount === 'number' ? meta.pricedCount : 0,
+      covered: !!covered
+    };
+    window.dispatchEvent(new CustomEvent('homeheat:zip-searched', { detail: detail }));
   }
 
   // Render results
