@@ -4,13 +4,16 @@
  * (price status banner impressions, insight card clicks, nav clicks, supplier engagement)
  */
 
-async function up(sequelize) {
-  const [tables] = await sequelize.query(`
-    SELECT table_name FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'user_events'
-  `);
+const { QueryTypes } = require('sequelize');
 
-  if (tables.length > 0) {
+async function up(sequelize) {
+  const tables = await sequelize.query(
+    `SELECT table_name FROM information_schema.tables
+     WHERE table_schema = 'public' AND table_name = 'user_events'`,
+    { type: QueryTypes.SELECT }
+  );
+
+  if (tables && tables.length > 0) {
     console.log('[Migration 103] user_events table already exists, skipping');
     return;
   }

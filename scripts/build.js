@@ -74,7 +74,7 @@ async function build() {
 
   // Auto-version CSS: replace ?v=N with content hash of style.min.css
   const minCssPath = path.join(WEBSITE_DIR, 'style.min.css');
-  const htmlFiles = findHtmlFiles(WEBSITE_DIR);
+  const htmlFiles = findSourceHtmlFiles();
 
   if (fs.existsSync(minCssPath)) {
     const cssContent = fs.readFileSync(minCssPath);
@@ -139,18 +139,47 @@ async function build() {
   console.log(`  Total: ${formatSize(totalOriginal)} → ${formatSize(totalMinified)} (${savings}% smaller)`);
 }
 
-/** Recursively find all .html files under a directory */
-function findHtmlFiles(dir) {
+/**
+ * Generator-output directories under website/. These are produced by
+ * cron-driven generators using the generate-then-swap _tmp pattern;
+ * build.js must not walk into them or readFileSync races the atomic
+ * rename and crashes ENOENT. Mirrors the website/-relative directory
+ * entries in .gitignore + the pre-commit hook's REGEN_PATHS — keep these
+ * three in sync if a new generator directory is added.
+ *
+ * Note: prices.html (the file at website/ root) is intentionally NOT
+ * excluded. It's hand-edited but also rewritten in-place by
+ * generate-seo-pages.js#updatePricesHtml, which only touches data
+ * sections (leaderboard table, schema, top deals) — it does not refresh
+ * <script src="...?v=...">. If build.js skipped it, JS cache-bust hashes
+ * in prices.html would stay stale and prod browsers would keep getting
+ * old JS. There's no _tmp race for the root file.
+ */
+const GENERATED_PATHS_RE = /^website\/(prices|supplier|heating-cost|average-heating-bill|price-trend)\/|^website\/sitemap\.xml$/;
+
+/**
+ * Enumerate source HTML files under website/ — recursive walk that excludes
+ * generator output. Pure filesystem (no git binary or .git/ dependency)
+ * so it works identically in local dev, Railway/Nixpacks build, and CI.
+ */
+function findSourceHtmlFiles() {
+  const repoRoot = path.dirname(WEBSITE_DIR);
   const results = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...findHtmlFiles(fullPath));
-    } else if (entry.name.endsWith('.html')) {
-      results.push(fullPath);
+  walk(WEBSITE_DIR);
+  return results;
+
+  function walk(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      const rel = path.relative(repoRoot, fullPath);
+      if (entry.isDirectory()) {
+        if (GENERATED_PATHS_RE.test(rel + '/')) continue;
+        walk(fullPath);
+      } else if (entry.name.endsWith('.html') && !GENERATED_PATHS_RE.test(rel)) {
+        results.push(fullPath);
+      }
     }
   }
-  return results;
 }
 
 function formatSize(bytes) {

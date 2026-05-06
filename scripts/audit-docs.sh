@@ -73,8 +73,8 @@ echo ""
 # --- website-generation.md ---
 echo "website-generation.md"
 
-MIN_SUP=$(extract "$BACKEND_DIR/scripts/generate-seo-pages.js" 'MIN_SUPPLIERS_FOR_PAGE\s*=')
-echo "  Min suppliers for page: ${MIN_SUP} (doc: 3)"
+MIN_SUP=$(extract "$BACKEND_DIR/scripts/generate-seo-pages.js" 'MIN_SUPPLIERS_TO_GENERATE\s*=')
+echo "  Min suppliers to generate: ${MIN_SUP} (doc: 3)"
 [ "$MIN_SUP" != "3" ] && [ "$MIN_SUP" != "?" ] && MISMATCHES=$((MISMATCHES + 1)) && echo "    ^ MISMATCH" || true
 
 ZIP_QUAL=$(extract "$BACKEND_DIR/scripts/generate-zip-elite-pages.js" 'MIN_QUALITY_SCORE\s*=')

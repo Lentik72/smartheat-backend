@@ -605,17 +605,45 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/155-add-coverage-requests-notified-fuels', label: 'Per-fuel notification tracking on coverage_requests (notified_fuels text[] + index swap)' },
         ];
 
+        // Migration runner contract: each migration file MUST export `{ up }` where
+        // `up` is `async function(sequelize)` and uses `sequelize.query(...)` directly.
+        // DO NOT write migrations using the queryInterface convention — the runner
+        // passes the raw Sequelize instance, so `queryInterface.sequelize.query()`
+        // will throw "Cannot read properties of undefined (reading 'query')" and
+        // be silently caught here. (See plan: snappy-bubbling-cascade.md)
         let migrationErrors = 0;
+        const failedMigrations = [];
         for (const { path: migPath, label } of migrations) {
           try {
             const { up } = require(migPath);
             await up(sequelize);
           } catch (err) {
             migrationErrors++;
+            // /health body shows truncated error (200 char cap to avoid leaking long
+            // traces via a publicly-cacheable endpoint). Full message is in the warn
+            // log below — operators must cross-reference Railway logs for full context.
+            const safeError = String(err.message || err).slice(0, 200);
+            failedMigrations.push({ label, error: safeError });
             logger.warn(`⚠️  ${label} migration: ${err.message}`);
           }
         }
-        logger.info(`✅ Migrations complete (${migrations.length - migrationErrors}/${migrations.length} succeeded)`);
+
+        // Stash for /health visibility (matches feedback_silent_degradation.md).
+        app.locals.migrationStatus = {
+          total: migrations.length,
+          succeeded: migrations.length - migrationErrors,
+          errors: migrationErrors,
+          failed: failedMigrations,
+        };
+
+        if (migrationErrors > 0) {
+          // Escalate to error-level when anything failed — visible in Railway log filter.
+          // NOTE: Railway does NOT auto-alert on error-level logs alone; this is for
+          // human dashboard visibility. The /health body is the machine-checkable signal.
+          logger.error(`❌ ${migrationErrors}/${migrations.length} migration(s) failed: ${failedMigrations.map(f => f.label).join(', ')}`);
+        } else {
+          logger.info(`✅ Migrations complete (${migrations.length}/${migrations.length} succeeded)`);
+        }
 
         // ScrapeConfigSync runs AFTER all migrations to avoid creating
         // duplicate records for suppliers that migrations already inserted
@@ -738,6 +766,7 @@ app.get('/health', async (req, res) => {
       modelsReady: Array.from(modelsReady),
       modelsPending: EXPECTED_MODELS.filter(n => !modelsReady.has(n)),
       retryDisabled: process.env.DISABLE_MODEL_RETRY === 'true',
+      migrations: app.locals.migrationStatus || { total: 0, succeeded: 0, errors: 0, failed: [] },
     },
     system: {
       nodeVersion: process.version,

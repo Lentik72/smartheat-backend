@@ -8,27 +8,20 @@
  */
 'use strict';
 
-module.exports = {
-  async up(queryInterface) {
-    // supplier_clicks: used by demand, trend, click-share, and price-impact queries
-    await queryInterface.sequelize.query(`
-      CREATE INDEX IF NOT EXISTS idx_supplier_clicks_supplier_created
-      ON supplier_clicks(supplier_id, created_at)
-    `);
+async function up(sequelize) {
+  // supplier_clicks: used by demand, trend, click-share, and price-impact queries
+  await sequelize.query(`
+    CREATE INDEX IF NOT EXISTS idx_supplier_clicks_supplier_created
+    ON supplier_clicks(supplier_id, created_at)
+  `);
+  console.log('[Migration 120] Created idx_supplier_clicks_supplier_created');
 
-    // user_locations: used by area-search counts scoped to supplier's postal_codes_served
-    await queryInterface.sequelize.query(`
-      CREATE INDEX IF NOT EXISTS idx_user_locations_zip_created
-      ON user_locations(zip_code, created_at)
-    `);
-  },
+  // user_locations: used by area-search counts scoped to supplier's postal_codes_served
+  await sequelize.query(`
+    CREATE INDEX IF NOT EXISTS idx_user_locations_zip_created
+    ON user_locations(zip_code, created_at)
+  `);
+  console.log('[Migration 120] Created idx_user_locations_zip_created');
+}
 
-  async down(queryInterface) {
-    await queryInterface.sequelize.query(`
-      DROP INDEX IF EXISTS idx_supplier_clicks_supplier_created
-    `);
-    await queryInterface.sequelize.query(`
-      DROP INDEX IF EXISTS idx_user_locations_zip_created
-    `);
-  }
-};
+module.exports = { up };

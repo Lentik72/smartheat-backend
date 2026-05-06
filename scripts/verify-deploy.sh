@@ -73,6 +73,33 @@ if ! echo "$HEALTH_BODY" | grep -q '"database":true'; then
   exit 1
 fi
 
+# Check migrations succeeded (added 2026-05-02 — silent migration failures
+# previously left perf indexes uncreated; surfaced in /health.startup.migrations).
+# Uses node JSON parser instead of grep chain — chained grep silently truncates
+# if any failed[].error message contains a '}', falsely reporting success.
+MIG_ERRORS=$(node -e '
+  let body = "";
+  process.stdin.on("data", c => body += c);
+  process.stdin.on("end", () => {
+    try {
+      const r = JSON.parse(body);
+      console.log(r.startup?.migrations?.errors ?? "0");
+    } catch { console.log("0"); }
+  });
+' <<< "$HEALTH_BODY")
+if [ "$MIG_ERRORS" != "0" ]; then
+  echo "FAIL: $MIG_ERRORS migration(s) failed — check /health for details"
+  node -e '
+    let body = "";
+    process.stdin.on("data", c => body += c);
+    process.stdin.on("end", () => {
+      try { console.log(JSON.stringify(JSON.parse(body).startup?.migrations ?? {}, null, 2)); }
+      catch {}
+    });
+  ' <<< "$HEALTH_BODY"
+  exit 1
+fi
+
 echo "  /health: OK (${RESPONSE_TIME}s)"
 
 # ─────────────────────────────────────────────

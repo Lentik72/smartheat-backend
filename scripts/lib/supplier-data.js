@@ -52,6 +52,7 @@ async function getCurrentPrices(sequelize, minPrice, maxPrice, fuelType = 'heati
     FROM supplier_prices sp
     JOIN suppliers s ON sp.supplier_id = s.id
     WHERE sp.is_valid = true
+      AND sp.source_type != 'aggregator_signal'
       AND sp.expires_at > NOW()
       AND sp.scraped_at > NOW() - INTERVAL '36 hours'
       AND sp.price_per_gallon BETWEEN $1 AND $2
@@ -118,9 +119,54 @@ function computeFreshness(scrapedAt) {
   return { text: Math.round(hours / 24) + 'd ago', dotClass: 'freshness-gray' };
 }
 
+/**
+ * Returns the set of supplier IDs that had a fresh price in the last `days` days
+ * for the given fuel, restricted to active + displayable suppliers and valid prices.
+ *
+ * Used by the SEO generator to decide whether a state/county/city page is
+ * substantive enough to be indexable. The window is wider than the 36h display
+ * freshness so that single-day scraper outages do not flap pages between
+ * indexed and noindexed.
+ *
+ * Filters mirror getCurrentPrices except the freshness window. Aggregator-signal
+ * prices are excluded — they are market signals only and never user-facing
+ * (see SupplierPrice.js:50,132,162).
+ *
+ * @param {object} sequelize - Sequelize instance
+ * @param {string} fuelType - 'heating_oil', 'kerosene', or 'propane'
+ * @param {number} days - Window size in days
+ * @param {{minPrice: number, maxPrice: number}} range - Valid price range
+ * @returns {Promise<Set<string>>} Set of supplier UUIDs.
+ */
+async function getRecentPricedSupplierIds(sequelize, fuelType, days, { minPrice, maxPrice }) {
+  // `days` is interpolated into the SQL template literal because it's a
+  // hardcoded numeric constant (INDEX_PRICE_WINDOW_DAYS = 14) at the call
+  // site, never user input. Matches the inline-INTERVAL convention in
+  // getCurrentPrices (lib/supplier-data.js:56). For belt-and-suspenders,
+  // we coerce to integer with parseInt before interpolation.
+  const intervalDays = parseInt(days, 10);
+  if (!Number.isFinite(intervalDays) || intervalDays < 1) {
+    throw new Error(`getRecentPricedSupplierIds: days must be a positive integer, got ${days}`);
+  }
+  const [rows] = await sequelize.query(`
+    SELECT DISTINCT sp.supplier_id
+    FROM supplier_prices sp
+    JOIN suppliers s ON sp.supplier_id = s.id
+    WHERE sp.is_valid = true
+      AND sp.source_type != 'aggregator_signal'
+      AND sp.scraped_at > NOW() - INTERVAL '${intervalDays} days'
+      AND sp.price_per_gallon BETWEEN $1 AND $2
+      AND sp.fuel_type = $3
+      AND s.active = true
+      AND s.allow_price_display = true
+  `, { bind: [minPrice, maxPrice, fuelType] });
+  return new Set(rows.map(r => r.supplier_id));
+}
+
 module.exports = {
   getAllSuppliers,
   getCurrentPrices,
   getSuppliersForZips,
+  getRecentPricedSupplierIds,
   computeFreshness
 };

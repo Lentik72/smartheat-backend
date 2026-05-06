@@ -7,18 +7,13 @@
  */
 'use strict';
 
-module.exports = {
-  async up(queryInterface) {
-    await queryInterface.sequelize.query(`
-      CREATE INDEX IF NOT EXISTS idx_suppliers_active
-      ON suppliers(active)
-      WHERE active = true
-    `);
-  },
+async function up(sequelize) {
+  await sequelize.query(`
+    CREATE INDEX IF NOT EXISTS idx_suppliers_active
+    ON suppliers(active)
+    WHERE active = true
+  `);
+  console.log('[Migration 119] Created idx_suppliers_active');
+}
 
-  async down(queryInterface) {
-    await queryInterface.sequelize.query(`
-      DROP INDEX IF EXISTS idx_suppliers_active
-    `);
-  }
-};
+module.exports = { up };
