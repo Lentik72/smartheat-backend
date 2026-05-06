@@ -366,12 +366,38 @@ class PriceAlertService {
     `);
     if (tableCheck.length === 0) return 0;
 
-    // Find coverage requests where the ZIP now has active suppliers with prices
+    // Per-fuel coverage notifications.
+    //
+    // A request stores `fuel_types` (the user's requested set) and
+    // `notified_fuels` (fuels we've already emailed about). We fire one
+    // email each time a NEW fuel — one in fuel_types but not yet in
+    // notified_fuels — gains coverage. So a multi-fuel request gets up to
+    // N notifications, one per requested fuel as coverage rolls in.
+    //
+    // matched_fuels in the SELECT excludes already-notified fuels — only
+    // fuels gaining first-time coverage trigger this email.
     const [matches] = await this.sequelize.query(`
-      SELECT cr.id, cr.email, cr.zip_code, cr.city, cr.state, cr.unsubscribe_token
+      SELECT cr.id, cr.email, cr.zip_code, cr.city, cr.state, cr.unsubscribe_token,
+        cr.fuel_types AS requested_fuels,
+        cr.notified_fuels AS already_notified,
+        ARRAY(
+          SELECT DISTINCT sp.fuel_type::text
+          FROM suppliers s
+          JOIN supplier_prices sp ON s.id = sp.supplier_id
+          WHERE s.active = true
+            AND s.allow_price_display = true
+            AND sp.is_valid = true
+            AND sp.scraped_at > NOW() - INTERVAL '72 hours'
+            AND sp.fuel_type::text = ANY(cr.fuel_types)
+            AND NOT (sp.fuel_type::text = ANY(cr.notified_fuels))
+            AND EXISTS (
+              SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS zip
+              WHERE zip = cr.zip_code
+            )
+        ) AS matched_fuels
       FROM coverage_requests cr
       WHERE cr.active = true
-        AND cr.notified_at IS NULL
+        AND NOT (cr.notified_fuels @> cr.fuel_types)
         AND EXISTS (
           SELECT 1 FROM suppliers s
           JOIN supplier_prices sp ON s.id = sp.supplier_id
@@ -379,7 +405,8 @@ class PriceAlertService {
             AND s.allow_price_display = true
             AND sp.is_valid = true
             AND sp.scraped_at > NOW() - INTERVAL '72 hours'
-            AND sp.fuel_type = 'heating_oil'
+            AND sp.fuel_type::text = ANY(cr.fuel_types)
+            AND NOT (sp.fuel_type::text = ANY(cr.notified_fuels))
             AND EXISTS (
               SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS zip
               WHERE zip = cr.zip_code
@@ -396,7 +423,17 @@ class PriceAlertService {
 
     let notified = 0;
     for (const match of matches) {
-      // Get supplier count for this ZIP
+      const matchedFuels = Array.isArray(match.matched_fuels) && match.matched_fuels.length > 0
+        ? match.matched_fuels
+        : ['heating_oil'];
+
+      // Total distinct supplier count across ALL matched fuels — the user is
+      // about to see them as one coverage area, regardless of which fuel any
+      // particular supplier sells.
+      // Sequelize v6 expands an array replacement as a tuple ('a','b') —
+      // valid for IN(...), wrong for ANY(...) which needs a Postgres array.
+      // Use positional bind with explicit ::text[] cast instead (matches the
+      // bind-array convention used elsewhere in this codebase).
       const [countRows] = await this.sequelize.query(`
         SELECT COUNT(DISTINCT s.id) AS cnt
         FROM suppliers s
@@ -405,21 +442,35 @@ class PriceAlertService {
           AND s.allow_price_display = true
           AND sp.is_valid = true
           AND sp.scraped_at > NOW() - INTERVAL '72 hours'
-          AND sp.fuel_type = 'heating_oil'
+          AND sp.fuel_type::text = ANY($1::text[])
           AND EXISTS (
             SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS zip
-            WHERE zip = :zipCode
+            WHERE zip = $2
           )
-      `, { replacements: { zipCode: match.zip_code } });
+      `, { bind: [matchedFuels, match.zip_code] });
       const supplierCount = parseInt(countRows[0]?.cnt) || 0;
 
-      const success = await this.sendCoverageAddedEmail(match, supplierCount);
+      const success = await this.sendCoverageAddedEmail(match, supplierCount, matchedFuels);
       if (success) {
+        // Merge newly-notified fuels into notified_fuels (deduped). A future
+        // run will exclude these from matched_fuels, so the same fuel is
+        // never re-notified on the same request.
+        //
+        // notified_fuel_type stays as "first fuel ever notified" (admin
+        // reports key off it). notified_at becomes "last notified at".
+        // Same array-bind pattern as the count query above (Sequelize
+        // replacements would emit a tuple, not a Postgres array).
         await this.sequelize.query(`
           UPDATE coverage_requests
-          SET notified_at = NOW(), notified_fuel_type = 'heating_oil', updated_at = NOW()
-          WHERE id = :id
-        `, { replacements: { id: match.id } });
+          SET
+            notified_fuels = ARRAY(
+              SELECT DISTINCT unnest(notified_fuels || $1::text[])
+            ),
+            notified_at = NOW(),
+            notified_fuel_type = COALESCE(notified_fuel_type, $2),
+            updated_at = NOW()
+          WHERE id = $3
+        `, { bind: [matchedFuels, matchedFuels[0], match.id] });
         notified++;
       }
     }
@@ -432,16 +483,66 @@ class PriceAlertService {
 
   /**
    * Send "coverage added" email for a coverage request.
+   * @param {Object} match - coverage request row
+   * @param {number} supplierCount - number of priced suppliers in area (across all matched fuels)
+   * @param {string[]} matchedFuels - which fuels gained coverage; e.g. ['heating_oil', 'kerosene']
    */
-  async sendCoverageAddedEmail(match, supplierCount) {
+  async sendCoverageAddedEmail(match, supplierCount, matchedFuels = ['heating_oil']) {
     const { email, zip_code, city, state, unsubscribe_token } = match;
 
+    // Closed set of fuels we actually deliver / scrape / list suppliers for.
+    // Natural gas and electric are utility-rate fuels (no per-supplier pricing,
+    // no delivery), so they CANNOT show up in a "prices now available" email
+    // even if a future caller passes them. The DB whitelist (coverage-request
+    // route VALID_FUEL_TYPES + supplier_prices.fuel_type ENUM) should already
+    // prevent this, so filtering here is defense-in-depth: if anything leaks
+    // through, refuse to send rather than render misleading copy.
+    const fuelDisplayNames = {
+      heating_oil: 'heating oil',
+      kerosene: 'kerosene',
+      propane: 'propane'
+    };
+    const knownFuels = matchedFuels.filter(f => fuelDisplayNames[f]);
+    if (knownFuels.length === 0) {
+      this.logger.warn(`[PriceAlert] sendCoverageAddedEmail aborted — no deliverable fuels in matchedFuels=${JSON.stringify(matchedFuels)} for ${email}/${zip_code}`);
+      return false;
+    }
+
+    // Format the matched-fuels array into a natural English list:
+    //  one    → "heating oil"
+    //  two    → "heating oil and kerosene"
+    //  three+ → "heating oil, kerosene, and propane"
+    const fuelNames = knownFuels.map(f => fuelDisplayNames[f]);
+    const formatFuelList = (names) => {
+      if (names.length === 1) return names[0];
+      if (names.length === 2) return `${names[0]} and ${names[1]}`;
+      return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
+    };
+    const bodyFuelCopy = formatFuelList(fuelNames);
+    // Capitalize the first letter for sentence/subject use.
+    const subjectFuelCopy = bodyFuelCopy.charAt(0).toUpperCase() + bodyFuelCopy.slice(1);
+
     const location = city && state ? `${city}, ${state.toUpperCase()}` : zip_code;
-    const priceUrl = `${SITE_URL}/prices.html?zip=${zip_code}&utm_source=coverage_added&utm_medium=email`;
+    // Route the CTA to a fuel-correct landing page:
+    //   - heating_oil included in matched fuels → /prices.html ZIP lookup
+    //     (the legacy generic lookup; defaults to heating_oil internally
+    //      which is appropriate when oil is what they're getting).
+    //   - non-oil only (kerosene or propane) → that fuel's dedicated index.
+    //     We do NOT use state subpaths here — propane/kerosene state coverage
+    //     is sparse and an MD/NJ/RI request would 404 on a missing state page.
+    const utm = 'utm_source=coverage_added&utm_medium=email';
+    const hasOil = knownFuels.includes('heating_oil');
+    const firstNonOil = knownFuels.find(f => f !== 'heating_oil');
+    let priceUrl;
+    if (hasOil || !firstNonOil) {
+      priceUrl = `${SITE_URL}/prices.html?zip=${zip_code}&${utm}`;
+    } else {
+      priceUrl = `${SITE_URL}/prices/${firstNonOil}/?${utm}`;
+    }
     const unsubUrl = `${SITE_URL}/api/coverage-request/unsubscribe?token=${unsubscribe_token}`;
     const appUrl = 'https://apps.apple.com/us/app/homeheat/id6747320571?utm_source=coverage_added&utm_campaign=notification';
 
-    const subject = `Heating oil prices now available near ${zip_code}`;
+    const subject = `${subjectFuelCopy} prices now available near ${zip_code}`;
     const supplierNote = supplierCount > 0 ? ` from ${supplierCount} supplier${supplierCount !== 1 ? 's' : ''}` : '';
 
     const html = `
@@ -449,10 +550,10 @@ class PriceAlertService {
   ${this.buildEmailHeader()}
 
   <div style="padding: 0 20px;">
-    <h2 style="font-size: 20px; color: #1a1a1a; margin: 0 0 16px;">Great news — we now track heating oil prices near you!</h2>
+    <h2 style="font-size: 20px; color: #1a1a1a; margin: 0 0 16px;">Great news — we now track ${bodyFuelCopy} prices near you!</h2>
 
     <div style="background: #f0fdf4; border-radius: 8px; padding: 16px; margin: 16px 0;">
-      <p style="margin: 0; font-size: 15px; color: #333;">We now have heating oil pricing data${supplierNote} delivering to <strong>${location}</strong>.</p>
+      <p style="margin: 0; font-size: 15px; color: #333;">We now have ${bodyFuelCopy} pricing data${supplierNote} delivering to <strong>${location}</strong>.</p>
     </div>
 
     <p style="margin: 16px 0 24px; text-align: center;">

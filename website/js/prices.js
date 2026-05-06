@@ -919,12 +919,16 @@
         return;
       }
 
-      // Gather fuel types
+      // Gather fuel types. Note: the kerosene/propane checkboxes are siblings
+      // of the <form>, not children — `form.querySelector` would return null.
+      // Look them up at document scope (the names are unique on the page).
       var fuelTypes = ['heating_oil'];
-      if (form.querySelector('[name="fuel_kerosene"]') && form.querySelector('[name="fuel_kerosene"]').checked) {
+      var keroseneBox = document.querySelector('input[name="fuel_kerosene"]');
+      if (keroseneBox && keroseneBox.checked) {
         fuelTypes.push('kerosene');
       }
-      if (form.querySelector('[name="fuel_propane"]') && form.querySelector('[name="fuel_propane"]').checked) {
+      var propaneBox = document.querySelector('input[name="fuel_propane"]');
+      if (propaneBox && propaneBox.checked) {
         fuelTypes.push('propane');
       }
 
