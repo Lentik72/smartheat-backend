@@ -315,9 +315,39 @@ router.get('/', async (req, res) => {
       return res.json({ data: [], meta: fallbackMeta, signature });
     }
 
-    // Get all active suppliers for unified matching
+    // Get all active suppliers for unified matching.
+    //
+    // Heating-oil queries skip the fuel filter — the `fuel_types` tagging has
+    // a legacy split (`oil` and `heating_oil` both used for the same fuel),
+    // and filtering would silently drop a large fraction of oil suppliers
+    // until the data is normalized.
+    //
+    // Non-oil queries (kerosene/propane) include a supplier IFF either evidence
+    // source confirms they sell that fuel:
+    //   (a) `fuel_types` array contains the requested fuel, OR
+    //   (b) the supplier has a current valid scraped/reported price for that fuel.
+    //
+    // (b) is necessary because some suppliers have valid prices for non-oil
+    // fuels but their `fuel_types` tag still says only `["oil"]` — filtering
+    // by tag alone would silently exclude real, priced suppliers.
+    const supplierWhere = { active: true };
+    if (fuelType !== 'heating_oil') {
+      // Pre-fetch supplier ids that have at least one currently-valid price for this fuel.
+      const [pricedRows] = await sequelize.query(
+        `SELECT DISTINCT supplier_id FROM supplier_prices
+          WHERE fuel_type = $1
+            AND is_valid = true
+            AND expires_at > NOW()`,
+        { bind: [fuelType] }
+      );
+      const pricedSupplierIds = pricedRows.map(r => r.supplier_id);
+      supplierWhere[Op.or] = [
+        { fuelTypes: { [Op.contains]: [fuelType] } },
+        ...(pricedSupplierIds.length > 0 ? [{ id: { [Op.in]: pricedSupplierIds } }] : [])
+      ];
+    }
     const allSuppliers = await Supplier.findAll({
-      where: { active: true },
+      where: supplierWhere,
       attributes: [
         'id', 'name', 'phone', 'email', 'website',
         'addressLine1', 'city', 'state',

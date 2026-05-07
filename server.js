@@ -602,6 +602,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/152-add-cn-brown-lancaster', label: 'CN Brown Energy (Lancaster NH — NEK VT + Coos NH, 3rd CN Brown branch via multi-branch config)' },
           { path: './src/migrations/153-add-central-pa-suppliers', label: 'Central PA gap fill (Lewistown 17044): Nittany Energy (Lewistown), Snedeker Energy, J.J. Powell (Lewistown), Oakland Fuel Oil (Mifflintown/Juniata)' },
           { path: './src/migrations/154-add-dixieland-energy', label: 'Dixie Land Energy (Rising Sun MD — Cecil/Harford MD + New Castle DE + Chester/Lancaster/York PA, will-call confirmed, no scrapable price)' },
+          { path: './src/migrations/155-add-coverage-requests-notified-fuels', label: 'Per-fuel notification tracking on coverage_requests (notified_fuels text[] + index swap)' },
         ];
 
         // Migration runner contract: each migration file MUST export `{ up }` where
