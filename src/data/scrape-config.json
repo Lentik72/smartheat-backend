@@ -20405,11 +20405,21 @@
     ]
   },
   "buxtonoil.com": {
-    "enabled": false,
+    "enabled": true,
+    "primaryFuelOptional": true,
     "pattern": "direct",
-    "notes": "DISABLED: Site redesigned, all prices removed ('call for pricing'). Also targetTier:2 is dead code on pattern:direct. NH Southeast/Seacoast + NE MA.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
-    "targetTier": 2,
+    "notes": "NH Raymond — COD/will-call confirmed. Site redesign (early 2026) replaced published heating-oil price with 'Call our office'; only propane has a Cash Price of the day. primaryFuelOptional:true allows propane scraping while heating-oil + kerosene regexes silently no-match. When they republish heating oil, the strict regex auto-picks it up. NH Southeast/Seacoast + NE MA.",
+    "priceRegex": ">Heating Oil</h3>[\\s\\S]{0,400}?\\$([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "propane": {
+        "enabled": true,
+        "priceRegex": ">Propane</h3>[\\s\\S]{0,400}?\\$([0-9]+\\.[0-9]{2,3})"
+      },
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": ">Kerosene</h3>[\\s\\S]{0,400}?\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
     "postalCodesServed": [
       "03034",
       "03038",

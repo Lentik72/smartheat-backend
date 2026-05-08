@@ -603,6 +603,7 @@ if (API_KEYS.DATABASE_URL) {
           { path: './src/migrations/153-add-central-pa-suppliers', label: 'Central PA gap fill (Lewistown 17044): Nittany Energy (Lewistown), Snedeker Energy, J.J. Powell (Lewistown), Oakland Fuel Oil (Mifflintown/Juniata)' },
           { path: './src/migrations/154-add-dixieland-energy', label: 'Dixie Land Energy (Rising Sun MD — Cecil/Harford MD + New Castle DE + Chester/Lancaster/York PA, will-call confirmed, no scrapable price)' },
           { path: './src/migrations/155-add-coverage-requests-notified-fuels', label: 'Per-fuel notification tracking on coverage_requests (notified_fuels text[] + index swap)' },
+          { path: './src/migrations/156-add-buxton-multi-fuel-types', label: 'Buxton Oil fuel_types: oil → heating_oil+propane+kerosene (paired with primaryFuelOptional config flag)' },
         ];
 
         // Migration runner contract: each migration file MUST export `{ up }` where

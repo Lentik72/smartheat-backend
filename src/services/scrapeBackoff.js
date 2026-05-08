@@ -186,8 +186,28 @@ async function getBackoffStats(sequelize) {
   return stats[0];
 }
 
+/**
+ * Policy: should a primary-fuel scrape FAILURE be treated as success because
+ * at least one secondary fuel succeeded? Returns true only when the supplier
+ * is opted-in via `config.primaryFuelOptional` AND `result.fuelPrices` is a
+ * non-empty array. Used by the failure branches in `scripts/scrape-prices.js`
+ * and `src/services/DistributedScheduler.js` to decide between
+ * `recordFailure` and `recordSuccess`.
+ *
+ * Buxton Oil (heatingoil-…) is the first user — they publish only a propane
+ * Cash Price; heating oil and kerosene cards say "Call our office". Without
+ * this gate Buxton's primary regex no-match would push them into cooldown
+ * within 2 nights and propane would never get stored.
+ */
+function shouldSkipFailureCounter(config, result) {
+  if (!config || !config.primaryFuelOptional) return false;
+  if (!result || !Array.isArray(result.fuelPrices)) return false;
+  return result.fuelPrices.length > 0;
+}
+
 module.exports = {
   shouldScrapeSupplier,
+  shouldSkipFailureCounter,
   recordSuccess,
   recordFailure,
   monthlyReset,

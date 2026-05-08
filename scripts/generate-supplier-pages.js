@@ -837,11 +837,17 @@ async function generateSupplierPages(options = {}) {
 
     // Get latest valid prices for ALL suppliers (not just claimed)
     // V2.12.0: Query per fuel type to avoid kerosene prices showing as oil
+    // V3.x.0: 14-day window aligns with INDEX_PRICE_WINDOW_DAYS and the existing
+    // nearby-suppliers filter (line 165). Hides leftover stale rows from
+    // suppliers whose scrape-config has been disabled (e.g., site-redesign cases
+    // where the last published price stayed in the DB but is no longer current).
     const [prices] = await sequelize.query(`
       SELECT DISTINCT ON (supplier_id)
         supplier_id, price_per_gallon, scraped_at
       FROM supplier_prices
-      WHERE is_valid = true AND fuel_type = 'heating_oil'
+      WHERE is_valid = true
+        AND fuel_type = 'heating_oil'
+        AND scraped_at > NOW() - INTERVAL '14 days'
       ORDER BY supplier_id, scraped_at DESC
     `);
 
@@ -852,11 +858,14 @@ async function generateSupplierPages(options = {}) {
     }));
 
     // V2.12.0: Get kerosene prices separately for dual-fuel display
+    // V3.x.0: 14-day window — see same filter on heating_oil query above.
     const [keroPrices] = await sequelize.query(`
       SELECT DISTINCT ON (supplier_id)
         supplier_id, price_per_gallon, scraped_at
       FROM supplier_prices
-      WHERE is_valid = true AND fuel_type = 'kerosene'
+      WHERE is_valid = true
+        AND fuel_type = 'kerosene'
+        AND scraped_at > NOW() - INTERVAL '14 days'
       ORDER BY supplier_id, scraped_at DESC
     `);
     const keroPriceMap = new Map(keroPrices.map(p => {

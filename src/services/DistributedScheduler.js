@@ -425,7 +425,30 @@ async function executeScrape(supplierId, supplierName, sequelize, logger) {
       }
     }
 
-    const { recordSuccess, recordFailure } = require('./scrapeBackoff');
+    const { recordSuccess, recordFailure, shouldSkipFailureCounter } = require('./scrapeBackoff');
+
+    // V3.x.0: Helper to insert one secondary fuel price row (kerosene, propane).
+    // Mirrors the INSERT shape used by `scripts/scrape-prices.js:319-373`.
+    async function insertSecondaryFuel(fp, sourceType, sourceUrl) {
+      try {
+        await sequelize.query(`
+          INSERT INTO supplier_prices (
+            id, supplier_id, price_per_gallon, min_gallons, fuel_type,
+            source_type, source_url, scraped_at, expires_at, is_valid, notes,
+            created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, 150, $3,
+            $4, $5, NOW(), NOW() + INTERVAL '48 hours', true, NULL,
+            NOW(), NOW()
+          )
+        `, {
+          bind: [supplierId, fp.price, fp.fuelType, sourceType, sourceUrl]
+        });
+        logger.info(`   🔥 ${fp.fuelType}: $${fp.price.toFixed(3)}`);
+      } catch (fuelErr) {
+        logger.warn(`   ⚠️  Failed to store ${fp.fuelType} price: ${fuelErr.message}`);
+      }
+    }
 
     if (result.success) {
       // Save to database
@@ -451,13 +474,34 @@ async function executeScrape(supplierId, supplierName, sequelize, logger) {
         ]
       });
 
+      // V3.x.0: Also store secondary fuel prices (kerosene, propane). Was previously
+      // missing on this code path — only `scripts/scrape-prices.js` (4PM cron) stored them,
+      // so multi-fuel suppliers (Phillips, Morse, etc.) only refreshed secondaries once/day.
+      if (Array.isArray(result.fuelPrices) && result.fuelPrices.length > 0) {
+        for (const fp of result.fuelPrices) {
+          await insertSecondaryFuel(fp, result.sourceType, result.sourceUrl);
+        }
+      }
+
       // Reset backoff status so cooldown suppliers return to active
       await recordSuccess(sequelize, supplierId);
 
       logger.info(`   ✅ $${result.pricePerGallon.toFixed(2)}/gal`);
     } else {
-      await recordFailure(sequelize, supplierId, supplierName, logger, result.error);
-      logger.info(`   ❌ ${result.error}`);
+      // V3.x.0: primaryFuelOptional gate — when supplier is opted-in and at least one
+      // secondary fuel succeeded, store secondaries + treat as healthy. Buxton Oil
+      // is the first user (heating-oil card says "Call our office", propane scrapes fine).
+      if (shouldSkipFailureCounter(config, result)) {
+        const sourceType = config.displayable === false ? 'aggregator_signal' : 'scraped';
+        for (const fp of result.fuelPrices) {
+          await insertSecondaryFuel(fp, sourceType, supplier.website);
+        }
+        await recordSuccess(sequelize, supplierId);
+        logger.warn(`   ⚠️  primary fuel optional — ${result.fuelPrices.length} secondary fuel(s) succeeded; resetting failure counter`);
+      } else {
+        await recordFailure(sequelize, supplierId, supplierName, logger, result.error);
+        logger.info(`   ❌ ${result.error}`);
+      }
     }
 
   } catch (error) {

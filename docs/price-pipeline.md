@@ -21,9 +21,11 @@ Prices enter via two channels (scraping and SMS), pass through validation, and a
 
 ```
 scrape-config.json → DistributedScheduler (hash-based time per supplier)
-                   → priceScraper.js (fetch + extract)
+                   → priceScraper.js (fetch + extract — primary + fuels.* secondaries)
                    → validate ($2.00–$5.00) + 25% drop protection + 20% outlier detection
                    → supplier_prices (source_type='scraped', expires 48h)
+                     [V3.x.0: DistributedScheduler now stores secondary fuels too;
+                      previously only the 4PM `runScraper` cron stored them.]
 
 SMS inbound → sms-price-service.js (parse + match by phone_last10)
            → two-step confirm (first time) or direct (returning)
@@ -44,6 +46,10 @@ Five pattern types in scrape-config.json:
 - **split**: Price split across HTML elements (e.g., "$3" + "199" = $3.199)
 - **json_api**: Fetch JSON endpoint, extract via dot-notation `jsonPath`. **V2.15.0** — secondary fuels (e.g. kerosene) can define their own `fuels.<fuel>.apiUrl` + `jsonPath` for a separate call; the regex-based `fuels.<fuel>.priceRegex` path still applies when the primary value is a text blob. Per-fuel failures log to console and are omitted from `fuelPrices` but do not fail the primary scrape. Note: `SupplierPrice.fuelType` is an ENUM of `('heating_oil', 'kerosene')` — adding a fuel beyond this list requires coordinated ENUM + FUEL_PRICE_RANGES + model change.
 - **post_form** (V3.0.0): POST form-encoded body (e.g. `wcp_id=2&zip_code=06712`) to a price endpoint, then extract from the returned HTML using the same tier-sort logic as `table`. Used for Droplet-hosted suppliers (`hostGroup: "droplet"`). Browser-class User-Agent + supplier-homepage Referer required — bot UAs are rejected. Kill switch: `SCRAPE_SKIP_DROPLET=true`. **Multi-fuel (heatingoil-qt3c)**: Droplet returns identical HTML structure for every product, so secondary fuels need a per-fuel `formBody` override (e.g. `fuels.propane.formBody.wcp_id="1"`). The scraper does a separate POST per fuel, throttled 1500ms apart, after the primary POST succeeds. Secondary failures log with `[multi-fuel-post]` prefix and never affect primary success or the Droplet circuit breaker. `extractFuelPrices()` skips any fuel that declares `formBody` to prevent same-HTML-bleed (running propane regex against oil HTML would match because the markup is identical).
+
+### `primaryFuelOptional` (V3.x.0)
+
+Per-entry config flag. When `true`, primary heating-oil regex no-match does NOT increment failure counters as long as at least one `fuels.*` secondary regex succeeded — the failure path calls `recordSuccess` instead of `recordFailure`, and any captured secondary fuel prices are stored as usual. Used for suppliers who deliver heating oil but currently publish only secondary-fuel prices (e.g., propane), so we can capture what they DO publish without cycling through cooldown. When the primary fuel republishes, the strict regex matches and the ordinary success path runs — flag becomes a no-op. Default undefined preserves existing behavior for all other suppliers. Logged at `warn` level when active so silent primary-skips remain visible to operators. Gate logic lives in `shouldSkipFailureCounter(config, result)` in `src/services/scrapeBackoff.js` and is called from both production scrape paths (`scripts/scrape-prices.js` failure branch and `src/services/DistributedScheduler.js` failure branch). First user: `buxtonoil.com`.
 
 ### lookupUrl (V2.14.0)
 

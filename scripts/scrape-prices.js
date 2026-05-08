@@ -30,6 +30,7 @@ const {
 // V2.6.0: Import backoff service
 const {
   shouldScrapeSupplier,
+  shouldSkipFailureCounter,
   recordSuccess,
   recordFailure,
   getBackoffStats
@@ -378,10 +379,18 @@ async function runScraper(options = {}) {
         results.failed.push(result);
 
         // V2.6.0: Record failure - update counters, potentially set cooldown/phone_only
+        // V3.x.0: primaryFuelOptional gate (heatingoil-…) — when supplier is opted-in
+        // and at least one secondary fuel succeeded, treat as healthy. Buxton Oil is
+        // the first user: heating oil card says "Call our office" but propane scrapes fine.
         if (!opts.dryRun) {
-          const backoffResult = await recordFailure(sequelize, supplier.id, supplier.name, log, result.error);
-          if (backoffResult.action !== 'none') {
-            // Already logged by recordFailure
+          if (shouldSkipFailureCounter(config, result)) {
+            await recordSuccess(sequelize, supplier.id);
+            log.warn(`   ⚠️  primary fuel optional — ${result.fuelPrices.length} secondary fuel(s) succeeded; resetting failure counter`);
+          } else {
+            const backoffResult = await recordFailure(sequelize, supplier.id, supplier.name, log, result.error);
+            if (backoffResult.action !== 'none') {
+              // Already logged by recordFailure
+            }
           }
         }
 

@@ -104,6 +104,17 @@ Only NY and CT have multi-county regions:
 
 All other states: state → county → city (no regional rollup).
 
+## Profile Page Price Display
+
+The supplier's *own* price card on `/supplier/<slug>` filters
+`supplier_prices` by `is_valid = true AND scraped_at > NOW() - INTERVAL '14
+days'` (V3.x.0). Without that window, leftover rows from disabled-but-not-
+cleaned-up suppliers (site-redesign cases like Buxton, Red Door Oil, Williams
+Fuel Oil) would render as `$X.XX · stale · MMM D`. 14 days matches
+`INDEX_PRICE_WINDOW_DAYS` and the nearby-suppliers filter (below). When a
+supplier resumes scraping, the new price flows through normally on the next
+nightly regen.
+
 ## Nearby Suppliers (Profile Pages)
 
 - Scored by: `(countyOverlap × 10) + zipOverlap`
