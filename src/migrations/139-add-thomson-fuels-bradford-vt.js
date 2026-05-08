@@ -69,7 +69,8 @@ module.exports = {
         NOW(), NOW()
       )
       ON CONFLICT (slug) DO UPDATE SET
-        postal_codes_served = EXCLUDED.postal_codes_served,
+        -- postal_codes_served intentionally NOT updated: ScrapeConfigSync owns
+        -- this column post-migration-100 (backend/CLAUDE.md "Coverage Authority").
         service_cities = EXCLUDED.service_cities,
         service_counties = EXCLUDED.service_counties,
         service_area_radius = EXCLUDED.service_area_radius,
