@@ -10,6 +10,10 @@
 #   - allowPriceDisplay !== false (should be === true)
 #   - postal_codes_served written in migrations after 100
 #   - Common secret patterns
+#   - /health handler making unbounded DB calls (heatingoil-jsxj class)
+#   - og:image references using WebP (social crawler compat)
+#   - scrapeBackoff monthlyReset missing scrape_failure_dates clear
+#     (project_jsonld_scraper_breakage class)
 #
 # Usage:
 #   bash scripts/sanity-check.sh          # check all
@@ -279,6 +283,137 @@ check_secrets() {
 }
 
 # ─────────────────────────────────────────────
+# 9. /health handler must not introduce unbounded DB calls
+#    Past incident: heatingoil-jsxj — server.js /health route did
+#    sequelize.authenticate() without a race timeout; a Postgres blip
+#    hung /health past Railway's healthcheck deadline → rollback.
+#    Fix lives in raceDbAuthenticate (src/services/healthCheck.js).
+#    Anything else inside the /health handler that hits the DB needs
+#    a similar timeout wrapper.
+# ─────────────────────────────────────────────
+check_health_db_race() {
+  if [ -n "$TARGET_FILE" ]; then
+    case "$TARGET_FILE" in
+      */server.js) ;; # continue
+      *) return ;;
+    esac
+  fi
+
+  local server_file="$BACKEND_DIR/server.js"
+  [ -f "$server_file" ] || return
+
+  # Extract the /health handler body. Heuristic: from the line containing
+  # `app.get('/health'` to the first `});` after it. awk is more reliable
+  # than multi-line bash regex.
+  local health_body
+  health_body=$(awk "
+    /app\.get\(['\"]\/health['\"]/ { in_handler = 1 }
+    in_handler { print }
+    in_handler && /^\}\);/ { exit }
+  " "$server_file" 2>/dev/null)
+
+  if [ -z "$health_body" ]; then
+    return
+  fi
+
+  # Forbidden patterns — direct DB calls without a known race wrapper.
+  # raceDbAuthenticate is the sanctioned helper. Anything else inside this
+  # handler that touches sequelize / pool / db.* needs a Promise.race.
+  local forbidden_patterns='sequelize\.(query|authenticate)|sequelize\.transaction|pool\.(query|connect)|db\.(query|raw)'
+  local matches
+  matches=$(echo "$health_body" | grep -nE "$forbidden_patterns" || true)
+
+  if [ -n "$matches" ]; then
+    # Only flag matches NOT on a line that also calls raceDbAuthenticate.
+    local violations
+    violations=$(echo "$matches" | grep -v 'raceDbAuthenticate' || true)
+    if [ -n "$violations" ]; then
+      while IFS= read -r line; do
+        error "server.js /health handler — possible unbounded DB call: $line (heatingoil-jsxj class — wrap with raceDbAuthenticate or Promise.race)"
+      done <<< "$violations"
+      return
+    fi
+  fi
+
+  ok "/health handler has no unbounded DB calls"
+}
+
+# ─────────────────────────────────────────────
+# 10. og:image must be PNG (not WebP)
+#     Memory: og:image_format — Facebook/LinkedIn/Twitter crawlers do
+#     not reliably parse WebP. PNG-only for social-share compat.
+# ─────────────────────────────────────────────
+check_og_image_format() {
+  local search_path
+  if [ -n "$TARGET_FILE" ]; then
+    case "$TARGET_FILE" in
+      *.html|*.js) search_path="$TARGET_FILE" ;;
+      *) return ;;
+    esac
+  else
+    search_path="$BACKEND_DIR/website $BACKEND_DIR/scripts $BACKEND_DIR/src"
+  fi
+
+  # Match: og:image meta tag content with .webp anywhere on the line.
+  # Catches both literal HTML and JS string literals composing og:image.
+  local found
+  found=$(grep -rnE "og:image[^>]*\.webp|og_image[^=]*=.*\.webp|ogImage[^=]*=.*\.webp" $search_path \
+    --include="*.html" --include="*.js" \
+    --exclude-dir=node_modules \
+    2>/dev/null || true)
+
+  if [ -n "$found" ]; then
+    while IFS= read -r line; do
+      error "$line — og:image must be PNG, not WebP (social crawler compat)"
+    done <<< "$found"
+  else
+    ok "og:image references are not WebP"
+  fi
+}
+
+# ─────────────────────────────────────────────
+# 11. monthlyReset must clear scrape_failure_dates
+#     Past incident: project_jsonld_scraper_breakage (Mar 2026, fixed
+#     via migration 113 + scrapeBackoff.js update). The monthlyReset
+#     function MUST clear scrape_failure_dates to '[]'::jsonb in
+#     addition to counters; otherwise old dates inside the 30-day
+#     window cause immediate re-blocking on the first new failure.
+# ─────────────────────────────────────────────
+check_monthly_reset() {
+  local backoff_file="$BACKEND_DIR/src/services/scrapeBackoff.js"
+  if [ -n "$TARGET_FILE" ]; then
+    case "$TARGET_FILE" in
+      */scrapeBackoff.js) ;; # continue
+      *) return ;;
+    esac
+  fi
+  [ -f "$backoff_file" ] || return
+
+  # Extract the monthlyReset function body (from `function monthlyReset` or
+  # `async function monthlyReset` through the first standalone `}` at column 0).
+  local fn_body
+  fn_body=$(awk '
+    /^async function monthlyReset|^function monthlyReset/ { in_fn = 1 }
+    in_fn { print }
+    in_fn && /^\}/ && !/^\}\)/ { exit }
+  ' "$backoff_file" 2>/dev/null)
+
+  if [ -z "$fn_body" ]; then
+    # Function not found — file may have been refactored; skip rather than false-fire.
+    return
+  fi
+
+  # Required: the function body MUST contain an assignment of
+  # scrape_failure_dates to an empty value (typically '[]'::jsonb in SQL,
+  # or [] in JS). Both forms are acceptable.
+  if ! echo "$fn_body" | grep -qE "scrape_failure_dates\s*=\s*('\[\]'::jsonb|\[\])"; then
+    error "scrapeBackoff.js monthlyReset — missing 'scrape_failure_dates = []::jsonb' clear (project_jsonld_scraper_breakage class — old failure dates re-block suppliers immediately after reset)"
+    return
+  fi
+
+  ok "scrapeBackoff.js monthlyReset clears scrape_failure_dates"
+}
+# ─────────────────────────────────────────────
 # 8. Required page elements in generated HTML
 #    Spot-check: nav.js, analytics, Smart App Banner
 # ─────────────────────────────────────────────
@@ -327,6 +462,9 @@ check_price_display_pattern
 check_coverage_in_migrations
 check_secrets
 check_page_elements
+check_health_db_race
+check_og_image_format
+check_monthly_reset
 
 # ─────────────────────────────────────────────
 # Summary
