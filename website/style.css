@@ -1892,7 +1892,7 @@ body {
     margin-top: 0.5rem;
 }
 
-.supplier-phone {
+.supplier-card .supplier-phone {
     display: inline-flex;
     align-items: center;
     font-size: 0.875rem;
@@ -1902,7 +1902,7 @@ body {
     min-height: 44px;
 }
 
-.supplier-phone:hover {
+.supplier-card .supplier-phone:hover {
     text-decoration: underline;
 }
 
@@ -1926,7 +1926,7 @@ body {
 }
 
 /* Card right column: price hero */
-.supplier-price {
+.supplier-card .supplier-price {
     text-align: right;
     flex-shrink: 0;
 }
@@ -3618,7 +3618,7 @@ body {
     font-size: 0.9rem;
 }
 
-.supplier-price {
+.supplier-table .supplier-price {
     font-weight: 700;
     font-size: 1.1rem;
     color: #FF6B35;
@@ -3648,7 +3648,7 @@ body {
     color: var(--primary-orange);
 }
 
-.supplier-website {
+.supplier-table .supplier-website {
     text-align: center;
 }
 
@@ -3699,7 +3699,7 @@ body {
         display: none;
     }
 
-    .supplier-price {
+    .supplier-table .supplier-price {
         font-size: 1rem;
     }
 
@@ -3734,7 +3734,7 @@ body {
         font-size: 0.8rem;
     }
 
-    .supplier-price {
+    .supplier-table .supplier-price {
         font-size: 0.9rem;
     }
 
