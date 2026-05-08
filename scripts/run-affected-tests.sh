@@ -40,11 +40,34 @@ fi
 
 BACKEND_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Resolve to backend-relative path. If outside backend, suppress.
+# Resolve to backend-relative path. The harness passes FILE in three
+# observed shapes depending on cwd and how the assistant typed the path:
+#   1. Absolute: /Users/.../SmartHeatIOS/backend/server.js
+#   2. Relative-with-prefix: SmartHeatIOS/backend/server.js (cwd = outer monorepo)
+#   3. Relative-to-backend: src/services/healthCheck.js (cwd = backend dir)
+# Try each in order; bail to suppress only if none match an existing file.
+REL=""
 case "$FILE" in
-  "$BACKEND_DIR"/*) REL="${FILE#$BACKEND_DIR/}" ;;
-  *) echo '{"suppressOutput":true}'; exit 0 ;;
+  *SmartHeatIOS/backend/*)
+    REL="${FILE#*SmartHeatIOS/backend/}"
+    ;;
+  /*)
+    # Absolute path that didn't contain SmartHeatIOS/backend/ — outside.
+    echo '{"suppressOutput":true}'; exit 0
+    ;;
+  *)
+    # Relative path without prefix — assume relative to BACKEND_DIR if file exists there.
+    if [ -f "$BACKEND_DIR/$FILE" ]; then
+      REL="$FILE"
+    else
+      echo '{"suppressOutput":true}'; exit 0
+    fi
+    ;;
 esac
+
+# Diagnostic: record the resolved relative path so the log shows whether
+# the path-mapper succeeded, not just that the script was invoked.
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] resolved REL=${REL}" >> /tmp/affected-tests-hook.log 2>/dev/null || true
 
 # Map source file → test file. Keep in sync with the bead spec.
 # *.test.js paths re-run themselves.
@@ -66,13 +89,16 @@ esac
 
 TEST_FILE="$BACKEND_DIR/$TEST"
 if [ ! -f "$TEST_FILE" ]; then
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] mapping found TEST=${TEST} but file missing at ${TEST_FILE}" >> /tmp/affected-tests-hook.log 2>/dev/null || true
   echo '{"suppressOutput":true}'
   exit 0
 fi
 
 # Run the affected test. Capture both stdout and stderr.
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] running TEST=${TEST}" >> /tmp/affected-tests-hook.log 2>/dev/null || true
 OUTPUT=$(node "$TEST_FILE" 2>&1)
 RC=$?
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] TEST=${TEST} exited rc=${RC}" >> /tmp/affected-tests-hook.log 2>/dev/null || true
 
 if [ "$RC" -eq 0 ]; then
   echo '{"suppressOutput":true}'
