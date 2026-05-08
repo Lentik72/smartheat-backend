@@ -1483,8 +1483,8 @@ router.post('/suppliers', async (req, res) => {
         JSON.stringify(fuelTypes || ['heating_oil']),
         notes || null,
         slug,
-        active !== false,  // default true
-        allowPriceDisplay !== false  // default true
+        active !== false,  // default true (active is permissive — admin-created suppliers are visible by default)
+        allowPriceDisplay === true  // explicit opt-in; per backend/CLAUDE.md '=== true' rule
       ]
     });
 
