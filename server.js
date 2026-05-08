@@ -463,148 +463,7 @@ if (API_KEYS.DATABASE_URL) {
         // Migrations must complete before ScrapeConfigSync starts to prevent
         // duplicate supplier records (ScrapeConfigSync matches by domain and
         // will create new records if migrations haven't inserted yet).
-        const migrations = [
-          { path: './src/migrations/006-activity-analytics', label: 'Activity analytics' },
-          { path: './src/migrations/008-add-device-id-tracking', label: 'Device ID tracking' },
-          { path: './src/migrations/009-add-waitlist', label: 'Waitlist' },
-          { path: './src/migrations/014-add-pwa-events', label: 'PWA events' },
-          { path: './src/migrations/015-add-tc-fuel-oil', label: 'TC Fuel Oil' },
-          { path: './src/migrations/016-add-tevis-energy', label: 'Tevis Energy' },
-          { path: './src/migrations/017-add-delaware-suppliers', label: 'Delaware suppliers' },
-          { path: './src/migrations/024-fix-abc-fuel-location', label: 'ABC Fuel location' },
-          { path: './src/migrations/025-add-sherman-ct-suppliers', label: 'Sherman CT suppliers' },
-          { path: './src/migrations/026-add-hometown-reliable-fuel', label: 'Hometown/Reliable' },
-          { path: './src/migrations/027-add-gaylordsville-suppliers', label: 'Gaylordsville suppliers' },
-          { path: './src/migrations/028-add-vernon-area-suppliers', label: 'Vernon area suppliers' },
-          { path: './src/migrations/029-add-portland-pa-suppliers', label: 'Portland PA suppliers' },
-          { path: './src/migrations/030-add-elizabethtown-pa-suppliers', label: 'Elizabethtown PA suppliers' },
-          { path: './src/migrations/031-add-york-pa-suppliers', label: 'York PA suppliers' },
-          { path: './src/migrations/032-add-dighton-ma-suppliers', label: 'Dighton MA suppliers' },
-          { path: './src/migrations/033-add-kent-county-de-suppliers', label: 'Kent County DE suppliers' },
-          { path: './src/migrations/034-add-western-ct-suppliers', label: 'Western CT suppliers' },
-          { path: './src/migrations/035-add-hudson-valley-ny-suppliers', label: 'Hudson Valley NY suppliers' },
-          { path: './src/migrations/036-add-sms-price-support', label: 'SMS price support' },
-          { path: './src/migrations/037-add-alaska-suppliers', label: 'Alaska suppliers' },
-          { path: './src/migrations/038-add-347-oil', label: '347 Oil' },
-          { path: './src/migrations/039-add-cod-suppliers', label: 'COD suppliers' },
-          { path: './src/migrations/040-add-jennison-fuels', label: 'Jennison Fuels' },
-          { path: './src/migrations/041-add-ace-fueling', label: 'Ace Fueling' },
-          { path: './src/migrations/042-add-regional-cod-suppliers', label: 'Regional COD suppliers' },
-          { path: './src/migrations/043-add-pa-regional-suppliers', label: 'PA regional suppliers' },
-          { path: './src/migrations/044-add-bangor-me-suppliers', label: 'Bangor ME suppliers' },
-          { path: './src/migrations/045-add-cn-brown-energy', label: 'CN Brown Energy' },
-          { path: './src/migrations/046-add-casco-me-suppliers', label: 'Casco ME suppliers' },
-          { path: './src/migrations/047-add-coverage-gap-suppliers', label: 'Coverage gap suppliers' },
-          { path: './src/migrations/048-add-ip-hash-to-user-locations', label: 'IP hash' },
-          { path: './src/migrations/049-add-cheshire-nh-suppliers', label: 'Cheshire NH suppliers' },
-          { path: './src/migrations/050-add-northern-nh-suppliers', label: 'Northern NH suppliers' },
-          { path: './src/migrations/051-add-fairfield-ct-suppliers', label: 'Fairfield CT suppliers' },
-          { path: './src/migrations/052-add-ct-coverage-suppliers', label: 'CT coverage suppliers' },
-          { path: './src/migrations/053-add-eastern-ct-suppliers', label: 'Eastern CT suppliers' },
-          { path: './src/migrations/054-add-ct-directory-suppliers', label: 'CT directory suppliers' },
-          { path: './src/migrations/055-add-ct-cod-suppliers', label: 'CT COD suppliers' },
-          { path: './src/migrations/056-add-delivery-model-column', label: 'Delivery model column' },
-          { path: './src/migrations/057-add-zip-price-stats-tables', label: 'ZIP price stats' },
-          { path: './src/migrations/058-add-zip-to-county-table', label: 'ZIP to County' },
-          { path: './src/migrations/059-cleanup-duplicate-suppliers', label: 'Duplicate cleanup' },
-          { path: './src/migrations/060-fix-expired-prices', label: 'Fix expired prices' },
-          { path: './src/migrations/061-add-dragon-fuel-llc', label: 'Dragon Fuel LLC' },
-          { path: './src/migrations/062-add-port-jervis-area-suppliers', label: 'Port Jervis area' },
-          { path: './src/migrations/063-add-quakertown-area-suppliers', label: 'Quakertown area' },
-          { path: './src/migrations/064-add-recovered-403-suppliers', label: 'Recovered 403 suppliers' },
-          { path: './src/migrations/065-add-metro-energy-boston', label: 'Metro Energy Boston' },
-          { path: './src/migrations/066-add-werley-energy', label: 'Werley Energy' },
-          { path: './src/migrations/067-enable-kelleys-oil', label: "Kelley's Oil" },
-          { path: './src/migrations/068-enable-seven-suppliers', label: 'Seven suppliers' },
-          { path: './src/migrations/069-fix-cooldown-suppliers', label: 'Cooldown fix' },
-          { path: './src/migrations/070-fix-stale-suppliers', label: 'Stale suppliers fix' },
-          { path: './src/migrations/071-fix-remaining-stale', label: 'Remaining stale fix' },
-          { path: './src/migrations/072-add-westchester-putnam-suppliers', label: 'Westchester/Putnam suppliers' },
-          { path: './src/migrations/073-cleanup-scrapeconfig-duplicates', label: 'ScrapeConfigSync duplicate cleanup' },
-          { path: './src/migrations/074-add-daily-platform-metrics', label: 'Daily platform metrics' },
-          { path: './src/migrations/075-supplier-data-integrity', label: 'Supplier data integrity' },
-          { path: './src/migrations/076-add-me-ct-incomplete-suppliers', label: 'ME/CT incomplete suppliers' },
-          { path: './src/migrations/077-add-ma-suppliers-batch1', label: 'MA suppliers batch 1' },
-          { path: './src/migrations/078-add-ma-suppliers-batch2', label: 'MA suppliers batch 2' },
-          { path: './src/migrations/079-add-ma-suppliers-batch3', label: 'MA suppliers batch 3' },
-          { path: './src/migrations/080-add-ri-suppliers', label: 'RI suppliers' },
-          { path: './src/migrations/081-add-nh-suppliers', label: 'NH suppliers' },
-          { path: './src/migrations/082-add-me-suppliers', label: 'ME suppliers' },
-          { path: './src/migrations/083-add-ct-suppliers', label: 'CT suppliers' },
-          { path: './src/migrations/084-add-vt-suppliers', label: 'VT suppliers' },
-          { path: './src/migrations/085-claim-unique-index', label: 'Claim unique index' },
-          { path: './src/migrations/086-claim-funnel-hardening', label: 'Claim funnel hardening' },
-          { path: './src/migrations/087-backfill-westchester-putnam-coverage', label: 'Backfill Westchester/Putnam coverage' },
-          { path: './src/migrations/088-backfill-de-md-coverage', label: 'Backfill DE/MD coverage' },
-          { path: './src/migrations/089-backfill-baltimore-coverage', label: 'Backfill Baltimore coverage' },
-          { path: './src/migrations/090-add-luzerne-carbon-schuylkill-suppliers', label: 'Luzerne/Carbon/Schuylkill PA suppliers' },
-          { path: './src/migrations/091-add-upstate-ny-suppliers', label: 'Upstate NY suppliers' },
-          { path: './src/migrations/092-add-northern-virginia-suppliers', label: 'Northern Virginia suppliers' },
-          { path: './src/migrations/093-fix-stale-price-display-flags', label: 'Fix stale price display flags' },
-          { path: './src/migrations/094-add-price-alert-subscribers', label: 'Price alert subscribers' },
-          { path: './src/migrations/095-merge-duplicate-suppliers', label: 'Merge duplicate suppliers' },
-          { path: './src/migrations/096-add-walker-valley-suppliers', label: 'Walker Valley area suppliers' },
-          { path: './src/migrations/097-add-staffordville-coverage', label: 'Staffordville coverage' },
-          { path: './src/migrations/098-backfill-limited-coverage-zips', label: 'Backfill limited-coverage ZIPs + Hilton Oil' },
-          { path: './src/migrations/099-fix-overwritten-coverage', label: 'Fix overwritten supplier coverage' },
-          { path: './src/migrations/100-scrapeconfig-coverage-authority', label: 'scrape-config coverage authority' },
-          { path: './src/migrations/101-add-northumberland-pa-suppliers', label: 'Northumberland PA suppliers' },
-          { path: './src/migrations/102-add-herkimer-ny-suppliers', label: 'Herkimer NY suppliers' },
-          { path: './src/migrations/103-create-user-events', label: 'User events tracking' },
-          { path: './src/migrations/104-add-utica-ny-suppliers', label: 'Utica NY suppliers' },
-          { path: './src/migrations/105-create-supplier-requests', label: 'Supplier requests table' },
-          { path: './src/migrations/106-price-review-enhancements', label: 'Price review enhancements' },
-          { path: './src/migrations/107-add-fawcett-energy-ma', label: 'Fawcett Energy MA' },
-          { path: './src/migrations/108-add-fulton-ny-suppliers', label: 'Fulton NY / Oswego County suppliers' },
-          { path: './src/migrations/109-add-dansville-ny-suppliers', label: 'Dansville NY / Livingston County suppliers' },
-          { path: './src/migrations/110-add-kerosene-fuel-type', label: 'Add kerosene fuel type' },
-          { path: './src/migrations/111-fix-price-alert-last-seen', label: 'Fix price alert first-send bug' },
-          { path: './src/migrations/112-add-central-pa-suppliers', label: 'Central PA suppliers (Dolan Oil, Talley Petroleum)' },
-          { path: './src/migrations/113-reset-jsonld-blocked-suppliers', label: 'Reset 40 blocked suppliers (fix monthlyReset failure dates bug)' },
-          { path: './src/migrations/114-reset-config-fix-suppliers', label: 'Reset 5 suppliers (config fixes + slug corrections)' },
-          { path: './src/migrations/115-reset-stale-regex-suppliers', label: 'Reset 3 suppliers (stale regex + Hometown Fuel json_api)' },
-          { path: './src/migrations/116-reset-unclear-suppliers', label: 'Reset 3 suppliers (Premier Energy + Fettinger + Hollenbach)' },
-          { path: './src/migrations/117-reset-wix-fixable-suppliers', label: 'Reset 3 suppliers (Higgins + Red Star + Kelleys — HTML entity regex fixes)' },
-          { path: './src/migrations/118-add-queens-college-point-supplier', label: "Angelo's Fuel Oil Co (Queens/College Point)" },
-          { path: './src/migrations/119-add-supplier-active-index', label: 'Add partial index on suppliers.active for query performance' },
-          { path: './src/migrations/120-dashboard-indexes', label: 'Dashboard composite indexes' },
-          { path: './src/migrations/121-add-nashua-nh-suppliers', label: 'Shattuck Oil + Absco Heating (Nashua NH area)' },
-          { path: './src/migrations/122-add-susquehanna-pa-suppliers', label: 'Windswept + Economy Heating (Susquehanna PA / Southern Tier NY)' },
-          { path: './src/migrations/123-add-morgan-oil-virginia', label: 'Morgan Oil Corporation (Marshall, VA — Loudoun/Fauquier 5-county)' },
-          { path: './src/migrations/124-add-do-not-pitch-flag', label: 'Add do_not_pitch column to suppliers' },
-          { path: './src/migrations/125-add-droplet-suppliers', label: 'Droplet Fuel: 19 new suppliers + do_not_pitch flag on 30 Droplet suppliers' },
-          { path: './src/migrations/126-add-cron-heartbeats', label: 'Cron heartbeats + error log tables (Phase 2 automation)' },
-          { path: './src/migrations/127-reset-stale-audit-suppliers', label: 'Reset backoff for 5 stale-audit suppliers' },
-          { path: './src/migrations/128-add-sunrise-heating-stamford', label: 'Sunrise Heating Fuels (Stamford NY — Delaware/Schoharie/Greene/Otsego)' },
-          { path: './src/migrations/129-add-jk-sons-fuel-margaretville', label: 'JK & Sons Fuel Oil (Margaretville NY — Delaware/6-county)' },
-          { path: './src/migrations/130-add-hancock-md-suppliers', label: 'Steffey & Findlay + Brothers Heating Oil (Hancock/Hagerstown MD)' },
-          { path: './src/migrations/131-add-woodruff-energy-bridgeton', label: 'Woodruff Energy (Bridgeton NJ — 6-county South Jersey)' },
-          { path: './src/migrations/132-add-patriot-discount-oil-nj', label: 'Patriot Discount Oil (Whitehouse NJ — Hunterdon/Warren/Somerset/Morris)' },
-          { path: './src/migrations/133-create-coverage-requests', label: 'Coverage requests table (empty ZIP email notifications)' },
-          { path: './src/migrations/134-create-quote-requests', label: 'Quote requests + supplier junction tables (heatingoil-h1fy)' },
-          { path: './src/migrations/135-add-supplier-lead-columns', label: 'Supplier lead opt-in columns (heatingoil-h1fy)' },
-          { path: './src/migrations/136-add-scrape-runs-rejections', label: 'Scrape runs rejections column (outlier detection)' },
-          { path: './src/migrations/137-add-atlas-oil-new-berlinville', label: 'Atlas Oil (New Berlinville PA) + activate Clayton Discount Fuel (Langhorne PA)' },
-          { path: './src/migrations/138-add-l-and-son-heat-yonkers', label: 'L & Son Heat/AC Tech (Yonkers NY)' },
-          { path: './src/migrations/139-add-thomson-fuels-bradford-vt', label: 'Thomson Fuels (Bradford VT)' },
-          { path: './src/migrations/140-add-asi-oil-norwich-ct', label: 'ASI Oil (Norwich CT — New London County)' },
-          { path: './src/migrations/141-add-user-mention-suppliers', label: 'User-mention batch: Castle Fuel NY, Costello PA, F.C. Haab PA, Victory PA, Fortified Fuels CT + L&Son aliases' },
-          { path: './src/migrations/142-add-wargo-coal-oil', label: 'Wargo Coal & Oil Inc (McAdoo PA — Greater Hazleton, Luzerne/Schuylkill/Carbon)' },
-          { path: './src/migrations/143-add-incorporation-fields', label: 'Incorporation fields + NY/CT filing dates for 30 suppliers (outreach correlation)' },
-          { path: './src/migrations/144-add-fegley-oil', label: 'Fegley Oil Company (Tamaqua PA — Schuylkill/Carbon/Luzerne counties)' },
-          { path: './src/migrations/145-add-propane-fuel-type', label: 'Add propane to fuel_type ENUMs (supplier_prices + community_deliveries)' },
-          { path: './src/migrations/146-add-augusta-me-suppliers', label: 'Augusta ME (04330) gap: Litchfield Fuel + M.A. Haskell + CN Brown Augusta' },
-          { path: './src/migrations/147-add-jc-heating-cooling', label: 'JC Heating & Cooling (Levittown/Yardley PA — Bucks/Montgomery 40 towns)' },
-          { path: './src/migrations/148-add-leroux-fuels-ny', label: 'Leroux Fuels (Plattsburgh NY — Clinton + N. Essex counties)' },
-          { path: './src/migrations/149-add-energy-coop-vermont', label: 'Energy Co-op of Vermont (Colchester VT — Chittenden+4 counties)' },
-          { path: './src/migrations/150-add-hudson-fuel-oil-oh', label: 'Hudson Fuel Oil (New Richmond OH — Cincinnati metro, 3rd in-state OH supplier)' },
-          { path: './src/migrations/151-add-jackman-fuels-vt', label: 'Jackman Fuels Inc (Vergennes VT — Addison+Chittenden counties, will-call)' },
-          { path: './src/migrations/152-add-cn-brown-lancaster', label: 'CN Brown Energy (Lancaster NH — NEK VT + Coos NH, 3rd CN Brown branch via multi-branch config)' },
-          { path: './src/migrations/153-add-central-pa-suppliers', label: 'Central PA gap fill (Lewistown 17044): Nittany Energy (Lewistown), Snedeker Energy, J.J. Powell (Lewistown), Oakland Fuel Oil (Mifflintown/Juniata)' },
-          { path: './src/migrations/154-add-dixieland-energy', label: 'Dixie Land Energy (Rising Sun MD — Cecil/Harford MD + New Castle DE + Chester/Lancaster/York PA, will-call confirmed, no scrapable price)' },
-          { path: './src/migrations/155-add-coverage-requests-notified-fuels', label: 'Per-fuel notification tracking on coverage_requests (notified_fuels text[] + index swap)' },
-          { path: './src/migrations/156-add-buxton-multi-fuel-types', label: 'Buxton Oil fuel_types: oil → heating_oil+propane+kerosene (paired with primaryFuelOptional config flag)' },
-        ];
+        const { migrations, loadMigrationModule } = require('./src/migrations-list');
 
         // Migration runner contract: each migration file MUST export `{ up }` where
         // `up` is `async function(sequelize)` and uses `sequelize.query(...)` directly.
@@ -614,9 +473,9 @@ if (API_KEYS.DATABASE_URL) {
         // be silently caught here. (See plan: snappy-bubbling-cascade.md)
         let migrationErrors = 0;
         const failedMigrations = [];
-        for (const { path: migPath, label } of migrations) {
+        for (const m of migrations) {
           try {
-            const { up } = require(migPath);
+            const { up } = loadMigrationModule(m);
             await up(sequelize);
           } catch (err) {
             migrationErrors++;
@@ -624,8 +483,8 @@ if (API_KEYS.DATABASE_URL) {
             // traces via a publicly-cacheable endpoint). Full message is in the warn
             // log below — operators must cross-reference Railway logs for full context.
             const safeError = String(err.message || err).slice(0, 200);
-            failedMigrations.push({ label, error: safeError });
-            logger.warn(`⚠️  ${label} migration: ${err.message}`);
+            failedMigrations.push({ label: m.label, error: safeError });
+            logger.warn(`⚠️  ${m.label} migration: ${err.message}`);
           }
         }
 
@@ -709,30 +568,13 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoint
+const { raceDbAuthenticate } = require('./src/services/healthCheck');
 app.get('/health', async (req, res) => {
   // Tri-state so operators can distinguish a Postgres blip (timeout) from an outage (down).
   // Race bounds /health latency so UptimeRobot doesn't false-alert on transient DB slowness.
-  let dbState = 'down';
-  if (sequelize) {
-    let raceTimer;
-    try {
-      await Promise.race([
-        sequelize.authenticate(),
-        new Promise((_, reject) => {
-          raceTimer = setTimeout(() => reject(new Error('health-db-timeout')), DB_HEALTH_RACE_MS);
-        })
-      ]);
-      dbState = 'up';
-    } catch (error) {
-      if (error && error.message === 'health-db-timeout') {
-        dbState = 'timeout';
-        logger.warn(`[health] DB authenticate exceeded ${DB_HEALTH_RACE_MS}ms — reporting database:timeout`);
-      } else {
-        dbState = 'down';
-      }
-    } finally {
-      clearTimeout(raceTimer);
-    }
+  const { state: dbState } = await raceDbAuthenticate(sequelize, DB_HEALTH_RACE_MS);
+  if (dbState === 'timeout') {
+    logger.warn(`[health] DB authenticate exceeded ${DB_HEALTH_RACE_MS}ms — reporting database:timeout`);
   }
   const databaseStatus = dbState === 'up';
 
