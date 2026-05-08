@@ -28,11 +28,6 @@ set -uo pipefail
 
 FILE="${1:-}"
 
-# Diagnostic log: appends one line per invocation to /tmp so we can verify
-# the hook is being invoked by the harness, even when output is suppressed.
-# Remove this block once integration is confirmed (heatingoil-wwp7 close note).
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] run-affected-tests INVOKED with FILE=${FILE} CWD=$(pwd) PROJECT=${CLAUDE_PROJECT_DIR:-unset}" >> /tmp/affected-tests-hook.log 2>/dev/null || true
-
 if [ -z "$FILE" ]; then
   echo '{"suppressOutput":true}'
   exit 0
@@ -65,10 +60,6 @@ case "$FILE" in
     ;;
 esac
 
-# Diagnostic: record the resolved relative path so the log shows whether
-# the path-mapper succeeded, not just that the script was invoked.
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] resolved REL=${REL}" >> /tmp/affected-tests-hook.log 2>/dev/null || true
-
 # Map source file → test file. Keep in sync with the bead spec.
 # *.test.js paths re-run themselves.
 TEST=""
@@ -89,16 +80,13 @@ esac
 
 TEST_FILE="$BACKEND_DIR/$TEST"
 if [ ! -f "$TEST_FILE" ]; then
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] mapping found TEST=${TEST} but file missing at ${TEST_FILE}" >> /tmp/affected-tests-hook.log 2>/dev/null || true
   echo '{"suppressOutput":true}'
   exit 0
 fi
 
 # Run the affected test. Capture both stdout and stderr.
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] running TEST=${TEST}" >> /tmp/affected-tests-hook.log 2>/dev/null || true
 OUTPUT=$(node "$TEST_FILE" 2>&1)
 RC=$?
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] TEST=${TEST} exited rc=${RC}" >> /tmp/affected-tests-hook.log 2>/dev/null || true
 
 if [ "$RC" -eq 0 ]; then
   echo '{"suppressOutput":true}'
