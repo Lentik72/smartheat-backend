@@ -12,6 +12,7 @@
     "verify-deploy": "bash scripts/verify-deploy.sh",
     "audit-docs": "bash scripts/audit-docs.sh",
     "regen": "node scripts/regen-all.js",
+    "test": "bash scripts/run-tests.sh",
     "test:multi-branch": "node src/services/multi-branch-config.test.js",
     "postinstall": "git rev-parse --git-dir >/dev/null 2>&1 && git config core.hooksPath .githooks || true"
   },

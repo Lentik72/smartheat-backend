@@ -21,6 +21,29 @@ done
 
 echo "=== Deploy Verification ==="
 
+# ─────────────────────────────────────────────
+# 0. Local test gate — fail fast before checking remote
+# Tests are pure-logic (no DB), so they're cheap and safe to run here.
+# Skip only if --skip-tests is passed (rare; emergencies).
+# ─────────────────────────────────────────────
+SKIP_TESTS=0
+for arg in "$@"; do
+  [ "$arg" = "--skip-tests" ] && SKIP_TESTS=1
+done
+
+if [ "$SKIP_TESTS" -eq 0 ]; then
+  echo ""
+  echo "Running local test suite (npm test)..."
+  if ! bash "$(dirname "$0")/run-tests.sh"; then
+    echo ""
+    echo "=== Tests failed — aborting deploy verification ==="
+    echo "If you're verifying a hotfix where tests are known broken,"
+    echo "re-run with: npm run verify-deploy -- --skip-tests"
+    exit 1
+  fi
+  echo "Tests passed. Continuing with remote checks."
+fi
+
 # Wait for deploy to propagate
 if [ "$WAIT_SECONDS" -gt 0 ]; then
   echo "Waiting ${WAIT_SECONDS}s for deploy to propagate..."
