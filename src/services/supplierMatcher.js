@@ -118,19 +118,22 @@ function findSuppliersForZip(userZip, suppliers, options = {}) {
 
       // Priority 3: County match (60 points) - EXPLICIT ONLY
       // V1.1.0: Added state validation to prevent cross-state county matches
-      // (e.g., York County VA supplier matching York County PA users)
-      // Allows match if supplier serves ANY ZIPs in user's state (handles multi-state suppliers)
+      //   (e.g., York County VA supplier matching York County PA users)
+      // V1.2.0 (heatingoil-12815): Tightened from "any ZIP in user state"
+      //   to "at least one ZIP in user state+county". The looser guard
+      //   leaked cross-state county-name matches: a NJ-based supplier
+      //   with serviceCounties=['Warren',…] (NJ Warren) and NY ZIPs in
+      //   Orange/Sullivan counties was matching NY 12815 (Warren) just
+      //   because it had *some* NY ZIP. The stricter guard requires real
+      //   coverage of the user's exact (state, county) combination.
       if (score === 0) {
         const serviceCounties = supplier.serviceCounties || supplier.service_counties || [];
         if (serviceCounties.includes(userInfo.county)) {
-          // Check if supplier serves user's state (via ZIP codes or home state)
-          const supplierState = supplier.state;
-          const servesUserState = supplierState === userInfo.state ||
-            postalCodes.some(zip => {
-              const zipInfo = zipDatabase[zip];
-              return zipInfo && zipInfo.state === userInfo.state;
-            });
-          if (servesUserState) {
+          const servesUserStateCounty = postalCodes.some(zip => {
+            const zipInfo = zipDatabase[zip];
+            return zipInfo && zipInfo.state === userInfo.state && zipInfo.county === userInfo.county;
+          });
+          if (servesUserStateCounty) {
             score = SCORE.COUNTY;
             matchType = 'county';
           }
