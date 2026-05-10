@@ -155,6 +155,7 @@ const migrations = [
   { slug: '154-add-dixieland-energy', label: 'Dixie Land Energy (Rising Sun MD — Cecil/Harford MD + New Castle DE + Chester/Lancaster/York PA, will-call confirmed, no scrapable price)' },
   { slug: '155-add-coverage-requests-notified-fuels', label: 'Per-fuel notification tracking on coverage_requests (notified_fuels text[] + index swap)' },
   { slug: '156-add-buxton-multi-fuel-types', label: 'Buxton Oil fuel_types: oil → heating_oil+propane+kerosene (paired with primaryFuelOptional config flag)' },
+  { slug: '157-add-warren-county-ny-suppliers', label: 'Warren County NY (12815 gap fill): Long Energy (Schenectady — Capital Region + Warren) + Mountain Petroleum (Schroon Lake — Adirondacks)' },
 ];
 
 function loadMigrationModule(m) {
