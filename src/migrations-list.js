@@ -156,6 +156,8 @@ const migrations = [
   { slug: '155-add-coverage-requests-notified-fuels', label: 'Per-fuel notification tracking on coverage_requests (notified_fuels text[] + index swap)' },
   { slug: '156-add-buxton-multi-fuel-types', label: 'Buxton Oil fuel_types: oil → heating_oil+propane+kerosene (paired with primaryFuelOptional config flag)' },
   { slug: '157-add-warren-county-ny-suppliers', label: 'Warren County NY (12815 gap fill): Long Energy (Schenectady — Capital Region + Warren) + Mountain Petroleum (Schroon Lake — Adirondacks)' },
+  { slug: '158-add-rj-waterhouse-fuel-oil', label: 'RJ Waterhouse Fuel Oil (Lake Luzerne NY — Mirabito sub-brand acquired Sept 2025; Warren/Saratoga/Washington counties)' },
+  { slug: '159-add-ron-bush-oil', label: 'Ron Bush Oil (LaFayette NY — Mirabito sub-brand acquired Aug 2025; 8-county central NY incl. Syracuse metro)' },
 ];
 
 function loadMigrationModule(m) {
