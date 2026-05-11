@@ -19665,6 +19665,38 @@
       "17094"
     ]
   },
+  "mountainviewfuel.com": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED: PA Berks/Lebanon/Lancaster/Dauphin counties (Bethel HQ, 372 E. Rehrersburg Rd) - no published pricing ('Call for competitive pricing 717-933-9505'). COD confirmed: 'On-Call and Automatic Heating Oil Delivery' on /fuel-delivery. Operating entity: Countryside Propane LLC dba Mountain View Fuel. Multi-fuel: heating oil + K-1 kerosene + propane.",
+    "postalCodesServed": [
+      "17026",
+      "17033",
+      "17046",
+      "17067",
+      "17522",
+      "17543",
+      "19506",
+      "19507",
+      "19526",
+      "19530",
+      "19533",
+      "19540",
+      "19567",
+      "19601",
+      "19602",
+      "19603",
+      "19604",
+      "19605",
+      "19606",
+      "19607",
+      "19608",
+      "19609",
+      "19610",
+      "19611",
+      "19612"
+    ]
+  },
   "_section_RI": "=== RHODE ISLAND ===",
   "applevalleyoil.net": {
     "enabled": true,

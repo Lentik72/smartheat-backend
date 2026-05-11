@@ -158,6 +158,7 @@ const migrations = [
   { slug: '157-add-warren-county-ny-suppliers', label: 'Warren County NY (12815 gap fill): Long Energy (Schenectady — Capital Region + Warren) + Mountain Petroleum (Schroon Lake — Adirondacks)' },
   { slug: '158-add-rj-waterhouse-fuel-oil', label: 'RJ Waterhouse Fuel Oil (Lake Luzerne NY — Mirabito sub-brand acquired Sept 2025; Warren/Saratoga/Washington counties)' },
   { slug: '159-add-ron-bush-oil', label: 'Ron Bush Oil (LaFayette NY — Mirabito sub-brand acquired Aug 2025; 8-county central NY incl. Syracuse metro)' },
+  { slug: '160-add-mountain-view-fuel', label: 'Mountain View Fuel (Bethel PA — Countryside Propane LLC dba; Berks/Lebanon/Lancaster/Dauphin; heating oil + kerosene + propane, will-call/On-Call confirmed, no scrapable price)' },
 ];
 
 function loadMigrationModule(m) {
