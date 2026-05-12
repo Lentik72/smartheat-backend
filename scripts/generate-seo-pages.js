@@ -52,8 +52,11 @@ const INDEX_PRICE_WINDOW_DAYS = 14;
 // strong pages or some other regression appears.
 const DISABLE_NOINDEX_THIN_PAGES = process.env.DISABLE_NOINDEX_THIN_PAGES === 'true';
 
-const MIN_VALID_PRICE = 2.00;       // Filter out data errors
-const MAX_VALID_PRICE = 6.00;       // Filter out data errors
+// Per-fuel valid price range comes from FUEL_CONFIGS (below). Filter
+// uses inclusive bounds — preserved exactly from the pre-clsn behavior.
+function priceInFuelRange(price, FUEL) {
+  return price >= FUEL.minPrice && price <= FUEL.maxPrice;
+}
 
 initCountyData(WEBSITE_DIR);
 
@@ -518,7 +521,7 @@ async function generateSEOPages(options = {}) {
 /**
  * Calculate market stats with outlier filtering
  */
-function calculateMarketStats(suppliers) {
+function calculateMarketStats(suppliers, FUEL) {
   const pricedSuppliers = suppliers.filter(s => s.hasPrice && s.price);
 
   if (pricedSuppliers.length === 0) {
@@ -527,8 +530,9 @@ function calculateMarketStats(suppliers) {
 
   const prices = pricedSuppliers.map(s => s.price);
 
-  // Filter outliers (< $2 or > $6 are data errors)
-  const validPrices = prices.filter(p => p >= MIN_VALID_PRICE && p <= MAX_VALID_PRICE);
+  // Per-fuel valid range (heatingoil-clsn). Heating oil $2-$6, kerosene
+  // $2.50-$7.00, propane $1.50-$5.00 — see FUEL_CONFIGS above.
+  const validPrices = prices.filter(p => priceInFuelRange(p, FUEL));
 
   if (validPrices.length === 0) {
     return null;
@@ -573,7 +577,7 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
   const indexableCount = suppliers.filter(s => recentPriceSet.has(s.id)).length;
   const noindex = !DISABLE_NOINDEX_THIN_PAGES && indexableCount < MIN_PRICED_TO_INDEX;
 
-  const stats = calculateMarketStats(suppliers);
+  const stats = calculateMarketStats(suppliers, FUEL);
   const dateStr = formatDate();
   const timeStr = formatTime();
 
@@ -750,7 +754,7 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
   const indexableCount = suppliers.filter(s => recentPriceSet.has(s.id)).length;
   const noindex = !DISABLE_NOINDEX_THIN_PAGES && indexableCount < MIN_PRICED_TO_INDEX;
 
-  const stats = calculateMarketStats(suppliers);
+  const stats = calculateMarketStats(suppliers, FUEL);
   const dateStr = formatDate();
   const timeStr = formatTime();
   const countySlug = slugify(county) + '-county';
@@ -828,7 +832,7 @@ async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, 
   const indexableCount = suppliers.filter(s => recentPriceSet.has(s.id)).length;
   const noindex = !DISABLE_NOINDEX_THIN_PAGES && indexableCount < MIN_PRICED_TO_INDEX;
 
-  const stats = calculateMarketStats(suppliers);
+  const stats = calculateMarketStats(suppliers, FUEL);
   const dateStr = formatDate();
   const timeStr = formatTime();
 
@@ -893,7 +897,7 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
   const indexableCount = suppliers.filter(s => recentPriceSet.has(s.id)).length;
   const noindex = !DISABLE_NOINDEX_THIN_PAGES && indexableCount < MIN_PRICED_TO_INDEX;
 
-  const stats = calculateMarketStats(suppliers);
+  const stats = calculateMarketStats(suppliers, FUEL);
   const dateStr = formatDate();
   const timeStr = formatTime();
   const citySlug = slugify(city);
@@ -1790,7 +1794,7 @@ async function updatePricesHtml(pricesHtmlPath, states, prices, suppliers, FUEL)
   const validPrices = prices
     .filter(p => {
       const supplier = displayableSuppliers.find(s => s.id === p.supplier_id);
-      return supplier && p.price >= MIN_VALID_PRICE && p.price <= MAX_VALID_PRICE;
+      return supplier && priceInFuelRange(p.price, FUEL);
     })
     .sort((a, b) => a.price - b.price)
     .slice(0, 5);
@@ -1965,9 +1969,9 @@ function generateLeaderboardSnippet(states, prices, suppliers, FUEL) {
   }
   stateData.sort((a, b) => parseFloat(a.avg) - parseFloat(b.avg));
 
-  // Top 5 deals
+  // Top 5 deals (per-fuel range filter — heatingoil-clsn)
   const validPrices = prices
-    .filter(p => p.price >= MIN_VALID_PRICE && p.price <= MAX_VALID_PRICE)
+    .filter(p => priceInFuelRange(p.price, FUEL))
     .sort((a, b) => a.price - b.price)
     .slice(0, 5);
 
@@ -2365,7 +2369,7 @@ function escapeHtml(str) {
 }
 
 // Export for scheduler
-module.exports = { generateSEOPages };
+module.exports = { generateSEOPages, priceInFuelRange, calculateMarketStats, generateLeaderboardSnippet };
 
 // Run directly if executed from command line
 if (require.main === module) {

@@ -39,8 +39,6 @@ function safeLink(href, html) {
 const locationResolver = require('../src/services/locationResolver');
 
 // Configuration
-const MIN_VALID_PRICE = 2.00;
-const MAX_VALID_PRICE = 6.00;
 const WEBSITE_DIR = path.join(__dirname, '../website');
 // V2.12.0: COUNTY_DIR set inside generateCountyElitePages() based on fuelType option
 const MIN_QUALITY_SCORE = 0.45;  // Tier 1 + Tier 2 only (quality counties)
