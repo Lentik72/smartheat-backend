@@ -42,7 +42,11 @@
     "rjenergy.com": "RJ Energy Services - Augusta, ME. Full-service HVAC + heating oil/propane/K1. Budget plans, online payment portal, no COD language on site. 24hr emergency. Phone: (207) 622-7720.",
     "deadriver.com": "Dead River Company - New England regional (ME/NH/VT/MA). Acquired Augusta Fuel Co (AFC) August 2025. Full-service automatic delivery + MyAccount. Historically contract-only. Phone: (207) 622-3851.",
     "fabianoil.com": "Fabian Oil - Oakland, ME. Full-service automatic delivery, budget plans, price protection. Kennebec/Somerset/Franklin/Waldo counties. Phone: (207) 465-2000.",
-    "bovefuels.com": "G.A. Bove Fuels - Mechanicville, NY (76 Railroad St 12118; satellite Hudson Falls 12839). 90+ years family-owned, 4-generation. Capital Region + S. Hamilton + SW Vermont. Service-area page lists Brant Lake explicitly. Automatic delivery + budget plans only — no will-call/COD on own site (checked /fuel-delivery, /order-fuel, /fuel-delivery/heating-oil, /contact/become-a-customer). Re-check quarterly for will-call language. Phone: (518) 664-5111."
+    "bovefuels.com": "G.A. Bove Fuels - Mechanicville, NY (76 Railroad St 12118; satellite Hudson Falls 12839). 90+ years family-owned, 4-generation. Capital Region + S. Hamilton + SW Vermont. Service-area page lists Brant Lake explicitly. Automatic delivery + budget plans only — no will-call/COD on own site (checked /fuel-delivery, /order-fuel, /fuel-delivery/heating-oil, /contact/become-a-customer). Re-check quarterly for will-call language. Phone: (518) 664-5111.",
+    "bvpetroleum.com": "Bedford Valley Petroleum & Propane - Everett, PA (10228 Lincoln Hwy 15537). Since 1947. Bedford/Fulton/Franklin/Huntingdon PA + Allegany/Garrett MD + Mineral WV. 24/7 emergency + evening/weekend delivery. Automatic Fuel Delivery + Budget Fuel Plan on services page — no will-call/COD language found 2026-05. Phone: (800) 654-4328. Researched during Warfordsburg 17267 gap fill.",
+    "acandt.com": "AC&T Co. - Hagerstown, MD (11535 Hopewell Rd 21740). 60+yr regional MD/WV/PA. Automatic Delivery + No-Run-Out Guarantee, SmartPay 12-month spread, Auto Pay — no will-call/COD on site. 4¢/gal discount for enrolling in automatic. Phone: (301) 582-2700. Researched during Warfordsburg 17267 gap fill.",
+    "shawleysgas.com": "Shawley's L.P. Gas - Hagerstown, MD (18034 Shawley Dr 21740). 40+yr family-owned. MD/PA/VA/WV residential/commercial/agricultural. 'Year-round delivery programs' — no will-call/COD on site. Heating oil + propane. Phone: (301) 797-4887. Researched during Warfordsburg 17267 gap fill.",
+    "hardellservices.com": "Hardell Services - Hagerstown, MD (44 Garlinger Ave 21740). Since 1946. Washington County MD only. Service Agreements + Budget Plans (contract-only) — main brand is automatic. Sister brand Brothers Discount Heating Oil (brothersheatingoil.com) is the COD arm, already in scrape-config (disabled). Phone: (301) 739-0743. Researched during Warfordsburg 17267 gap fill."
   },
   "_section_NY": "=== NEW YORK ===",
   "acsoilservice.com": {
@@ -16606,6 +16610,43 @@
     ]
   },
   "_section_PA": "=== PENNSYLVANIA ===",
+  "cmfuels.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/order-fuel.php",
+    "priceRegex": "heatingoil-icon[^$]*\\$([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "kero-icon[^$]*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
+    "notes": "PA Spring Run 17262 (Path Valley Rd). C.M. Fuels Inc. — Western Franklin + S. Juniata + Fulton + Huntingdon counties. COD qualification: homepage 'Deliveries can be made automatically or as an on-call basis, whichever the customer prefers'; order page shows public prices and 'Cash discount does not apply when paying by credit/debit card' (price IS the cash price). 150-gal min, online ordering via aitsafe.com payment gateway, no account required. Founded 2005, owns trucks. BBB D+ with 1 unanswered complaint (file opened 2025-03-16) — under rule 7B rejection threshold. Heating oil $4.50 + kerosene $6.30 + off-road diesel $4.55 displayed on same page; regex anchored to fuel-icon class to separate them. Phone (717) 349-2379.",
+    "postalCodesServed": [
+      "15536", "16689", "16691", "17212", "17215", "17223", "17228",
+      "17229", "17233", "17238", "17267",
+      "16611", "16621", "16622", "16623", "16634", "16638", "16647",
+      "16652", "16657", "16669", "16674", "16683", "16685", "16694",
+      "16877", "17052", "17060", "17066", "17213", "17239", "17243",
+      "17249", "17253", "17255", "17260", "17264",
+      "17021", "17035", "17049", "17058", "17059", "17076", "17082",
+      "17086", "17094",
+      "17201", "17214", "17219", "17220", "17221", "17222", "17224",
+      "17225", "17235", "17236", "17237", "17244", "17252", "17254",
+      "17262", "17265", "17268", "17270", "17271"
+    ]
+  },
+  "mcclearyoil.com": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED: PA Chambersburg / Franklin County. McCleary Oil Co Inc — 79yr business (1266 N Franklin St 17201). Call-in delivery available ('A customer notifies our office when a delivery is needed. The order is placed to allow two to three days') — functionally on-call/will-call, same qualification model as cmfuels.com. No public pricing — allowPriceDisplay=false. Heating oil (#2) + kerosene (#1) + propane. 150 gal min HO/K-1. 24-hour retail pumps at 484 W Commerce St. Phone (717) 264-6181. Researched during Warfordsburg 17267 gap fill.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "17201", "17214", "17219", "17220", "17221", "17222", "17224",
+      "17225", "17235", "17236", "17237", "17244", "17252", "17254",
+      "17262", "17265", "17268", "17270", "17271"
+    ]
+  },
   "aaronsheatingoil.com": {
     "enabled": false,
     "pattern": "none",
@@ -20665,6 +20706,17 @@
     ]
   },
   "_section_MD": "=== MARYLAND ===",
+  "roachenergy.com": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED: WV HQ (Martinsburg, 301 E Stephen St 25401) — only Washington Co MD coverage in scope (WV not in market). Roach Energy since 1952. Will-call delivery offered alongside automatic; same-day will-call in Martinsburg before 3pm is a subset, not a restriction. No public pricing — allowPriceDisplay=false. Heating oil + kerosene + propane. 24/7 emergency. Phone (304) 596-0147. Researched during Warfordsburg 17267 gap fill.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "postalCodesServed": [
+      "21711", "21713", "21715", "21719", "21722", "21733", "21734",
+      "21740", "21742", "21746", "21750", "21756", "21767", "21779",
+      "21782", "21783", "21795"
+    ]
+  },
   "tevisenergy.com": {
     "enabled": false,
     "pattern": "direct",
