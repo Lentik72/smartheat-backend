@@ -166,8 +166,8 @@ const initSupplierModel = (sequelize) => {
       fuelTypes: {
         type: DataTypes.JSONB,
         field: 'fuel_types',
-        defaultValue: ['oil'],
-        comment: 'Offered: oil, kerosene, diesel, propane'
+        defaultValue: ['heating_oil'],
+        comment: 'Offered: heating_oil, kerosene, propane'
       },
       seniorDiscount: {
         type: DataTypes.STRING(10),
