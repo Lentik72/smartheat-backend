@@ -13,6 +13,8 @@
 
 const https = require('https');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 // Diagnostic categories with labels, priority (1=critical), and default actions
 const CATEGORIES = {
@@ -76,9 +78,57 @@ function classifyError(error) {
   return 'unknown';
 }
 
+/**
+ * Normalize a website URL or a scrape-config key to a bare domain
+ * (no protocol, no www., no trailing path). Mirrors the normalization
+ * used by ScrapeConfigSync so a row's `website` can be matched against
+ * the JSON config's top-level domain keys.
+ */
+function normalizeDomain(value) {
+  if (!value) return null;
+  return value
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/.*$/, '')
+    .toLowerCase();
+}
+
 class SupplierDiagnosticsService {
   constructor(sequelize) {
     this.sequelize = sequelize;
+    this._configDisabledCache = null;
+    this._configCachedAt = 0;
+  }
+
+  /**
+   * Build the set of normalized domains marked `enabled: false` in
+   * scrape-config.json. Used to filter stale-supplier diagnostics so
+   * intentionally-disabled scrapers don't pollute the operator alert view
+   * (heatingoil-l0n6). 5-minute cache so a single email generation pass
+   * or dashboard request reads disk once.
+   */
+  _getConfigDisabledDomains() {
+    if (this._configDisabledCache && Date.now() - this._configCachedAt < 5 * 60 * 1000) {
+      return this._configDisabledCache;
+    }
+    try {
+      const cfgPath = path.join(__dirname, '../data/scrape-config.json');
+      const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+      const disabled = new Set();
+      for (const [domain, entry] of Object.entries(cfg)) {
+        if (domain.startsWith('_')) continue;
+        if (entry && entry.enabled === false) {
+          disabled.add(normalizeDomain(domain));
+        }
+      }
+      this._configDisabledCache = disabled;
+      this._configCachedAt = Date.now();
+      return disabled;
+    } catch (e) {
+      // If config can't be read for any reason, fall back to empty set —
+      // don't drop suppliers based on missing data.
+      return new Set();
+    }
   }
 
   /**
@@ -242,10 +292,31 @@ class SupplierDiagnosticsService {
         AND s.website IS NOT NULL
         AND s.website != ''
         AND (lp.scraped_at IS NULL OR lp.scraped_at < NOW() - INTERVAL '48 hours')
+        -- heatingoil-l0n6: drop suppliers that have NEVER been touched
+        -- (no successful price AND no recorded failure). These are usually
+        -- new rows awaiting their first scrape cycle; flagging them as
+        -- "stale" before the scheduler has rotated to them produces false
+        -- positives in the diagnostic groups (e.g. Wardwell/No Frills/Brewer
+        -- the morning they were added).
+        AND (lp.scraped_at IS NOT NULL OR s.last_scrape_failure_at IS NOT NULL)
       ORDER BY lp.scraped_at ASC NULLS FIRST
     `);
 
-    return results.map(r => ({
+    // heatingoil-l0n6: drop suppliers whose scrape-config entry is
+    // `enabled: false`. The operator already triaged them (e.g. site
+    // redirected, price replaced with "call for pricing", domain dead);
+    // re-surfacing them as health alerts every day is noise. Cooldown /
+    // phone_only signals are NOT touched here — those come from the
+    // backoff system and remain visible as intended.
+    const disabledDomains = this._getConfigDisabledDomains();
+    const filtered = disabledDomains.size === 0
+      ? results
+      : results.filter(r => {
+          const domain = normalizeDomain(r.website);
+          return !domain || !disabledDomains.has(domain);
+        });
+
+    return filtered.map(r => ({
       name: r.name,
       website: r.website,
       scrape_status: r.scrape_status,
