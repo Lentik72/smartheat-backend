@@ -164,6 +164,7 @@ const migrations = [
   { slug: '163-fix-suppliers-fuel-types-default', label: 'Flip suppliers.fuel_types DEFAULT from ["oil"] → ["heating_oil"] so ScrapeConfigSync INSERTs no longer leak legacy tag (heatingoil-qeix, blocks kz7j backfill)' },
   { slug: '164-add-wardwell-no-frills-blue-hill', label: 'Wardwell Oil (Sedgwick ME) + No Frills Oil (Hancock ME) — Blue Hill peninsula / Hancock County COD; closes 04614 gap; same parent (No Frills Oil Co., Inc.) operating two brands with distinct prices' },
   { slug: '165-rehabilitate-cn-brown-brewer', label: 'Rehabilitate orphan cn-brown-energy → cn-brown-brewer (Brewer ME, 10 Penobscot ZIPs $4.799). Repoints website cnbrown.com → cnbrownenergy.com, scopes coverage to live Brewer-routed ZIPs, drops propane. Pittsfield + Mattawamkeag branches filed as follow-ups' },
+  { slug: '166-add-cn-brown-pittsfield-mattawamkeag', label: 'CN Brown Energy (Pittsfield) — 12 ZIPs Penobscot/Somerset + (Mattawamkeag) — 5 remote Penobscot ZIPs. Both branches discovered during mig 165 orphan rehab; both already active CN Brown offices on cnbrownenergy.com lookup. Closes heatingoil-7r8b + heatingoil-ijuu' },
 ];
 
 function loadMigrationModule(m) {
