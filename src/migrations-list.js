@@ -162,6 +162,7 @@ const migrations = [
   { slug: '161-add-countryside-fuels', label: 'Countryside Fuels (Fultonville NY — Gramuglia family since 1975, 3 depots, 10 NY counties: Fulton/Herkimer/Montgomery/Schenectady/Schoharie/Clinton/Essex/Chenango/Delaware/Otsego; heating oil + kerosene, published per-location prices)' },
   { slug: '162-add-warfordsburg-region-suppliers', label: 'Warfordsburg PA 17267 gap fill: C.M. Fuels (Spring Run PA, 4 counties Franklin/Juniata/Fulton/Huntingdon, scrapable HO+kerosene), McCleary Oil (Chambersburg PA Franklin Co, call-in, no scrape), Roach Energy (Martinsburg WV — Washington Co MD coverage only, will-call, no scrape)' },
   { slug: '163-fix-suppliers-fuel-types-default', label: 'Flip suppliers.fuel_types DEFAULT from ["oil"] → ["heating_oil"] so ScrapeConfigSync INSERTs no longer leak legacy tag (heatingoil-qeix, blocks kz7j backfill)' },
+  { slug: '164-add-wardwell-no-frills-blue-hill', label: 'Wardwell Oil (Sedgwick ME) + No Frills Oil (Hancock ME) — Blue Hill peninsula / Hancock County COD; closes 04614 gap; same parent (No Frills Oil Co., Inc.) operating two brands with distinct prices' },
 ];
 
 function loadMigrationModule(m) {

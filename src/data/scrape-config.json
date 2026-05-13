@@ -36519,5 +36519,88 @@
       "19348",
       "17314"
     ]
+  },
+  "wardwelloil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "Wardwell Oil",
+    "phone": "(207) 359-8953",
+    "notes": "ME Sedgwick/Hancock County - Blue Hill peninsula brand operated by No Frills Oil Co., Inc. (footer © 2026 No Frills Oil Co., Inc.). C.O.D Accounts + Will Call Delivery explicit on /terms-and-conditions/. Prices independent of No Frills sister brand. WordPress + Genesis with shared nfo-pricing-widget HTML — if template changes, nofrillsoil.com breaks together. Est. 1960.",
+    "priceRegex": "#2 Oil</div><div class=\"nfo-pricing-widget-price\">\\$([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kerosene</div><div class=\"nfo-pricing-widget-price\">\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
+    "postalCodesServed": [
+      "04416",
+      "04421",
+      "04472",
+      "04476",
+      "04614",
+      "04616",
+      "04617",
+      "04627",
+      "04629",
+      "04642",
+      "04650",
+      "04673",
+      "04676",
+      "04684"
+    ]
+  },
+  "nofrillsoil.com": {
+    "enabled": true,
+    "pattern": "direct",
+    "name": "No Frills Oil",
+    "phone": "(207) 422-3581",
+    "notes": "ME Hancock/Hancock County - parent of Wardwell Oil (operates Wardwell as Blue Hill peninsula brand). C.O.D Accounts + Will Call Delivery explicit on /terms-and-conditions/. WordPress + Genesis; same nfo-pricing-widget regex as wardwelloil.com. Est. 1980. Broad Hancock + edges of Penobscot/Washington counties (Bangor, Brewer, Hampden, Cherryfield, Milbridge, Steuben). Toll-free 1-800-537-6645.",
+    "priceRegex": "#2 Oil</div><div class=\"nfo-pricing-widget-price\">\\$([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kerosene</div><div class=\"nfo-pricing-widget-price\">\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
+    "postalCodesServed": [
+      "04401",
+      "04402",
+      "04412",
+      "04416",
+      "04444",
+      "04456",
+      "04472",
+      "04474",
+      "04476",
+      "04605",
+      "04607",
+      "04609",
+      "04612",
+      "04613",
+      "04614",
+      "04617",
+      "04622",
+      "04624",
+      "04627",
+      "04629",
+      "04634",
+      "04640",
+      "04650",
+      "04653",
+      "04658",
+      "04662",
+      "04664",
+      "04669",
+      "04674",
+      "04675",
+      "04676",
+      "04677",
+      "04679",
+      "04680",
+      "04684",
+      "04685",
+      "04693"
+    ]
   }
 }
