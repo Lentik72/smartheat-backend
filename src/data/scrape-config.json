@@ -23,7 +23,8 @@
     "heatingoilprices.com": "Aggregator — regional pricing trends. Not a direct supplier.",
     "heatfleet.com": "Aggregator — national dealer price comparison. Not a direct supplier.",
     "cheapestoil.com": "Aggregator — Northeast price lists. Not a direct supplier.",
-    "codcashfuel.com": "Aggregator/reseller — subcontracts delivery to area carriers (per OilMonster listing: \"Deliveries are often sub-contracted to other area carriers\"). Phone 207.620.7555, Manchester ME. Not a direct fleet operator. 2026-04-22."
+    "codcashfuel.com": "Aggregator/reseller — subcontracts delivery to area carriers (per OilMonster listing: \"Deliveries are often sub-contracted to other area carriers\"). Phone 207.620.7555, Manchester ME. Not a direct fleet operator. 2026-04-22.",
+    "cnbrown.com": "Legacy domain (2026-05-13, heatingoil-2d66). Supplier now in cnbrownenergy.com multi-branch config as cn-brown-augusta / cn-brown-brewer / cn-brown-lancaster / cn-brown-pittsfield / cn-brown-mattawamkeag. The cnbrown.com entry stayed disabled in main config but ScrapeConfigSync's _shouldSyncConfigEntry still processed it (only filters on postalCodesServed presence, not enabled flag), which combined with mig 045's idempotency misfire was resurrecting an orphan cn-brown-energy row. Moved here so the sync skips it (top-level keys starting with '_' are skipped)."
   },
   "_future_contract_oil": {
     "_comment": "Quality suppliers that are contract-only. Revisit if they add COD/will-call.",
@@ -26299,31 +26300,6 @@
       "06712",
       "06716",
       "06720"
-    ]
-  },
-  "cnbrown.com": {
-    "enabled": false,
-    "pattern": "none",
-    "notes": "DISABLED: Added by coverage export — not yet in scrape config. Slug: cn-brown-energy",
-    "postalCodesServed": [
-      "03570",
-      "03575",
-      "03576",
-      "03579",
-      "03580",
-      "03581",
-      "03582",
-      "03583",
-      "03584",
-      "03585",
-      "03588",
-      "03589",
-      "03590",
-      "03592",
-      "03593",
-      "03595",
-      "03597",
-      "03598"
     ]
   },
   "coastalenergyct.com": {
