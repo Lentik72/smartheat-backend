@@ -1153,11 +1153,18 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // Health endpoint does NOT gate on pagesReady (API must be available immediately).
   (async () => {
     const websiteDir = path.join(__dirname, 'website');
-    const GENERATOR_TIMEOUT = 90000; // 90s per generator
+    // Hang backstop only — NOT a deploy gate. The original 90s value was a
+    // fail-fast threshold for the pagesReady /health gate, which was removed
+    // 2026-03-04 (f26e7a956). Normal SEO-page generation runs ~83s, so 90s
+    // produced false "timed out" failures on any deploy that booted under DB
+    // load. 300s only ever trips on a genuine hang, while still bounding a
+    // stuck generator so its CronMonitor heartbeat can't sit at "running"
+    // forever.
+    const GENERATOR_TIMEOUT = 300000; // 300s per generator (hang backstop)
 
     const withTimeout = (promise, name) => Promise.race([
       promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error(`${name} timed out after 90s`)), GENERATOR_TIMEOUT))
+      new Promise((_, reject) => setTimeout(() => reject(new Error(`${name} timed out after ${GENERATOR_TIMEOUT / 1000}s`)), GENERATOR_TIMEOUT))
     ]);
 
     const startTime = Date.now();
