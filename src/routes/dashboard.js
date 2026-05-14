@@ -141,39 +141,44 @@ router.get('/diag', async (req, res) => {
       last20: trimmed.substring(trimmed.length - 20)
     };
 
-    // Try base64 decode
-    try {
-      const decoded = Buffer.from(trimmed, 'base64').toString('utf8');
-      result.base64DecodedLength = decoded.length;
-      result.base64DecodedStartsWithBrace = decoded.startsWith('{');
-      result.base64First30 = decoded.substring(0, 30);
-
-      // Try JSON parse
+    // Mirror the real consumer logic in UnifiedAnalytics.js (initFirebase /
+    // initFirebaseGA4 / initBigQuery): raw JSON if it starts with '{',
+    // otherwise base64-decode. The previous version ALWAYS base64-decoded
+    // first — and Buffer.from(rawJSON, 'base64') never throws, it just
+    // produces garbage bytes — so raw-JSON credentials (which Railway stores
+    // and the app handles fine) were falsely reported jsonValid:false. The
+    // raw-JSON fallback that existed was dead code, only reachable if
+    // Buffer.from threw. See heatingoil-7r9p (false-alarm P1 this caused).
+    let parsed;
+    if (trimmed.startsWith('{')) {
+      result.format = 'raw-json';
       try {
-        const parsed = JSON.parse(decoded);
+        parsed = JSON.parse(trimmed);
         result.jsonValid = true;
-        result.hasProjectId = !!parsed.project_id;
-        result.projectId = parsed.project_id;
-        result.hasPrivateKey = !!parsed.private_key;
-        result.hasClientEmail = !!parsed.client_email;
-      } catch (jsonErr) {
-        result.jsonValid = false;
-        result.jsonError = jsonErr.message;
-      }
-    } catch (b64Err) {
-      result.base64Valid = false;
-      result.base64Error = b64Err.message;
-
-      // Try raw JSON parse
-      try {
-        const parsed = JSON.parse(trimmed);
-        result.rawJsonValid = true;
-        result.hasProjectId = !!parsed.project_id;
-        result.projectId = parsed.project_id;
       } catch (rawErr) {
-        result.rawJsonValid = false;
-        result.rawJsonError = rawErr.message;
+        result.jsonValid = false;
+        result.jsonError = rawErr.message;
       }
+    } else {
+      result.format = 'base64';
+      try {
+        const decoded = Buffer.from(trimmed, 'base64').toString('utf8');
+        result.base64DecodedLength = decoded.length;
+        result.base64DecodedStartsWithBrace = decoded.startsWith('{');
+        result.base64First30 = decoded.substring(0, 30);
+        parsed = JSON.parse(decoded);
+        result.jsonValid = true;
+      } catch (err) {
+        result.jsonValid = false;
+        result.jsonError = err.message;
+      }
+    }
+
+    if (result.jsonValid && parsed) {
+      result.hasProjectId = !!parsed.project_id;
+      result.projectId = parsed.project_id;
+      result.hasPrivateKey = !!parsed.private_key;
+      result.hasClientEmail = !!parsed.client_email;
     }
 
     return result;
