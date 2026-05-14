@@ -130,7 +130,7 @@ echo "  /health: OK (${RESPONSE_TIME}s)"
 # ─────────────────────────────────────────────
 echo ""
 echo "Spot-checking pages..."
-PAGES=("/" "/prices" "/for-suppliers" "/prices/ny" "/how-prices-work")
+PAGES=("/" "/prices" "/prices/" "/for-suppliers" "/prices/ny" "/prices/ny/" "/how-prices-work")
 
 for PAGE in "${PAGES[@]}"; do
   CODE=$(curl -sL -o /dev/null -w "%{http_code}" --max-time "$TIMEOUT" "${BASE_URL}${PAGE}" 2>/dev/null || echo "000")

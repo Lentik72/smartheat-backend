@@ -48,6 +48,9 @@ const SmsPriceService = require('./src/services/sms-price-service');
 // Price alert email service for website subscribers
 const PriceAlertService = require('./src/services/PriceAlertService');
 
+// V2.37.0: Trailing-slash → no-slash redirect helper (heatingoil-x0ak)
+const { trailingSlashRedirectTarget } = require('./src/utils/trailing-slash-redirect');
+
 // Import route modules with error handling
 let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes, dashboardRoutes, smsWebhookRoutes;
 
@@ -247,6 +250,17 @@ app.use((req, res, next) => {
     if (rest.endsWith('.html')) rest = rest.slice(0, -5);
     const qs = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
     return res.redirect(301, `/prices/${abbr}${rest}${qs}`);
+  }
+  // V2.37.0: Trailing-slash → no-slash when a sibling .html exists and no directory index.
+  // Fixes heatingoil-x0ak — /prices/ was 404ing because the clean-URL middleware below
+  // skips paths that end with '/', so /prices/ never resolved to website/prices.html
+  // and Express static fell through.
+  // Placed AFTER the state-name redirect so /prices/connecticut/ → /prices/ct/ in a
+  // single hop, not /prices/connecticut → /prices/ct (2-hop chain).
+  const tsTarget = trailingSlashRedirectTarget(req.path, path.join(__dirname, 'website'), fs.existsSync);
+  if (tsTarget !== null) {
+    const qs = req._parsedUrl.search || '';
+    return res.redirect(301, tsTarget + qs);
   }
   // Redirect ZIP-in-town-path: /prices/nh/03064 → /prices?zip=03064
   const zipInPath = req.path.match(/^\/prices\/[a-z]{2}\/(\d{5})$/);
