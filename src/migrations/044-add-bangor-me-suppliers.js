@@ -368,8 +368,28 @@ module.exports = {
       }
     ];
 
+    // heatingoil-7bdq: mig 165 renames the 'cn-brown-energy' row to
+    // 'cn-brown-brewer'. After that rename, this migration's
+    // `ON CONFLICT (slug) DO NOTHING` no longer protects the CN Brown entry
+    // — there's no row with slug 'cn-brown-energy' to conflict with — so a
+    // plain re-insert would create an orphan on every boot. If the rehab
+    // has already run (cn-brown-brewer exists), drop the CN Brown entry
+    // here. On a fresh DB it stays in, gets inserted, and mig 165 renames
+    // it as designed. The other 4 suppliers have stable slugs and are
+    // unaffected.
+    const [brewerRows] = await sequelize.query(
+      `SELECT 1 FROM suppliers WHERE slug = 'cn-brown-brewer' LIMIT 1`
+    );
+    const cnBrownAlreadyRehabbed = Array.isArray(brewerRows) && brewerRows.length > 0;
+    const suppliersToInsert = cnBrownAlreadyRehabbed
+      ? suppliers.filter(s => s.slug !== 'cn-brown-energy')
+      : suppliers;
+    if (cnBrownAlreadyRehabbed) {
+      console.log('[Migration 044] cn-brown-brewer exists — skipping CN Brown Energy re-insert (rehabbed by mig 165)');
+    }
+
     // Insert all suppliers
-    for (const supplier of suppliers) {
+    for (const supplier of suppliersToInsert) {
       await sequelize.query(`
         INSERT INTO suppliers (
           id, name, slug, phone, email, website, address_line1, city, state,
