@@ -51,6 +51,8 @@ const PriceAlertService = require('./src/services/PriceAlertService');
 // V2.37.0: Trailing-slash → no-slash redirect helper (heatingoil-x0ak)
 const { trailingSlashRedirectTarget } = require('./src/utils/trailing-slash-redirect');
 const { cityCountyRedirectTarget } = require('./src/utils/city-county-redirect');
+const { legacyHeatingOilRedirectTarget } = require('./src/utils/legacy-heating-oil-redirect');
+const { subpathIndexRedirectTarget } = require('./src/utils/subpath-index-redirect');
 
 // Import route modules with error handling
 let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes, dashboardRoutes, smsWebhookRoutes;
@@ -236,9 +238,22 @@ app.use((req, res, next) => {
   if (req.path === '/index') {
     return res.redirect(301, '/' + (req._parsedUrl.search || ''));
   }
+  // Subpath /{prefix}/index → /{prefix} (heatingoil-2e1s — bead evidence /prices/ny/index)
+  const sipTarget = subpathIndexRedirectTarget(req.path);
+  if (sipTarget !== null) {
+    return res.redirect(301, sipTarget + (req._parsedUrl.search || ''));
+  }
   // Redirect /suppliers/ to /prices (bots guess parent from /supplier/{slug} pages)
   if (req.path === '/suppliers' || req.path === '/suppliers/') {
     return res.redirect(301, '/prices' + (req._parsedUrl.search || ''));
+  }
+  // /suppliers/{slug} → /supplier/{slug} (heatingoil-2e1s; bare /suppliers is handled by the rule above)
+  if (req.path.startsWith('/suppliers/')) {
+    return res.redirect(301, '/supplier' + req.path.slice('/suppliers'.length) + (req._parsedUrl.search || ''));
+  }
+  // /how-it-works → /how-prices-work (heatingoil-2e1s, legacy renamed page)
+  if (req.path === '/how-it-works') {
+    return res.redirect(301, '/how-prices-work' + (req._parsedUrl.search || ''));
   }
   // Redirect old full-state-name price URLs to abbreviated form
   // e.g. /prices/connecticut/fairfield-county → /prices/ct/fairfield-county
@@ -251,6 +266,11 @@ app.use((req, res, next) => {
     if (rest.endsWith('.html')) rest = rest.slice(0, -5);
     const qs = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
     return res.redirect(301, `/prices/${abbr}${rest}${qs}`);
+  }
+  // Legacy /heating-oil[-prices]/{state}/{city}-county → /prices/county/{abbr}/{city} (heatingoil-2e1s)
+  const lhoTarget = legacyHeatingOilRedirectTarget(req.path, OLD_STATE_NAMES);
+  if (lhoTarget !== null) {
+    return res.redirect(301, lhoTarget + (req._parsedUrl.search || ''));
   }
   // V2.37.0: Trailing-slash → no-slash when a sibling .html exists and no directory index.
   // Fixes heatingoil-x0ak — /prices/ was 404ing because the clean-URL middleware below
@@ -271,6 +291,11 @@ app.use((req, res, next) => {
   // Redirect .html to clean URL (except functional pages like update-price.html)
   if (req.path.endsWith('.html') && !req.path.includes('update-price') && !req.path.includes('supplier-dashboard') && !req.path.includes('price-review') && !req.path.startsWith('/admin')) {
     const cleanPath = req.path.slice(0, -5);
+    return res.redirect(301, cleanPath + (req._parsedUrl.search || ''));
+  }
+  // .htm strip (heatingoil-2e1s — same exclusion list as .html strip above)
+  if (req.path.endsWith('.htm') && !req.path.includes('update-price') && !req.path.includes('supplier-dashboard') && !req.path.includes('price-review') && !req.path.startsWith('/admin')) {
+    const cleanPath = req.path.slice(0, -4);
     return res.redirect(301, cleanPath + (req._parsedUrl.search || ''));
   }
   next();
