@@ -255,6 +255,14 @@ app.use((req, res, next) => {
   if (req.path === '/how-it-works') {
     return res.redirect(301, '/how-prices-work' + (req._parsedUrl.search || ''));
   }
+  // /learn/average-heating-bill[/] → /average-heating-bill/ (heatingoil-okug)
+  // The canonical "Average Heating Bills by State" hub lives at the site root,
+  // not under /learn/. GSC indexed the wrong path. Cover both forms because
+  // x0ak's trailing-slash redirect only fires when /learn/average-heating-bill.html
+  // exists — it doesn't.
+  if (req.path === '/learn/average-heating-bill' || req.path === '/learn/average-heating-bill/') {
+    return res.redirect(301, '/average-heating-bill/' + (req._parsedUrl.search || ''));
+  }
   // Redirect old full-state-name price URLs to abbreviated form
   // e.g. /prices/connecticut/fairfield-county → /prices/ct/fairfield-county
   //      /prices/new-york → /prices/ny
