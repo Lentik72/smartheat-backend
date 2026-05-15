@@ -50,6 +50,7 @@ const PriceAlertService = require('./src/services/PriceAlertService');
 
 // V2.37.0: Trailing-slash → no-slash redirect helper (heatingoil-x0ak)
 const { trailingSlashRedirectTarget } = require('./src/utils/trailing-slash-redirect');
+const { cityCountyRedirectTarget } = require('./src/utils/city-county-redirect');
 
 // Import route modules with error handling
 let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes, dashboardRoutes, smsWebhookRoutes;
@@ -287,6 +288,17 @@ app.use((req, res, next) => {
   if (fs.existsSync(htmlPath)) {
     req.url = req.path + '.html';
     return next();
+  }
+
+  // City → -county fuzzy fallback (heatingoil-vwpi). Runs after the exact-match
+  // {path}.html lookup above failed. Recovers /prices/va/fairfax when the file
+  // is prices/va/fairfax-county.html. One-way, no-slash; scoped by the helper's
+  // regex to /prices/{2-letter-state}/{city}.
+  const ccTarget = cityCountyRedirectTarget(req.path, path.join(__dirname, 'website'), fs.existsSync);
+  if (ccTarget !== null) {
+    // _parsedUrl.search is the same idiom as the x0ak trailing-slash block above (kept consistent intentionally; the supplier-fuzzy block below uses the originalUrl form for historical reasons).
+    const qs = req._parsedUrl.search || '';
+    return res.redirect(301, ccTarget + qs);
   }
 
   // Supplier slug redirects: known old/changed slugs → current canonical slugs
