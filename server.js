@@ -340,6 +340,7 @@ app.use((req, res, next) => {
     const SLUG_REDIRECTS = {
       'town-country-fuel': 'town-and-country-fuel-pa',
       'getcodoil': null,             // removed broker — 410 Gone
+      'discount-oil-llc': null,      // never listed — 410 Gone (heatingoil-xaef)
       's-s-fuel': 's-s-fuel',        // merged duplicate, keep canonical
     };
     const slug = req.path.slice('/supplier/'.length);
