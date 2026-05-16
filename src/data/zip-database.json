@@ -14580,6 +14580,13 @@
     "lat": 40.017059,
     "lng": -78.907682
   },
+  "15561": {
+    "city": "Sipesville",
+    "county": "Somerset",
+    "state": "PA",
+    "lat": 40.0994,
+    "lng": -79.0914
+  },
   "15562": {
     "city": "Springs",
     "county": "Somerset",
@@ -14593,6 +14600,20 @@
     "state": "PA",
     "lat": 40.094802,
     "lng": -78.965817
+  },
+  "15564": {
+    "city": "Wellersburg",
+    "county": "Somerset",
+    "state": "PA",
+    "lat": 39.7329,
+    "lng": -78.8503
+  },
+  "15565": {
+    "city": "West salisbury",
+    "county": "Somerset",
+    "state": "PA",
+    "lat": 39.7811,
+    "lng": -79.1591
   },
   "15601": {
     "city": "Greensburg",
@@ -26620,6 +26641,13 @@
     "lat": 38.300217,
     "lng": -76.743445
   },
+  "20610": {
+    "city": "Barstow",
+    "county": "Calvert",
+    "state": "MD",
+    "lat": 38.5243,
+    "lng": -76.6167
+  },
   "20611": {
     "city": "Bel alton",
     "county": "Charles",
@@ -26725,6 +26753,13 @@
     "lat": 38.236645,
     "lng": -76.762227
   },
+  "20627": {
+    "city": "Compton",
+    "county": "St. Marys",
+    "state": "MD",
+    "lat": 38.305,
+    "lng": -76.632
+  },
   "20628": {
     "city": "Dameron",
     "county": "St. Marys",
@@ -26760,6 +26795,13 @@
     "lat": 38.242387,
     "lng": -76.501513
   },
+  "20635": {
+    "city": "Helen",
+    "county": "St. Marys",
+    "state": "MD",
+    "lat": 38.3989,
+    "lng": -76.7199
+  },
   "20636": {
     "city": "Hollywood",
     "county": "St. Marys",
@@ -26787,6 +26829,13 @@
     "state": "MD",
     "lat": 38.453999,
     "lng": -77.052819
+  },
+  "20643": {
+    "city": "Ironsides",
+    "county": "Charles",
+    "state": "MD",
+    "lat": 38.4917,
+    "lng": -77.1597
   },
   "20645": {
     "city": "Issue",
@@ -26836,6 +26885,13 @@
     "state": "MD",
     "lat": 38.279211,
     "lng": -76.608406
+  },
+  "20661": {
+    "city": "Mount victoria",
+    "county": "Charles",
+    "state": "MD",
+    "lat": 38.35,
+    "lng": -76.9
   },
   "20662": {
     "city": "Nanjemoy",

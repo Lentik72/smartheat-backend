@@ -166,6 +166,7 @@ const migrations = [
   { slug: '165-rehabilitate-cn-brown-brewer', label: 'Rehabilitate orphan cn-brown-energy → cn-brown-brewer (Brewer ME, 10 Penobscot ZIPs $4.799). Repoints website cnbrown.com → cnbrownenergy.com, scopes coverage to live Brewer-routed ZIPs, drops propane. Pittsfield + Mattawamkeag branches filed as follow-ups' },
   { slug: '166-add-cn-brown-pittsfield-mattawamkeag', label: 'CN Brown Energy (Pittsfield) — 12 ZIPs Penobscot/Somerset + (Mattawamkeag) — 5 remote Penobscot ZIPs. Both branches discovered during mig 165 orphan rehab; both already active CN Brown offices on cnbrownenergy.com lookup. Closes heatingoil-7r8b + heatingoil-ijuu' },
   { slug: '167-delete-cn-brown-energy-orphan', label: 'Idempotent DELETE for cn-brown-energy orphan row that mig 045 resurrected at 14:32 UTC 2026-05-13. Runs every boot as backstop in case mig 045 misfires again; companion change moves cnbrown.com to scrape-config _ignore_list' },
+  { slug: '168-add-pa-md-suppliers-batch', label: 'PA + MD supplier batch (2 new): Shaffer Oil (Somerset/Cambria PA, will-call, no scrape); SJ Johnson (Huntingtown MD, COD/will-call/no-contract, scrapable $4.699). Best Price Oil + Tevis Energy were already in production (migs 031/016/089) with reduced coverage; expanding their footprint left for a sibling task. Companion: 8 new ZIPs in zip-database.json (3 PA Wellersburg-area + 5 MD SJ Johnson hamlets)' },
 ];
 
 function loadMigrationModule(m) {
