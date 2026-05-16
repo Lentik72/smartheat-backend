@@ -103,6 +103,17 @@ const initSupplierModel = (sequelize) => {
         defaultValue: true,
         comment: 'If false, supplier has opted out of price display'
       },
+      // heatingoil-kjnt (mig 170): heating-oil price intentionally dark on this
+      // supplier's site (e.g. "Call our office"); judge health-freshness on
+      // ANY successfully-scraped fuel instead of only heating_oil. Source of
+      // truth is scrape-config.json `primaryFuelOptional`, synced by
+      // ScrapeConfigSync on boot (single-branch entries only).
+      primaryFuelOptional: {
+        type: DataTypes.BOOLEAN,
+        field: 'primary_fuel_optional',
+        defaultValue: false,
+        comment: 'True when the primary fuel (heating_oil) is intentionally dark; use any-fuel-fresh for health'
+      },
       // V1.6.0: Hours & Availability
       hoursWeekday: {
         type: DataTypes.STRING(50),

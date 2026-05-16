@@ -190,7 +190,8 @@ class ScrapeConfigSync {
         // avoiding sync drift when duplicates exist
         const [existing] = await this.sequelize.query(`
           SELECT id, name, phone, postal_codes_served, active,
-                 allow_price_display, scrape_status, consecutive_scrape_failures
+                 allow_price_display, scrape_status, consecutive_scrape_failures,
+                 primary_fuel_optional
           FROM suppliers
           WHERE LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE $1
              OR LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE $2
@@ -291,6 +292,18 @@ class ScrapeConfigSync {
             values.push(cfg.phone);
           }
 
+          // heatingoil-kjnt: sync primaryFuelOptional from scrape-config into the
+          // primary_fuel_optional column. Only state-transition writes (avoids
+          // an UPDATE per-supplier per-boot for the ~hundreds that never set the
+          // flag). Branch entries deliberately do NOT use this path — see
+          // _syncSupplierCoverage doc; multi-branch chains set per-branch flags
+          // via per-branch migrations, same as name/phone.
+          const desiredPrimaryFuelOptional = cfg.primaryFuelOptional === true;
+          if (existing.primary_fuel_optional !== desiredPrimaryFuelOptional) {
+            updates.push(`primary_fuel_optional = $${paramIndex++}`);
+            values.push(desiredPrimaryFuelOptional);
+          }
+
           // If config says enabled and DB has price display off, this is a re-enable.
           // Reset failure counters so supplier doesn't show as "at risk" from stale data.
           if (cfg.enabled === true && !existing.allow_price_display) {
@@ -331,9 +344,11 @@ class ScrapeConfigSync {
           await this.sequelize.query(`
             INSERT INTO suppliers (
               id, name, phone, website, postal_codes_served,
+              primary_fuel_optional,
               active, source, created_at, updated_at
             ) VALUES (
               gen_random_uuid(), $1, $2, $3, $4,
+              $5,
               false, 'scrape_config_sync', NOW(), NOW()
             )
           `, {
@@ -341,7 +356,8 @@ class ScrapeConfigSync {
               name,
               cfg.phone || null,
               websiteUrl,
-              JSON.stringify(cfg.postalCodesServed)
+              JSON.stringify(cfg.postalCodesServed),
+              cfg.primaryFuelOptional === true
             ],
             type: this.sequelize.QueryTypes.INSERT
           });
