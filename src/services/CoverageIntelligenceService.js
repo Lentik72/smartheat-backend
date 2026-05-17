@@ -15,6 +15,7 @@ const { Op } = require('sequelize');
 const { getUserLocationModel, getNewLocations, getCoverageGaps } = require('../models/UserLocation');
 const { getSupplierModel } = require('../models/Supplier');
 const { findSuppliersForZip } = require('./supplierMatcher');
+const { healthFuelPredicate, healthTieBreak } = require('../utils/supplier-health-price-query');
 
 // V2.8.0: Full US ZIP lookup for classifying verified vs unverified ZIPs
 const usZipLookup = require('../data/us-zip-lookup.json');
@@ -343,11 +344,15 @@ class CoverageIntelligenceService {
       );
 
       // Find active suppliers with websites
+      // heatingoil-kjnt: fuel-aware via fragment helper. MAX(scraped_at) is the
+      // "any-fuel latest" for PFO suppliers so daily-report stale list excludes
+      // Buxton-style supplies whose primary oil is intentionally dark.
       const [allSuppliers] = await this.sequelize.query(`
         SELECT s.id, s.name, s.state, s.city, s.website,
                MAX(sp.scraped_at) as last_price_update
         FROM suppliers s
-        LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.fuel_type = 'heating_oil'
+        LEFT JOIN supplier_prices sp ON s.id = sp.supplier_id
+          AND ${healthFuelPredicate({ pricesAlias: 'sp', suppliersAlias: 's' })}
         WHERE s.active = true AND s.website IS NOT NULL
         GROUP BY s.id, s.name, s.state, s.city, s.website
         ORDER BY s.name
@@ -553,16 +558,20 @@ class CoverageIntelligenceService {
       const weekAgoStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
 
       // Get all suppliers with scrape history (exclude phone-only and non-price-display)
+      // heatingoil-kjnt: subquery is fuel-aware; LATERAL would also work but the
+      // DISTINCT ON subquery shape is preserved to minimize diff. References outer
+      // s.id via correlated SELECT (s_inner alias for the predicate).
       const [suppliers] = await this.sequelize.query(`
         SELECT
           s.id, s.name, s.website,
           sp.scraped_at, sp.price_per_gallon, sp.expires_at
         FROM suppliers s
         LEFT JOIN (
-          SELECT DISTINCT ON (supplier_id) *
-          FROM supplier_prices
-          WHERE fuel_type = 'heating_oil'
-          ORDER BY supplier_id, scraped_at DESC
+          SELECT DISTINCT ON (sp_inner.supplier_id) sp_inner.*
+          FROM supplier_prices sp_inner
+          JOIN suppliers s_inner ON sp_inner.supplier_id = s_inner.id
+          WHERE ${healthFuelPredicate({ pricesAlias: 'sp_inner', suppliersAlias: 's_inner' })}
+          ORDER BY sp_inner.supplier_id, sp_inner.scraped_at DESC, ${healthTieBreak({ pricesAlias: 'sp_inner' })}
         ) sp ON s.id = sp.supplier_id
         WHERE s.active = true
           AND s.website IS NOT NULL

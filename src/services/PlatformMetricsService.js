@@ -10,6 +10,8 @@
  * and receives small result sets. Queries run sequentially — no concurrent memory spikes.
  */
 
+const { healthFuelPredicate } = require('../utils/supplier-health-price-query');
+
 const ADVISORY_LOCK_KEY = 742019231;
 
 class PlatformMetricsService {
@@ -277,12 +279,16 @@ class PlatformMetricsService {
       ),
 
       -- Freshness: latest price per ZIP
+      -- heatingoil-kjnt: fuel-aware via predicate fragment so a ZIP served only
+      -- by a primaryFuelOptional supplier with stale oil but fresh propane
+      -- counts as fresh for demand-density is_fresh / healthy flagging.
       zip_freshness AS (
         SELECT
           jsonb_array_elements_text(s.postal_codes_served) AS zip_code,
           MAX(sp.scraped_at) AS latest_price_at
         FROM suppliers s
-        JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.is_valid = true AND sp.fuel_type = 'heating_oil'
+        JOIN supplier_prices sp ON s.id = sp.supplier_id AND sp.is_valid = true
+          AND ${healthFuelPredicate({ pricesAlias: 'sp', suppliersAlias: 's' })}
         WHERE s.active = true
           AND s.allow_price_display = true
           AND jsonb_typeof(s.postal_codes_served) = 'array'

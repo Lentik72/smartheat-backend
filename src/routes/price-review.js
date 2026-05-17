@@ -18,6 +18,12 @@ const router = express.Router();
 // Diagnostic classification from SupplierDiagnosticsService
 const { classifyError, CATEGORIES } = require('../services/SupplierDiagnosticsService');
 
+// heatingoil-kjnt: fuel-aware helpers for HEALTH-bucket queries (stale-list).
+// Other queries in this file (suspicious-band, blocked-context, /stats) stay
+// oil-only by design: price band $2-$5.50 is oil-specific; "Price Review" tab
+// is the operator's OIL pipeline dashboard. See bead kjnt notes.
+const { buildLatestHealthPriceCTE } = require('../utils/supplier-health-price-query');
+
 // Load scrape config to detect keroseneReview flags
 const scrapeConfig = require('../data/scrape-config.json');
 
@@ -280,17 +286,17 @@ router.get('/', requireAuth, async (req, res) => {
 
     // 3. Sites with stale prices (> 7 days, no recent update)
     // V2.10.3: Fixed query to check LATEST price per supplier, not any old price
+    // heatingoil-kjnt: fuel-aware via builder. Same MAINTENANCE false-flag the
+    // Command Center fix addressed — Buxton's oil 71d stale would surface here
+    // even though propane is fresh. health_fuel_type carried in current_price
+    // context (consumer can label which fuel the price shown represents).
     const [stalePrices] = await sequelize.query(`
-      WITH latest_prices AS (
-        SELECT DISTINCT ON (supplier_id)
-          supplier_id,
-          price_per_gallon,
-          scraped_at
-        FROM supplier_prices
-        WHERE is_valid = true
-          AND fuel_type = 'heating_oil'
-        ORDER BY supplier_id, scraped_at DESC
-      )
+      ${buildLatestHealthPriceCTE({
+        cteName: 'latest_prices',
+        pricesAlias: 'sp_inner',
+        suppliersAlias: 's_inner',
+        includePrice: true,
+      })}
       SELECT
         s.id,
         s.name,
@@ -299,6 +305,7 @@ router.get('/', requireAuth, async (req, res) => {
         s.state,
         s.last_scrape_error,
         lp.price_per_gallon as current_price,
+        lp.health_fuel_type as current_price_fuel_type,
         lp.scraped_at,
         'stale_price' as review_reason
       FROM suppliers s
@@ -382,6 +389,11 @@ router.get('/', requireAuth, async (req, res) => {
           city: item.city,
           state: item.state,
           currentPrice: item.current_price ? parseFloat(item.current_price) : null,
+          // heatingoil-kjnt: only the stalePrices query carries this column
+          // (its CTE is fuel-aware via buildLatestHealthPriceCTE). Other branches
+          // leave it undefined → null. Disambiguates non-oil prices for PFO
+          // suppliers in the operator review UI.
+          currentPriceFuelType: item.current_price_fuel_type || null,
           lastScraped: item.scraped_at,
           reviewReason: item.review_reason,
           status: item.status || null,

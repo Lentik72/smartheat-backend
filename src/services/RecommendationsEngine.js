@@ -8,6 +8,8 @@
  * 3. Growth - Android app decision and expansion
  */
 
+const { buildLatestHealthPriceCTE } = require('../utils/supplier-health-price-query');
+
 class RecommendationsEngine {
   constructor(sequelize, logger) {
     this.sequelize = sequelize;
@@ -278,16 +280,29 @@ class RecommendationsEngine {
    */
   async analyzeDataQuality(recommendations) {
     try {
+      // heatingoil-kjnt: fuel-aware via canonical helper. All three CTEs use the
+      // standard single-CTE latest-price shape, so the full builder fits cleanly.
+      // No price column needed (count-only / timestamp-only consumers).
+      const priceStatsCte = buildLatestHealthPriceCTE({
+        cteName: 'latest_prices',
+        pricesAlias: 'sp_inner',
+        suppliersAlias: 's_inner',
+      });
+      const staleSuppliersCte = buildLatestHealthPriceCTE({
+        cteName: 'latest_prices',
+        pricesAlias: 'sp_inner',
+        suppliersAlias: 's_inner',
+      });
+      const highClicksCte = buildLatestHealthPriceCTE({
+        cteName: 'latest_prices',
+        pricesAlias: 'sp_inner',
+        suppliersAlias: 's_inner',
+      });
+
       const [priceStats, staleSuppliers, highClicksNoPrice] = await Promise.all([
         // Overall price coverage
         this.sequelize.query(`
-          WITH latest_prices AS (
-            SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
-            FROM supplier_prices
-            WHERE is_valid = true
-              AND fuel_type = 'heating_oil'
-            ORDER BY supplier_id, scraped_at DESC
-          )
+          ${priceStatsCte}
           SELECT
             COUNT(DISTINCT s.id) as total_suppliers,
             COUNT(DISTINCT lp.supplier_id) as with_prices,
@@ -299,13 +314,7 @@ class RecommendationsEngine {
 
         // Stale suppliers (prioritize by clicks)
         this.sequelize.query(`
-          WITH latest_prices AS (
-            SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
-            FROM supplier_prices
-            WHERE is_valid = true
-              AND fuel_type = 'heating_oil'
-            ORDER BY supplier_id, scraped_at DESC
-          ),
+          ${staleSuppliersCte},
           recent_clicks AS (
             SELECT supplier_id, COUNT(*) as clicks
             FROM supplier_clicks
@@ -323,19 +332,14 @@ class RecommendationsEngine {
         `, { type: this.sequelize.QueryTypes.SELECT }),
 
         // High-click suppliers with no price
+        // Builder yields CTE first; recent_clicks chained after via comma.
         this.sequelize.query(`
-          WITH recent_clicks AS (
+          ${highClicksCte},
+          recent_clicks AS (
             SELECT supplier_id, supplier_name, COUNT(*) as clicks
             FROM supplier_clicks
             WHERE created_at > NOW() - INTERVAL '7 days'
             GROUP BY supplier_id, supplier_name
-          ),
-          latest_prices AS (
-            SELECT DISTINCT ON (supplier_id) supplier_id
-            FROM supplier_prices
-            WHERE is_valid = true
-              AND fuel_type = 'heating_oil'
-            ORDER BY supplier_id, scraped_at DESC
           )
           SELECT rc.supplier_name, rc.clicks
           FROM recent_clicks rc
