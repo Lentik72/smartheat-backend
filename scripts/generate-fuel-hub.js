@@ -181,17 +181,38 @@ async function generateFuelHub(options = {}) {
       log('\u2705 Database connected');
     }
 
-    // Get suppliers per state (by fuel_types field, not just scraped prices)
+    // Get suppliers per state. Mirrors heatingoil-6thh OR-fallback in
+    // src/routes/suppliers.js:335-345: include a supplier IFF either evidence
+    // source confirms they sell this fuel — tag match OR has a current valid
+    // scraped price. The tag-only filter (ILIKE/containment) silently excluded
+    // suppliers whose `fuel_types` JSONB still says only ["oil"] but who scrape
+    // valid kerosene/propane prices (bead heatingoil-nqps).
+    const [pricedRows] = await sequelize.query(`
+      SELECT DISTINCT supplier_id
+      FROM supplier_prices
+      WHERE fuel_type = $1
+        AND is_valid = true
+        AND expires_at > NOW()
+    `, { bind: [activeFuelConfig.fuelType] });
+    const pricedSupplierIds = pricedRows.map(r => r.supplier_id);
+
+    const stateStatsBinds = [JSON.stringify([activeFuelConfig.fuelType])];
+    const pricedClause = pricedSupplierIds.length > 0
+      ? (stateStatsBinds.push(pricedSupplierIds), 'OR s.id = ANY($2::uuid[])')
+      : '';
     const [stateStats] = await sequelize.query(`
       SELECT
         s.state as state_code,
         COUNT(*) as total_suppliers
       FROM suppliers s
       WHERE s.active = true
-        AND s.fuel_types::text ILIKE '%${activeFuelConfig.fuelType}%'
+        AND (
+          s.fuel_types @> $1::jsonb
+          ${pricedClause}
+        )
       GROUP BY s.state
       ORDER BY COUNT(*) DESC
-    `);
+    `, { bind: stateStatsBinds });
 
     // Get scraped price stats per state (for median/min/max display)
     const [priceStats] = await sequelize.query(`
