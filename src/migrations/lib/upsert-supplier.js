@@ -1,15 +1,22 @@
 /**
  * Shared supplier upsert utility for migrations.
  *
- * Matches existing records by website domain. If found, updates all fields.
- * If not found, inserts with ON CONFLICT (slug) DO UPDATE for idempotency.
+ * Two match modes (heatingoil-b8k3):
+ *   - 'website' (default): match existing rows by website domain LIKE-substring.
+ *     Original behavior, preserves backwards compatibility for ~54 callers
+ *     passing single suppliers with unique websites. Found → UPDATE all fields
+ *     by id; not found → INSERT with ON CONFLICT (slug) DO UPDATE as backstop.
+ *   - 'slug': skip the website lookup; go straight to INSERT ... ON CONFLICT
+ *     (slug) DO UPDATE. Required for multi-branch chains where several
+ *     supplier rows share a website (e.g. cnbrownenergy.com hosts 5 CN Brown
+ *     branches). The website-LIKE LIMIT-1 lookup picks the wrong sibling row
+ *     and the UPDATE then collides on the slug unique key — see mig 146
+ *     bug fix 6dba892a6 and reference_multi_branch_chains memory.
  *
  * postal_codes_served is managed by scrape-config.json via ScrapeConfigSync.
  * If supplier.postalCodesServed is null/undefined, it is skipped in both
  * UPDATE and INSERT — preserving whatever ScrapeConfigSync has set.
  * Old migrations that still pass it are harmless (ScrapeConfigSync union-merges after).
- *
- * Used by migrations 075, 076, 077+.
  */
 
 const { v4: uuidv4 } = require('uuid');
@@ -17,27 +24,41 @@ const { v4: uuidv4 } = require('uuid');
 /**
  * @param {object} sequelize - Sequelize instance
  * @param {object} supplier - Supplier data with camelCase field names
+ * @param {object} [options]
+ * @param {('website'|'slug')} [options.matchBy='website'] - existing-row lookup strategy
  */
-async function upsertSupplier(sequelize, supplier) {
+async function upsertSupplier(sequelize, supplier, options = {}) {
+  const { matchBy = 'website' } = options;
+  if (matchBy !== 'website' && matchBy !== 'slug') {
+    throw new Error(`upsertSupplier: invalid matchBy ${JSON.stringify(matchBy)} — expected 'website' or 'slug'`);
+  }
+
   // Ensure an ID exists
   if (!supplier.id) {
     supplier.id = uuidv4();
   }
 
-  const normalizedDomain = supplier.website
-    .replace(/^https?:\/\//, '')
-    .replace(/^www\./, '')
-    .replace(/\/$/, '')
-    .toLowerCase();
+  // matchBy: 'slug' deliberately skips the website lookup. The INSERT path
+  // below uses ON CONFLICT (slug) DO UPDATE, which is the canonical key —
+  // a separate SELECT would be redundant and (for shared-domain chains)
+  // would pick the wrong sibling row.
+  let existing = null;
+  if (matchBy === 'website') {
+    const normalizedDomain = supplier.website
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/$/, '')
+      .toLowerCase();
 
-  const [existing] = await sequelize.query(`
-    SELECT id FROM suppliers
-    WHERE LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE $1
-    LIMIT 1
-  `, {
-    bind: [`%${normalizedDomain}%`],
-    type: sequelize.QueryTypes.SELECT
-  });
+    [existing] = await sequelize.query(`
+      SELECT id FROM suppliers
+      WHERE LOWER(REPLACE(REPLACE(website, 'https://', ''), 'http://', '')) LIKE $1
+      LIMIT 1
+    `, {
+      bind: [`%${normalizedDomain}%`],
+      type: sequelize.QueryTypes.SELECT
+    });
+  }
 
   const hasCoverage = supplier.postalCodesServed != null;
 
