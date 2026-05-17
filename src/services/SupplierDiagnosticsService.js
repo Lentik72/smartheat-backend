@@ -149,7 +149,10 @@ class SupplierDiagnosticsService {
       category: classifyError(f.error)
     }));
 
-    // Group by category
+    // Group by category. heatingoil-teeu: each grouped supplier carries
+    // primaryFuelOptional so the renderer can annotate "expected oil-dark"
+    // entries (Buxton-style). Per-group expectedCount lets the UI show
+    // "X of Y are expected" at a glance.
     const groups = {};
     for (const f of classifiedFailures) {
       if (!groups[f.category]) {
@@ -159,15 +162,20 @@ class SupplierDiagnosticsService {
           icon: cat.icon,
           priority: cat.priority,
           action: cat.action,
-          suppliers: []
+          suppliers: [],
+          expectedCount: 0,
         };
       }
       groups[f.category].suppliers.push({
         name: f.supplier_name,
         error: f.error,
         website: f.website,
-        retries: f.retried_attempts || 0
+        retries: f.retried_attempts || 0,
+        primaryFuelOptional: f.primary_fuel_optional === true,
       });
+      if (f.primary_fuel_optional === true) {
+        groups[f.category].expectedCount += 1;
+      }
     }
 
     // Probe stale suppliers not already in failures (lightweight HTTP HEAD)
@@ -203,10 +211,17 @@ class SupplierDiagnosticsService {
       .map(([category, group]) => ({ category, ...group }));
 
     const totalIssues = classifiedFailures.length + probeResults.length;
+    // heatingoil-teeu: total count of PFO-supplier failures across all groups
+    // (probe entries are for stale suppliers, no PFO flag carried — only
+    // failures from scrape_runs.failures get the annotation).
+    const expectedFailureCount = sortedGroups.reduce(
+      (sum, g) => sum + (g.expectedCount || 0), 0
+    );
 
     return {
       groups: sortedGroups,
       totalIssues,
+      expectedFailureCount,
       backoff: backoffStats,
       staleCount: staleSuppliers.length,
       probedCount: probeResults.length,
@@ -217,7 +232,16 @@ class SupplierDiagnosticsService {
 
   /**
    * Get failures from the most recent scrape runs (last 24h).
-   * Deduplicates by supplier name, enriches with website URL.
+   * Deduplicates by supplier name, enriches with website URL + PFO flag.
+   *
+   * heatingoil-teeu: also enriches with `primary_fuel_optional`. For PFO
+   * suppliers (Buxton-style) the failure is the expected oil-dark scenario
+   * (oil regex no-match by design; secondary fuels scraped fine). The
+   * scraper still pushes such results into scrape_runs.failures so the
+   * per-fuel-failure signal is preserved (kjnt audit verdict — don't
+   * suppress, just annotate). Display layer turns the flag into a small
+   * "(PFO)" suffix so operators can distinguish at a glance from a
+   * genuine total-failure.
    */
   async _getRecentFailures() {
     const [runs] = await this.sequelize.query(`
@@ -242,23 +266,33 @@ class SupplierDiagnosticsService {
             supplier_id: f.supplierId || f.supplier_id || null,
             error: f.error,
             retried_attempts: f.retriedAttempts || f.retried_attempts || 0,
-            website: f.website || null
+            website: f.website || null,
+            primary_fuel_optional: false, // populated by enrichment below
           });
         }
       }
     }
 
-    // Enrich with website URLs if not already stored in failures JSONB
-    const needsWebsite = allFailures.filter(f => !f.website);
-    if (needsWebsite.length > 0) {
-      const names = needsWebsite.map(f => f.supplier_name);
+    // Enrich each failure with website + primary_fuel_optional in one
+    // round-trip. Suppliers without matching name (renamed since the run)
+    // keep null website + false PFO — same as pre-teeu behavior for website.
+    if (allFailures.length > 0) {
+      const names = allFailures.map(f => f.supplier_name);
       const [suppliers] = await this.sequelize.query(`
-        SELECT name, website FROM suppliers WHERE name = ANY($1::text[])
+        SELECT name, website, primary_fuel_optional
+        FROM suppliers
+        WHERE name = ANY($1::text[])
       `, { bind: [names] });
 
-      const websiteMap = {};
-      suppliers.forEach(s => { websiteMap[s.name] = s.website; });
-      needsWebsite.forEach(f => { f.website = websiteMap[f.supplier_name] || null; });
+      const supplierMap = {};
+      suppliers.forEach(s => { supplierMap[s.name] = s; });
+      for (const f of allFailures) {
+        const s = supplierMap[f.supplier_name];
+        if (s) {
+          if (!f.website) f.website = s.website || null;
+          f.primary_fuel_optional = s.primary_fuel_optional === true;
+        }
+      }
     }
 
     return allFailures;

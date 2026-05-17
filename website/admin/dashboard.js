@@ -3641,6 +3641,12 @@ function renderStaleSuppliers(stale) {
 }
 
 // V2.13.0: Render diagnostics table (categorized failure analysis)
+// heatingoil-teeu: annotate primaryFuelOptional (Buxton-style) suppliers
+// with a "(PFO)" suffix and de-emphasize them. These are expected oil-dark
+// failures — the primary fuel is intentionally not scraped while secondary
+// fuels (e.g. propane) succeed. Count column shows "N (M exp.)" when any
+// PFO entries are present so operators can distinguish expected vs genuine
+// failures at a glance without losing the per-fuel-failure signal.
 function renderDiagnostics(diag) {
   const panel = document.getElementById('diagnostics-panel');
   const tbody = document.getElementById('diagnostics-body');
@@ -3653,17 +3659,27 @@ function renderDiagnostics(diag) {
   }
 
   panel.style.display = '';
-  if (countEl) countEl.textContent = diag.totalIssues;
+  if (countEl) {
+    countEl.textContent = diag.expectedFailureCount > 0
+      ? `${diag.totalIssues} (${diag.expectedFailureCount} expected)`
+      : diag.totalIssues;
+  }
 
   const priorityBg = (p) => p <= 1 ? '#fee2e2' : p <= 2 ? '#fffbeb' : '';
+  const renderName = (s) => s.primaryFuelOptional
+    ? `<span style="color:#888;" title="primaryFuelOptional — oil intentionally dark, secondary fuel scraping fine">${s.name} <em>(PFO)</em></span>`
+    : s.name;
 
   tbody.innerHTML = diag.groups.map(g => {
-    const names = g.suppliers.slice(0, 3).map(s => s.name).join(', ');
+    const names = g.suppliers.slice(0, 3).map(renderName).join(', ');
     const more = g.suppliers.length > 3 ? ` <em style="color:#888">+${g.suppliers.length - 3} more</em>` : '';
     const bg = priorityBg(g.priority);
+    const countCell = g.expectedCount > 0
+      ? `${g.suppliers.length} <span style="color:#888;font-weight:400;font-size:11px;">(${g.expectedCount} exp.)</span>`
+      : g.suppliers.length;
     return `<tr${bg ? ' style="background:' + bg + '"' : ''}>
       <td>${g.icon || ''} ${g.label}</td>
-      <td style="text-align:center;font-weight:700;">${g.suppliers.length}</td>
+      <td style="text-align:center;font-weight:700;">${countCell}</td>
       <td>${names}${more}</td>
       <td style="font-size:12px;color:#666;">${g.action}</td>
     </tr>`;
