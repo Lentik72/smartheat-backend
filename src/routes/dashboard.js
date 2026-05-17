@@ -30,6 +30,7 @@ const RecommendationsEngine = require('../services/RecommendationsEngine');
 const SupplierHealthService = require('../services/SupplierHealthService');
 const CommandCenterService = require('../services/CommandCenterService');
 const { findSuppliersForZip } = require('../services/supplierMatcher');
+const { buildLatestHealthPriceCTE } = require('../utils/supplier-health-price-query');
 
 // Apply protection to all dashboard routes
 router.use(dashboardProtection);
@@ -251,18 +252,18 @@ router.get('/overview', async (req, res) => {
       `),
 
       // Scraper stats (prices are in supplier_prices table)
+      // heatingoil-kjnt: refactored from inline subquery to WITH-CTE so the
+      // canonical fuel-aware helper can be used; sp.id presence-check rewritten
+      // to sp.supplier_id IS NOT NULL (equivalent, since the helper's CTE
+      // omits sp.id but every matched row has supplier_id).
       safeQuery('scraperStats', `
+        ${buildLatestHealthPriceCTE({ cteName: 'latest_health_prices', pricesAlias: 'lhp_inner', suppliersAlias: 's_inner' })}
         SELECT
           COUNT(DISTINCT CASE WHEN sp.scraped_at > NOW() - INTERVAL '48 hours' THEN s.id END) as with_fresh_prices,
           COUNT(DISTINCT s.id) as total,
-          COUNT(DISTINCT CASE WHEN sp.id IS NOT NULL AND sp.scraped_at < NOW() - INTERVAL '48 hours' THEN s.id END) as stale_count
+          COUNT(DISTINCT CASE WHEN sp.supplier_id IS NOT NULL AND sp.scraped_at < NOW() - INTERVAL '48 hours' THEN s.id END) as stale_count
         FROM suppliers s
-        LEFT JOIN (
-          SELECT DISTINCT ON (supplier_id) supplier_id, id, scraped_at
-          FROM supplier_prices
-          WHERE is_valid = true AND fuel_type = 'heating_oil'
-          ORDER BY supplier_id, scraped_at DESC
-        ) sp ON s.id = sp.supplier_id
+        LEFT JOIN latest_health_prices sp ON s.id = sp.supplier_id
         WHERE s.active = true AND s.allow_price_display = true
       `),
 
@@ -859,13 +860,11 @@ router.get('/scraper-health', async (req, res) => {
       `, { type: sequelize.QueryTypes.SELECT }),
 
       // Overall scraper stats (using supplier_prices for price data)
+      // heatingoil-kjnt: fuel-aware via canonical helper. Aliases bumped to
+      // avoid shadowing the outer `s` (suppliers) when the helper's internal
+      // JOIN brings its own suppliers alias.
       sequelize.query(`
-        WITH latest_prices AS (
-          SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
-          FROM supplier_prices
-          WHERE is_valid = true AND fuel_type = 'heating_oil'
-          ORDER BY supplier_id, scraped_at DESC
-        )
+        ${buildLatestHealthPriceCTE({ cteName: 'latest_prices', pricesAlias: 'sp_inner', suppliersAlias: 's_inner' })}
         SELECT
           COUNT(DISTINCT lp.supplier_id) as with_prices,
           COUNT(*) as total
@@ -875,19 +874,17 @@ router.get('/scraper-health', async (req, res) => {
       `, { type: sequelize.QueryTypes.SELECT }),
 
       // Stale suppliers (price older than 48h)
+      // heatingoil-kjnt: fuel-aware + carries lastPriceFuelType (one of the
+      // 8 visible-price sites in bead kjnt — the /scraper-health stale[]).
       sequelize.query(`
-        WITH latest_prices AS (
-          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
-          FROM supplier_prices
-          WHERE is_valid = true AND fuel_type = 'heating_oil'
-          ORDER BY supplier_id, scraped_at DESC
-        )
+        ${buildLatestHealthPriceCTE({ cteName: 'latest_prices', pricesAlias: 'sp_inner', suppliersAlias: 's_inner', includePrice: true })}
         SELECT
           s.id,
           s.name,
           s.city,
           s.state,
           lp.price_per_gallon as "lastPrice",
+          lp.health_fuel_type as "lastPriceFuelType",
           lp.scraped_at as "lastUpdated",
           s.website
         FROM suppliers s
@@ -1116,14 +1113,16 @@ router.get('/suppliers', async (req, res) => {
     const sortOrder = order.toLowerCase() === 'desc' ? 'DESC NULLS LAST' : 'ASC NULLS LAST';
     const orderByClause = `ORDER BY ${sortField} ${sortOrder}`;
 
+    // heatingoil-kjnt: fuel-aware via canonical helper. Admin suppliers table
+    // shows currentPrice — one of the 8 visible-price sites in bead kjnt —
+    // so the SELECT carries currentPriceFuelType. The scrapingEnabled boolean
+    // becomes fuel-aware too: a primary_fuel_optional supplier with a fresh
+    // secondary-fuel price is correctly "scrapingEnabled: true" (which is
+    // what the dashboard.js:1375 fallback comment was trying to approximate
+    // anyway). Helper aliases bumped to avoid shadowing outer `s`/`sp_inner`.
     const [suppliers, countResult] = await Promise.all([
       sequelize.query(`
-        WITH latest_prices AS (
-          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
-          FROM supplier_prices
-          WHERE is_valid = true AND fuel_type = 'heating_oil'
-          ORDER BY supplier_id, scraped_at DESC
-        )
+        ${buildLatestHealthPriceCTE({ cteName: 'latest_prices', pricesAlias: 'sp_inner', suppliersAlias: 's_inner', includePrice: true })}
         SELECT
           s.id,
           s.name,
@@ -1132,6 +1131,7 @@ router.get('/suppliers', async (req, res) => {
           s.state,
           s.city,
           lp.price_per_gallon as "currentPrice",
+          lp.health_fuel_type as "currentPriceFuelType",
           lp.scraped_at as "priceUpdatedAt",
           s.active as "isActive",
           s.allow_price_display as "allowPriceDisplay",
@@ -1145,12 +1145,7 @@ router.get('/suppliers', async (req, res) => {
       `, { bind: params, type: sequelize.QueryTypes.SELECT }),
 
       sequelize.query(`
-        WITH latest_prices AS (
-          SELECT DISTINCT ON (supplier_id) supplier_id, price_per_gallon, scraped_at
-          FROM supplier_prices
-          WHERE is_valid = true AND fuel_type = 'heating_oil'
-          ORDER BY supplier_id, scraped_at DESC
-        )
+        ${buildLatestHealthPriceCTE({ cteName: 'latest_prices', pricesAlias: 'sp_inner', suppliersAlias: 's_inner' })}
         SELECT COUNT(*) as count
         FROM suppliers s
         LEFT JOIN latest_prices lp ON s.id = lp.supplier_id
