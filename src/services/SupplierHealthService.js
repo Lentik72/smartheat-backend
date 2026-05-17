@@ -5,6 +5,11 @@
  */
 
 const { getBackoffStats } = require('./scrapeBackoff');
+const {
+  healthFuelPredicate,
+  healthTieBreak,
+  buildLatestHealthPriceCTE,
+} = require('../utils/supplier-health-price-query');
 
 class SupplierHealthService {
   /**
@@ -70,15 +75,21 @@ class SupplierHealthService {
    * Categories: fresh (<24h), aging (24-48h), stale (48h-7d), expired (>7d or never)
    */
   async _getPriceFreshness(sequelize) {
+    // heatingoil-kjnt: fuel-aware. `latest_prices` JOINs suppliers so the
+    // predicate can gate non-oil rows to primary_fuel_optional=true. Count-
+    // only output — no consumer-visible price column. Existing two-CTE
+    // structure preserved (latest_prices + scrapable) rather than swapping in
+    // the full builder helper, since `scrapable` is doing distinct work.
     const [results] = await sequelize.query(`
       WITH latest_prices AS (
-        SELECT DISTINCT ON (supplier_id)
-          supplier_id,
-          scraped_at
-        FROM supplier_prices
-        WHERE is_valid = true
-          AND fuel_type = 'heating_oil'
-        ORDER BY supplier_id, scraped_at DESC
+        SELECT DISTINCT ON (sp.supplier_id)
+          sp.supplier_id,
+          sp.scraped_at
+        FROM supplier_prices sp
+        JOIN suppliers s ON sp.supplier_id = s.id
+        WHERE sp.is_valid = true
+          AND ${healthFuelPredicate({ pricesAlias: 'sp', suppliersAlias: 's' })}
+        ORDER BY sp.supplier_id, sp.scraped_at DESC, ${healthTieBreak({ pricesAlias: 'sp' })}
       ),
       scrapable AS (
         SELECT s.id
@@ -167,22 +178,23 @@ class SupplierHealthService {
    * Get suppliers with stale prices (>48h old)
    */
   async _getStaleSuppliers(sequelize) {
+    // heatingoil-kjnt: fuel-aware via the canonical builder. CTE carries
+    // health_fuel_type so the staleSuppliers JSON labels which fuel produced
+    // lastPrice (required for the 8 visible-price sites in bead kjnt; this
+    // is one of them). LATERAL/scalar consumers use the fragment helpers,
+    // but this is a clean single-CTE shape so the full builder fits.
+    const cte = buildLatestHealthPriceCTE({
+      cteName: 'latest_prices',
+      includePrice: true,
+    });
     const [results] = await sequelize.query(`
-      WITH latest_prices AS (
-        SELECT DISTINCT ON (supplier_id)
-          supplier_id,
-          price_per_gallon,
-          scraped_at
-        FROM supplier_prices
-        WHERE is_valid = true
-          AND fuel_type = 'heating_oil'
-        ORDER BY supplier_id, scraped_at DESC
-      )
+      ${cte}
       SELECT
         s.name,
         s.city,
         s.state,
         lp.price_per_gallon as last_price,
+        lp.health_fuel_type as last_price_fuel_type,
         lp.scraped_at as last_updated,
         s.website,
         EXTRACT(EPOCH FROM (NOW() - lp.scraped_at)) / 86400 as days_since_update
@@ -200,6 +212,7 @@ class SupplierHealthService {
       city: r.city,
       state: r.state,
       lastPrice: r.last_price ? parseFloat(r.last_price) : null,
+      lastPriceFuelType: r.last_price_fuel_type, // heatingoil-kjnt — disambiguates non-oil prices
       lastUpdated: r.last_updated,
       website: r.website,
       daysSinceUpdate: Math.round(parseFloat(r.days_since_update) * 10) / 10

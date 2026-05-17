@@ -15,6 +15,7 @@ const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { buildLatestHealthPriceCTE } = require('../utils/supplier-health-price-query');
 
 // Diagnostic categories with labels, priority (1=critical), and default actions
 const CATEGORIES = {
@@ -267,22 +268,23 @@ class SupplierDiagnosticsService {
    * Get suppliers with stale prices (>48h) that are configured for scraping.
    */
   async _getStaleSuppliers() {
+    // heatingoil-kjnt: fuel-aware via the canonical builder. CTE carries
+    // health_fuel_type so the diagnostic output labels which fuel produced
+    // last_price (one of the 8 visible-price sites in bead kjnt). The
+    // l0n6 never-touched and disabled-domain filters stay intact below.
+    const cte = buildLatestHealthPriceCTE({
+      cteName: 'latest_prices',
+      includePrice: true,
+    });
     const [results] = await this.sequelize.query(`
-      WITH latest_prices AS (
-        SELECT DISTINCT ON (supplier_id)
-          supplier_id,
-          price_per_gallon,
-          scraped_at
-        FROM supplier_prices
-        WHERE is_valid = true AND fuel_type = 'heating_oil'
-        ORDER BY supplier_id, scraped_at DESC
-      )
+      ${cte}
       SELECT
         s.name,
         s.website,
         s.scrape_status,
         s.consecutive_scrape_failures,
         lp.price_per_gallon as last_price,
+        lp.health_fuel_type as last_price_fuel_type,
         lp.scraped_at as last_scraped,
         EXTRACT(EPOCH FROM (NOW() - COALESCE(lp.scraped_at, s.created_at))) / 86400 as stale_days
       FROM suppliers s
@@ -322,6 +324,7 @@ class SupplierDiagnosticsService {
       scrape_status: r.scrape_status,
       consecutive_failures: parseInt(r.consecutive_scrape_failures) || 0,
       last_price: r.last_price ? parseFloat(r.last_price) : null,
+      last_price_fuel_type: r.last_price_fuel_type, // heatingoil-kjnt — disambiguates non-oil prices
       last_scraped: r.last_scraped,
       stale_days: Math.round(parseFloat(r.stale_days) * 10) / 10
     }));

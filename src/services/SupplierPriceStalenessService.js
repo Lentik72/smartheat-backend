@@ -11,6 +11,8 @@
  * Summer consideration: Prices don't change much, so be lenient.
  */
 
+const { healthFuelPredicate, healthTieBreak } = require('../utils/supplier-health-price-query');
+
 const STALE_THRESHOLD_DAYS = 7;      // Send reminder after 7 days
 const SCRAPE_RESUME_DAYS = 7;        // Resume scraping after 7 days
 const OUTDATED_THRESHOLD_DAYS = 14;  // Show warning after 14 days
@@ -40,6 +42,10 @@ class SupplierPriceStalenessService {
   async getClaimedSuppliersNeedingReminder() {
     if (!this.sequelize) return [];
 
+    // heatingoil-kjnt: fuel-aware. LATERAL references outer s.primary_fuel_optional
+    // so the predicate gates non-oil rows to primaryFuelOptional suppliers only.
+    // Carries fuel_type as health_fuel_type — consumed by sendReminderEmail to
+    // label the price in the email body (must not email a propane price as oil).
     const [rows] = await this.sequelize.query(`
       SELECT
         s.id,
@@ -51,13 +57,16 @@ class SupplierPriceStalenessService {
         s.last_stale_reminder_at,
         sp.price_per_gallon,
         sp.scraped_at as last_price_date,
+        sp.health_fuel_type,
         mlt.token as magic_link_token
       FROM suppliers s
       LEFT JOIN LATERAL (
-        SELECT price_per_gallon, scraped_at
-        FROM supplier_prices
-        WHERE supplier_id = s.id AND is_valid = true AND fuel_type = 'heating_oil'
-        ORDER BY scraped_at DESC
+        SELECT price_per_gallon, scraped_at, fuel_type AS health_fuel_type
+        FROM supplier_prices sp_inner
+        WHERE sp_inner.supplier_id = s.id
+          AND sp_inner.is_valid = true
+          AND ${healthFuelPredicate({ pricesAlias: 'sp_inner', suppliersAlias: 's' })}
+        ORDER BY sp_inner.scraped_at DESC, ${healthTieBreak({ pricesAlias: 'sp_inner' })}
         LIMIT 1
       ) sp ON true
       LEFT JOIN magic_link_tokens mlt ON mlt.supplier_id = s.id
@@ -86,6 +95,9 @@ class SupplierPriceStalenessService {
   async getClaimedSuppliersForBackupScrape() {
     if (!this.sequelize) return [];
 
+    // heatingoil-kjnt: fuel-aware. Same predicate as the reminder query.
+    // No price column needed in this query's output — only used to decide
+    // whether to enqueue a backup scrape.
     const [rows] = await this.sequelize.query(`
       SELECT
         s.id,
@@ -94,9 +106,11 @@ class SupplierPriceStalenessService {
       FROM suppliers s
       LEFT JOIN LATERAL (
         SELECT scraped_at
-        FROM supplier_prices
-        WHERE supplier_id = s.id AND is_valid = true AND fuel_type = 'heating_oil'
-        ORDER BY scraped_at DESC
+        FROM supplier_prices sp_inner
+        WHERE sp_inner.supplier_id = s.id
+          AND sp_inner.is_valid = true
+          AND ${healthFuelPredicate({ pricesAlias: 'sp_inner', suppliersAlias: 's' })}
+        ORDER BY sp_inner.scraped_at DESC, ${healthTieBreak({ pricesAlias: 'sp_inner' })}
         LIMIT 1
       ) sp ON true
       WHERE s.claimed_at IS NOT NULL
@@ -139,7 +153,13 @@ class SupplierPriceStalenessService {
         <p>Homeowners in ${supplier.city}, ${supplier.state} are looking for current prices. Keeping your price up-to-date helps you get more customers!</p>
 
         ${supplier.last_price_date
-          ? `<p style="color: #666;">Current price on file: <strong>$${parseFloat(supplier.price_per_gallon).toFixed(3)}</strong>/gallon</p>`
+          // heatingoil-kjnt: label which fuel produced this price — for
+          // primaryFuelOptional suppliers (e.g. Buxton) the freshest valid
+          // row may be propane/kerosene, not heating oil. Must not email a
+          // propane price as if it were oil.
+          ? (supplier.health_fuel_type && supplier.health_fuel_type !== 'heating_oil'
+              ? `<p style="color: #666;">Current ${supplier.health_fuel_type.replace('_', ' ')} price on file: <strong>$${parseFloat(supplier.price_per_gallon).toFixed(3)}</strong>/gallon</p>`
+              : `<p style="color: #666;">Current price on file: <strong>$${parseFloat(supplier.price_per_gallon).toFixed(3)}</strong>/gallon</p>`)
           : '<p style="color: #666;">No price currently on file.</p>'
         }
 
