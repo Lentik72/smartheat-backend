@@ -11,6 +11,10 @@
  */
 
 const TZ = 'America/New_York';
+const {
+  healthFuelPredicate,
+  buildLatestHealthPriceCTE,
+} = require('../utils/supplier-health-price-query');
 
 // Eastern time "today" string for JS-side comparisons
 function easternToday() {
@@ -105,6 +109,11 @@ class CommandCenterService {
    */
   async _getNorthStar(sequelize) {
     // Get daily quality connections for last 8 days (today + 7 for trend)
+    // heatingoil-kjnt: fuel-aware. "Fresh supplier" = supplier with any
+    // qualifying fresh row (heating_oil for everyone, plus secondary fuels
+    // for primary_fuel_optional). Drives the North Star quality-connection
+    // count — primaryFuelOptional suppliers like Buxton now count as fresh
+    // when their secondary fuel is fresh.
     const [dailyData] = await sequelize.query(`
       WITH fresh_suppliers AS (
         SELECT DISTINCT sp.supplier_id
@@ -114,7 +123,7 @@ class CommandCenterService {
           AND s.active = true
           AND s.scrape_status = 'active'
           AND sp.scraped_at > NOW() - INTERVAL '48 hours'
-          AND sp.fuel_type = 'heating_oil'
+          AND ${healthFuelPredicate({ pricesAlias: 'sp', suppliersAlias: 's' })}
       ),
       daily_connections AS (
         SELECT
@@ -372,6 +381,8 @@ class CommandCenterService {
 
     // --- Conversion anomaly (quality connection rate) ---
     // Rolling 24h window vs 7d baseline
+    // heatingoil-kjnt: same fuel-aware "fresh supplier" definition as the
+    // North Star (must match for anomaly comparison to be sound).
     const [convData] = await sequelize.query(`
       WITH fresh AS (
         SELECT DISTINCT sp.supplier_id
@@ -379,7 +390,7 @@ class CommandCenterService {
         JOIN suppliers s ON sp.supplier_id = s.id
         WHERE sp.is_valid = true AND s.active = true
           AND sp.scraped_at > NOW() - INTERVAL '48 hours'
-          AND sp.fuel_type = 'heating_oil'
+          AND ${healthFuelPredicate({ pricesAlias: 'sp', suppliersAlias: 's' })}
       ),
       recent_conv AS (
         SELECT
@@ -442,16 +453,17 @@ class CommandCenterService {
    * Minimal (no website): minimal
    */
   async _getSupplierLifecycle(sequelize) {
+    // heatingoil-kjnt: fuel-aware via canonical builder. The lifecycle
+    // classifier (live/stale/failing/blocked) uses `last_price_at` (a
+    // timestamp, not $) — no visible-price labeling needed. primary_fuel_optional
+    // suppliers now classify off their freshest fuel, not their dark oil.
+    const cte = buildLatestHealthPriceCTE({
+      cteName: 'latest_prices',
+      pricesAlias: 'sp_inner',
+      suppliersAlias: 's_inner',
+    });
     const [results] = await sequelize.query(`
-      WITH latest_prices AS (
-        SELECT DISTINCT ON (supplier_id)
-          supplier_id,
-          scraped_at
-        FROM supplier_prices
-        WHERE is_valid = true
-          AND fuel_type = 'heating_oil'
-        ORDER BY supplier_id, scraped_at DESC
-      )
+      ${cte}
       SELECT
         s.id, s.name, s.city, s.state, s.scrape_status,
         s.consecutive_scrape_failures, s.website, s.allow_price_display,
@@ -630,14 +642,10 @@ class CommandCenterService {
     }
 
     // Stale prices — include supplier names + how stale
+    // heatingoil-kjnt: fuel-aware via canonical builder. days_stale is a
+    // timestamp-derived number — no visible-price labeling.
     const [stale] = await sequelize.query(`
-      WITH latest AS (
-        SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
-        FROM supplier_prices
-        WHERE is_valid = true
-          AND fuel_type = 'heating_oil'
-        ORDER BY supplier_id, scraped_at DESC
-      )
+      ${buildLatestHealthPriceCTE({ cteName: 'latest', pricesAlias: 'sp_inner', suppliersAlias: 's_inner' })}
       SELECT s.name, s.city, s.state, s.website,
         ROUND(EXTRACT(EPOCH FROM (NOW() - l.scraped_at)) / 86400) as days_stale
       FROM suppliers s
@@ -735,6 +743,9 @@ class CommandCenterService {
    * Compares last 7d average vs previous 7d average within a 30d window
    */
   async _getTrajectory(sequelize) {
+    // heatingoil-kjnt: same fuel-aware "fresh supplier" definition as
+    // North Star + conversion-anomaly. Trajectory must match for
+    // up/down/flat verdict to be coherent.
     const [results] = await sequelize.query(`
       WITH fresh_suppliers AS (
         SELECT DISTINCT sp.supplier_id
@@ -742,7 +753,7 @@ class CommandCenterService {
         JOIN suppliers s ON sp.supplier_id = s.id
         WHERE sp.is_valid = true AND s.active = true
           AND sp.scraped_at > NOW() - INTERVAL '48 hours'
-          AND sp.fuel_type = 'heating_oil'
+          AND ${healthFuelPredicate({ pricesAlias: 'sp', suppliersAlias: 's' })}
       ),
       daily AS (
         SELECT
@@ -794,12 +805,17 @@ class CommandCenterService {
     }
 
     // Went live this week (first price in last 7 days, no price before that)
+    // heatingoil-kjnt: fuel-aware in BOTH the outer "has fresh row" check
+    // AND the NOT EXISTS "no prior row" check. The two filters must use the
+    // same predicate or the semantics drift (e.g. supplier shows as "went
+    // live" because their oil started fresh but their propane existed before).
+    // The NOT EXISTS correlates on outer `s`, so the same fragment works.
     const [wentLive] = await sequelize.query(`
       SELECT COUNT(DISTINCT sp.supplier_id) as cnt
       FROM supplier_prices sp
       JOIN suppliers s ON sp.supplier_id = s.id
       WHERE sp.is_valid = true
-        AND sp.fuel_type = 'heating_oil'
+        AND ${healthFuelPredicate({ pricesAlias: 'sp', suppliersAlias: 's' })}
         AND ${pipelineFilter}
         AND s.scrape_status = 'active'
         AND sp.scraped_at > NOW() - INTERVAL '7 days'
@@ -807,7 +823,7 @@ class CommandCenterService {
           SELECT 1 FROM supplier_prices sp2
           WHERE sp2.supplier_id = sp.supplier_id
             AND sp2.is_valid = true
-            AND sp2.fuel_type = 'heating_oil'
+            AND ${healthFuelPredicate({ pricesAlias: 'sp2', suppliersAlias: 's' })}
             AND sp2.scraped_at <= NOW() - INTERVAL '7 days'
             AND sp2.scraped_at > NOW() - INTERVAL '14 days'
         )
@@ -818,12 +834,10 @@ class CommandCenterService {
     }
 
     // Went stale this week (last price 48h–9d ago, meaning it was fresh last week)
+    // heatingoil-kjnt: fuel-aware via canonical builder. `latest.scraped_at`
+    // is timestamp-only — no visible-price labeling needed.
     const [wentStale] = await sequelize.query(`
-      WITH latest AS (
-        SELECT DISTINCT ON (supplier_id) supplier_id, scraped_at
-        FROM supplier_prices WHERE is_valid = true AND fuel_type = 'heating_oil'
-        ORDER BY supplier_id, scraped_at DESC
-      )
+      ${buildLatestHealthPriceCTE({ cteName: 'latest', pricesAlias: 'sp_inner', suppliersAlias: 's_inner' })}
       SELECT COUNT(*) as cnt FROM latest l
       JOIN suppliers s ON l.supplier_id = s.id
       WHERE ${pipelineFilter}
