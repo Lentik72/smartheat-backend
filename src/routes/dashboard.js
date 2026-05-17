@@ -919,6 +919,7 @@ router.get('/scraper-health', async (req, res) => {
         city: s.city,
         state: s.state,
         lastPrice: s.lastPrice ? parseFloat(s.lastPrice) : null,
+        lastPriceFuelType: s.lastPriceFuelType, // heatingoil-kjnt — labels non-oil prices
         lastUpdated: s.lastUpdated,
         website: s.website
       }))
