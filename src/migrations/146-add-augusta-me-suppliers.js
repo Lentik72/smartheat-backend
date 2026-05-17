@@ -30,6 +30,7 @@
  */
 
 const { upsertSupplier } = require('./lib/upsert-supplier');
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = {
   name: '146-add-augusta-me-suppliers',
@@ -118,37 +119,72 @@ module.exports = {
     // National chain (ME/NH/VT/MA) but vertically integrated, not a franchise.
     // Per-ZIP cash price via ?location-zip-code=ZIP lookup. This record is scoped
     // to the Augusta branch's 12 confirmed ZIPs (probed via lookup form).
-    // ============================================
-    await upsertSupplier(sequelize, {
-      name: 'CN Brown Energy (Augusta)',
-      slug: 'cn-brown-augusta',
-      phone: '(207) 622-6262',
-      email: 'ho3030Group@cnbrown.com',
-      website: 'https://cnbrownenergy.com',
-      addressLine1: '362 Riverside Dr',
-      city: 'Augusta',
-      state: 'ME',
-      serviceCities: JSON.stringify([
-        'Augusta', 'Farmingdale', 'Gardiner', 'Hallowell', 'Manchester',
-        'Randolph', 'Readfield', 'South China', 'Vassalboro', 'Windsor',
-        'Winthrop', 'North Whitefield',
-      ]),
-      serviceCounties: JSON.stringify(['Kennebec', 'Lincoln']),
-      serviceAreaRadius: 25,
-      lat: 44.351642,
-      lng: -69.803773,
-      hoursWeekday: null,
-      hoursSaturday: null,
-      hoursSunday: null,
-      emergencyDelivery: false,
-      weekendDelivery: false,
-      paymentMethods: JSON.stringify(['credit_card', 'cash', 'check']),
-      fuelTypes: JSON.stringify(['heating_oil', 'kerosene', 'diesel', 'propane']),
-      minimumGallons: null,
-      seniorDiscount: false,
-      allowPriceDisplay: true,
-      notes: null,
-      active: true,
+    //
+    // **Slug-based upsert, NOT website-based** (see mig 152 template, heatingoil-b8k3).
+    // 5 CN Brown branches share `cnbrownenergy.com`. upsertSupplier()'s
+    // domain-LIKE LIMIT-1 lookup picks the wrong branch and the UPDATE then
+    // tries to overwrite that branch's slug with 'cn-brown-augusta' → unique
+    // constraint violation on every boot (failing migration spammed /health for
+    // weeks). Rewriting this single block as direct INSERT ... ON CONFLICT (slug)
+    // DO UPDATE matches the documented multi-branch pattern (reference_multi_branch_chains).
+    // Litchfield + Haskell above use upsertSupplier safely — unique websites.
+    await sequelize.query(`
+      INSERT INTO suppliers (
+        id, name, slug, phone, email, website, address_line1, city, state,
+        service_cities, service_counties, service_area_radius, lat, lng,
+        hours_weekday, hours_saturday, hours_sunday,
+        emergency_delivery, weekend_delivery,
+        payment_methods, fuel_types, minimum_gallons, senior_discount,
+        allow_price_display, notes, active, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9,
+        $10::jsonb, $11::jsonb, $12, $13, $14,
+        NULL, NULL, NULL,
+        false, false,
+        $15::jsonb, $16::jsonb, NULL, false,
+        true, NULL, true, NOW(), NOW()
+      )
+      ON CONFLICT (slug) DO UPDATE SET
+        name = EXCLUDED.name,
+        phone = EXCLUDED.phone,
+        email = EXCLUDED.email,
+        website = EXCLUDED.website,
+        address_line1 = EXCLUDED.address_line1,
+        city = EXCLUDED.city,
+        state = EXCLUDED.state,
+        service_cities = EXCLUDED.service_cities,
+        service_counties = EXCLUDED.service_counties,
+        service_area_radius = EXCLUDED.service_area_radius,
+        lat = EXCLUDED.lat,
+        lng = EXCLUDED.lng,
+        payment_methods = EXCLUDED.payment_methods,
+        fuel_types = EXCLUDED.fuel_types,
+        allow_price_display = EXCLUDED.allow_price_display,
+        active = EXCLUDED.active,
+        updated_at = NOW()
+    `, {
+      bind: [
+        uuidv4(),
+        'CN Brown Energy (Augusta)',
+        'cn-brown-augusta',
+        '(207) 622-6262',
+        'ho3030Group@cnbrown.com',
+        'https://cnbrownenergy.com',
+        '362 Riverside Dr',
+        'Augusta',
+        'ME',
+        JSON.stringify([
+          'Augusta', 'Farmingdale', 'Gardiner', 'Hallowell', 'Manchester',
+          'Randolph', 'Readfield', 'South China', 'Vassalboro', 'Windsor',
+          'Winthrop', 'North Whitefield',
+        ]),
+        JSON.stringify(['Kennebec', 'Lincoln']),
+        25,
+        44.351642,
+        -69.803773,
+        JSON.stringify(['credit_card', 'cash', 'check']),
+        JSON.stringify(['heating_oil', 'kerosene', 'diesel', 'propane']),
+      ],
     });
 
     console.log('[Migration 146] ✅ Added 3 Augusta ME suppliers (Litchfield, Haskell, CN Brown Augusta)');
