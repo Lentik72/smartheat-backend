@@ -17,6 +17,7 @@
 const DEFAULT_HEAT_LOSS_FACTOR = 14000; // BTU per HDD (2,000 sq-ft × 7 BTU/sq-ft/HDD)
 const HEATING_MONTHS = 6; // Oct–Mar for monthly cost estimate
 
+// Per-fuel filter ranges (minPrice/maxPrice) live in scripts/generate-seo-pages.js#FUEL_CONFIGS; this module owns cost-engine constants only.
 const FUELS = {
   'heating-oil': {
     label: 'Heating Oil',
@@ -24,7 +25,6 @@ const FUELS = {
     unit: 'gallon',
     btuPerUnit: 138500,
     efficiency: 0.85,
-    priceRange: [2.00, 5.00],
     installCost: 0,
     category: 'liquid',
   },
@@ -34,7 +34,6 @@ const FUELS = {
     unit: 'gallon',
     btuPerUnit: 135000,
     efficiency: 0.87,
-    priceRange: [2.50, 6.50],
     installCost: 0,
     category: 'liquid',
   },
@@ -44,7 +43,6 @@ const FUELS = {
     unit: 'gallon',
     btuPerUnit: 91500,
     efficiency: 0.90,
-    priceRange: [1.50, 3.50],
     installCost: 0,
     category: 'liquid',
   },
@@ -63,7 +61,6 @@ const FUELS = {
     unit: 'therm',
     btuPerUnit: 100000,
     efficiency: 0.93,
-    priceRange: [0.50, 2.50],
     installCost: 0,
     category: 'gas',
   },
