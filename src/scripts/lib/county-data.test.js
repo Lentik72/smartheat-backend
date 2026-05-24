@@ -46,7 +46,7 @@ function makeFakeSequelize() {
   const fakeSql2 = makeFakeSequelize();
   await getRecentPriceCount(fakeSql2, ['100'], 2.50, 7.00);
 
-  assert.strictEqual(fakeSql2.calls.length, 1, 'query called once');
+  assert.strictEqual(fakeSql2.calls.length, 1, 'query called once (custom args)');
   assert.deepStrictEqual(
     fakeSql2.calls[0].bind,
     [2.50, 7.00, ['100']],
@@ -54,7 +54,17 @@ function makeFakeSequelize() {
   );
 
   console.log('  ✓ custom args bind [2.50, 7.00, zips]');
-  console.log('✅ getRecentPriceCount: 2 tests passed');
+
+  // ── Test 3: empty zipPrefixes returns 0 without calling query ─────
+
+  const fakeSql3 = makeFakeSequelize();
+  const result = await getRecentPriceCount(fakeSql3, []);
+
+  assert.strictEqual(result, 0, 'returns 0 for empty zipPrefixes');
+  assert.strictEqual(fakeSql3.calls.length, 0, 'query NOT called for empty zipPrefixes');
+
+  console.log('  ✓ empty zipPrefixes returns 0 without querying');
+  console.log('✅ getRecentPriceCount: 3 tests passed');
 })().catch((err) => {
   console.error('  ✗ FAIL:', err.message);
   process.exit(1);
