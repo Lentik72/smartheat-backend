@@ -95,9 +95,15 @@ async function getStateOilStats(sequelize, stateCode, fuelType = 'heating_oil') 
 }
 
 /**
- * Count active prices within the last 48 hours for given ZIP prefixes
+ * Count active prices within the last 48 hours for given ZIP prefixes.
+ * Defaults to heating-oil range ($2–$6). Pass per-fuel min/max for non-oil callers.
  */
-async function getRecentPriceCount(sequelize, zipPrefixes) {
+async function getRecentPriceCount(
+  sequelize,
+  zipPrefixes,
+  minPrice = MIN_VALID_PRICE,
+  maxPrice = MAX_VALID_PRICE,
+) {
   if (!zipPrefixes || zipPrefixes.length === 0) return 0;
   const [results] = await sequelize.query(`
     SELECT COUNT(DISTINCT sp.supplier_id) as price_count
@@ -113,7 +119,7 @@ async function getRecentPriceCount(sequelize, zipPrefixes) {
         SELECT 1 FROM jsonb_array_elements_text(s.postal_codes_served) AS z
         WHERE LEFT(z, 3) = ANY($3::text[])
       )
-  `, { bind: [MIN_VALID_PRICE, MAX_VALID_PRICE, zipPrefixes] });
+  `, { bind: [minPrice, maxPrice, zipPrefixes] });
 
   return parseInt(results[0]?.price_count || 0, 10);
 }
