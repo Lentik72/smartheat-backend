@@ -32,7 +32,7 @@ function makeFakeSequelize() {
   const fakeSql = makeFakeSequelize();
   await getRecentPriceCount(fakeSql, ['100']);
 
-  assert.strictEqual(fakeSql.calls.length, 1, 'query called once');
+  assert.strictEqual(fakeSql.calls.length, 1, 'query called once (default args)');
   assert.deepStrictEqual(
     fakeSql.calls[0].bind,
     [2.00, 6.00, ['100']],
