@@ -306,10 +306,15 @@ async function computeMarketSignal() {
       return SignalCalculator.createEmptySignal('national');
     }
 
-    // Convert to price format expected by SignalCalculator
-    // Use heating oil retail estimate: WTI * 0.045 * 1.15
+    // Convert WTI observations to a heating-oil retail proxy for the TREND
+    // signal (SignalCalculator uses direction/deltas, not absolute level).
+    // V2.19.0: additive crude→retail model — (WTI/42 + crack + distribution) —
+    // matching market.js's wtiToRetail. The old multiplicative `WTI*0.045*1.15`
+    // overstated retail at high crude; the additive form is monotonic in WTI so
+    // the trend direction is unchanged while the level is realistic.
+    const wtiToRetail = (wti) => (wti / 42) + 0.75 + 1.25;
     const prices = observations.map(obs => ({
-      pricePerGallon: parseFloat(obs.value) * 0.045 * 1.15,
+      pricePerGallon: wtiToRetail(parseFloat(obs.value)),
       scrapedAt: new Date(obs.date)
     }));
 

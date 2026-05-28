@@ -21,7 +21,20 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Oil price data fetching helper
+// V2.19.0: Additive crude→retail model. Heating-oil retail is mostly additive
+// (crude/barrel-equivalent + crack spread + distribution margin), NOT a
+// multiplier of crude — the old `WTI × 0.045 × 1.15` overshot badly at high
+// crude (WTI $112 → $5.81 vs real retail ~$4.67). These constants are only used
+// for the WTI FALLBACK path; the primary retail source is scraped supplier
+// prices (getScrapedFuelPrice). Documented in docs/price-pipeline.md.
+const CRUDE_GAL_PER_BARREL = 42;
+const HEATING_OIL_CRACK_SPREAD = 0.75;   // $/gal wholesale crack over crude
+const HEATING_OIL_DISTRIBUTION = 1.25;   // $/gal retail margin over wholesale
+const wtiToWholesale = (wti) => (wti / CRUDE_GAL_PER_BARREL) + HEATING_OIL_CRACK_SPREAD;
+const wtiToRetail = (wti) => wtiToWholesale(wti) + HEATING_OIL_DISTRIBUTION;
+
+// Oil price data fetching helper.
+// V2.19.0: deterministic (no Math.random jitter) + additive crude→retail model.
 const fetchOilPriceData = async (logger) => {
   const fetch = (await import('node-fetch')).default;
   const API_KEYS = {
@@ -49,10 +62,10 @@ const fetchOilPriceData = async (logger) => {
           return {
             source: 'FRED',
             wtiCrude: latestPrice,
-            brentCrude: latestPrice + 3.0 + (Math.random() * 2 - 1), // Approximate spread
-            heatingOilWholesale: latestPrice * 0.045 + (Math.random() * 0.02 - 0.01),
-            heatingOilRetail: latestPrice * 0.045 * 1.15 + (Math.random() * 0.05 - 0.025),
-            naturalGas: 2.5 + (Math.random() * 1.0 - 0.5), // $/MCF
+            brentCrude: latestPrice + 3.0, // approximate Brent-WTI spread
+            heatingOilWholesale: wtiToWholesale(latestPrice),
+            heatingOilRetail: wtiToRetail(latestPrice),
+            naturalGas: 2.5, // $/MCF placeholder (not used for the cost estimate)
             change24h: latestPrice - previousPrice,
             changePercent24h: ((latestPrice - previousPrice) / previousPrice) * 100,
             lastUpdated: new Date().toISOString(),
@@ -86,9 +99,9 @@ const fetchOilPriceData = async (logger) => {
             source: 'AlphaVantage',
             wtiCrude: latestPrice,
             brentCrude: latestPrice + 3.0,
-            heatingOilWholesale: latestPrice * 0.045,
-            heatingOilRetail: latestPrice * 0.045 * 1.15,
-            naturalGas: 2.5 + (Math.random() * 1.0 - 0.5),
+            heatingOilWholesale: wtiToWholesale(latestPrice),
+            heatingOilRetail: wtiToRetail(latestPrice),
+            naturalGas: 2.5,
             change24h: latestPrice - previousPrice,
             changePercent24h: ((latestPrice - previousPrice) / previousPrice) * 100,
             lastUpdated: new Date().toISOString(),
@@ -102,23 +115,80 @@ const fetchOilPriceData = async (logger) => {
     }
   }
   
-  // Final fallback - realistic mock data
-  logger.warn('All market APIs failed, using estimated data');
-  const baseWTI = 75.0 + (Math.random() * 15 - 7.5); // $67.50-$82.50 range
-  const dailyChange = (Math.random() * 6 - 3); // ±$3 daily change
-  
+  // Final fallback - deterministic estimate (V2.19.0: no random jitter).
+  // Last resort only — reached when FRED + Alpha Vantage both fail AND there is
+  // no scraped supplier data for the fuel. Fixed sane base so the value is
+  // stable across calls rather than jittering on a trust surface.
+  logger.warn('All market APIs failed, using deterministic estimate');
+  const baseWTI = 75.0;
   return {
     source: 'Estimated',
     wtiCrude: baseWTI,
-    brentCrude: baseWTI + 2.5 + (Math.random() * 2 - 1),
-    heatingOilWholesale: baseWTI * 0.045 + (Math.random() * 0.1 - 0.05),
-    heatingOilRetail: baseWTI * 0.045 * 1.15 + (Math.random() * 0.15 - 0.075),
-    naturalGas: 2.5 + (Math.random() * 1.5 - 0.75),
-    change24h: dailyChange,
-    changePercent24h: (dailyChange / baseWTI) * 100,
+    brentCrude: baseWTI + 2.5,
+    heatingOilWholesale: wtiToWholesale(baseWTI),
+    heatingOilRetail: wtiToRetail(baseWTI),
+    naturalGas: 2.5,
+    change24h: 0,
+    changePercent24h: 0,
     lastUpdated: new Date().toISOString(),
     dataSource: 'Market Estimation (APIs Unavailable)',
     reliability: 'low'
+  };
+};
+
+// V2.19.0: Fuel-aware price bands for the scraped-median query. The leaderboard's
+// [2.00, 6.00] band was tuned for heating oil and would clip legitimate kerosene
+// (>$6) and propane (<$2) prices, biasing their medians. Per-fuel bands fix that.
+const FUEL_PRICE_BANDS = {
+  heating_oil: [2.00, 6.00],
+  kerosene: [3.00, 8.00],
+  propane: [1.00, 5.00]
+};
+const SUPPORTED_FUELS = Object.keys(FUEL_PRICE_BANDS);
+
+// V2.19.0: Real scraped supplier-price MEDIAN for a fuel (national).
+// This is the PRIMARY retail source for the cost estimate, replacing the
+// WTI-derived proxy. Mirrors the /leaderboard freshness/displayable filter
+// (active, allow_price_display, valid, not expired, ≤36h, latest-per-supplier)
+// but national (no GROUP BY state) and fuel-aware band. Parameterized.
+const getScrapedFuelPrice = async (sequelize, fuelType) => {
+  const band = FUEL_PRICE_BANDS[fuelType] || FUEL_PRICE_BANDS.heating_oil;
+  const [rows] = await sequelize.query(`
+    SELECT
+      ROUND((PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sp.price_per_gallon))::numeric, 3) AS median_price,
+      ROUND(MIN(sp.price_per_gallon)::numeric, 2) AS min_price,
+      ROUND(MAX(sp.price_per_gallon)::numeric, 2) AS max_price,
+      COUNT(*) AS n,
+      MAX(sp.scraped_at) AS as_of
+    FROM suppliers s
+    JOIN supplier_prices sp ON s.id = sp.supplier_id
+    WHERE s.active = true
+      AND s.allow_price_display = true
+      AND sp.is_valid = true
+      AND sp.expires_at > NOW()
+      AND sp.scraped_at > NOW() - INTERVAL '36 hours'
+      AND sp.fuel_type = :fuelType
+      AND sp.source_type != 'aggregator_signal'
+      AND sp.price_per_gallon BETWEEN :minBand AND :maxBand
+      AND sp.scraped_at = (
+        SELECT MAX(sp2.scraped_at) FROM supplier_prices sp2
+        WHERE sp2.supplier_id = s.id
+          AND sp2.is_valid = true
+          AND sp2.expires_at > NOW()
+          AND sp2.scraped_at > NOW() - INTERVAL '36 hours'
+          AND sp2.fuel_type = :fuelType
+          AND sp2.source_type != 'aggregator_signal'
+      )
+  `, { replacements: { fuelType, minBand: band[0], maxBand: band[1] } });
+
+  const row = rows && rows[0];
+  if (!row || row.median_price == null || parseInt(row.n, 10) === 0) return null;
+  return {
+    median: parseFloat(row.median_price),
+    min: row.min_price != null ? parseFloat(row.min_price) : null,
+    max: row.max_price != null ? parseFloat(row.max_price) : null,
+    supplierCount: parseInt(row.n, 10),
+    asOf: row.as_of ? new Date(row.as_of).toISOString() : null
   };
 };
 
@@ -378,24 +448,79 @@ router.get('/leaderboard', async (req, res) => {
   }
 });
 
-// GET /api/market/oil-prices - Enhanced oil price data
-router.get('/oil-prices', async (req, res) => {
+// GET /api/market/oil-prices - Enhanced, fuel-aware price data
+// V2.19.0: primary retail source is the scraped supplier-price median per fuel
+// (?fuel=heating_oil|kerosene|propane). WTI/FRED is trend + oil-only fallback.
+router.get('/oil-prices',
+  query('fuel').optional().isIn(SUPPORTED_FUELS).withMessage('Invalid fuel type'),
+  query('zip').optional().matches(/^\d{5}$/).withMessage('Invalid ZIP code format'),
+  handleValidationErrors,
+  async (req, res) => {
   try {
     const cache = req.app.locals.cache;
     const logger = req.app.locals.logger;
-    const cacheKey = 'enhanced_oil_prices';
-    
+    const sequelize = req.app.locals.sequelize;
+    const fuelType = req.query.fuel || 'heating_oil';
+    // V2.19.0: kill switch — MARKET_FUEL_AWARE=false reverts to the legacy
+    // (jitter-free) oil-only WTI path without a redeploy.
+    const fuelAwareEnabled = process.env.MARKET_FUEL_AWARE !== 'false';
+
+    // V2.19.0: per-fuel + per-mode cache key. Was a single 'enhanced_oil_prices'
+    // key (first-fuel-wins for the whole TTL). Mode segment ensures flipping
+    // MARKET_FUEL_AWARE doesn't keep serving a cached fuel-aware payload (or
+    // vice versa) for up to 30 min.
+    const cacheKey = `enhanced_oil_prices_${fuelType}_${fuelAwareEnabled ? 'fa' : 'legacy'}`;
     const cached = cache.get(cacheKey);
     if (cached) {
-      logger.info('📦 Cache hit: enhanced oil prices');
+      logger.info(`📦 Cache hit: ${cacheKey}`);
       return res.json(cached);
     }
-    
+
+    // WTI + retained legacy fields (wtiCrude, heatingOilRetail, etc.) — kept for
+    // forward-compat with older iOS builds and the market-trend signal.
     const oilData = await fetchOilPriceData(logger);
-    
-    // Add market context and trends
+
+    // V2.19.0: fuel-aware scraped median = primary retail source.
+    let pricePerGallon = null;
+    let priceBasis = 'unavailable';
+    let supplierCount = 0;
+    let asOf = null;
+    let isAlreadyRegional = false;
+    let priceRange = null;
+
+    if (fuelAwareEnabled && sequelize) {
+      const scraped = await getScrapedFuelPrice(sequelize, fuelType)
+        .catch(err => { logger.warn(`Scraped fuel price failed (${fuelType}): ${err.message}`); return null; });
+      if (scraped) {
+        pricePerGallon = scraped.median;
+        priceBasis = 'scraped_median';
+        supplierCount = scraped.supplierCount;
+        asOf = scraped.asOf;
+        isAlreadyRegional = true; // real (NE-heavy) local data — iOS must NOT regionalize
+        priceRange = { low: scraped.min, high: scraped.max };
+      }
+    }
+
+    // Fallback: heating oil → additive WTI-derived (true national base, iOS
+    // regionalizes). Kerosene/propane have no crude proxy → stay unavailable.
+    if (pricePerGallon == null && fuelType === 'heating_oil') {
+      pricePerGallon = oilData.heatingOilRetail;
+      priceBasis = 'wti_fallback';
+      isAlreadyRegional = false;
+      asOf = oilData.lastUpdated;
+    }
+
     const enhancedData = {
-      ...oilData,
+      ...oilData, // RETAIN existing fields for forward-compat (never remove/rename)
+      // V2.19.0 fuel-aware fields:
+      fuelType,
+      pricePerGallon,
+      priceBasis,
+      scope: 'national',
+      supplierCount,
+      asOf,
+      isAlreadyRegional,
+      priceRange,
       marketContext: {
         volatility: Math.abs(oilData.changePercent24h) > 3 ? 'high' : 'moderate',
         trend: oilData.change24h > 1 ? 'bullish' : oilData.change24h < -1 ? 'bearish' : 'stable',
@@ -412,12 +537,12 @@ router.get('/oil-prices', async (req, res) => {
         factors: ['seasonal_demand', 'inventory_levels', 'geopolitical_events']
       }
     };
-    
-    // Cache for 30 minutes (oil prices change frequently)
+
+    // Cache for 30 minutes (per fuel)
     cache.set(cacheKey, enhancedData, 1800);
-    
+
     res.json(enhancedData);
-    
+
   } catch (error) {
     req.app.locals.logger.error('Enhanced oil prices error:', error);
     res.status(500).json({

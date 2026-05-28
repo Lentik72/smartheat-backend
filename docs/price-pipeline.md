@@ -44,7 +44,7 @@ Five pattern types in scrape-config.json:
 - **direct**: First regex match on page
 - **table**: Tiered pricing — sorts ascending, takes lowest (highest-volume tier). `targetTier` overrides selection
 - **split**: Price split across HTML elements (e.g., "$3" + "199" = $3.199)
-- **json_api**: Fetch JSON endpoint, extract via dot-notation `jsonPath`. **V2.15.0** — secondary fuels (e.g. kerosene) can define their own `fuels.<fuel>.apiUrl` + `jsonPath` for a separate call; the regex-based `fuels.<fuel>.priceRegex` path still applies when the primary value is a text blob. Per-fuel failures log to console and are omitted from `fuelPrices` but do not fail the primary scrape. Note: `SupplierPrice.fuelType` is an ENUM of `('heating_oil', 'kerosene')` — adding a fuel beyond this list requires coordinated ENUM + FUEL_PRICE_RANGES + model change.
+- **json_api**: Fetch JSON endpoint, extract via dot-notation `jsonPath`. **V2.15.0** — secondary fuels (e.g. kerosene) can define their own `fuels.<fuel>.apiUrl` + `jsonPath` for a separate call; the regex-based `fuels.<fuel>.priceRegex` path still applies when the primary value is a text blob. Per-fuel failures log to console and are omitted from `fuelPrices` but do not fail the primary scrape. Note: `SupplierPrice.fuelType` is an ENUM of `('heating_oil', 'kerosene', 'propane')` (verified in prod 2026-05-28) — adding a fuel beyond this list requires coordinated ENUM + FUEL_PRICE_RANGES + model change.
 - **post_form** (V3.0.0): POST form-encoded body (e.g. `wcp_id=2&zip_code=06712`) to a price endpoint, then extract from the returned HTML using the same tier-sort logic as `table`. Used for Droplet-hosted suppliers (`hostGroup: "droplet"`). Browser-class User-Agent + supplier-homepage Referer required — bot UAs are rejected. Kill switch: `SCRAPE_SKIP_DROPLET=true`. **Multi-fuel (heatingoil-qt3c)**: Droplet returns identical HTML structure for every product, so secondary fuels need a per-fuel `formBody` override (e.g. `fuels.propane.formBody.wcp_id="1"`). The scraper does a separate POST per fuel, throttled 1500ms apart, after the primary POST succeeds. Secondary failures log with `[multi-fuel-post]` prefix and never affect primary success or the Droplet circuit breaker. `extractFuelPrices()` skips any fuel that declares `formBody` to prevent same-HTML-bleed (running propane regex against oil HTML would match because the markup is identical).
 
 ### `primaryFuelOptional` (V3.x.0)
@@ -95,6 +95,19 @@ Phone matching: extracts last 10 digits, looks up `phone_last10`. Multiple match
 ## Aggregator Signals
 
 Config entries with `displayable: false` are scraped as `source_type='aggregator_signal'`. These are **explicitly excluded** from all user-facing price queries (`sourceType != 'aggregator_signal'`). Used only for market intelligence.
+
+## Cost-estimate price source — `/api/market/oil-prices` (V2.19.0)
+
+The iOS Forecast cost estimate's market price comes from `/api/market/oil-prices`. **Primary source is the scraped supplier-price MEDIAN per fuel**, NOT a crude-derived proxy.
+
+- `?fuel=heating_oil|kerosene|propane` (default `heating_oil`), validated via express-validator enum; optional `?zip=` (5-digit).
+- `getScrapedFuelPrice(sequelize, fuel)` runs the leaderboard freshness/displayable filter (active, allow_price_display, valid, not expired, ≤36h, latest-per-supplier) **national** (no GROUP BY state) with a **fuel-aware price band** — `FUEL_PRICE_BANDS` in `market.js`: oil `[2,6]`, kerosene `[3,8]`, propane `[1,5]`. The old single `[2,6]` band clipped kerosene >$6 and propane <$2, biasing their medians. Aggregates with `PERCENTILE_CONT(0.5)`.
+- **Fallback ladder:** scraped median → (heating oil ONLY) additive WTI-derived → `unavailable`. Kerosene/propane with no scraped data return `priceBasis:"unavailable"` (no crude proxy), never a cross-fuel number.
+- **WTI is trend + oil-only fallback, never the primary retail price.** FRED `DCOILWTICO` is crude. The crude→retail conversion (`wtiToRetail` in `market.js`, and the trend proxy in `MarketIntelligenceService.computeMarketSignal`) is **additive**: `(WTI/42) + CRACK_SPREAD(0.75) + DISTRIBUTION(1.25)`. The prior multiplicative `WTI × 0.045 × 1.15` overshot at high crude (WTI $112 → $5.81 vs real retail ~$4.67). **No `Math.random()` jitter** — prices are deterministic.
+- **Response fields** (additive — existing `wtiCrude`/`heatingOilRetail`/etc. retained for forward-compat): `fuelType`, `pricePerGallon` (null if unavailable), `priceBasis` (`scraped_median`|`wti_fallback`|`unavailable`), `scope` (`national`), `supplierCount`, `asOf`, `isAlreadyRegional` (true for scraped — iOS must NOT apply its regional multiplier; false for WTI fallback). `priceRange` carries scraped min/max.
+- **Per-fuel cache key** `enhanced_oil_prices_${fuel}` (30-min TTL). A single key would serve first-fuel-wins.
+- **Kill switch:** `MARKET_FUEL_AWARE=false` reverts to the legacy oil-only WTI path (still jitter-free) without a redeploy.
+- Scope is national (Northeast-heavy, since suppliers are NE); state/ZIP scoping deferred (propane/kerosene always fall to national at current coverage).
 
 ## Supplier Diagnostics (V2.13.0)
 
