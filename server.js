@@ -342,6 +342,52 @@ app.use((req, res, next) => {
       'getcodoil': null,             // removed broker — 410 Gone
       'discount-oil-llc': null,      // never listed — 410 Gone (heatingoil-xaef)
       's-s-fuel': 's-s-fuel',        // merged duplicate, keep canonical
+
+      // heatingoil-qbd0.9: deactivated suppliers whose pages stopped generating
+      // and now 404. 301 only where the SAME business has a live active listing
+      // (verified same name + same city, target 200); otherwise 410 Gone.
+      // 301 — renamed/same business, active successor verified live:
+      'ss-fuel': 's-s-fuel',                          // SS Fuel → S&S Fuel, Oakdale NY
+      'check-oil': 'check-oil-and-propane',           // Check Oil → Check Oil & Propane, Peekskill NY
+      'chrysalis-fuel-inc': 'chrysalis-fuel',         // Cold Spring NY
+      'economy-fuel': 'economy-fuel-peekskill',       // Economy Fuel, Peekskill NY (NOT the CT/New City ones)
+      'johns-fuel-oil': 'john-s-fuel-oil',            // John's Fuel Oil, Holtsville NY
+      'john-s-oil': 'johns-oil-service',              // John's Oil Service, Lynn MA
+      'kelleys-oil': 'kelley-s-oil',                  // Kelley's Oil, S. Weymouth MA
+      'superior-fuel-oil': 'superior-fuel-oil-inc',   // Superior Fuel Oil, Peekskill NY
+      'jurassic-fuels': 'jurassic-fuels-inc',         // Poughkeepsie → Lower Hudson Valley NY
+      // 410 — no active successor (conservative default for deactivated listings):
+      'bees-fuel-oil': null,                          // Bee's Fuel Oil, Walden NY
+      'simsbury-oil-company': null,                   // Newington CT
+      'martin-heating-oil-llc': null,                 // Wolcott CT
+      'brazos-oil-llc': null,                         // Portland CT
+      'terroco-oil-de': null,                         // Dover DE
+      'springers-oil-service': null,                  // Feeding Hills MA
+      'online-fuel-company': null,                    // Scarborough ME
+      'online-fuel-co': null,                         // Portsmouth NH
+      'bruce-hall-corp': null,                        // Cooperstown NY
+      'dutile-sons': null,                            // Laconia NH
+      'direct-oil': null,                             // Thornwood NY (direct-oil-north is a distinct entity — NOT a redirect)
+      'absolute-energy': null,                        // Dobbs Ferry NY
+      'fielding-s-oil-propane': null,                 // Dover NH
+      'presby-oil': null,                             // Bethlehem NH
+      'jc-discount-oil': null,                        // Coram NY
+      'coastal-energy-ct': null,                      // Norwalk CT
+      'the-oil-club': null,                           // Emmaus PA
+      'oil-discounters': null,                        // Emmaus PA
+      'affordable-fuel-inc': null,                    // Seekonk MA
+      'romeos-fuel': null,                            // Holtsville NY
+      'trinks-brothers-oil-llc': null,                // Manchester CT
+      'piro-paving-petroleum': null,                  // Norwalk CT
+      'state-fuel-inc': null,                         // Rochester NY
+      'long-island-cod': null,                        // Mineola NY
+      'cod-oil-long-island': null,                    // Hicksville NY
+      'nj-easy': null,                                // Central NJ
+      'miller-s-energy': null,                        // Chesapeake VA
+      'sandri-energy': null,                          // Greenfield MA
+      'oilex-fuel': null,                             // Mineola NY
+      'leonard-splaine-co': null,                     // Woodbridge VA
+      'aj-s-discount-oil': 'ajs-discount-oil',        // AJ's Discount Oil, Portland ME (active successor)
     };
     const slug = req.path.slice('/supplier/'.length);
     if (slug in SLUG_REDIRECTS) {
