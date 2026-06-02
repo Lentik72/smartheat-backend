@@ -13,6 +13,8 @@
 //
 // Run: node src/utils/review-queue-sql.test.js
 
+const fs = require('fs');
+const path = require('path');
 const { buildBlockedSitesSQL, buildReviewCountSQL } = require('./review-queue-sql');
 
 let passed = 0, failed = 0;
@@ -45,6 +47,24 @@ console.log('\n=== buildReviewCountSQL (email/admin) ===');
   has(sql, /lo\.scraped_at\s*<\s*NOW\(\)\s*-\s*INTERVAL '48 hours'/, 'blocked guard: latest oil stale (older than 48h)');
   has(sql, /NOT EXISTS\s*\(\s*SELECT 1 FROM supplier_prices sp2\b[\s\S]*?sp2\.is_valid = true/, 'needs_initial: no valid price');
   hasNot(sql, /expires_at/, 'does NOT key off expires_at');
+}
+
+console.log('\n=== wiring: call sites import + call the builders ===');
+{
+  const read = p => fs.readFileSync(path.join(__dirname, p), 'utf8');
+  const pr = read('../routes/price-review.js');
+  has(pr, /require\(['"]\.\.\/utils\/review-queue-sql['"]\)/, 'price-review.js requires the util');
+  has(pr, /buildBlockedSitesSQL\(\)/, 'price-review.js calls buildBlockedSitesSQL()');
+  const srv = read('../../server.js');
+  has(srv, /require\(['"]\.\/src\/utils\/review-queue-sql['"]\)/, 'server.js requires the util');
+  has(srv, /buildReviewCountSQL\(\)/, 'server.js calls buildReviewCountSQL()');
+  const adm = read('../routes/admin.js');
+  has(adm, /require\(['"]\.\.\/utils\/review-queue-sql['"]\)/, 'admin.js requires the util');
+  has(adm, /buildReviewCountSQL\(\)/, 'admin.js calls buildReviewCountSQL()');
+  // the old inline queries must be GONE (replaced, not left alongside the new call)
+  hasNot(pr,  /'scrape_blocked' as review_reason/, 'price-review.js no longer inlines the blocked query');
+  hasNot(srv, /COUNT\(DISTINCT s\.id\) as cnt/, 'server.js no longer inlines the old guard-less count query');
+  hasNot(adm, /COUNT\(DISTINCT s\.id\) as cnt/, 'admin.js no longer inlines the old guard-less count query');
 }
 
 console.log(`\n${failed===0?'✅':'❌'} ${passed} passed, ${failed} failed`);

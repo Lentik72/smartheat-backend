@@ -53,6 +53,7 @@ const { trailingSlashRedirectTarget } = require('./src/utils/trailing-slash-redi
 const { cityCountyRedirectTarget } = require('./src/utils/city-county-redirect');
 const { legacyHeatingOilRedirectTarget } = require('./src/utils/legacy-heating-oil-redirect');
 const { subpathIndexRedirectTarget } = require('./src/utils/subpath-index-redirect');
+const { buildReviewCountSQL } = require('./src/utils/review-queue-sql');
 
 // Import route modules with error handling
 let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes, dashboardRoutes, smsWebhookRoutes;
@@ -1673,19 +1674,7 @@ function scheduleCoverageIntelligence(cronMonitor) {
             // Count review items (excluding dismissed) for the email
             let reviewCount = 0;
             try {
-              const [countResult] = await sequelize.query(`
-                SELECT COUNT(DISTINCT s.id) as cnt FROM suppliers s
-                WHERE s.active = true AND s.website IS NOT NULL AND s.allow_price_display = true
-                  AND NOT EXISTS (SELECT 1 FROM price_review_dismissals d WHERE d.supplier_id = s.id AND d.dismiss_until > NOW())
-                  AND (
-                    EXISTS (
-                      SELECT 1 FROM supplier_prices sp WHERE sp.supplier_id = s.id AND sp.is_valid = true
-                      AND (sp.price_per_gallon < 2.00 OR sp.price_per_gallon > 5.50)
-                    )
-                    OR s.scrape_status IN ('cooldown', 'phone_only')
-                    OR NOT EXISTS (SELECT 1 FROM supplier_prices sp2 WHERE sp2.supplier_id = s.id AND sp2.is_valid = true)
-                  )
-              `);
+              const [countResult] = await sequelize.query(buildReviewCountSQL());
               reviewCount = parseInt(countResult[0]?.cnt || 0);
             } catch (countErr) {
               // price_review_dismissals table may not exist yet

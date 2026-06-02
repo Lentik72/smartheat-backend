@@ -17,6 +17,7 @@ const router = express.Router();
 
 // Diagnostic classification from SupplierDiagnosticsService
 const { classifyError, CATEGORIES } = require('../services/SupplierDiagnosticsService');
+const { buildBlockedSitesSQL } = require('../utils/review-queue-sql');
 
 // heatingoil-kjnt: fuel-aware helpers for HEALTH-bucket queries (stale-list).
 // Other queries in this file (suspicious-band, blocked-context, /stats) stay
@@ -246,38 +247,7 @@ router.get('/', requireAuth, async (req, res) => {
     // 2. Sites in cooldown or phone_only (from scrape_status column on suppliers)
     let blockedSites = [];
     try {
-      const [result] = await sequelize.query(`
-        WITH latest_prices AS (
-          SELECT DISTINCT ON (supplier_id)
-            supplier_id,
-            price_per_gallon AS current_price,
-            scraped_at
-          FROM supplier_prices
-          WHERE is_valid = true
-            AND fuel_type = 'heating_oil'
-          ORDER BY supplier_id, scraped_at DESC
-        )
-        SELECT
-          s.id,
-          s.name,
-          s.website,
-          s.city,
-          s.state,
-          s.last_scrape_error,
-          s.scrape_status as status,
-          s.consecutive_scrape_failures,
-          s.last_scrape_failure_at,
-          s.scrape_cooldown_until as cooldown_until,
-          lp.current_price,
-          lp.scraped_at,
-          'scrape_blocked' as review_reason
-        FROM suppliers s
-        LEFT JOIN latest_prices lp ON lp.supplier_id = s.id
-        WHERE s.active = true
-          AND s.website IS NOT NULL
-          AND s.allow_price_display = true
-          AND (s.scrape_status = 'cooldown' OR s.scrape_status = 'phone_only')
-      `);
+      const [result] = await sequelize.query(buildBlockedSitesSQL());
       blockedSites = result;
     } catch (err) {
       // scrape_status column may not exist - skip this check

@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 const { initDatabase, DataPersistence } = require('../models/database');
+const { buildReviewCountSQL } = require('../utils/review-queue-sql');
 
 // Initialize persistence layer
 let dataPersistence;
@@ -1011,17 +1012,7 @@ router.post('/trigger-daily-report', async (req, res) => {
       const baseUrl = process.env.BACKEND_URL || 'https://www.gethomeheat.com';
       let reviewCount = 0;
       try {
-        const [countResult] = await sequelize.query(`
-          SELECT COUNT(DISTINCT s.id) as cnt FROM suppliers s
-          WHERE s.active = true AND s.website IS NOT NULL AND s.allow_price_display = true
-            AND NOT EXISTS (SELECT 1 FROM price_review_dismissals d WHERE d.supplier_id = s.id AND d.dismiss_until > NOW())
-            AND (
-              EXISTS (SELECT 1 FROM supplier_prices sp WHERE sp.supplier_id = s.id AND sp.is_valid = true
-                AND (sp.price_per_gallon < 2.00 OR sp.price_per_gallon > 5.50))
-              OR s.scrape_status IN ('cooldown', 'phone_only')
-              OR NOT EXISTS (SELECT 1 FROM supplier_prices sp2 WHERE sp2.supplier_id = s.id AND sp2.is_valid = true)
-            )
-        `);
+        const [countResult] = await sequelize.query(buildReviewCountSQL());
         reviewCount = parseInt(countResult[0]?.cnt || 0);
       } catch (e) { /* price_review_dismissals may not exist */ }
       priceReviewLink = { url: `${baseUrl}/price-review.html?mltoken=${token}`, count: reviewCount };
