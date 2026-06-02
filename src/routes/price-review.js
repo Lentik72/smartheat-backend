@@ -18,6 +18,7 @@ const router = express.Router();
 // Diagnostic classification from SupplierDiagnosticsService
 const { classifyError, CATEGORIES } = require('../services/SupplierDiagnosticsService');
 const { buildBlockedSitesSQL } = require('../utils/review-queue-sql');
+const { recordSuccess } = require('../services/scrapeBackoff');
 
 // heatingoil-kjnt: fuel-aware helpers for HEALTH-bucket queries (stale-list).
 // Other queries in this file (suspicious-band, blocked-context, /stats) stay
@@ -416,7 +417,7 @@ router.get('/', requireAuth, async (req, res) => {
  *
  * Body: { prices: [{ supplierId, price, minGallons? }] }
  */
-router.post('/submit', requireAuth, async (req, res) => {
+async function submitPrices(req, res) {
   const sequelize = req.app.locals.sequelize;
   const logger = req.app.locals.logger;
 
@@ -489,6 +490,20 @@ router.post('/submit', requireAuth, async (req, res) => {
         });
 
         logger?.info(`[PriceReview] Updated ${supplier[0].name}: $${priceNum.toFixed(3)}`);
+
+        // Manual oil verification gives us a fresh current OIL price → clear oil
+        // scrape-backoff so the supplier leaves the review queue and the daily
+        // cron retries it. Oil-only: a kerosene-only manual price must NOT clear
+        // oil backoff (the blocked/suspicious logic is oil-only).
+        // NOTE: no transaction here — each query autocommits, so the INSERT above
+        // is already persisted. If recordSuccess throws, the per-supplier catch
+        // reports this row as failed even though the price IS stored (operator
+        // re-submits; insert is idempotent: re-expire + re-insert). Placing it
+        // inside the try is the right tradeoff vs aborting the whole submit.
+        if (fuel === 'heating_oil') {
+          await recordSuccess(sequelize, supplierId);
+        }
+
         results.push({
           supplierId,
           name: supplier[0].name,
@@ -515,7 +530,8 @@ router.post('/submit', requireAuth, async (req, res) => {
     logger?.error('[PriceReview] Submit error:', error.message);
     res.status(500).json({ error: 'Failed to submit prices', message: error.message });
   }
-});
+}
+router.post('/submit', requireAuth, submitPrices);
 
 /**
  * POST /api/price-review/dismiss
@@ -643,3 +659,4 @@ router.get('/stats', requireAuth, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.submitPrices = submitPrices;
