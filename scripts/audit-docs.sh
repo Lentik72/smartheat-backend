@@ -47,7 +47,7 @@ MAX_30D=$(extract "$SRC/services/scrapeBackoff.js" 'MAX_FAILURES_IN_30')
 echo "  Max failures in 30 days: ${MAX_30D} (doc: 3)"
 [ "$MAX_30D" != "3" ] && [ "$MAX_30D" != "?" ] && MISMATCHES=$((MISMATCHES + 1)) && echo "    ^ MISMATCH" || true
 
-DROP=$(extract "$BACKEND_DIR/scripts/scrape-prices.js" 'MAX_PRICE_DROP')
+DROP=$(extract "$SRC/utils/price-sanity.js" 'MAX_PRICE_DROP\s*=')
 echo "  Max price drop: ${DROP} (doc: 0.25)"
 [ "$DROP" != "0.25" ] && [ "$DROP" != "?" ] && MISMATCHES=$((MISMATCHES + 1)) && echo "    ^ MISMATCH" || true
 

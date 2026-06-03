@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 const { initDatabase, DataPersistence } = require('../models/database');
 const { buildReviewCountSQL } = require('../utils/review-queue-sql');
+const { getRecentRejections } = require('../utils/price-sanity');
 
 // Initialize persistence layer
 let dataPersistence;
@@ -1104,16 +1105,11 @@ router.post('/trigger-daily-report', async (req, res) => {
       logger.warn('[DailyReports] Manual trigger: failed to generate diagnostics:', err.message);
     }
 
-    // 6. Price rejections
+    // 6. Price rejections (shared source with the auto cron — see price-sanity.js)
     let priceRejections = null;
     try {
-      const [rejectRows] = await sequelize.query(`
-        SELECT rejections FROM scrape_runs WHERE run_at > NOW() - INTERVAL '24 hours'
-          AND rejections != '[]'::jsonb ORDER BY run_at DESC LIMIT 1
-      `);
-      if (rejectRows.length > 0 && rejectRows[0].rejections?.length > 0) {
-        priceRejections = rejectRows[0].rejections;
-      }
+      const rows = await getRecentRejections(sequelize);
+      if (rows.length > 0) priceRejections = rows;
     } catch (err) {
       logger.warn('[DailyReports] Manual trigger: failed to gather price rejections:', err.message);
     }
