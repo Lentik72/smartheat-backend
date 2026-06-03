@@ -36,6 +36,8 @@ const {
   getBackoffStats
 } = require('../src/services/scrapeBackoff');
 
+const { checkAndRecordPrice, getAllStateMedians } = require('../src/utils/price-sanity');
+
 // Parse command line args (only when run directly)
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
@@ -165,34 +167,8 @@ async function runScraper(options = {}) {
       fuelFailed: 0,   // V2.12.0: Additional fuel extractions that failed
     };
 
-    // V2.7.0: Price change protection threshold
-    const MAX_PRICE_DROP_PERCENT = 0.25; // Reject drops > 25%
-
-    // V3.1.0: Market outlier detection — reject prices far below the pack
-    // Catches scraping artifacts (e.g., gas station prices, card prices, wrong page section)
-    // V3.1.2: State-level median (not national) — prices vary significantly by state
-    const MAX_BELOW_MEDIAN_PERCENT = 0.25; // Reject prices > 25% below state median
-    const MIN_SUPPLIERS_FOR_MEDIAN = 5;    // Need enough data for a meaningful median
-    const stateMedians = {};
+    const stateMedians = await getAllStateMedians(sequelize);
     {
-      const [medianRows] = await sequelize.query(`
-        SELECT s.state,
-               PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sp.price_per_gallon::numeric) as median_price,
-               COUNT(DISTINCT sp.supplier_id) as supplier_count
-        FROM supplier_prices sp
-        JOIN suppliers s ON sp.supplier_id = s.id
-        WHERE sp.is_valid = true
-          AND sp.fuel_type = 'heating_oil'
-          AND sp.expires_at > NOW()
-          AND s.active = true
-          AND s.allow_price_display = true
-          AND s.state IS NOT NULL
-        GROUP BY s.state
-        HAVING COUNT(DISTINCT sp.supplier_id) >= ${MIN_SUPPLIERS_FOR_MEDIAN}
-      `);
-      for (const row of medianRows) {
-        stateMedians[row.state] = parseFloat(row.median_price);
-      }
       const stateList = Object.entries(stateMedians).map(([st, m]) => `${st}: $${m.toFixed(2)}`).join(', ');
       log.info(`📊 State medians (${Object.keys(stateMedians).length} states): ${stateList || 'none (< 5 suppliers per state)'}`);
     }
@@ -239,60 +215,23 @@ async function runScraper(options = {}) {
         // V2.7.0: Price change protection - check for suspicious drops
         let priceRejected = false;
         if (!opts.dryRun) {
-          // Fetch previous valid HEATING-OIL price for this supplier.
-          // MUST scope by fuel_type: the primary result is heating_oil (the insert
-          // below hardcodes it), and multi-fuel suppliers may have higher-priced
-          // kerosene/propane rows. Without the filter the latest cross-fuel row
-          // (e.g. kerosene $6.30 vs oil $4.20) was used as "previous", triggering
-          // false drop rejections (heatingoil-v5p0). Mirrors the per-fuel guard on
-          // the secondary-fuel path below.
           const [prevPrices] = await sequelize.query(`
             SELECT price_per_gallon FROM supplier_prices
             WHERE supplier_id = $1 AND fuel_type = 'heating_oil' AND is_valid = true
             ORDER BY scraped_at DESC LIMIT 1
           `, { bind: [result.supplierId] });
-
-          if (prevPrices.length > 0) {
-            const prevPrice = parseFloat(prevPrices[0].price_per_gallon);
-            const newPrice = result.pricePerGallon;
-            const dropPercent = (prevPrice - newPrice) / prevPrice;
-
-            if (dropPercent > MAX_PRICE_DROP_PERCENT) {
-              // Suspicious drop - reject this price
-              log.warn(`   ⚠️  REJECTED: $${newPrice.toFixed(3)} is ${(dropPercent * 100).toFixed(0)}% below previous $${prevPrice.toFixed(3)}`);
-              results.rejected.push({
-                supplierName: supplier.name,
-                supplierId: supplier.id,
-                newPrice,
-                previousPrice: prevPrice,
-                dropPercent: dropPercent * 100,
-                reason: `${(dropPercent * 100).toFixed(0)}% drop exceeds ${MAX_PRICE_DROP_PERCENT * 100}% threshold`
-              });
-              priceRejected = true;
-              // Move from success to rejected (don't count as success)
-              results.success.pop();
-            }
-          }
-
-          // V3.1.2: State-level outlier detection — reject prices far below the state pack
-          const stateMedian = supplier.state ? stateMedians[supplier.state] : null;
-          if (!priceRejected && stateMedian) {
-            const newPrice = result.pricePerGallon;
-            const belowMedian = (stateMedian - newPrice) / stateMedian;
-            if (belowMedian > MAX_BELOW_MEDIAN_PERCENT) {
-              log.warn(`   ⚠️  OUTLIER REJECTED: $${newPrice.toFixed(3)} is ${(belowMedian * 100).toFixed(0)}% below ${supplier.state} median $${stateMedian.toFixed(3)}`);
-              results.rejected.push({
-                supplierName: supplier.name,
-                supplierId: supplier.id,
-                state: supplier.state,
-                newPrice,
-                marketMedian: stateMedian,
-                belowMedianPercent: belowMedian * 100,
-                reason: `${(belowMedian * 100).toFixed(0)}% below ${supplier.state} median exceeds ${MAX_BELOW_MEDIAN_PERCENT * 100}% threshold`
-              });
-              priceRejected = true;
-              results.success.pop();
-            }
+          const prevPrice = prevPrices.length > 0 ? parseFloat(prevPrices[0].price_per_gallon) : null;
+          const verdict = await checkAndRecordPrice(sequelize, {
+            supplierId: supplier.id, supplierName: supplier.name, fuelType: 'heating_oil',
+            newPrice: result.pricePerGallon, prevPrice,
+            stateMedian: supplier.state ? stateMedians[supplier.state] : null, state: supplier.state,
+            source: 'batch',
+          }, log);
+          if (!verdict.ok) {
+            log.warn(`   ⚠️  REJECTED: $${result.pricePerGallon.toFixed(3)} — ${verdict.rejection.reason}`);
+            results.rejected.push({ supplierName: supplier.name, supplierId: supplier.id, newPrice: result.pricePerGallon, ...verdict.rejection });
+            results.success.pop();
+            priceRejected = true;
           }
         }
 
@@ -326,22 +265,18 @@ async function runScraper(options = {}) {
         if (!opts.dryRun && result.fuelPrices && result.fuelPrices.length > 0) {
           for (const fp of result.fuelPrices) {
             try {
-              // Price drop protection per fuel type
               const [prevFuelPrices] = await sequelize.query(`
                 SELECT price_per_gallon FROM supplier_prices
                 WHERE supplier_id = $1 AND fuel_type = $2 AND is_valid = true
                 ORDER BY scraped_at DESC LIMIT 1
               `, { bind: [result.supplierId, fp.fuelType] });
-
-              let fuelRejected = false;
-              if (prevFuelPrices.length > 0) {
-                const prevPrice = parseFloat(prevFuelPrices[0].price_per_gallon);
-                const dropPercent = (prevPrice - fp.price) / prevPrice;
-                if (dropPercent > MAX_PRICE_DROP_PERCENT) {
-                  log.warn(`   ⚠️  ${fp.fuelType} REJECTED: $${fp.price.toFixed(3)} is ${(dropPercent * 100).toFixed(0)}% below previous $${prevPrice.toFixed(3)}`);
-                  fuelRejected = true;
-                }
-              }
+              const prevFuel = prevFuelPrices.length > 0 ? parseFloat(prevFuelPrices[0].price_per_gallon) : null;
+              const fuelVerdict = await checkAndRecordPrice(sequelize, {
+                supplierId: result.supplierId, supplierName: supplier.name, fuelType: fp.fuelType,
+                newPrice: fp.price, prevPrice: prevFuel, stateMedian: null, source: 'batch',
+              }, log);
+              const fuelRejected = !fuelVerdict.ok;
+              if (fuelRejected) log.warn(`   ⚠️  ${fp.fuelType} REJECTED: $${fp.price.toFixed(3)} — ${fuelVerdict.rejection.reason}`);
               // No previous price = first ever for this fuel — always store (no drop to detect)
 
               if (!fuelRejected) {
