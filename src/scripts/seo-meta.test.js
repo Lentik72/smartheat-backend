@@ -6,7 +6,7 @@
  */
 const assert = require('assert');
 const {
-  stateMeta, countyMeta, cityMeta, regionMeta, zipMeta, fitTitle, TITLE_CORE_MAX,
+  stateMeta, countyMeta, cityMeta, regionMeta, zipMeta, supplierMeta, fitTitle, TITLE_CORE_MAX,
 } = require('../../scripts/lib/seo-meta');
 
 // ── stateMeta (with price stats) ──
@@ -82,5 +82,22 @@ const {
   assert.ok(title.toLowerCase().includes('heating oil'), 'zip title keeps the keyword');
   assert.ok(title.length <= TITLE_CORE_MAX, `zip title within max: "${title}" (${title.length})`);
 }
+
+{ // supplierMeta — heatingoil-qbd0.2 supplier CTR
+  const { title, description } = supplierMeta({ name: 'Bryn Mawr Fuel', city: 'Yonkers', stateCode: 'NY', stats: null });
+  assert.ok(title.startsWith('Bryn Mawr Fuel'), 'supplier title leads with business name');
+  assert.ok(title.includes('Heating Oil Prices'), 'supplier title keeps keyword when it fits');
+  assert.ok(title.length <= TITLE_CORE_MAX, `supplier title within max: "${title}"`);
+  assert.ok(!title.includes('HomeHeat'), 'helper does not add brand');
+  assert.ok(description.includes('Yonkers, NY'), 'supplier description names city + state');
+  assert.ok(description.length <= 160, 'supplier description within 160');
+}
+{ const { title } = supplierMeta({ name: 'A'.repeat(45), city: 'Springfield', stateCode: 'MA', stats: null });
+  assert.ok(title.length <= TITLE_CORE_MAX, 'long-name supplier title still within max');
+  assert.ok(title.startsWith('A'.repeat(45)), 'long-name supplier title keeps full name'); }
+{ // double-escape guard: helper returns RAW name; render escapes exactly once
+  const { title } = supplierMeta({ name: 'S&S Oil', city: 'Derby', stateCode: 'CT', stats: null });
+  assert.ok(title.includes('S&S Oil'), 'helper keeps raw ampersand; escaping happens once at render');
+  assert.ok(!title.includes('&amp;'), 'helper does NOT pre-escape (avoids S&amp;amp;S)'); }
 
 console.log('✅ seo-meta: all assertions passed');

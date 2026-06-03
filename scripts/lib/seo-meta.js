@@ -95,7 +95,19 @@ function zipMeta({ regionName, zipPrefix, supplierCount, stats }) {
   return { title, description };
 }
 
+/** Supplier profile page — /supplier/{slug} (heatingoil-qbd0.2 supplier CTR) */
+function supplierMeta({ name, city, stateCode, stats }) {
+  const loc = (city && stateCode) ? ` in ${city}, ${stateCode}` : '';
+  const title = fitTitle(name, [' Heating Oil Prices', loc]);
+  const where = (city && stateCode) ? ` in ${city}, ${stateCode}` : '';
+  const description = clampDesc(
+    `Compare ${name} heating oil prices${where}${priceClause(stats)}. ` +
+    `See their current rate, service area, hours, and contact info. Updated daily.`,
+  );
+  return { title, description };
+}
+
 module.exports = {
-  stateMeta, countyMeta, cityMeta, regionMeta, zipMeta,
+  stateMeta, countyMeta, cityMeta, regionMeta, zipMeta, supplierMeta,
   fitTitle, clampDesc, TITLE_CORE_MAX, DESC_MAX,
 };

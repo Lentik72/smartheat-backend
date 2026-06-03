@@ -20,6 +20,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
 require('dotenv').config();
+const { supplierMeta } = require('./lib/seo-meta');
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
@@ -284,6 +285,13 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
   // Meta description with price
   const metaPrice = hasPrice ? ` Current price: ${priceDisplay}/gal.` : '';
   const metaDesc = `${supplier.name} provides heating oil delivery in ${serviceAreaText}.${metaPrice} Contact for delivery availability.`;
+
+  // SEO title + description (heatingoil-qbd0.2 supplier CTR)
+  // Pass RAW supplier.name — NOT the local `name` (which is already escapeHtml'd).
+  // supplierMeta does no escaping; escapeHtml() at render escapes exactly once.
+  const { title: seoTitle, description: seoDescription } = supplierMeta({
+    name: supplier.name, city: supplier.city, stateCode: supplier.state, stats: null,
+  });
 
   // ─── Build Sections ─────
 
@@ -685,11 +693,11 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${name} - Heating Oil Delivery | HomeHeat</title>
-  <meta name="description" content="${escapeHtml(metaDesc)}">
+  <title>${escapeHtml(seoTitle)} | HomeHeat</title>
+  <meta name="description" content="${escapeHtml(seoDescription)}">
   <link rel="canonical" href="https://www.gethomeheat.com/supplier/${supplier.slug}">
 
-  <meta property="og:title" content="${name} - Heating Oil Delivery">
+  <meta property="og:title" content="${escapeHtml(seoTitle)}">
   <meta property="og:description" content="Heating oil delivery in ${escapeHtml(serviceAreaText)}">
   <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:type" content="business.business">
