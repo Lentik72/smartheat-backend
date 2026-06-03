@@ -32,6 +32,7 @@ const { getAllSuppliers, getCurrentPrices, getSuppliersForZips, getRecentPricedS
 
 // Shared nav/CSS helpers
 const { getNavHTML, init: initCountyData, crossLinkExists } = require('./lib/county-data');
+const { stateMeta, countyMeta, cityMeta } = require('./lib/seo-meta');
 
 // Configuration
 const WEBSITE_DIR = path.join(__dirname, '../website');
@@ -696,15 +697,18 @@ async function generateStateHubPage(stateCode, stateInfo, allSuppliers, priceMap
   }
   countyLinks.sort((a, b) => b.count - a.count);
 
-  // Intelligence-first description — highlights county comparison for SEO
-  const description = stateMedian
-    ? `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices across ${countyEliteData.length} counties in ${stateInfo.name}. Compare ${suppliers.length} suppliers updated daily.`
-    : `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${stateInfo.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Compare ${suppliers.length} suppliers.`;
+  // SEO title + description (CTR-optimized, exact-match front-loaded) — heatingoil-qbd0.2
+  const { title: seoTitle, description } = stateMeta({
+    fuelLabel: FUEL.label,
+    stateName: stateInfo.name,
+    supplierCount: suppliers.length,
+    stats,
+  });
 
   const html = generatePageHTML({
     type: 'state',
     noindex,
-    title: `${FUEL.label} Prices in ${stateInfo.name}`,
+    title: seoTitle,
     h1: `${FUEL.label} Prices in ${stateInfo.name}`,
     description,
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/`,
@@ -781,12 +785,19 @@ async function generateCountyPage(stateCode, stateInfo, county, allSuppliers, pr
   cityLinks.sort((a, b) => b.count - a.count);
 
   const countyName = toTitleCase(county);
+  const { title: seoTitle, description: seoDescription } = countyMeta({
+    fuelLabel: FUEL.label,
+    countyName,
+    stateCode,
+    supplierCount: suppliers.length,
+    stats,
+  });
   const html = generatePageHTML({
     type: 'county',
     noindex,
-    title: `${FUEL.label} Prices in ${countyName} County, ${stateInfo.name}`,
+    title: seoTitle,
     h1: `${countyName} County ${FUEL.label} Prices`,
-    description: `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${countyName} County, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Compare ${suppliers.length} suppliers.`,
+    description: seoDescription,
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/${countySlug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
@@ -941,12 +952,19 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
 
   const cityName = toTitleCase(city);
   const countyNameFormatted = countyName ? toTitleCase(countyName) : null;
+  const { title: seoTitle, description: seoDescription } = cityMeta({
+    fuelLabel: FUEL.label,
+    cityName,
+    stateCode,
+    supplierCount: suppliers.length,
+    stats,
+  });
   const html = generatePageHTML({
     type: 'city',
     noindex,
-    title: `${FUEL.label} Prices in ${cityName}, ${stateCode}`,
+    title: seoTitle,
     h1: `${cityName} ${FUEL.label} Prices`,
-    description: `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${cityName}, ${stateCode}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Compare ${suppliers.length} suppliers.`,
+    description: seoDescription,
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/${citySlug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },
@@ -1573,12 +1591,12 @@ function generatePageHTML(data, FUEL) {
   <script src="${assetPath}js/analytics.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">${noindex ? '\n  <meta name="robots" content="noindex, follow">' : ''}
-  <title>${escapeHtml(title)} - Updated ${dateStr} | HomeHeat</title>
+  <title>${escapeHtml(title)} | HomeHeat</title>
   <meta name="description" content="${escapeHtml(description)}">
   <link rel="canonical" href="${canonicalUrl}">
 
   <!-- OpenGraph -->
-  <meta property="og:title" content="${escapeHtml(title)} - ${dateStr}">
+  <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:url" content="${canonicalUrl}">
