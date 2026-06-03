@@ -54,6 +54,7 @@ const { cityCountyRedirectTarget } = require('./src/utils/city-county-redirect')
 const { legacyHeatingOilRedirectTarget } = require('./src/utils/legacy-heating-oil-redirect');
 const { subpathIndexRedirectTarget } = require('./src/utils/subpath-index-redirect');
 const { buildReviewCountSQL } = require('./src/utils/review-queue-sql');
+const { getRecentRejections } = require('./src/utils/price-sanity');
 
 // Import route modules with error handling
 let weatherRoutes, marketRoutes, communityRoutes, analyticsRoutes, authRoutes, adminRoutes, suppliersRoutes, intelligenceRoutes, activityAnalyticsRoutes, waitlistRoutes, priceReviewRoutes, dashboardRoutes, smsWebhookRoutes;
@@ -1813,15 +1814,10 @@ function scheduleCoverageIntelligence(cronMonitor) {
           // V3.1.1: Gather recent price rejections (outliers + drops) from last 24h
           let priceRejections = null;
           try {
-            const [rejectRows] = await sequelize.query(`
-              SELECT rejections FROM scrape_runs
-              WHERE run_at > NOW() - INTERVAL '24 hours'
-                AND rejections != '[]'::jsonb
-              ORDER BY run_at DESC LIMIT 1
-            `);
-            if (rejectRows.length > 0 && rejectRows[0].rejections && rejectRows[0].rejections.length > 0) {
-              priceRejections = rejectRows[0].rejections;
-              logger.info(`[DailyReports] ${priceRejections.length} price rejection(s) in last 24h`);
+            const rows = await getRecentRejections(sequelize);
+            if (rows.length > 0) {
+              priceRejections = rows;
+              logger.info(`[DailyReports] ${rows.length} price rejection(s) in last 24h`);
             }
           } catch (err) {
             logger.warn('[DailyReports] Failed to gather price rejections:', err.message);
