@@ -17,6 +17,7 @@
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { Sequelize } = require('sequelize');
+const { checkAndRecordPrice, getStateMedian } = require('../utils/price-sanity');
 
 // Configuration
 const WINDOW_START_HOUR = 8;  // 8 AM EST
@@ -431,6 +432,20 @@ async function executeScrape(supplierId, supplierName, sequelize, logger) {
     // Mirrors the INSERT shape used by `scripts/scrape-prices.js:319-373`.
     async function insertSecondaryFuel(fp, sourceType, sourceUrl) {
       try {
+        const [prevF] = await sequelize.query(`
+          SELECT price_per_gallon FROM supplier_prices
+          WHERE supplier_id = $1 AND fuel_type = $2 AND is_valid = true
+          ORDER BY scraped_at DESC LIMIT 1
+        `, { bind: [supplierId, fp.fuelType] });
+        const v = await checkAndRecordPrice(sequelize, {
+          supplierId, supplierName, fuelType: fp.fuelType, newPrice: fp.price,
+          prevPrice: prevF.length > 0 ? parseFloat(prevF[0].price_per_gallon) : null,
+          stateMedian: null, source: 'scheduler',
+        }, logger);
+        if (!v.ok) {
+          logger.warn(`   ⚠️  [price-rejected] ${supplierName} ${fp.fuelType} $${fp.price.toFixed(3)} — ${v.rejection.reason}`);
+          return;
+        }
         await sequelize.query(`
           INSERT INTO supplier_prices (
             id, supplier_id, price_per_gallon, min_gallons, fuel_type,
@@ -451,28 +466,45 @@ async function executeScrape(supplierId, supplierName, sequelize, logger) {
     }
 
     if (result.success) {
-      // Save to database
-      await sequelize.query(`
-        INSERT INTO supplier_prices (
-          id, supplier_id, price_per_gallon, min_gallons, fuel_type,
-          source_type, source_url, scraped_at, expires_at, is_valid, notes,
-          created_at, updated_at
-        ) VALUES (
-          gen_random_uuid(), $1, $2, $3, 'heating_oil',
-          $4, $5, $6, $7, true, NULL,
-          NOW(), NOW()
-        )
-      `, {
-        bind: [
-          result.supplierId,
-          result.pricePerGallon,
-          result.minGallons,
-          result.sourceType,
-          result.sourceUrl,
-          result.scrapedAt.toISOString(),
-          result.expiresAt.toISOString()
-        ]
-      });
+      // sanity-gate the primary oil price (recordSuccess still runs below regardless)
+      const [prevOil] = await sequelize.query(`
+        SELECT price_per_gallon FROM supplier_prices
+        WHERE supplier_id = $1 AND fuel_type = 'heating_oil' AND is_valid = true
+        ORDER BY scraped_at DESC LIMIT 1
+      `, { bind: [result.supplierId] });
+      const oilVerdict = await checkAndRecordPrice(sequelize, {
+        supplierId: result.supplierId, supplierName: supplier.name, fuelType: 'heating_oil',
+        newPrice: result.pricePerGallon,
+        prevPrice: prevOil.length > 0 ? parseFloat(prevOil[0].price_per_gallon) : null,
+        stateMedian: await getStateMedian(sequelize, supplier.state), state: supplier.state,
+        source: 'scheduler',
+      }, logger);
+      if (!oilVerdict.ok) {
+        logger.warn(`   ⚠️  [price-rejected] ${supplierName} heating_oil $${result.pricePerGallon.toFixed(3)} — ${oilVerdict.rejection.reason}`);
+      } else {
+        // Save to database
+        await sequelize.query(`
+          INSERT INTO supplier_prices (
+            id, supplier_id, price_per_gallon, min_gallons, fuel_type,
+            source_type, source_url, scraped_at, expires_at, is_valid, notes,
+            created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, 'heating_oil',
+            $4, $5, $6, $7, true, NULL,
+            NOW(), NOW()
+          )
+        `, {
+          bind: [
+            result.supplierId,
+            result.pricePerGallon,
+            result.minGallons,
+            result.sourceType,
+            result.sourceUrl,
+            result.scrapedAt.toISOString(),
+            result.expiresAt.toISOString()
+          ]
+        });
+      }
 
       // V3.x.0: Also store secondary fuel prices (kerosene, propane). Was previously
       // missing on this code path — only `scripts/scrape-prices.js` (4PM cron) stored them,

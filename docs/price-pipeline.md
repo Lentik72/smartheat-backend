@@ -2,7 +2,7 @@
 system: price-pipeline
 tags: [scraping, prices, sms, backoff, validation]
 constants:
-  scraper_price_range: "$2.00–$5.00"
+  scraper_price_range: "$2.00–$6.00"
   sms_price_range: "$1.50–$8.00"
   scraped_price_expiry: "48 hours"
   sms_price_expiry: "7 days"
@@ -22,7 +22,7 @@ Prices enter via two channels (scraping and SMS), pass through validation, and a
 ```
 scrape-config.json → DistributedScheduler (hash-based time per supplier)
                    → priceScraper.js (fetch + extract — primary + fuels.* secondaries)
-                   → validate ($2.00–$5.00) + 25% drop protection + 20% outlier detection
+                   → validate ($2.00–$6.00) + 25% drop protection + 25% outlier detection
                    → supplier_prices (source_type='scraped', expires 48h)
                      [V3.x.0: DistributedScheduler now stores secondary fuels too;
                       previously only the 4PM `runScraper` cron stored them.]
@@ -146,8 +146,8 @@ The diagnostics replace three legacy sections (Scrape Health stats, Yesterday's 
 ## Key Rules
 
 - Scraper sets expiry to 48h (model default comment says 24h — scraper is authoritative)
-- 25% drop protection: if new price drops >25% from the previous price **of the same fuel type**, it's rejected entirely (not saved). Both the primary (heating_oil) and secondary-fuel guards scope the previous-price lookup by `fuel_type` — comparing across fuels (e.g. a new oil price vs a stored kerosene price) caused false rejections (heatingoil-v5p0)
-- 25% outlier detection: if new price is >25% below the **state** median (needs ≥5 suppliers in that state), it's rejected — catches scraping artifacts like card prices or wrong page sections
+- 25% drop protection (per fuel type) + 25% state-median outlier detection (oil only, ≥5 suppliers/state) now run on BOTH scrape paths — the nightly batch (scripts/scrape-prices.js) AND the all-day DistributedScheduler. Shared logic: src/utils/price-sanity.js (evaluatePriceSanity + checkAndRecordPrice). Drop compares against the previous SAME-fuel price. Deliberate parity tradeoff: the all-day path will now reject a legitimately steep (>25%) drop too — the rejection is surfaced in the 6 AM email so the operator can spot-and-clear it; kill switch DISABLE_PRICE_SANITY=true disables the guard without a deploy.
+- Every rejection (both paths, primary + secondary fuel) is logged to the price_rejections table (migration 173); both daily-report paths (auto cron + admin trigger) read the last 24h from there via getRecentRejections (deduped per supplier+fuel). The batch also keeps its scrape_runs.rejections run-summary.
 - Auto-heal: if no valid prices but recently-scraped ones exist (within 7 days), extends their expiry by 48h
 - Distributed scheduler: SHA256(supplier_id) mod 600 minutes → stable daily time + ±15min jitter
 - Failure rate alert fires when >20% of scrapes fail in a run
