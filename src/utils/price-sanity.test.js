@@ -31,5 +31,58 @@ ok(evaluatePriceSanity({newPrice:3.00, prevPrice:4.00}).ok, 'exactly 25% drop �
   ok(r.rejection.previousPrice!==undefined, 'when both fail, drop takes precedence'); }
 ok(MAX_PRICE_DROP===0.25 && MAX_BELOW_MEDIAN===0.25, 'thresholds exported = 0.25');
 
-console.log(`\n${failed===0?'✅':'❌'} ${passed} passed, ${failed} failed`);
-process.exit(failed===0?0:1);
+console.log('\n=== DB helpers (fake sequelize) ===');
+const { getAllStateMedians, getStateMedian, recordPriceRejection, checkAndRecordPrice, getRecentRejections } = require('./price-sanity');
+function fakeSeq(rowsForSelect) {
+  const calls=[];
+  return { calls, query(sql,opts){ calls.push({sql,opts});
+    if (/PERCENTILE_CONT/.test(sql)) return Promise.resolve([rowsForSelect||[]]);
+    if (/SELECT price_per_gallon FROM supplier_prices/.test(sql)) return Promise.resolve([rowsForSelect||[]]);
+    return Promise.resolve([[],0]); } };
+}
+(async()=>{
+  { const seq=fakeSeq([{state:'CT',median_price:'4.40'},{state:'PA',median_price:'4.10'}]);
+    const m=await getAllStateMedians(seq);
+    ok(m.CT===4.40 && m.PA===4.10, 'getAllStateMedians parses rows → number map');
+    ok(/PERCENTILE_CONT/.test(seq.calls[0].sql) && /heating_oil/.test(seq.calls[0].sql), 'uses oil median SQL'); }
+  { const seq=fakeSeq([{median_price:'4.55'}]);
+    ok((await getStateMedian(seq,'CT'))===4.55, 'getStateMedian returns number');
+    ok(seq.calls[0].opts.bind[0]==='CT', 'getStateMedian binds state'); }
+  { const seq=fakeSeq([]); ok((await getStateMedian(seq,'WY'))===null, 'getStateMedian null when <5 suppliers');
+    ok((await getStateMedian(seq,null))===null, 'getStateMedian null for null state'); }
+  { const seq=fakeSeq();
+    await recordPriceRejection(seq,{supplierId:'s1',supplierName:'X',fuelType:'heating_oil',newPrice:4.2,
+      rejection:{reason:'r',dropPercent:33,previousPrice:6.3},source:'scheduler'});
+    const c=seq.calls.find(c=>/INSERT INTO price_rejections/.test(c.sql));
+    ok(c, 'recordPriceRejection inserts'); ok(c.opts.bind.includes('scheduler'),'binds source');
+    ok(c.opts.bind.includes(6.3) && c.opts.bind.includes(33), 'binds previousPrice + dropPercent');
+    ok(c.opts.bind.includes(null), 'null for market_median on a drop rejection'); }
+  { const seq={query(){return Promise.reject(new Error('boom'));}};
+    await recordPriceRejection(seq,{supplierId:'s1',supplierName:'X',fuelType:'heating_oil',newPrice:4.2,rejection:{reason:'r'},source:'batch'});
+    pass('recordPriceRejection swallows DB errors'); }
+  { const seq=fakeSeq();
+    const v=await checkAndRecordPrice(seq,{supplierId:'s1',supplierName:'X',fuelType:'heating_oil',newPrice:4.2,prevPrice:6.3,stateMedian:null,state:'PA',source:'scheduler'});
+    ok(!v.ok, 'checkAndRecordPrice returns reject verdict');
+    ok(seq.calls.some(c=>/INSERT INTO price_rejections/.test(c.sql)), 'reject path records rejection'); }
+  { const seq=fakeSeq();
+    const v=await checkAndRecordPrice(seq,{supplierId:'s1',supplierName:'X',fuelType:'heating_oil',newPrice:4.2,prevPrice:4.3,stateMedian:4.4,state:'PA',source:'scheduler'});
+    ok(v.ok, 'checkAndRecordPrice ok verdict');
+    ok(!seq.calls.some(c=>/INSERT INTO price_rejections/.test(c.sql)), 'ok path records nothing'); }
+  { process.env.DISABLE_PRICE_SANITY='true';
+    const seq=fakeSeq();
+    const v=await checkAndRecordPrice(seq,{supplierId:'s1',supplierName:'X',fuelType:'heating_oil',newPrice:1.0,prevPrice:6.3,stateMedian:6.0,state:'PA',source:'scheduler'});
+    ok(v.ok, 'kill switch → ok even for an anomalous price');
+    ok(seq.calls.length===0, 'kill switch → no DB writes');
+    delete process.env.DISABLE_PRICE_SANITY; }
+  { const seq={query(){return Promise.reject(new Error('db down'));}};
+    ok((await getStateMedian(seq,'CT'))===null, 'getStateMedian returns null on DB error'); }
+  { const calls=[]; const seq={calls,query(sql,opts){calls.push({sql,opts});
+      return Promise.resolve([[{supplierName:'X',newPrice:4.2,marketMedian:null,reason:'r'}]]);}};
+    const rows=await getRecentRejections(seq);
+    ok(Array.isArray(rows) && rows.length===1, 'getRecentRejections returns rows');
+    const sql=calls[0].sql;
+    ok(/DISTINCT ON \(supplier_id, fuel_type\)/.test(sql), 'dedups per supplier+fuel');
+    ok(/INTERVAL '24 hours'/.test(sql) && /::float/.test(sql) && /LIMIT 50/.test(sql), '24h window + ::float casts + cap'); }
+  console.log(`\n${failed===0?'✅':'❌'} ${passed} passed, ${failed} failed`);
+  process.exit(failed===0?0:1);
+})();
