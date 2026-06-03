@@ -717,12 +717,12 @@ function generateCountyPageHTML(stats, history, zipDetails, stateMedian = null, 
   <script src="${assetPath}js/analytics.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr} | HomeHeat</title>
+  <title>${escapeHtml(countyName)} County ${FUEL.label} Prices (${stateCode}) | HomeHeat</title>
   <meta name="description" content="${metaDescription}">
   <link rel="canonical" href="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
 
   <!-- OpenGraph -->
-  <meta property="og:title" content="${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
+  <meta property="og:title" content="${escapeHtml(countyName)} County ${FUEL.label} Prices (${stateCode})">
   <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : `Compare local ${FUEL.label.toLowerCase()} prices.`}">
   <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:url" content="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
@@ -1175,12 +1175,12 @@ ${countySuppliers.map(s => {
   <script src="${v2AssetPath}js/analytics.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr} | HomeHeat</title>
+  <title>${escapeHtml(countyName)} County ${FUEL.label} Prices (${stateCode}) | HomeHeat</title>
   <meta name="description" content="${metaDescription}">
   <link rel="canonical" href="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">
 
   <!-- OpenGraph -->
-  <meta property="og:title" content="${FUEL.label} Prices in ${escapeHtml(countyName)} County, ${stateCode} - ${dateStr}">
+  <meta property="og:title" content="${escapeHtml(countyName)} County ${FUEL.label} Prices (${stateCode})">
   <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : `Compare local ${FUEL.label.toLowerCase()} prices.`}">
   <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:url" content="https://www.gethomeheat.com${FUEL.urlPrefix}/${stateCode.toLowerCase()}/${slug}">

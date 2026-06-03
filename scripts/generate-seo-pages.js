@@ -32,7 +32,7 @@ const { getAllSuppliers, getCurrentPrices, getSuppliersForZips, getRecentPricedS
 
 // Shared nav/CSS helpers
 const { getNavHTML, init: initCountyData, crossLinkExists } = require('./lib/county-data');
-const { stateMeta, countyMeta, cityMeta } = require('./lib/seo-meta');
+const { stateMeta, countyMeta, cityMeta, regionMeta, zipMeta } = require('./lib/seo-meta');
 
 // Configuration
 const WEBSITE_DIR = path.join(__dirname, '../website');
@@ -862,12 +862,20 @@ async function generateRegionalPage(stateCode, stateInfo, region, allSuppliers, 
   }
   countyLinks.sort((a, b) => b.count - a.count);
 
+  const { title: seoTitle, description: seoDescription } = regionMeta({
+    fuelLabel: FUEL.label,
+    regionName: region.name,
+    stateCode,
+    supplierCount: suppliers.length,
+    stats,
+  });
+
   const html = generatePageHTML({
     type: 'region',
     noindex,
-    title: `${FUEL.label} Prices in ${region.name}, ${stateInfo.name}`,
+    title: seoTitle,
     h1: `${region.name} ${FUEL.label} Prices`,
-    description: `Today's (${dateStr}) ${FUEL.label.toLowerCase()} prices in ${region.name}. ${stats ? `Prices from $${stats.min} to $${stats.max}/gal.` : ''} Covers ${region.counties.join(', ')} counties.`,
+    description: seoDescription,
     canonicalUrl: `https://www.gethomeheat.com${FUEL.urlPrefix}/${stateInfo.abbrev}/${region.slug}`,
     breadcrumbs: [
       { name: 'Home', url: '/' },

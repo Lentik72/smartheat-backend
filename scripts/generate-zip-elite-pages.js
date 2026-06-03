@@ -22,6 +22,7 @@ const fsSync = require('fs');
 const crypto = require('crypto');
 const path = require('path');
 require('dotenv').config();
+const { zipMeta } = require('./lib/seo-meta');
 
 // Configuration
 const WEBSITE_DIR = path.join(__dirname, '../website');
@@ -335,6 +336,13 @@ function generateZipPageHTML(stats, history, county = null) {
 
   const assetPath = '../../';
 
+  const zipStats = (typeof minPrice === 'number' && typeof maxPrice === 'number')
+    ? { min: minPrice.toFixed(2), max: maxPrice.toFixed(2) }
+    : null;
+  const { title: seoTitle, description: seoDescription } = zipMeta({
+    regionName, zipPrefix, supplierCount, stats: zipStats,
+  });
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -343,12 +351,12 @@ function generateZipPageHTML(stats, history, county = null) {
   <script src="${assetPath}js/analytics.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Heating Oil Prices in ${escapeHtml(regionName)} (${zipPrefix}xx) - ${dateStr} | HomeHeat</title>
-  <meta name="description" content="${medianPrice ? `Today's (${lastUpdate}) heating oil prices in ${regionName}: $${medianPrice.toFixed(2)}/gal median from ${supplierCount} suppliers.` : `Heating oil prices for ZIP codes starting with ${zipPrefix}. Updated ${lastUpdate}.`}">
+  <title>${escapeHtml(seoTitle)} | HomeHeat</title>
+  <meta name="description" content="${escapeHtml(seoDescription)}">
   <link rel="canonical" href="https://www.gethomeheat.com/prices/zip/${zipPrefix}">
 
   <!-- OpenGraph -->
-  <meta property="og:title" content="Heating Oil Prices in ${escapeHtml(regionName)} - ${dateStr}">
+  <meta property="og:title" content="${escapeHtml(seoTitle)}">
   <meta property="og:description" content="${medianPrice ? `$${medianPrice.toFixed(2)}/gal median. Compare ${supplierCount} suppliers.` : 'Compare local heating oil prices.'}">
   <meta property="og:image" content="https://www.gethomeheat.com/images/screenshot-1-home.png">
   <meta property="og:url" content="https://www.gethomeheat.com/prices/zip/${zipPrefix}">
