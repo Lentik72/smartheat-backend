@@ -239,10 +239,16 @@ async function runScraper(options = {}) {
         // V2.7.0: Price change protection - check for suspicious drops
         let priceRejected = false;
         if (!opts.dryRun) {
-          // Fetch previous valid price for this supplier
+          // Fetch previous valid HEATING-OIL price for this supplier.
+          // MUST scope by fuel_type: the primary result is heating_oil (the insert
+          // below hardcodes it), and multi-fuel suppliers may have higher-priced
+          // kerosene/propane rows. Without the filter the latest cross-fuel row
+          // (e.g. kerosene $6.30 vs oil $4.20) was used as "previous", triggering
+          // false drop rejections (heatingoil-v5p0). Mirrors the per-fuel guard on
+          // the secondary-fuel path below.
           const [prevPrices] = await sequelize.query(`
             SELECT price_per_gallon FROM supplier_prices
-            WHERE supplier_id = $1 AND is_valid = true
+            WHERE supplier_id = $1 AND fuel_type = 'heating_oil' AND is_valid = true
             ORDER BY scraped_at DESC LIMIT 1
           `, { bind: [result.supplierId] });
 

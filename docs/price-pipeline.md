@@ -146,7 +146,7 @@ The diagnostics replace three legacy sections (Scrape Health stats, Yesterday's 
 ## Key Rules
 
 - Scraper sets expiry to 48h (model default comment says 24h — scraper is authoritative)
-- 25% drop protection: if new price drops >25% from previous, it's rejected entirely (not saved)
+- 25% drop protection: if new price drops >25% from the previous price **of the same fuel type**, it's rejected entirely (not saved). Both the primary (heating_oil) and secondary-fuel guards scope the previous-price lookup by `fuel_type` — comparing across fuels (e.g. a new oil price vs a stored kerosene price) caused false rejections (heatingoil-v5p0)
 - 25% outlier detection: if new price is >25% below the **state** median (needs ≥5 suppliers in that state), it's rejected — catches scraping artifacts like card prices or wrong page sections
 - Auto-heal: if no valid prices but recently-scraped ones exist (within 7 days), extends their expiry by 48h
 - Distributed scheduler: SHA256(supplier_id) mod 600 minutes → stable daily time + ±15min jitter
