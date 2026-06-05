@@ -45,7 +45,13 @@ function shouldScrapeSupplier(supplier) {
 }
 
 /**
- * Record a successful scrape - reset failure counters
+ * Record a successful scrape - reset failure counters.
+ *
+ * MUST also clear scrape_failure_dates (the rolling 30-day phone_only window),
+ * not just consecutive_scrape_failures: recordFailure re-marks phone_only at
+ * MAX_FAILURES_IN_30_DAYS dates still inside the window, so leaving stale dates
+ * here snaps a recovered supplier straight back to phone_only on its next single
+ * failure (heatingoil-duqd). Mirrors monthlyReset, which already clears them.
  * @param {object} sequelize - Sequelize instance
  * @param {string} supplierId - Supplier ID
  */
@@ -53,6 +59,7 @@ async function recordSuccess(sequelize, supplierId) {
   await sequelize.query(`
     UPDATE suppliers SET
       consecutive_scrape_failures = 0,
+      scrape_failure_dates = '[]'::jsonb,
       scrape_status = 'active',
       scrape_cooldown_until = NULL,
       last_scrape_error = NULL,

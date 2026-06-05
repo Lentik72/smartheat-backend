@@ -78,11 +78,11 @@ active → (2 consecutive fails) → cooldown (7 days)
 active → (3 fails in 30-day window) → phone_only
 cooldown → (expiry) → active
 phone_only → (1st of month reset) → active (all counters AND failure dates cleared)
-any state → (successful scrape) → active (all counters reset)
+any state → (successful scrape) → active (all counters AND `scrape_failure_dates` cleared)
 ```
 
 Phone_only takes precedence over cooldown when both conditions are met.
-Monthly reset clears `scrape_failure_dates` — without this, old dates in the 30-day window cause immediate re-blocking on the first new failure.
+Both `monthlyReset` AND `recordSuccess` clear `scrape_failure_dates` — without this, old dates still inside the 30-day window re-trigger `phone_only` on the very next single failure, so a supplier that scrapes successfully but fails intermittently stays stuck in `phone_only` (heatingoil-duqd; same class as the Mar-2026 monthlyReset bug). Note the all-day `DistributedScheduler` re-scrapes `phone_only` suppliers (only the nightly `scrape-prices.js` batch honors the `shouldScrapeSupplier` skip), so a recovered supplier's next daytime success clears the window and returns it to `active`.
 
 ## SMS Two-Step Confirmation
 
