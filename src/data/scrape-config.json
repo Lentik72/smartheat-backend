@@ -2433,7 +2433,7 @@
     ]
   },
   "ssfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
     "notes": "Long Island Nassau/Suffolk/Queens",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
@@ -7133,7 +7133,7 @@
     ]
   },
   "countylinefuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
     "notes": "NJ Hunterdon County - 26 towns",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
@@ -11440,7 +11440,7 @@
     ]
   },
   "cplfuel.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2})\\s*/\\s*150",
     "postalCodesServed": [
@@ -14900,7 +14900,7 @@
     ]
   },
   "absoluteoilcompany.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "direct",
     "notes": "MA Peabody/North Shore - COD delivery. 29 towns.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
@@ -21589,7 +21589,7 @@
     ]
   },
   "librafuels.com": {
-    "enabled": true,
+    "enabled": false,
     "pattern": "post_form",
     "pricePath": "/get-price/",
     "formBody": {
