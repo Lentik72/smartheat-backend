@@ -37,11 +37,17 @@ for (const [domain, cfg] of Object.entries(scrapeConfig)) {
   }
 }
 
-// Master admin token for internal/emergency access (set in Railway env vars)
-const ADMIN_MASTER_TOKEN = process.env.ADMIN_REVIEW_TOKEN || 'smartheat-price-review-2024';
+// Master admin token for internal/emergency access (REQUIRED in Railway env vars).
+// No hardcoded default — a missing env var fails closed (admin access denied),
+// never falls back to a public string. (heatingoil-3fv5)
+const ADMIN_MASTER_TOKEN = process.env.ADMIN_REVIEW_TOKEN;
 
-// Secret for generating magic links (should be set in env vars)
-const MAGIC_LINK_SECRET = process.env.MAGIC_LINK_SECRET || 'smartheat-magic-link-secret-2024';
+// Secret for the /generate-link internal endpoint (REQUIRED in env vars).
+const MAGIC_LINK_SECRET = process.env.MAGIC_LINK_SECRET;
+
+if (!ADMIN_MASTER_TOKEN) {
+  console.warn('[PriceReview] ADMIN_REVIEW_TOKEN not set — master/admin access is disabled (fail-closed).');
+}
 
 /**
  * Generate a secure random token
@@ -64,8 +70,9 @@ const requireAuth = async (req, res, next) => {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  // Check if it's the master admin token (for internal/emergency use)
-  if (token === ADMIN_MASTER_TOKEN) {
+  // Check if it's the master admin token (for internal/emergency use).
+  // Guard on ADMIN_MASTER_TOKEN so an unset env var can't authorize.
+  if (ADMIN_MASTER_TOKEN && token === ADMIN_MASTER_TOKEN) {
     req.authType = 'master';
     return next();
   }
@@ -133,9 +140,12 @@ router.post('/generate-link', async (req, res) => {
   const sequelize = req.app.locals.sequelize;
   const logger = req.app.locals.logger;
 
-  // Only allow with master token or internal secret
+  // Only allow with master token or internal secret. Fail-closed: require the
+  // secret to be configured AND to match (an unset secret must never authorize).
   const authToken = req.headers['x-internal-token'] || req.headers['x-review-token'];
-  if (authToken !== ADMIN_MASTER_TOKEN && authToken !== MAGIC_LINK_SECRET) {
+  const authorized = (ADMIN_MASTER_TOKEN && authToken === ADMIN_MASTER_TOKEN)
+    || (MAGIC_LINK_SECRET && authToken === MAGIC_LINK_SECRET);
+  if (!authorized) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -177,7 +187,7 @@ router.post('/revoke-link', async (req, res) => {
   const sequelize = req.app.locals.sequelize;
 
   const authToken = req.headers['x-internal-token'] || req.headers['x-review-token'];
-  if (authToken !== ADMIN_MASTER_TOKEN) {
+  if (!ADMIN_MASTER_TOKEN || authToken !== ADMIN_MASTER_TOKEN) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

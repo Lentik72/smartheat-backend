@@ -13,8 +13,9 @@ const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
 
-// Admin master token (same as price-review)
-const ADMIN_MASTER_TOKEN = process.env.ADMIN_REVIEW_TOKEN || 'smartheat-price-review-2024';
+// Admin master token (same as price-review). REQUIRED in Railway env vars — no
+// hardcoded default, so a missing env var fails closed. (heatingoil-3fv5)
+const ADMIN_MASTER_TOKEN = process.env.ADMIN_REVIEW_TOKEN;
 
 // Magic link expiry (30 days — short-lived for security; suppliers can request a new link)
 const MAGIC_LINK_EXPIRY_DAYS = 30;
@@ -34,7 +35,7 @@ const requireAdmin = (req, res, next) => {
   }
 
   const dashboardPassword = process.env.DASHBOARD_PASSWORD;
-  if (token === ADMIN_MASTER_TOKEN || (dashboardPassword && token === dashboardPassword)) {
+  if ((ADMIN_MASTER_TOKEN && token === ADMIN_MASTER_TOKEN) || (dashboardPassword && token === dashboardPassword)) {
     return next();
   }
 
