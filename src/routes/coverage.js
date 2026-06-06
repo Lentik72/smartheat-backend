@@ -9,6 +9,11 @@ const { getUserLocationModel } = require('../models/UserLocation');
 const CoverageIntelligenceService = require('../services/CoverageIntelligenceService');
 const CoverageReportMailer = require('../services/CoverageReportMailer');
 const { Op } = require('sequelize');
+const requireAdmin = require('../middleware/requireAdmin');
+
+// All routes here are admin-only (mounted once at /api/admin/coverage). Guard
+// the whole router — no public endpoints live in this file. (heatingoil-jqw7)
+router.use(requireAdmin);
 
 /**
  * GET /api/admin/coverage/dashboard

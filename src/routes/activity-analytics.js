@@ -7,14 +7,18 @@
 
 const express = require('express');
 const router = express.Router();
+const requireAdmin = require('../middleware/requireAdmin');
 
 // ==================== ADMIN ENDPOINTS ====================
+// All routes in this section require admin auth. This router is mounted at BOTH
+// /api/admin/activity AND /api/activity (server.js), so requireAdmin is applied
+// per-route (not router-level) to keep the iOS telemetry endpoints below open.
 
 /**
  * GET /api/admin/activity/dashboard
  * Real-time activity dashboard
  */
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', requireAdmin, async (req, res) => {
   try {
     const analytics = req.app.locals.activityAnalytics;
     if (!analytics) {
@@ -63,7 +67,7 @@ router.get('/dashboard', async (req, res) => {
  * GET /api/admin/activity/dau
  * Daily Active Users history
  */
-router.get('/dau', async (req, res) => {
+router.get('/dau', requireAdmin, async (req, res) => {
   try {
     const analytics = req.app.locals.activityAnalytics;
     if (!analytics) {
@@ -123,7 +127,7 @@ router.get('/dau', async (req, res) => {
  * POST /api/admin/activity/dau/aggregate
  * Trigger DAU aggregation (for manual refresh)
  */
-router.post('/dau/aggregate', async (req, res) => {
+router.post('/dau/aggregate', requireAdmin, async (req, res) => {
   try {
     const analytics = req.app.locals.activityAnalytics;
     if (!analytics) {
@@ -148,7 +152,7 @@ router.post('/dau/aggregate', async (req, res) => {
  * GET /api/admin/activity/suppliers
  * Supplier engagement stats
  */
-router.get('/suppliers', async (req, res) => {
+router.get('/suppliers', requireAdmin, async (req, res) => {
   try {
     const analytics = req.app.locals.activityAnalytics;
     if (!analytics) {
@@ -187,7 +191,7 @@ router.get('/suppliers', async (req, res) => {
  * GET /api/admin/activity/user-added-suppliers
  * List suppliers added by users (for directory expansion)
  */
-router.get('/user-added-suppliers', async (req, res) => {
+router.get('/user-added-suppliers', requireAdmin, async (req, res) => {
   try {
     const analytics = req.app.locals.activityAnalytics;
     if (!analytics) {
@@ -228,7 +232,7 @@ router.get('/user-added-suppliers', async (req, res) => {
  * PATCH /api/admin/activity/user-added-suppliers/:id/review
  * Mark a user-added supplier as reviewed
  */
-router.patch('/user-added-suppliers/:id/review', async (req, res) => {
+router.patch('/user-added-suppliers/:id/review', requireAdmin, async (req, res) => {
   try {
     const sequelize = req.app.locals.sequelize;
     const { id } = req.params;
@@ -263,7 +267,7 @@ router.patch('/user-added-suppliers/:id/review', async (req, res) => {
  * GET /api/admin/activity/geographic
  * Geographic distribution of users
  */
-router.get('/geographic', async (req, res) => {
+router.get('/geographic', requireAdmin, async (req, res) => {
   try {
     const sequelize = req.app.locals.sequelize;
     const days = parseInt(req.query.days) || 30;
@@ -313,6 +317,9 @@ router.get('/geographic', async (req, res) => {
 });
 
 // ==================== iOS APP ENDPOINTS ====================
+// INTENTIONALLY PUBLIC (no requireAdmin): the iOS app posts anonymous telemetry
+// here with no auth token. Do NOT add requireAdmin to the two routes below or
+// app telemetry will start failing with 401. (heatingoil-jqw7)
 
 /**
  * POST /api/activity/supplier-added
@@ -378,7 +385,7 @@ router.post('/supplier-engagement', async (req, res) => {
  * POST /api/admin/activity/send-report
  * Manually trigger and send the activity report email
  */
-router.post('/send-report', async (req, res) => {
+router.post('/send-report', requireAdmin, async (req, res) => {
   try {
     const analytics = req.app.locals.activityAnalytics;
     const mailer = req.app.locals.coverageMailer;
