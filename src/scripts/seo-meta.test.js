@@ -122,4 +122,13 @@ assertLen(supplierMeta({ name: 'Reisdorf Oil & Propane', city: 'Warsaw', stateCo
 // A typical no-price supplier must read as a COMPLETE sentence, not a clamp-truncated fragment:
 assert.ok(!supplierMeta({ name: 'Tevis Energy', city: 'Westminster', stateCode: 'MD', price: null }).description.endsWith('…'), 'typical supplier desc not truncated');
 
+// ── grammar: singular vs plural supplier word (qbd0.x — no "1 suppliers") ──
+{
+  const d1 = cityMeta({ fuelLabel: 'Propane', cityName: 'Alma', stateCode: 'NY', countyName: 'Allegany', supplierCount: 1, stats: null }).description;
+  assert.ok(!/1 local suppliers/.test(d1), 'no "1 local suppliers" grammar slip :: ' + d1);
+  assert.ok(/\b1 local supplier\b/.test(d1), 'singular "1 local supplier" :: ' + d1);
+  const d2 = cityMeta({ fuelLabel: 'Propane', cityName: 'Alma', stateCode: 'NY', countyName: 'Allegany', supplierCount: 2, stats: null }).description;
+  assert.ok(/\b2 local suppliers\b/.test(d2), 'plural "2 local suppliers" :: ' + d2);
+}
+
 console.log('✅ seo-meta: all assertions passed');

@@ -45,15 +45,22 @@ function priceClause(stats) {
   return stats ? ` from $${stats.min}–$${stats.max}/gal` : '';
 }
 
+/** "1 supplier" vs "N suppliers" — avoids the "1 suppliers" grammar slip on
+ *  single-supplier pages. Pass cap=true for the title-case form. */
+function supplierWord(n, cap = false) {
+  const w = n === 1 ? 'supplier' : 'suppliers';
+  return cap ? w[0].toUpperCase() + w.slice(1) : w;
+}
+
 /** State hub page — /prices/{state}/ */
 function stateMeta({ fuelLabel, stateName, supplierCount, stats }) {
   const title = fitTitle(
     `${stateName} ${fuelLabel} Prices`,
-    [` — Compare ${supplierCount} Suppliers`],
+    [` — Compare ${supplierCount} ${supplierWord(supplierCount, true)}`],
   );
   const description = fitDesc(
     `Compare today's ${fuelLabel.toLowerCase()} prices${priceClause(stats)} across ` +
-    `${supplierCount} ${stateName} suppliers, sorted lowest first and updated daily.`,
+    `${supplierCount} ${stateName} ${supplierWord(supplierCount)}, sorted lowest first and updated daily.`,
     [` Find the cheapest delivered ${fuelLabel.toLowerCase()} rate near you and stop overpaying.`],
   );
   return { title, description };
@@ -63,11 +70,11 @@ function stateMeta({ fuelLabel, stateName, supplierCount, stats }) {
 function countyMeta({ fuelLabel, countyName, stateCode, supplierCount, stats }) {
   const title = fitTitle(
     `${countyName} County ${fuelLabel} Prices`,
-    [` (${stateCode})`, ` — ${supplierCount} Suppliers`],
+    [` (${stateCode})`, ` — ${supplierCount} ${supplierWord(supplierCount, true)}`],
   );
   const description = fitDesc(
     `Today's ${fuelLabel.toLowerCase()} prices in ${countyName} County, ${stateCode}` +
-    `${priceClause(stats)}. Compare ${supplierCount} local suppliers, sorted lowest first and updated daily.`,
+    `${priceClause(stats)}. Compare ${supplierCount} local ${supplierWord(supplierCount)}, sorted lowest first and updated daily.`,
     [` Find the cheapest delivered ${fuelLabel.toLowerCase()} rate across ${countyName} County today.`],
   );
   return { title, description };
@@ -77,12 +84,12 @@ function countyMeta({ fuelLabel, countyName, stateCode, supplierCount, stats }) 
 function cityMeta({ fuelLabel, cityName, stateCode, countyName, supplierCount, stats }) {
   const title = fitTitle(
     `${cityName}, ${stateCode} ${fuelLabel} Prices`,
-    [` — Compare ${supplierCount} Suppliers`],
+    [` — Compare ${supplierCount} ${supplierWord(supplierCount, true)}`],
   );
   const countyClause = countyName ? ` serving ${countyName} County` : '';
   const description = fitDesc(
     `Compare ${fuelLabel.toLowerCase()} prices in ${cityName}, ${stateCode} from ${supplierCount} ` +
-    `local suppliers${countyClause}${priceClause(stats)}, sorted lowest first and updated daily.`,
+    `local ${supplierWord(supplierCount)}${countyClause}${priceClause(stats)}, sorted lowest first and updated daily.`,
     [` See today's cheapest delivered ${fuelLabel.toLowerCase()} rate near ${cityName} and stop overpaying.`],
   );
   return { title, description };
@@ -92,11 +99,11 @@ function cityMeta({ fuelLabel, cityName, stateCode, countyName, supplierCount, s
 function regionMeta({ fuelLabel, regionName, stateCode, supplierCount, stats }) {
   const title = fitTitle(
     `${regionName}, ${stateCode} ${fuelLabel} Prices`,
-    [` — Compare ${supplierCount} Suppliers`],
+    [` — Compare ${supplierCount} ${supplierWord(supplierCount, true)}`],
   );
   const description = fitDesc(
     `Compare ${fuelLabel.toLowerCase()} prices across ${regionName}, ${stateCode} from ${supplierCount} ` +
-    `local suppliers${priceClause(stats)}, sorted lowest first and updated daily.`,
+    `local ${supplierWord(supplierCount)}${priceClause(stats)}, sorted lowest first and updated daily.`,
     [` Find the cheapest delivered ${fuelLabel.toLowerCase()} rate in the ${regionName} area today.`],
   );
   return { title, description };
@@ -106,11 +113,11 @@ function regionMeta({ fuelLabel, regionName, stateCode, supplierCount, stats }) 
 function zipMeta({ regionName, zipPrefix, supplierCount, stats }) {
   const title = fitTitle(
     `${regionName} Heating Oil Prices (${zipPrefix}xx)`,
-    [` — ${supplierCount} Suppliers`],
+    [` — ${supplierCount} ${supplierWord(supplierCount, true)}`],
   );
   const description = fitDesc(
     `Compare heating oil prices for ZIP codes starting ${zipPrefix} in the ${regionName} area` +
-    `${priceClause(stats)} from ${supplierCount} suppliers, sorted lowest first and updated daily.`,
+    `${priceClause(stats)} from ${supplierCount} ${supplierWord(supplierCount)}, sorted lowest first and updated daily.`,
     [` Find the cheapest delivered heating oil rate across the ${zipPrefix}xx ZIP codes today.`],
   );
   return { title, description };
@@ -135,5 +142,5 @@ function supplierMeta({ name, city, stateCode, price }) {
 
 module.exports = {
   stateMeta, countyMeta, cityMeta, regionMeta, zipMeta, supplierMeta,
-  fitTitle, fitDesc, clampDesc, TITLE_CORE_MAX, DESC_MAX, DESC_MIN,
+  fitTitle, fitDesc, clampDesc, supplierWord, TITLE_CORE_MAX, DESC_MAX, DESC_MIN,
 };
