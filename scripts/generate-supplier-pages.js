@@ -282,15 +282,16 @@ function generateSupplierPage(supplier, latestPrice, nearbySuppliers, trafficDat
   const hoursSaturday = supplier.hoursSaturday;
   const hoursSunday = supplier.hoursSunday;
 
-  // Meta description with price
-  const metaPrice = hasPrice ? ` Current price: ${priceDisplay}/gal.` : '';
-  const metaDesc = `${supplier.name} provides heating oil delivery in ${serviceAreaText}.${metaPrice} Contact for delivery availability.`;
-
-  // SEO title + description (heatingoil-qbd0.2 supplier CTR)
+  // SEO title + description (heatingoil-qbd0.2 supplier CTR; qbd0.x: DESC_MIN floor)
   // Pass RAW supplier.name — NOT the local `name` (which is already escapeHtml'd).
   // supplierMeta does no escaping; escapeHtml() at render escapes exactly once.
+  // `price` is the PARSED NUMBER (latestPrice.price_per_gallon), NOT the latestPrice row object.
+  // Do NOT pass the county service-area list — it overflows 160 and clampDesc truncates it.
   const { title: seoTitle, description: seoDescription } = supplierMeta({
-    name: supplier.name, city: supplier.city, stateCode: supplier.state, stats: null,
+    name: supplier.name,
+    city: supplier.city,
+    stateCode: supplier.state,
+    price: hasPrice ? latestPrice.price_per_gallon.toFixed(2) : null,
   });
 
   // ─── Build Sections ─────
