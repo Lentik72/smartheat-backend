@@ -2,11 +2,14 @@
  * CTR-optimized SEO title cores + meta descriptions for generated price pages.
  * Titles are returned WITHOUT the " | HomeHeat" brand suffix (the page template appends it)
  * and WITHOUT HTML-escaping (the template escapes at render). Cores kept <= TITLE_CORE_MAX.
- * Wording is the v1 CTR hypothesis (heatingoil-qbd0.2) — iterate in ONE place.
+ * Descriptions are length-guarded: clampDesc caps the MAX, fitDesc guarantees the MIN floor
+ * (Bing flags "too short" descriptions). Wording is the v1 CTR hypothesis (qbd0.2/qbd0.8/qbd0.x)
+ * — iterate in ONE place.
  */
 
 const TITLE_CORE_MAX = 57; // leaves room for " | HomeHeat" before SERP truncation
 const DESC_MAX = 160;
+const DESC_MIN = 150; // Bing "too short" floor; design target within the 150–160 sweet spot
 
 /** Join required + optional title parts, dropping trailing optional parts until <= max. */
 function fitTitle(required, optional, max = TITLE_CORE_MAX) {
@@ -25,6 +28,19 @@ function clampDesc(str, max = DESC_MAX) {
   return str.slice(0, max - 1).replace(/\s+\S*$/, '').trim() + '…';
 }
 
+/** Reach >= min by appending page-specific enrichment clauses in order, then clamp to <= max.
+ *  Enrichments MUST carry unique tokens (place/fuel/supplier) — never a shared constant — to
+ *  avoid trading "too short" for Bing "duplicate description". clampDesc guarantees the ceiling;
+ *  with normal English copy (no unbounded data lists) the result stays >= min in practice. */
+function fitDesc(base, enrichments = [], { min = DESC_MIN, max = DESC_MAX } = {}) {
+  let out = base;
+  for (const e of enrichments) {
+    if (out.length >= min) break;
+    out += e;
+  }
+  return clampDesc(out, max);
+}
+
 function priceClause(stats) {
   return stats ? ` from $${stats.min}–$${stats.max}/gal` : '';
 }
@@ -35,10 +51,10 @@ function stateMeta({ fuelLabel, stateName, supplierCount, stats }) {
     `${stateName} ${fuelLabel} Prices`,
     [` — Compare ${supplierCount} Suppliers`],
   );
-  const description = clampDesc(
+  const description = fitDesc(
     `Compare today's ${fuelLabel.toLowerCase()} prices${priceClause(stats)} across ` +
-    `${supplierCount} ${stateName} suppliers. Updated daily, sorted lowest first — ` +
-    `find the cheapest near you.`,
+    `${supplierCount} ${stateName} suppliers, sorted lowest first and updated daily.`,
+    [` Find the cheapest delivered ${fuelLabel.toLowerCase()} rate near you and stop overpaying.`],
   );
   return { title, description };
 }
@@ -49,22 +65,25 @@ function countyMeta({ fuelLabel, countyName, stateCode, supplierCount, stats }) 
     `${countyName} County ${fuelLabel} Prices`,
     [` (${stateCode})`, ` — ${supplierCount} Suppliers`],
   );
-  const description = clampDesc(
+  const description = fitDesc(
     `Today's ${fuelLabel.toLowerCase()} prices in ${countyName} County, ${stateCode}` +
-    `${priceClause(stats)}. Compare ${supplierCount} suppliers, sorted lowest first. Updated daily.`,
+    `${priceClause(stats)}. Compare ${supplierCount} local suppliers, sorted lowest first and updated daily.`,
+    [` Find the cheapest delivered ${fuelLabel.toLowerCase()} rate across ${countyName} County today.`],
   );
   return { title, description };
 }
 
-/** City/town page — /prices/{state}/{city} */
-function cityMeta({ fuelLabel, cityName, stateCode, supplierCount, stats }) {
+/** City/town page — /prices/{state}/{city}. countyName (optional) gives a unique mid-clause. */
+function cityMeta({ fuelLabel, cityName, stateCode, countyName, supplierCount, stats }) {
   const title = fitTitle(
     `${cityName}, ${stateCode} ${fuelLabel} Prices`,
     [` — Compare ${supplierCount} Suppliers`],
   );
-  const description = clampDesc(
-    `Compare ${fuelLabel.toLowerCase()} prices in ${cityName}, ${stateCode}${priceClause(stats)} ` +
-    `from ${supplierCount} local suppliers. Updated daily, lowest first.`,
+  const countyClause = countyName ? ` serving ${countyName} County` : '';
+  const description = fitDesc(
+    `Compare ${fuelLabel.toLowerCase()} prices in ${cityName}, ${stateCode} from ${supplierCount} ` +
+    `local suppliers${countyClause}${priceClause(stats)}, sorted lowest first and updated daily.`,
+    [` See today's cheapest delivered ${fuelLabel.toLowerCase()} rate near ${cityName} and stop overpaying.`],
   );
   return { title, description };
 }
@@ -75,9 +94,10 @@ function regionMeta({ fuelLabel, regionName, stateCode, supplierCount, stats }) 
     `${regionName}, ${stateCode} ${fuelLabel} Prices`,
     [` — Compare ${supplierCount} Suppliers`],
   );
-  const description = clampDesc(
-    `Compare ${fuelLabel.toLowerCase()} prices in ${regionName}, ${stateCode}${priceClause(stats)} ` +
-    `from ${supplierCount} local suppliers. Updated daily, lowest first.`,
+  const description = fitDesc(
+    `Compare ${fuelLabel.toLowerCase()} prices across ${regionName}, ${stateCode} from ${supplierCount} ` +
+    `local suppliers${priceClause(stats)}, sorted lowest first and updated daily.`,
+    [` Find the cheapest delivered ${fuelLabel.toLowerCase()} rate in the ${regionName} area today.`],
   );
   return { title, description };
 }
@@ -88,26 +108,32 @@ function zipMeta({ regionName, zipPrefix, supplierCount, stats }) {
     `${regionName} Heating Oil Prices (${zipPrefix}xx)`,
     [` — ${supplierCount} Suppliers`],
   );
-  const description = clampDesc(
-    `Compare heating oil prices for ZIP codes starting ${zipPrefix}` +
-    `${priceClause(stats)} from ${supplierCount} suppliers. Updated daily, lowest first.`,
+  const description = fitDesc(
+    `Compare heating oil prices for ZIP codes starting ${zipPrefix} in the ${regionName} area` +
+    `${priceClause(stats)} from ${supplierCount} suppliers, sorted lowest first and updated daily.`,
+    [` Find the cheapest delivered heating oil rate across the ${zipPrefix}xx ZIP codes today.`],
   );
   return { title, description };
 }
 
-/** Supplier profile page — /supplier/{slug} (heatingoil-qbd0.2 supplier CTR) */
-function supplierMeta({ name, city, stateCode, stats }) {
+/** Supplier profile page — /supplier/{slug} (heatingoil-qbd0.2 supplier CTR).
+ *  `price` only (no service-area list — a multi-county list overflows 160 and clampDesc
+ *  truncates it to a dangling comma). Durable copy leads; the CTA enrichment is the only
+ *  expendable (clamp-eaten) tail for long-name+price rows. */
+function supplierMeta({ name, city, stateCode, price }) {
   const loc = (city && stateCode) ? ` in ${city}, ${stateCode}` : '';
   const title = fitTitle(name, [' Heating Oil Prices', loc]);
   const where = (city && stateCode) ? ` in ${city}, ${stateCode}` : '';
-  const description = clampDesc(
-    `Compare ${name} heating oil prices${where}${priceClause(stats)}. ` +
-    `See their current rate, service area, hours, and contact info. Updated daily.`,
+  const priceBit = price ? ` — currently $${price}/gal` : '';
+  const description = fitDesc(
+    `Compare ${name} heating oil prices${where}${priceBit}. See their current rate, ` +
+    `service area, hours, payment options, and contact info — updated daily.`,
+    [` Check whether ${name} offers the cheapest heating oil delivery near you before you order.`],
   );
   return { title, description };
 }
 
 module.exports = {
   stateMeta, countyMeta, cityMeta, regionMeta, zipMeta, supplierMeta,
-  fitTitle, clampDesc, TITLE_CORE_MAX, DESC_MAX,
+  fitTitle, fitDesc, clampDesc, TITLE_CORE_MAX, DESC_MAX, DESC_MIN,
 };
