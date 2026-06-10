@@ -2228,7 +2228,7 @@
     "pattern": "table",
     "targetTier": 5,
     "notes": "Long Island Nassau/Suffolk - 4 tiers (lowest appears 3x). targetTier=5 = $3.54 (150 gal).",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "ec-price-per\"[^$]*\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "11001",
       "11003",
@@ -10777,7 +10777,13 @@
       "06519",
       "06524",
       "06525"
-    ]
+    ],
+    "fuels": {
+      "propane": {
+        "enabled": true,
+        "priceRegex": "PROPANE</strong>[\\s\\S]*?<strong>\\$([0-9]+\\.[0-9]{2})"
+      }
+    }
   },
   "purplefuels.com": {
     "enabled": true,
@@ -12234,7 +12240,13 @@
       "06525",
       "06712",
       "06770"
-    ]
+    ],
+    "fuels": {
+      "propane": {
+        "enabled": true,
+        "priceRegex": "Propane Price Starting at <strong>\\$([0-9]+\\.[0-9]{2})"
+      }
+    }
   },
   "reddooroil.com": {
     "enabled": false,
@@ -14473,7 +14485,7 @@
     "enabled": true,
     "pattern": "direct",
     "notes": "MA Hanover - Tiered pricing table (250/200/150/125/100/50 gal). Site is back up. Regex grabs first price (250 gal tier).",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})"
+    "priceRegex": "Current Heating Oil Prices[\\s\\S]*?\\$([0-9]+\\.[0-9]{2,3})"
   },
   "richardsfuel.com": {
     "enabled": true,
@@ -14520,7 +14532,13 @@
       "01069",
       "01071",
       "01507"
-    ]
+    ],
+    "fuels": {
+      "propane": {
+        "enabled": true,
+        "priceRegex": "Today's Propane Price[\\s\\S]{0,400}?\\$([0-9]+\\.[0-9]{2})"
+      }
+    }
   },
   "redstaroil.net": {
     "enabled": true,
@@ -18333,7 +18351,8 @@
       "18250",
       "18252",
       "18330",
-      "18333"
+      "18333",
+      "18610", "18210"
     ]
   },
   "tolinosfuel.com": {
@@ -18644,19 +18663,19 @@
       "17554",
       "17557",
       "17579"
-    ]
+    ],
+    "fuels": {
+      "propane": {
+        "enabled": true,
+        "priceRegex": "Propane 1-100 gallons[^$]*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "dolanoilservice.com": {
     "enabled": true,
     "pattern": "direct",
     "notes": "PA York Haven - COD/will-call. Northern York + Southern Cumberland counties. Oil + propane prices in HTML.",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
-    "fuels": {
-      "propane": {
-        "enabled": true,
-        "priceRegex": "Propane[^$]*\\$([0-9]+\\.[0-9]{2,3})"
-      }
-    },
     "postalCodesServed": [
       "17011",
       "17019",
@@ -19125,8 +19144,15 @@
       "18840",
       "18844",
       "18847",
-      "18848"
-    ]
+      "18848",
+      "18326", "18330", "18334", "18342", "18344", "18349", "18350", "18372", "18466"
+    ],
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kerosene:</span>\\s*<span class=\"fuel-price\">\\s*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "leighowoil.com": {
     "enabled": true,
@@ -19166,7 +19192,7 @@
     "targetTier": 2,
     "sectionStart": "Heating Oil Prices",
     "notes": "PA Port Carbon/Schuylkill County - True COD. sectionStart matches <h1>Heating Oil Prices</h1> heading, skips propane section. 3 heating oil tiers: 100-124/125-299/300+. targetTier=2 = 125-299 gal.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "Heating Oil Prices</strong>[\\s\\S]*?\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "17901",
       "17921",
@@ -19214,7 +19240,13 @@
       "18245",
       "18248",
       "18252"
-    ]
+    ],
+    "fuels": {
+      "propane": {
+        "enabled": true,
+        "priceRegex": "Propane Prices</strong>[\\s\\S]*?\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "buttonoil.com": {
     "enabled": false,
@@ -21119,7 +21151,13 @@
       "03878",
       "03884",
       "03887"
-    ]
+    ],
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kerosene<\\/h4><div data-ux=\"PriceMajor\"[^>]*>\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "buxtonoil.com": {
     "enabled": true,
@@ -21494,7 +21532,13 @@
       "03870",
       "03874",
       "03885"
-    ]
+    ],
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kerosene:\\s*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "brocoenergy.com": {
     "enabled": true,
@@ -21862,7 +21906,13 @@
       "03894",
       "03896",
       "03897"
-    ]
+    ],
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "K-1:\\s*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "fuelnrg.co": {
     "enabled": true,
@@ -21939,7 +21989,13 @@
       "03884",
       "03887",
       "03890"
-    ]
+    ],
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kerosene<\\/h3>[\\s\\S]*?([0-9]+\\.[0-9]{2,3})\\/gal"
+      }
+    }
   },
   "harrisenergyinc.com": {
     "enabled": true,
@@ -22322,7 +22378,13 @@
       "03590",
       "03595",
       "03597"
-    ]
+    ],
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kerosene[\\s\\S]*?elementor-price-list-price\">\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "joelsoil.com": {
     "enabled": true,
@@ -23545,7 +23607,13 @@
       "04107",
       "04110",
       "04260"
-    ]
+    ],
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "K1 Price:\\s*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "desrochersoil.com": {
     "enabled": true,
@@ -24023,7 +24091,13 @@
       "04073",
       "04083",
       "04087"
-    ]
+    ],
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "K-1 Fuel Cash Price[\\s\\S]*?\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "countryfuelllc.com": {
     "enabled": true,
@@ -24031,7 +24105,7 @@
     "name": "Country Fuel LLC",
     "phone": "(207) 725-4651",
     "notes": "ME Topsham - COD only explicit. GoDaddy SSR site. Oil + K1 prices on homepage.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "#2 Cash Price:[\\s\\S]*?All Areas:[\\s\\S]*?>([0-9]+\\.[0-9]{2,3})<",
     "postalCodesServed": [
       "04008",
       "04011",
@@ -24164,7 +24238,13 @@
       "04101",
       "04106",
       "04107"
-    ]
+    ],
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "K-1\\s*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    }
   },
   "ggcashfuel.com": {
     "enabled": false,
@@ -33756,7 +33836,8 @@
       "18512",
       "18518",
       "18519",
-      "18657"
+      "18657",
+      "18610", "18210"
     ]
   },
   "scottwilliamsoil.com": {
@@ -37015,6 +37096,115 @@
     "notes": "DISABLED: AK Delta Junction/Interior - Delta Transport Services (Delta Industrial), on-call/will-call #1 heating oil, no published prices (in-store/call pricing).",
     "postalCodesServed": [
       "99737"
+    ]
+  },
+  "woodlawnoil.com": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED directory: PA Beaver County (+Allegheny edge). Woodlawn Oil Co., Aliquippa 15001. Will-call qualification (own site): 'Will Call - If you choose to control your own delivery schedule, we are happy to accommodate your wishes.' No public per-gallon price -> allowPriceDisplay=false. Fuels: heating_oil, kerosene, propane, diesel. Phone (724) 378-4497. heatingoil-ntz2: serves 15001 propane demand signal (mmurph9412).",
+    "postalCodesServed": [
+      "15001",
+      "15003",
+      "15005",
+      "15009",
+      "15010",
+      "15026",
+      "15042",
+      "15043",
+      "15050",
+      "15052",
+      "15059",
+      "15061",
+      "15066",
+      "15074",
+      "15081",
+      "15108",
+      "15126",
+      "15225"
+    ]
+  },
+  "kandkoil.com": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED directory: PA Carbon County. K&K Oil Company, Lehighton 18235 (family-owned since 1998). Will-call qualification (own site): 'Will Call' delivery option. No public per-gallon price scraped yet -> allowPriceDisplay=false. Fuels: heating_oil, kerosene, diesel, gasoline. Phone 800-964-6451. heatingoil-ntz2: covers Albrightsville 18210 adjacent to 18610 Blakeslee gap.",
+    "postalCodesServed": [
+      "18210",
+      "18229",
+      "18058",
+      "18071",
+      "18080",
+      "18252",
+      "18088",
+      "18235"
+    ]
+  },
+  "firstfuelandpropane.com": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED directory: NY Columbia County (Hudson 12534). First Fuel & Propane. COD qualification (own site /fuel-oil/pricing-plans/): 'Make a one time payment based on the current cash price ... ten cent per gallon discount off of the cash price the day of delivery.' Heating-oil COD coverage = Columbia County; propane plan-based. No scrapable price -> allowPriceDisplay=false. Fuels: heating_oil, propane. Phone (518) 828-8700. heatingoil-ntz2 (qualified COD, non-gap directory).",
+    "postalCodesServed": [
+      "12037",
+      "12060",
+      "12075",
+      "12106",
+      "12115",
+      "12125",
+      "12130",
+      "12136",
+      "12165",
+      "12173",
+      "12184",
+      "12502",
+      "12503",
+      "12512",
+      "12513",
+      "12516",
+      "12517",
+      "12521",
+      "12523",
+      "12526",
+      "12529",
+      "12534",
+      "12565"
+    ]
+  },
+  "hoytsfuelservice.com": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED directory: PA Luzerne County (Shickshinny/Mocanaqua 18655). Hoyt's Fuel Service (42+ yrs). COD qualification (own site): 'Will Call Delivery - Choose your own delivery times and amounts' + 'Charge on Delivery - New accounts are COD for the first year if not approved for a credit or budget account.' No scrapable price (Call for Current Pricing) -> allowPriceDisplay=false. Fuels: heating_oil, kerosene, propane, diesel. Phone (570) 256-3407. heatingoil-ntz2 (qualified COD, non-gap directory).",
+    "postalCodesServed": [
+      "18655",
+      "18621",
+      "18622",
+      "18634",
+      "18635",
+      "18656",
+      "18660",
+      "18661"
+    ]
+  },
+  "myprogas.com": {
+    "enabled": false,
+    "pattern": "none",
+    "notes": "DISABLED directory: PA Beaver/Butler County. ProGas Inc., Aliquippa-area (HQ Zelienople 16063). PROPANE-ONLY (no heating oil) — added per operator direction for future propane expansion (overrides heating-oil hard rule). Will-call qualification (own site /residential-propane/): 'Will Call - Some customers prefer to let us know when they need a propane delivery. They order on a will call basis.' No public per-gallon price -> allowPriceDisplay=false. Fuels: propane, diesel. Phone (724) 452-7262. heatingoil-ntz2: serves 15001 propane demand signal (mmurph9412).",
+    "postalCodesServed": [
+      "15001",
+      "15003",
+      "15005",
+      "15009",
+      "15010",
+      "15026",
+      "15027",
+      "15042",
+      "15043",
+      "15050",
+      "15052",
+      "15059",
+      "15061",
+      "15066",
+      "15074",
+      "15081",
+      "16063"
     ]
   }
 }
