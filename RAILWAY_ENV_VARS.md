@@ -36,6 +36,10 @@ EMAIL_PASS=your-smtp-password
 LOG_LEVEL=info
 ```
 
+### IndexNow (Bing crawl submission)
+- `INDEXNOW_KEY` — REQUIRED to enable. 32-char hex string. Public by design — also served at `https://www.gethomeheat.com/<key>.txt` for IndexNow verification (NOT a secret; do not commit it to git, but exposure is expected). Generate with: `node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"`. If unset, the nightly IndexNow step skips cleanly (logs "skipped").
+- `INDEXNOW_DRY_RUN` — set to `true` to compute + log the would-submit count without POSTing or writing hashes. Default unset (live).
+
 ## 🚀 **Quick Setup Commands**
 
 ```bash

@@ -448,6 +448,17 @@ app.use(express.static(path.join(__dirname, 'website'), {
   }
 }));
 
+// IndexNow key verification: served dynamically from env (no static file to
+// persist on Railway's ephemeral FS, and the key stays out of git). IndexNow
+// fetches https://www.gethomeheat.com/<key>.txt and expects the body to equal
+// the key. Static middleware above won't find a real file and falls through.
+if (process.env.INDEXNOW_KEY) {
+  const _indexNowKey = process.env.INDEXNOW_KEY;
+  app.get(`/${_indexNowKey}.txt`, (req, res) => {
+    res.type('text/plain').send(_indexNowKey);
+  });
+}
+
 // Request logging
 app.use(expressWinston.logger({
   winstonInstance: logger,
@@ -1236,6 +1247,18 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       return result;
     }, { retry: false });
   }, { timezone: 'America/New_York' });
+  // Submit new/changed indexable URLs to IndexNow (Bing) — runs after the
+  // 23:30 sitemap regen so it reads a fresh sitemap.xml. See docs/deployment.md.
+  cron.schedule('31 23 * * *', async () => {
+    await cronMonitor.run('indexnow', async () => {
+      const { runIndexNowSubmission } = require('./src/services/IndexNowService');
+      const websiteDir = path.join(__dirname, 'website');
+      const result = await runIndexNowSubmission({ sequelize, logger, websiteDir });
+      if (result.skipped) logger.info('⏭️  IndexNow skipped (no INDEXNOW_KEY)');
+      else logger.info(`✅ IndexNow: ${result.submitted} submitted, ${result.pruned} pruned (${result.indexable} indexable)`);
+      return result;
+    }, { retry: false });
+  }, { timezone: 'America/New_York' });
   // Update for-suppliers page stats (after all page generators)
   cron.schedule('35 23 * * *', async () => {
     await cronMonitor.run('supplier-page-stats', async () => {
@@ -1249,6 +1272,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info('📄 SEO + Supplier + ZIP/County Elite page generator scheduled: daily at 11:00 PM EST');
   logger.info('📄 Heating cost + Avg Bill + Price Trend page generators scheduled: daily at 11:15/11:20/11:25 PM EST');
   logger.info('📄 Sitemap regeneration scheduled: daily at 11:30 PM EST');
+  logger.info('📡 IndexNow submission scheduled: daily at 11:31 PM EST (after sitemap)');
   logger.info('📊 Supplier page stats scheduled: daily at 11:35 PM EST');
 
   // Regenerate all pages on startup. Generated pages are gitignored — fresh

@@ -75,11 +75,16 @@ Railway's internal healthcheck uses `*.railway.app` URL. The redirect middleware
 |---|---|---|
 | 4:00 PM | Afternoon price scrape + ZIP/county stats | UTC (`0 21 * * *`) |
 | 11:00 PM | SEO + supplier + ZIP/county elite page generation | America/New_York |
+| 11:31 PM | IndexNow submission to Bing (after 11:30 sitemap regen) | America/New_York |
 | 2:15 AM | Platform metrics computation | America/New_York |
 | 3:30 AM (18th of month) | EIA energy rates refresh (electricity + gas) | America/New_York |
 | 6:00 AM (1st of month) | Monthly phone_only supplier reset | UTC (`0 11 1 * *`) |
 | 6:00 AM daily | Coverage analysis + daily report + staleness check | setTimeout-based |
 | 8:00 AM Monday | Weekly summary email | setTimeout-based |
+
+### IndexNow (Bing crawl submission)
+
+A nightly `cron.schedule('31 23 …')` step (after the 11:30 PM sitemap regen) reads `website/sitemap.xml` and submits only **new/changed** indexable URLs to IndexNow (shares to Bing), via `runIndexNowSubmission` in `src/services/IndexNowService.js`. Change detection = a content hash per URL (date + relative-freshness tokens normalized out) compared against the `indexnow_page_hashes` table (migration 176). **Removed** URLs are pruned from the table but never submitted (a drop is ambiguous: deleted vs newly `noindex`). The first run bootstraps (empty table → submits the whole sitemap once). Gated by `INDEXNOW_KEY` (presence) + `INDEXNOW_DRY_RUN`. A failed submission or a missing sitemap is NOT swallowed — it throws so `cronMonitor` marks the `indexnow` job failed and it appears in the 6 AM ops email's Recent Errors. A `/<INDEXNOW_KEY>.txt` route serves the verification key from env. Known tech debt: change detection hashes rendered HTML + regex-strips volatile tokens (fragile if a generator adds a new relative-time token); the logged `new/changed %` ratio is the drift signal.
 
 ## Startup Sequence
 
