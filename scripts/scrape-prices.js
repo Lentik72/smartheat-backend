@@ -273,7 +273,8 @@ async function runScraper(options = {}) {
               const prevFuel = prevFuelPrices.length > 0 ? parseFloat(prevFuelPrices[0].price_per_gallon) : null;
               const fuelVerdict = await checkAndRecordPrice(sequelize, {
                 supplierId: result.supplierId, supplierName: supplier.name, fuelType: fp.fuelType,
-                newPrice: fp.price, prevPrice: prevFuel, stateMedian: null, source: 'batch',
+                newPrice: fp.price, prevPrice: prevFuel, stateMedian: null,
+                primaryPrice: result.pricePerGallon, source: 'batch',
               }, log);
               const fuelRejected = !fuelVerdict.ok;
               if (fuelRejected) log.warn(`   ⚠️  ${fp.fuelType} REJECTED: $${fp.price.toFixed(3)} — ${fuelVerdict.rejection.reason}`);

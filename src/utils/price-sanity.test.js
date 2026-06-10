@@ -31,6 +31,23 @@ ok(evaluatePriceSanity({newPrice:3.00, prevPrice:4.00}).ok, 'exactly 25% drop �
   ok(r.rejection.previousPrice!==undefined, 'when both fail, drop takes precedence'); }
 ok(MAX_PRICE_DROP===0.25 && MAX_BELOW_MEDIAN===0.25, 'thresholds exported = 0.25');
 
+console.log('\n=== cross-fuel identity guard (heatingoil-u2gr) ===');
+// A secondary-fuel price IDENTICAL to the primary heating-oil price is almost always a
+// mislabeled capture (e.g. dolanoilservice propane regex grabbed the $4.899 oil price).
+// Per-fuel range gates can't catch it (the value is in-range), so reject on value-identity.
+{ const r=evaluatePriceSanity({newPrice:4.899, primaryPrice:4.899});
+  ok(!r.ok, 'secondary price == primary oil price → rejected');
+  ok(/cross.?fuel/i.test(r.rejection.reason), 'cross-fuel rejection reason wording');
+  eq(r.rejection.primaryPrice, 4.899, 'cross-fuel rejection carries primaryPrice');
+  ok(r.rejection.previousPrice===undefined && r.rejection.marketMedian===undefined, 'cross-fuel rejection has NO drop/median fields'); }
+ok(evaluatePriceSanity({newPrice:5.399, primaryPrice:4.499}).ok, 'distinct secondary vs oil → ok');
+ok(evaluatePriceSanity({newPrice:4.899, primaryPrice:null}).ok, 'no primaryPrice (primary fuel itself) → not cross-fuel checked');
+ok(evaluatePriceSanity({newPrice:4.899}).ok, 'absent primaryPrice → ok (back-compat, primary-fuel call)');
+ok(evaluatePriceSanity({newPrice:4.909, primaryPrice:4.899}).ok, 'one-cent difference → not identity → ok');
+ok(!evaluatePriceSanity({newPrice:4.899, primaryPrice:4.89900}).ok, 'float-equal within epsilon → rejected');
+{ const r=evaluatePriceSanity({newPrice:4.20, primaryPrice:4.20, prevPrice:6.30, stateMedian:4.40, state:'PA'});
+  ok(!r.ok && r.rejection.primaryPrice===4.20, 'cross-fuel takes precedence over drop/median when secondary==oil'); }
+
 console.log('\n=== DB helpers (fake sequelize) ===');
 const { getAllStateMedians, getStateMedian, recordPriceRejection, checkAndRecordPrice, getRecentRejections } = require('./price-sanity');
 function fakeSeq(rowsForSelect) {
@@ -73,6 +90,18 @@ function fakeSeq(rowsForSelect) {
     const v=await checkAndRecordPrice(seq,{supplierId:'s1',supplierName:'X',fuelType:'heating_oil',newPrice:1.0,prevPrice:6.3,stateMedian:6.0,state:'PA',source:'scheduler'});
     ok(v.ok, 'kill switch → ok even for an anomalous price');
     ok(seq.calls.length===0, 'kill switch → no DB writes');
+    delete process.env.DISABLE_PRICE_SANITY; }
+  { const seq=fakeSeq();
+    const v=await checkAndRecordPrice(seq,{supplierId:'s1',supplierName:'Dolan',fuelType:'propane',newPrice:4.899,primaryPrice:4.899,source:'scheduler'});
+    ok(!v.ok, 'checkAndRecordPrice rejects a secondary price identical to primary oil');
+    const c=seq.calls.find(c=>/INSERT INTO price_rejections/.test(c.sql));
+    ok(c, 'cross-fuel rejection is recorded to price_rejections');
+    ok(c && c.opts.bind.some(b=>/cross.?fuel/i.test(String(b))), 'recorded reason is cross-fuel'); }
+  { process.env.DISABLE_PRICE_SANITY='true';
+    const seq=fakeSeq();
+    const v=await checkAndRecordPrice(seq,{supplierId:'s1',supplierName:'Dolan',fuelType:'propane',newPrice:4.899,primaryPrice:4.899,source:'scheduler'});
+    ok(v.ok, 'kill switch bypasses the cross-fuel guard too');
+    ok(seq.calls.length===0, 'kill switch → no writes for cross-fuel collision');
     delete process.env.DISABLE_PRICE_SANITY; }
   { const seq={query(){return Promise.reject(new Error('db down'));}};
     ok((await getStateMedian(seq,'CT'))===null, 'getStateMedian returns null on DB error'); }

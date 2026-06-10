@@ -440,7 +440,7 @@ async function executeScrape(supplierId, supplierName, sequelize, logger) {
         const v = await checkAndRecordPrice(sequelize, {
           supplierId, supplierName, fuelType: fp.fuelType, newPrice: fp.price,
           prevPrice: prevF.length > 0 ? parseFloat(prevF[0].price_per_gallon) : null,
-          stateMedian: null, source: 'scheduler',
+          stateMedian: null, primaryPrice: result.pricePerGallon, source: 'scheduler',
         }, logger);
         if (!v.ok) {
           logger.warn(`   ⚠️  [price-rejected] ${supplierName} ${fp.fuelType} $${fp.price.toFixed(3)} — ${v.rejection.reason}`);
