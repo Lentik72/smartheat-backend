@@ -964,6 +964,7 @@ async function generateCityPage(stateCode, stateInfo, city, allSuppliers, priceM
     fuelLabel: FUEL.label,
     cityName,
     stateCode,
+    countyName: countyNameFormatted, // title-cased (line ~962); raw countyName is lowercase/abbrev
     supplierCount: suppliers.length,
     stats,
   });
