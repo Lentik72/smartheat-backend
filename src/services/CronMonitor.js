@@ -156,6 +156,7 @@ class CronMonitor {
         { name: 'avg-bill-pages', label: 'Avg Bill Pages (11:20 PM)', schedule: 'daily', windowHours: 26 },
         { name: 'price-trend-pages', label: 'Price Trend Pages (11:25 PM)', schedule: 'daily', windowHours: 26 },
         { name: 'sitemap', label: 'Sitemap (11:30 PM)', schedule: 'daily', windowHours: 26 },
+        { name: 'indexnow', label: 'IndexNow (11:31 PM)', schedule: 'daily', windowHours: 26 },
         { name: 'platform-metrics', label: 'Platform Metrics (2:15 AM)', schedule: 'daily', windowHours: 26 },
         { name: 'eia-energy-rates', label: 'EIA Energy Rates (3:30 AM, 18th of month)',
           schedule: 'monthly', dayOfMonth: 18, windowHours: 24 * 32 },
