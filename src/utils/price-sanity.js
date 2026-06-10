@@ -16,7 +16,19 @@ const MIN_SUPPLIERS_FOR_MEDIAN = 5;  // a state needs >=5 suppliers to trust its
  *   drop rejection:   { reason, dropPercent, previousPrice }
  *   median rejection: { reason, belowMedianPercent, marketMedian, state }
  */
-function evaluatePriceSanity({ newPrice, prevPrice = null, stateMedian = null, state = null }) {
+function evaluatePriceSanity({ newPrice, prevPrice = null, stateMedian = null, state = null, primaryPrice = null }) {
+  // Cross-fuel identity guard (heatingoil-u2gr): a secondary-fuel price IDENTICAL to the
+  // supplier's primary heating-oil price is almost always a mislabeled capture (e.g. a loose
+  // propane regex grabbing the oil price). The per-fuel range gates can't catch it because the
+  // value sits inside the secondary's valid range. Caller passes primaryPrice ONLY when
+  // validating a secondary fuel (kerosene/propane) against the supplier's oil price; it is
+  // never passed for the primary heating-oil check, so oil is never rejected against itself.
+  if (primaryPrice != null && Math.abs(newPrice - primaryPrice) < 0.0005) {
+    return { ok: false, rejection: {
+      reason: `cross-fuel: price $${newPrice.toFixed(3)} equals primary heating-oil price (likely mislabeled secondary capture)`,
+      primaryPrice,
+    } };
+  }
   if (prevPrice != null) {
     const drop = (prevPrice - newPrice) / prevPrice;
     if (drop > MAX_PRICE_DROP) {
@@ -108,12 +120,12 @@ async function recordPriceRejection(sequelize, { supplierId, supplierName, fuelT
   }
 }
 
-async function checkAndRecordPrice(sequelize, { supplierId, supplierName, fuelType, newPrice, prevPrice = null, stateMedian = null, state = null, source }, logger = null) {
+async function checkAndRecordPrice(sequelize, { supplierId, supplierName, fuelType, newPrice, prevPrice = null, stateMedian = null, state = null, primaryPrice = null, source }, logger = null) {
   // Kill switch (no-deploy disable; matches SCRAPE_SKIP_DROPLET precedent). If the
   // guard ever over-rejects legitimate prices, set DISABLE_PRICE_SANITY=true in
   // Railway env to neutralize it instantly — everything is accepted, nothing logged.
   if (process.env.DISABLE_PRICE_SANITY === 'true') return { ok: true };
-  const verdict = evaluatePriceSanity({ newPrice, prevPrice, stateMedian, state });
+  const verdict = evaluatePriceSanity({ newPrice, prevPrice, stateMedian, state, primaryPrice });
   if (!verdict.ok) {
     await recordPriceRejection(sequelize, { supplierId, supplierName, fuelType, newPrice, rejection: verdict.rejection, source }, logger);
   }
