@@ -7320,10 +7320,16 @@
     ]
   },
   "cashoilco.com": {
-    "enabled": false,
-    "pattern": "direct",
-    "notes": "DISABLED: No price found on page",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "enabled": true,
+    "pattern": "post_form",
+    "pricePath": "/order-fuel/",
+    "formBody": {
+      "xfuel_type": "Heating Oil",
+      "xzip": "07801"
+    },
+    "priceRegex": "x_base_price\\s*=\\s*'([0-9]+\\.[0-9]{2,3})'",
+    "hostGroup": "custom",
+    "notes": "NJ Dover/Morris - custom xzip form re-enabled 2026-06-12 (oil ~$4.35). Recovered by block-guard fix 43e675b3a. xzip hardcoded.",
     "postalCodesServed": [
       "07003",
       "07004",
@@ -18321,10 +18327,17 @@
     ]
   },
   "tolinosfuel.com": {
-    "enabled": false,
-    "pattern": "direct",
-    "notes": "DISABLED: PA Bangor - Price requires ZIP entry. COD available.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "enabled": true,
+    "pattern": "post_form",
+    "pricePath": "/",
+    "formBody": {
+      "xzip": "18013",
+      "xfuel": "Fuel Oil",
+      "zipSubmit": "GET PRICING"
+    },
+    "priceRegex": "price-chip[^>]*>\\$([0-9]+\\.[0-9]{2,3})",
+    "hostGroup": "custom",
+    "notes": "PA Bangor/Northampton - custom xzip form re-enabled 2026-06-12 (oil ~$4.30). Recovered by block-guard fix 43e675b3a. xzip hardcoded (scraper rotates zip_code which this form ignores).",
     "postalCodesServed": [
       "18013",
       "18014",
@@ -18800,11 +18813,17 @@
     ]
   },
   "marstellaroilconcrete.com": {
-    "enabled": false,
-    "pattern": "direct",
+    "enabled": true,
+    "pattern": "post_form",
     "pricePath": "/get-price/",
-    "notes": "DISABLED: PA Duncannon - Price behind online portal. Min 50 gal.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "formBody": {
+      "wcp_id": "2",
+      "zip_code": "17020"
+    },
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "hostGroup": "droplet",
+    "notes": "PA Harrisburg/Perry/Cumberland - Droplet re-enabled 2026-06-12 (oil ~$4.16). Recovered by block-guard fix 43e675b3a; coverage narrowed to served.",
+    "postalCodesOverride": true,
     "postalCodesServed": [
       "17007",
       "17011",
@@ -18831,7 +18850,6 @@
       "17059",
       "17061",
       "17062",
-      "17063",
       "17070",
       "17074",
       "17078",
