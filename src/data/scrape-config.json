@@ -11121,22 +11121,41 @@
     ]
   },
   "clearriverfueloil.com": {
-    "enabled": false,
-    "pattern": "direct",
-    "notes": "DISABLED: Price behind dynamic tool",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "enabled": true,
+    "pattern": "post_form",
+    "pricePath": "/get-price/",
+    "formBody": {
+      "wcp_id": "2",
+      "zip_code": "06066"
+    },
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "hostGroup": "droplet",
+    "postalCodesOverride": true,
     "postalCodesServed": [
-      "06320",
-      "06330",
-      "06340",
-      "06360",
-      "06365",
-      "06370",
-      "06375",
-      "06380",
-      "06382",
-      "06385"
-    ]
+      "06002",
+      "06016",
+      "06033",
+      "06040",
+      "06041",
+      "06042",
+      "06043",
+      "06066",
+      "06067",
+      "06073",
+      "06074",
+      "06088",
+      "06095",
+      "06096",
+      "06107",
+      "06108",
+      "06109",
+      "06110",
+      "06111",
+      "06117",
+      "06118",
+      "06119"
+    ],
+    "notes": "CT Hartford/Manchester/Vernon (central CT) - Droplet re-enabled 2026-06-12 (oil ~$3.99). Coverage REBUILT from endpoint-served ZIPs (prior DB coverage was Norwich/New London - wrong region)."
   },
   "wilcoxoilonline.com": {
     "enabled": false,
@@ -28495,22 +28514,32 @@
     ]
   },
   "eliteenergyct.com": {
-    "enabled": false,
-    "pattern": "none",
-    "notes": "DISABLED: Added by coverage export — not yet in scrape config. Slug: elite-energy-ct",
+    "enabled": true,
+    "pattern": "post_form",
+    "pricePath": "/get-price/",
+    "formBody": {
+      "wcp_id": "2",
+      "zip_code": "06790"
+    },
+    "priceRegex": "tier_price_option\"[^>]*data-gal=\"[0-9]+\"[^>]*>([0-9]+\\.[0-9]{2,3})",
+    "hostGroup": "droplet",
+    "postalCodesOverride": true,
     "postalCodesServed": [
-      "06824",
-      "06825",
-      "06828",
-      "06830",
-      "06831",
-      "06840",
-      "06850",
-      "06851",
-      "06853",
-      "06854",
-      "06855"
-    ]
+      "06013",
+      "06057",
+      "06098",
+      "06750",
+      "06756",
+      "06759",
+      "06763",
+      "06778",
+      "06786",
+      "06787",
+      "06790",
+      "06791",
+      "06795"
+    ],
+    "notes": "CT Litchfield/Torrington (NW CT) - Droplet re-enabled 2026-06-12 (oil ~$4.39). Coverage REBUILT from endpoint-served ZIPs (prior DB coverage was Fairfield - wrong region)."
   },
   "_no_website_emergency-services-fuel-corp": {
     "enabled": false,
