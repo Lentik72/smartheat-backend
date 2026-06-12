@@ -121,13 +121,43 @@ async function pruneHashes(sequelize, urls) {
   await sequelize.query('DELETE FROM indexnow_page_hashes WHERE url = ANY($1::text[])', { bind: [urls] });
 }
 
-// Submit absolute URLs to IndexNow in <=MAX_BATCH chunks. fetchImpl is
-// injectable for tests; defaults to global fetch (Node 18+). Returns the URLs
-// that were ACTUALLY accepted (submittedUrls) so the caller persists only
-// those — a failed batch stays unpersisted and is retried next run.
-async function submitToIndexNow(urls, { key, fetchImpl, logger } = {}) {
+// Per-batch retry. The cases this RELIABLY rescues are short transients — 429,
+// 5xx, or a dropped connection — seconds-scale, so the 15s/60s backoff absorbs
+// them and one blip doesn't fail the whole run + false-alarm the 6 AM ops email.
+// A first-run 403 is different: IndexNow 403s a brand-new key until Bing has
+// ASYNC-fetched keyLocation (one-time per key; observed 2026-06-12 — the first
+// nightly run 403'd, then the identical payload returned 200 hours later). That
+// verification can outlast the ~75s retry window; if it does, the run throws and
+// the next night's re-bootstrap submits everything again (also fine) — so the
+// retry gives the 403 a chance, not a guaranteed rescue. 400/422 (bad format /
+// URLs not on host) are permanent — retrying can't help, so fail fast. Bounded
+// (3 attempts): a genuinely bad key still surfaces after the cap, matching
+// IndexNow's "3 consecutive 403 = real problem" guidance.
+const SUBMIT_RETRY_DELAYS_MS = [15000, 60000]; // waited before attempts 2 and 3
+const SUBMIT_MAX_ATTEMPTS = SUBMIT_RETRY_DELAYS_MS.length + 1;
+
+function isRetriableStatus(status) {
+  return status === 403 || status === 429 || status >= 500;
+}
+
+const _defaultSleep = (ms) => new Promise((resolve) => {
+  const t = setTimeout(resolve, ms);
+  if (t && typeof t.unref === 'function') t.unref(); // don't block SIGTERM
+});
+
+// Submit absolute URLs to IndexNow in <=MAX_BATCH chunks. fetchImpl/sleep are
+// injectable for tests; default to global fetch (Node 18+) and a real timer.
+// Returns the URLs that were ACTUALLY accepted (submittedUrls) so the caller
+// persists only those — a failed batch stays unpersisted and is retried next run.
+async function submitToIndexNow(urls, { key, fetchImpl, logger, sleep, attempts } = {}) {
   const _fetch = fetchImpl || fetch;
   const _log = logger || console;
+  const _sleep = sleep || _defaultSleep;
+  const _warn = (msg) => {
+    if (typeof _log.warn === 'function') _log.warn(msg);
+    else if (typeof _log.error === 'function') _log.error(msg);
+  };
+  const maxAttempts = attempts || SUBMIT_MAX_ATTEMPTS;
   const keyLocation = `${BASE_URL}/${key}.txt`;
   const submittedUrls = [];
   let failed = 0;
@@ -139,19 +169,32 @@ async function submitToIndexNow(urls, { key, fetchImpl, logger } = {}) {
       keyLocation,
       urlList: batch.map(u => `${BASE_URL}${u}`),
     });
-    try {
-      const res = await _fetch(INDEXNOW_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body,
-        signal: AbortSignal.timeout(10000),
-      });
-      if (res.ok) submittedUrls.push(...batch);
-      else { failed += batch.length; _log.error(`[IndexNow] submission failed: HTTP ${res.status}`); }
-    } catch (e) {
-      failed += batch.length;
-      _log.error(`[IndexNow] submission error: ${e.message}`);
+    let ok = false;
+    let reason = '';
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      let retriable;
+      try {
+        const res = await _fetch(INDEXNOW_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body,
+          signal: AbortSignal.timeout(10000),
+        });
+        if (res.ok) { ok = true; break; }
+        reason = `HTTP ${res.status}`;
+        retriable = isRetriableStatus(res.status);
+      } catch (e) {
+        reason = e.message;
+        retriable = true; // timeout/network blip — worth a retry
+      }
+      if (!retriable || attempt === maxAttempts) break;
+      const idx = Math.min(attempt - 1, SUBMIT_RETRY_DELAYS_MS.length - 1);
+      const delay = SUBMIT_RETRY_DELAYS_MS[idx];
+      _warn(`[IndexNow] batch attempt ${attempt}/${maxAttempts} failed (${reason}); retrying in ${Math.round(delay / 1000)}s`);
+      await _sleep(delay);
     }
+    if (ok) submittedUrls.push(...batch);
+    else { failed += batch.length; _log.error(`[IndexNow] submission failed after ${maxAttempts} attempt(s): ${reason}`); }
   }
   return { submitted: submittedUrls.length, submittedUrls, failed };
 }
@@ -159,7 +202,7 @@ async function submitToIndexNow(urls, { key, fetchImpl, logger } = {}) {
 // Orchestrator — called by the 23:31 cron. Gated by INDEXNOW_KEY (presence)
 // and INDEXNOW_DRY_RUN. Reads the freshly-written sitemap.xml, hashes each
 // page, diffs vs the stored hashes, submits new/changed, reconciles the table.
-async function runIndexNowSubmission({ sequelize, logger, websiteDir, fetchImpl } = {}) {
+async function runIndexNowSubmission({ sequelize, logger, websiteDir, fetchImpl, sleep } = {}) {
   const _log = logger || console;
   const key = process.env.INDEXNOW_KEY;
   const dryRun = process.env.INDEXNOW_DRY_RUN === 'true';
@@ -208,7 +251,7 @@ async function runIndexNowSubmission({ sequelize, logger, websiteDir, fetchImpl 
   let submittedUrls = [];
   let failed = 0;
   if (toSubmit.length) {
-    const res = await submitToIndexNow(toSubmit, { key, fetchImpl, logger: _log });
+    const res = await submitToIndexNow(toSubmit, { key, fetchImpl, logger: _log, sleep });
     submittedUrls = res.submittedUrls;
     failed = res.failed;
     _log.info(`[IndexNow] submitted ${res.submitted}/${toSubmit.length} URLs` + (failed ? `, ${failed} FAILED` : ''));
