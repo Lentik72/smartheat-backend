@@ -412,29 +412,25 @@ async function scrapeSupplierPriceOnce(supplier, config) {
 
         const postHtml = await resp.text();
 
-        // Droplet-specific block detection in 200 responses
-        if (/captcha|blocked|rate.limit/i.test(postHtml)) {
-          return {
-            supplierId: supplier.id, supplierName: supplier.name, success: false,
-            error: 'Block text detected in POST response',
-            duration: Date.now() - startTime,
-            retryable: false,
-            dropletFailureType: 'block',
-          };
-        }
-
         // Extract price using existing extractPrice() with config's priceRegex
         const postPrice = extractPrice(postHtml, config);
         const postFuelPrices = extractFuelPrices(postHtml, config);
 
         if (postPrice === null) {
+          // No price extracted — only NOW classify a Droplet block. The
+          // /captcha|blocked|rate.limit/ guard must run AFTER extraction, never
+          // before: a valid price response that also embeds a reCAPTCHA script
+          // would false-positive on the word "captcha" (real cases:
+          // marstellaroilconcrete.com, tolinosfuel.com, cashoilco.com). Block
+          // text signals a real block only when there is no price to extract.
+          const blocked = /captcha|blocked|rate.limit/i.test(postHtml);
           return {
             supplierId: supplier.id, supplierName: supplier.name, success: false,
-            error: 'Price not found in POST response',
+            error: blocked ? 'Block text detected in POST response' : 'Price not found in POST response',
             duration: Date.now() - startTime,
             retryable: false,
             fuelPrices: postFuelPrices,
-            dropletFailureType: 'parse',
+            dropletFailureType: blocked ? 'block' : 'parse',
           };
         }
 
