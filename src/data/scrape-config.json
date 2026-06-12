@@ -129,10 +129,10 @@
     ]
   },
   "aceoilandpropane.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: NY Kingston/Ulster County",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "NY Kingston/Ulster - re-enabled 2026-06-12, verified static 'Heating Oil: $4.599' on homepage. COD.",
+    "priceRegex": "Heating Oil:\\s*\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "12401",
       "12402",
@@ -2103,10 +2103,10 @@
     ]
   },
   "jcdiscountoil.com": {
-    "enabled": false,
-    "pattern": "table",
-    "notes": "DISABLED: Long Island Suffolk County - ordering system offline.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY Suffolk LI - re-enabled 2026-06-12, COD-only, verified cash price $4.099/gal on homepage.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})/gallon</b>\\s*\\(cash\\)",
     "postalCodesServed": [
       "11701",
       "11702",
@@ -5187,8 +5187,8 @@
   "valleyoilpok.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NY - Valley Oil Poughkeepsie",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "NY Poughkeepsie - regex tightened 2026-06-12 to \"Today's Discounted Price\" $4.59 (was generic dollar-grab).",
+    "priceRegex": "<h3>\\$([0-9]+\\.[0-9]{2,3})<h3>",
     "postalCodesServed": [
       "12401",
       "12402",
@@ -6831,8 +6831,8 @@
   "lawmansoil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NJ Camden/Burlington/Gloucester - clear price display. May be CAPTCHA blocked intermittently.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "NJ Camden/Burlington - regex tightened 2026-06-12 to pricing-poster $5.099 (was generic; intermittent CAPTCHA).",
+    "priceRegex": "class=\"h1 color-default\">\\$([0-9]+\\.[0-9]{3})",
     "postalCodesServed": [
       "19008",
       "19010",
@@ -8045,10 +8045,12 @@
     ]
   },
   "forceten.org": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: SSL certificate error",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "pricePath": "/current-oil-prices.php",
+    "ignoreSSL": true,
+    "notes": "NJ Robbinsville - re-enabled 2026-06-12; verified 150-gal $4.499 on /current-oil-prices.php (meta date stale, price current).",
+    "priceRegex": "<strong>\\$([0-9]+\\.[0-9]{3})</strong>",
     "postalCodesServed": [
       "08512",
       "08520",
@@ -9611,9 +9613,10 @@
     ]
   },
   "northeastoilcompany.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: NJ Riverdale/Sussex-Morris-Passaic - COD only. Price loaded via JavaScript.",
+    "pricePath": "/change_price.html",
+    "notes": "NJ Riverdale - re-enabled 2026-06-12, COD-only; price on /change_price.html iframe ($4.59).",
     "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "07416",
@@ -11478,10 +11481,10 @@
     ]
   },
   "gaskienergy.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: 'Price today is:' field empty (JS-populated, not in static HTML).",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})\\s*per gallon",
+    "notes": "CT Hartford - re-enabled 2026-06-12, verified body price $4.29/gal (\"Our Oil Price today is\"); cash/check/credit same price.",
+    "priceRegex": ">\\$([0-9]+\\.[0-9]{2,3}) per gallon",
     "postalCodesServed": [
       "06002",
       "06010",
@@ -12400,10 +12403,10 @@
     ]
   },
   "yankeeoil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: CT Mansfield - Price loaded via JavaScript, not in static HTML.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "CT Mansfield - re-enabled 2026-06-12, verified \"CURRENT OIL PRICE: REGULAR $4.429\" on homepage (now static).",
+    "priceRegex": "CURRENT OIL PRICE: REGULAR <b[^>]*>\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "06029",
       "06035",
@@ -12540,10 +12543,11 @@
     ]
   },
   "midknightoilcompany.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: CT North Stonington/New London County - SSL certificate mismatch, site unreachable.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "ignoreSSL": true,
+    "notes": "CT New London - re-enabled 2026-06-12 with ignoreSSL (cert mismatch); verified 150-325gal tier $4.25 (dated 05/28/2026).",
+    "priceRegex": "150-325 GALLONS:[^$]*\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "06320",
       "06333",
@@ -15439,10 +15443,10 @@
     ]
   },
   "leblancoil.org": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: MA Southbridge/Worcester County - Wix JS-rendered site, prices not in static HTML.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "MA Southbridge - re-enabled 2026-06-12, verified Wix SSR \"$4.34 PER GALLON\" on homepage.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3}) PER GALLON",
     "postalCodesServed": [
       "01010",
       "01501",
@@ -16479,9 +16483,9 @@
   },
   "oilpeddler.com": {
     "enabled": true,
-    "pattern": "table",
-    "notes": "MA South Dennis/Cape Cod - Explicit COD. Tiered pricing 150+/200+ gal. WordPress SSR.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "pattern": "direct",
+    "notes": "MA Cape Cod - regex tightened 2026-06-12 to displayed tier price $4.559 (150+/200+ gal).",
+    "priceRegex": "price text-center price\">\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "02537",
       "02542",
@@ -21849,8 +21853,14 @@
   "603oil.com": {
     "enabled": true,
     "pattern": "direct",
-    "notes": "NH Lakes Region/Freedom - Explicitly COD. May be CAPTCHA blocked intermittently.",
+    "notes": "NH Lakes Region - explicit COD; kerosene added 2026-06-12 ($5.29). Oil $4.69. May be CAPTCHA blocked intermittently.",
     "priceRegex": "Oil Price[^$]*\\$([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "K1 Price[^$]*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
     "postalCodesServed": [
       "03816",
       "03817",
@@ -22983,10 +22993,17 @@
     ]
   },
   "ecvt.net": {
-    "enabled": false,
-    "pattern": "none",
-    "notes": "DISABLED: VT Chittenden+Grand Isle+Franklin+Lamoille+Washington counties - Will-Call + 'Today's Member Cash Price' confirmed on /service/heating-oil. Non-members welcome. Prices not in static HTML (/todays-cash-price 404s, homepage doesn't display $X.XX). Caveats: 7-10 business day lead time, $100 restart fee + $250 special-delivery fee for emergencies. Est. 1998, (802) 860-4090.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/cost-heating-fuel/",
+    "notes": "VT co-op - re-enabled 2026-06-12, MEMBER cash price oil $5.15 / K1 $5.75 on /cost-heating-fuel/ (page headline; non-members welcome). AVOID stale og:description $3.66. Flag if customer price ($5.28) preferred.",
+    "priceRegex": "Heating Oil\\s*&#8211;\\s*\\$([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kerosene\\s*&#8211;\\s*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
     "postalCodesServed": [
       "05401",
       "05403",
@@ -24270,10 +24287,10 @@
     ]
   },
   "bobscashfuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: ME Madison/Central ME - Prices via myfuelaccount.com portal, not on site.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "ME Madison - re-enabled 2026-06-12, verified static price widget oil $4.899 on homepage (kerosene present but identical 2nd widget; oil only for now).",
+    "priceRegex": "sc_price_item_price_value\">\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "04294",
       "04901",
@@ -24563,10 +24580,16 @@
     ]
   },
   "kaleroil.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: ME North Bath/Sagadahoc - Est. 1956, family-run. No public price on site.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "ME Bath - re-enabled 2026-06-12, verified \"#2 Fuel Oil: $4.699  Kerosene (K-1): $5.399\" on homepage.",
+    "priceRegex": "#2 Fuel Oil:\\s*\\$([0-9]+\\.[0-9]{2,3})",
+    "fuels": {
+      "kerosene": {
+        "enabled": true,
+        "priceRegex": "Kerosene \\(K-1\\):\\s*\\$([0-9]+\\.[0-9]{2,3})"
+      }
+    },
     "postalCodesServed": [
       "04003",
       "04008",
@@ -24595,10 +24618,10 @@
     ]
   },
   "cbhaskellfuel.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
-    "notes": "DISABLED: ME Windsor/Kennebec - Wix Thunderbolt, JS-rendered. 24hr emergency.",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "notes": "ME Windsor/Kennebec - re-enabled 2026-06-12, verified Wix SSR \"#2- $4.499\".",
+    "priceRegex": "#2-\\s*\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "04330",
       "04341",
@@ -25465,9 +25488,10 @@
     ]
   },
   "armstrongoilandpropane.com": {
-    "enabled": false,
-    "pattern": "none",
-    "notes": "DISABLED: Added by coverage export — not yet in scrape config. Slug: armstrong-oil-propane",
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - re-enabled 2026-06-12, verified 150-gal tier $4.190 in homepage pricing table; order online, pay cash/credit.",
+    "priceRegex": "<td>150</td><td>\\$([0-9]+\\.[0-9]{2,3})</td>",
     "postalCodesServed": [
       "06010",
       "06011",
@@ -25771,9 +25795,10 @@
     ]
   },
   "berkshireoilinc.com": {
-    "enabled": false,
-    "pattern": "none",
-    "notes": "DISABLED: Added by coverage export — not yet in scrape config. Slug: berkshire-oil-inc",
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - re-enabled 2026-06-12, verified homepage price $4.399* (heating-oil-only); will-call.",
+    "priceRegex": ">\\$([0-9]+\\.[0-9]{3})\\*</strong>",
     "postalCodesServed": [
       "06010",
       "06011",
@@ -25801,9 +25826,11 @@
     ]
   },
   "blackhawkoil.com": {
-    "enabled": false,
-    "pattern": "none",
-    "notes": "DISABLED: Added by coverage export — not yet in scrape config. Slug: blackhawk-oil",
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/todays-oil-price",
+    "notes": "CT - re-enabled 2026-06-12, verified $4.39/gal on /todays-oil-price (homepage carousel shows stale $2.69; use pricePath).",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})\\s*Per Gallon",
     "postalCodesServed": [
       "06010",
       "06011",
@@ -27174,9 +27201,10 @@
     ]
   },
   "countypetroleum.com": {
-    "enabled": false,
-    "pattern": "none",
-    "notes": "DISABLED: Added by coverage export — not yet in scrape config. Slug: county-petroleum",
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "NY Sullivan/Catskills - re-enabled 2026-06-12, homepage 'HEATING OIL PRICES AS LOW AS $4.69(9)'; capturing $4.69 (9/10 cent superscript dropped).",
+    "priceRegex": "\\$\\s*([0-9]+\\.[0-9]{2})<sup>",
     "postalCodesServed": [
       "10963",
       "12404",
@@ -29216,9 +29244,11 @@
     ]
   },
   "homesteadcomfort.com": {
-    "enabled": false,
-    "pattern": "none",
-    "notes": "DISABLED: Added by coverage export — not yet in scrape config. Slug: homestead-comfort",
+    "enabled": true,
+    "pattern": "direct",
+    "pricePath": "/pricing-and-payments",
+    "notes": "CT - re-enabled 2026-06-12, verified \"Home Heating Oil is $4.999 Per Gallon\" on /pricing-and-payments.",
+    "priceRegex": "Home Heating Oil is \\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "06029",
       "06040",
@@ -32359,9 +32389,10 @@
     ]
   },
   "plymouthoilct.com": {
-    "enabled": false,
-    "pattern": "none",
-    "notes": "DISABLED: Added by coverage export — not yet in scrape config. Slug: plymouth-oil-service-inc",
+    "enabled": true,
+    "pattern": "direct",
+    "notes": "CT - re-enabled 2026-06-12, verified explicit \"COD Price is $4.39\" on homepage (Full $4.69 / CC $4.44 / COD $4.39).",
+    "priceRegex": "COD Price is \\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "06057",
       "06063",
@@ -35621,9 +35652,11 @@
     ]
   },
   "walshsoil.com": {
-    "enabled": false,
-    "pattern": "none",
-    "notes": "DISABLED: Added by coverage export — not yet in scrape config. Slug: walsh-s-oil",
+    "enabled": true,
+    "pattern": "direct",
+    "ignoreSSL": true,
+    "notes": "MA - re-enabled 2026-06-12 with ignoreSSL (invalid cert); verified single homepage price $4.59/gal.",
+    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})</h2>",
     "postalCodesServed": [
       "01901",
       "01902",
