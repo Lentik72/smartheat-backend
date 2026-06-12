@@ -150,12 +150,42 @@ async function check(label, fn) {
     assert.strictEqual(r.failed, 0);
   });
 
-  await check('a non-OK response counts as failed, not submitted (so it retries next run)', async () => {
-    const fakeFetch = async () => ({ ok: false, status: 403 });
-    const r = await submitToIndexNow(['/x'], { key: 'k', fetchImpl: fakeFetch, logger: { error() {} } });
+  await check('a non-OK response that stays non-OK counts as failed after retries (so it retries next run)', async () => {
+    let calls = 0;
+    const fakeFetch = async () => { calls++; return { ok: false, status: 403 }; };
+    const r = await submitToIndexNow(['/x'], { key: 'k', fetchImpl: fakeFetch, sleep: async () => {}, logger: { error() {}, warn() {} } });
+    assert.strictEqual(calls, 3, 'a transient-class 403 is retried up to the attempt cap');
     assert.strictEqual(r.submitted, 0);
     assert.deepStrictEqual(r.submittedUrls, []);
     assert.strictEqual(r.failed, 1);
+  });
+
+  await check('retries a transient 403, then succeeds within the same run', async () => {
+    let calls = 0;
+    const fakeFetch = async () => { calls++; return calls === 1 ? { ok: false, status: 403 } : { ok: true, status: 200 }; };
+    const r = await submitToIndexNow(['/x'], { key: 'k', fetchImpl: fakeFetch, sleep: async () => {}, logger: { error() {}, warn() {} } });
+    assert.strictEqual(calls, 2, 'should retry once after a transient 403');
+    assert.strictEqual(r.submitted, 1);
+    assert.deepStrictEqual(r.submittedUrls, ['/x']);
+    assert.strictEqual(r.failed, 0);
+  });
+
+  await check('a non-retriable 422 fails fast without retrying', async () => {
+    let calls = 0;
+    const fakeFetch = async () => { calls++; return { ok: false, status: 422 }; };
+    const r = await submitToIndexNow(['/x'], { key: 'k', fetchImpl: fakeFetch, sleep: async () => {}, logger: { error() {}, warn() {} } });
+    assert.strictEqual(calls, 1, '422 = bad host/format; retry cannot help, so fail fast');
+    assert.strictEqual(r.failed, 1);
+    assert.strictEqual(r.submitted, 0);
+  });
+
+  await check('a network error is retried up to the attempt cap then fails', async () => {
+    let calls = 0;
+    const fakeFetch = async () => { calls++; throw new Error('ECONNRESET'); };
+    const r = await submitToIndexNow(['/x'], { key: 'k', fetchImpl: fakeFetch, sleep: async () => {}, attempts: 3, logger: { error() {}, warn() {} } });
+    assert.strictEqual(calls, 3, 'initial + 2 retries');
+    assert.strictEqual(r.failed, 1);
+    assert.strictEqual(r.submitted, 0);
   });
 
   console.log('\n=== runIndexNowSubmission (temp fixture) ===');
@@ -232,7 +262,7 @@ async function check(label, fn) {
     delete process.env.INDEXNOW_DRY_RUN;
     let threw = false;
     try {
-      await runIndexNowSubmission({ sequelize: stub, logger: { info() {}, error() {}, warn() {} }, websiteDir: dir, fetchImpl: fakeFetch });
+      await runIndexNowSubmission({ sequelize: stub, logger: { info() {}, error() {}, warn() {} }, websiteDir: dir, fetchImpl: fakeFetch, sleep: async () => {} });
     } catch (e) {
       threw = true;
       assert.ok(/submissions failed/.test(e.message));
