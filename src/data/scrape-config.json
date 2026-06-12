@@ -20530,10 +20530,10 @@
     ]
   },
   "hillsidehvac.com": {
-    "enabled": false,
+    "enabled": true,
     "pattern": "direct",
     "pricePath": "/heating-oil-delivery/",
-    "priceRegex": "\\$([0-9]+\\.[0-9]{2,3})",
+    "priceRegex": "TODAY.{0,3}S RATE[\\s\\S]{0,40}?\\$([0-9]+\\.[0-9]{2,3})",
     "postalCodesServed": [
       "19301",
       "19310",
